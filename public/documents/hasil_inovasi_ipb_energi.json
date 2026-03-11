@@ -1,0 +1,546 @@
+{
+    "metadata": {
+        "source": "501-Inovasi-IPB-1-Energi-Inovasi.pdf",
+        "total_nodes": 23
+    },
+    "nodes": [
+        {
+            "node_id": "INV-001",
+            "details": {
+                "judul": "Alat Pengering Dengan Tenaga Surya, Angin, dan Biomassa",
+                "deskripsi": "Alat pengering ini mengintegrasikan energi terbarukan berupa energi termal dan listrik dari surya, angin dan biomassa. Berguna untuk mengeringkan produk pertanian seperti gabah dan tidak tergantung pada cuaca.",
+                "perspektif": "Angin, cahaya matahari, dan panas lingkungan dapat kita peroleh secara gratis. Memadukan ketiganya sebagai alat pengering hasil pertanian berpotensi memberikan pelbagai manfaat.",
+                "keunggulan_inovasi": [
+                    "Sistem pengering melandaskan energi terbarukan, ramah lingkungan dan tidak bergantung pada tenaga listrik dan minyak/gas",
+                    "Bahan baku untuk sistem pengering mudah didapat, baik itu di kota besar, terlebih-lebih di daerah terpencil",
+                    "Biaya pengeringan sangat rendah",
+                    "Kualitas produk yang dihasilkan lebih baik dan seragam dengan adanya pengadukan"
+                ],
+                "potensi_aplikasi": "Dapat di aplikasikan di industri alat pertanian atau oleh petani.",
+                "inovator": {
+                    "nama": [
+                        "Komaruddin Abdullah"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-002",
+            "details": {
+                "judul": "Si Licin Tahan Panas",
+                "deskripsi": "Teknologi rolling oil berbahan dasar minyak jarak dan minyak sawit yang dikembangkan untuk industri pengolahan logam.",
+                "perspektif": "Pengembangan produk dengan bahan baku minyak sawit dan jathropa (jarak)",
+                "keunggulan_inovasi": [
+                    "Mempunyai karakteristik serupa dengan yang komersial",
+                    "Sifat lubrikasi lebih baik pada suhu tinggi",
+                    "Beremulsi dengan air",
+                    "Berasal dari bahan baku organik yang dapat diperbaharui"
+                ],
+                "potensi_aplikasi": "Industri pengolahan logam terutama baja, dan proses lainnya yang membutuhkan pelumas yang stabil pada suhu tinggi dan beremulsi dengan air",
+                "inovator": {
+                    "nama": "Ani Suryani",
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-003",
+            "details": {
+                "judul": "Sabun Alami",
+                "deskripsi": "Peluluh Minyak Bumi",
+                "perspektif": "Dunia masih bergantung pada minyak bumi, sedangkan hasil eksploitasinya kian berkurang. Surfaktan meningkatkan hasil minyak bumi dan dibutuhkan dalam jumlah sangat besar. Menemukan sumber surfaktan baru dari sumber yang terbaharukan sangat dibutuhkan.",
+                "keunggulan_inovasi": [
+                    "Meningkatkan nilai tambah minyak sawit",
+                    "Meningkatkan pendapatan masyarakat",
+                    "Mendukung klaster hilir sawit di Indonesia",
+                    "Peningkatan total produksi minyak bumi",
+                    "Surfaktan dari sumber yang terbarukan",
+                    "Mempunyai sifat larut dalam air",
+                    "Mempunyai sifat salinitas yang tinggi"
+                ],
+                "potensi_aplikasi": "Bahan baku surfaktan dibutuhkan dalam jumlah besar untuk proses oil recovery, bisa dibuat menjadi sabun, deterjen, bahkan kosmetik. Proses pembuatan surfaktan dapat diaplikasikan di industri sawit yang ingin melakukan diversifikasi produk, dapat melirik proses ini.",
+                "inovator": {
+                    "nama": [
+                        "Erliza Hambali",
+                        "Ani Suryani",
+                        "Pudji Permadi",
+                        "Agus Pratomo",
+                        "Mira Rivai",
+                        "Ria Maria"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-004",
+            "details": {
+                "judul": "Biopelet dari Pelepah Sawit",
+                "deskripsi": "Pelepah sawit yang biasanya dianggap sebagai limbah dapat diubah menjadi biopelet yang berkualitas tinggi. Biopelet ini memiliki nilai kalori yang tinggi dan dapat digunakan sebagai sumber energi alternatif.",
+                "perspektif": "Kebesaran dan kesuksesan seringkali diiringi dengan pengabaian dan kemubaziran. Pelepah yang kini adalah limbah yang melimpah ruah, dengan inovasi bisa diubah menjadi berkah yang terus bertambah.",
+                "keunggulan_inovasi": [
+                    "Bahan baku berupa pelepah sawit melimpah dan belum dimanfaatkan",
+                    "Pembakaran lebih bersih dan ramah bagi lingkungan",
+                    "Kompetitif dibandingkan harga bahan bakar minyak maupun batubara",
+                    "Waktu memasak yang lebih singkat dibandingkan dengan biobriket",
+                    "Lebih mudah dinyalakan/dimatikan dibandingkan biobriket",
+                    "Berpotensi ekspor sebagai sumber energi biomassa terbarukan"
+                ],
+                "potensi_aplikasi": "Inovasi ‘biopelet’ dapat dimanfaatkan oleh perkebunan kelapa sawit, untuk industri bahan bakar biomassa, maupun untuk memenuhi keperluan energi rumah tangga; misalnya untuk menunjang program desa mandiri energi.",
+                "inovator": {
+                    "nama": [
+                        "Erliza Hambali",
+                        "Dwi Setyaningsih",
+                        "Windi Liliana",
+                        "Dipo Bariguna"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-005",
+            "details": {
+                "judul": "Semua Jadi Satu",
+                "deskripsi": "Biodigester Portabel Penghasil Biogas sebagai Sumber Energi Keluarga",
+                "perspektif": "Menggabungkan dua pilihan, portabilitas dan daya tahan yang biasanya saling bertentangan, menjadi sebuah pilihan baru yang tidak hanya lebih baik, namun juga lebih murah.",
+                "keunggulan_inovasi": [
+                    "Portabel sehingga praktis dibawa dan digunakan, aman, murah terbuat dari bahan plastik dan juga sangat mudah aplikasinya",
+                    "Mudah di pasang (all in one), tanpa harus membeli bahan tambahan",
+                    "Teknologi ramah lingkungan",
+                    "Mendorong tumbuhnya industri rumah tangga di pedesaan",
+                    "Tersedianya energi terbarukan yang murah bagi petani/peternak",
+                    "Meningkatnya produktivitas pertanian dengan pemanfaatan limbah"
+                ],
+                "potensi_aplikasi": "Teknologi biogas ini dapat diaplikasikan di masyarakat secara luas, khususnya untuk masyarakat peternak.",
+                "inovator": {
+                    "nama": [
+                        "Salundik",
+                        "Zulfikar Moesa",
+                        "A. Yani"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-006",
+            "details": {
+                "judul": "Biodiesel Unggul dari Kelapa Sawit",
+                "deskripsi": "Peningkatan Nilai Tambah Biodiesel (Metil Ester) dari Crude Palm Oil Melalui Proses Fraksinasi (Distilasi) untuk Menghasilkan Single Cut Metil Ester",
+                "perspektif": "Bergantung pada sumberdaya alam sebagai komoditas ekspor tidak bisa diandalkan untuk jangka panjang. Kita harus mampu mengolah komoditas menjadi produk bernilai tambah tinggi, dan semakin tinggi.",
+                "keunggulan_inovasi": [
+                    "Proses fraksinasi lebih baik karena menyebabkan separasi komponen metil ester palmitat dari metil ester oleat",
+                    "Surfaktan yang dihasilkan dari bahan baku metil palmitat memiliki daya deterjensi tinggi",
+                    "Sisa fraksinasi berupa bahan baku biodiesel berkualitas yang a tahan terhadap suhu rendah"
+                ],
+                "potensi_aplikasi": "Proses dapat diterapkan usaha pengelolaan CPO untuk menghasilkan surfaktan yang digunakan pada eksploitasi minyak bumi, juga sebagai bahan industri produk pencuci dan pembersih (washing and cleaning)",
+                "inovator": {
+                    "nama": [
+                        "Ani Suryani",
+                        "Erliza Hambali",
+                        "Ari Imam Sutanto",
+                        "Siti Mujdalipah",
+                        "Jaelani"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-007",
+            "details": {
+                "judul": "Konverter Minyak Nabati untuk Mesin Diesel dengan Menggunakan Minyak Nyamplung Murni sebagai Bahan Bakar Alternatif",
+                "deskripsi": "Konverter minyak nabati untuk mesin diesel yang menggunakan minyak nyamplung murni sebagai bahan bakar alternatif, dengan penambahan tangki BBN, modifikasi saluran gas buang, dan katup bahan bakar.",
+                "perspektif": "Dalam pengembangan sumber bahan bakar baru, umumnya diperlukan inovasi pada mesin atau peralatan yang menggunakannya. Bila tidak bisa dilakukan, perlu inovasi pada cara penggunaan bahan bakar baru itu sendiri.",
+                "keunggulan_inovasi": [
+                    "Desain sederhana, dan mudah perawatannya.",
+                    "Dapat diproduksi lokal dengan biaya relatif murah.",
+                    "Dapat digunakan untuk BBN secara umum (minyak nyamplung, kelapa sawit, bintaro dan lain-lain).",
+                    "Aplikasi pada mesin kapal nelayan menunjukkan hasil yang memuaskan, dengan kecepatan dan akselerasi yang relatif sama seperti menggunakan solar."
+                ],
+                "potensi_aplikasi": "Aplikasi pada berbagai merek dan tipe mesin diesel, antara lain mesin genset, mesin traktor tangan, mesin kapal nelayan serta berbagai mesin yang digunakan pada industri pertanian.",
+                "inovator": {
+                    "nama": [
+                        "Desrial",
+                        "Y. Aris Purwanto",
+                        "Ika Amalia Kartika",
+                        "Joko Pitoyo"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-008",
+            "details": {
+                "judul": "Rumah Kaca",
+                "deskripsi": "Mikroalga",
+                "perspektif": "Microalgae",
+                "keunggulan_inovasi": [
+                    "Proses kultivasi cepat, sekitar 4-7 hari.",
+                    "Mikroalga sebagai alternatif pengganti bahan bakar fosil.",
+                    "Kepadatan mikroalga hampir 5 kali lipat dibandingkan dengan kultivasi pada sistem terbuka (pond).",
+                    "Sistem tertutup meningkatkan efisiensi penyerapan CO untuk pertumbuhan mikroalga."
+                ],
+                "potensi_aplikasi": "Untuk produksi biofuel sebagai alternatif pengganti bahan bakar fosil.",
+                "inovator": {
+                    "nama": [
+                        "Mujizat Kawaroe",
+                        "Dahlia Wulan Sari",
+                        "Dina Augustine",
+                        "Nur Endah Fitrianto",
+                        "Ayi Rachmat"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-009",
+            "details": {
+                "judul": "Pemanfaatan Limbah Minyak Dalam Tanah Pemucat Bekas sebagai Bahan Baku Biodiesel",
+                "deskripsi": "Penelitian ini membahas tentang pemanfaatan limbah minyak dalam tanah pemucat bekas sebagai bahan baku biodiesel. Limbah ini memiliki potensi untuk diproses secara in-situ dan menghasilkan biodiesel dengan yield yang tinggi.",
+                "perspektif": "Sumber daya alam terbarukan harus diutilisasi maksimal untuk mengurangi limbah yang sia-sia dan merugikan lingkungan.",
+                "keunggulan_inovasi": [
+                    "Menghasilkan sumber energi terbarukan",
+                    "Proses in-situ, meminimalkan biaya transport",
+                    "Proses simultan dan lebih sederhana",
+                    "Mengolah limbah industri pemurnian CPO"
+                ],
+                "potensi_aplikasi": "Biodiesel yang dihasilkan dapat digunakan sebagai bahan bakar substitusi untuk genset, boiler, dan peralatan industri statis lain.",
+                "inovator": {
+                    "nama": [
+                        "Muhammad Romli",
+                        "Ani Suryani",
+                        "Suprihartin, Nur Asma Deli"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-010",
+            "details": {
+                "judul": "Baterai Basah dari Air Tambak",
+                "deskripsi": "Pemanfaatan Energi Listrik Dari Sedimen Petambak",
+                "perspektif": "Ketika mikroorganisme secara alami bisa menghasilkan larutan asam serupa elektrolit pada sel baterai, mengapa tidak dicoba untuk menghasilkan listrik",
+                "keunggulan_inovasi": [
+                    "Memperbaiki kualitas air tambak.",
+                    "Meningkatkan produktivitas tambak.",
+                    "Menggunakan bahan baku sedimen tambak udang yang kurang dimanfaatkan.",
+                    "Menghemat penggunaan listrik."
+                ],
+                "potensi_aplikasi": "Industri Perikanan Tambak dan Pengembangan Sumber Energi",
+                "inovator": {
+                    "nama": [
+                        "Bambang Riyanto",
+                        "Akhiruddin Maddu",
+                        "Yayan Firmansyah"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-011",
+            "details": {
+                "judul": "Penangkap Debu dengan Pemanfaatan Gliserol Hasil Samping Industri Biodiesel",
+                "deskripsi": "Penangkap Debu (Dust Catcher’s Sidekick) adalah solusi untuk mengurangi pencemaran udara di industri batubara dan semen menggunakan gliserol sebagai komponen.",
+                "perspektif": "Inovasi besar terjadi kalau dua atau lebih masalah berhasil dihubungkan dengan bantuan ilmu dan teknologi. Penanggulangan masalah lingkungan di industri batu bara dan semen diperbaiki; dan pada saat yang sama gliserol, produk sampingan di industri biodiesel, diserap dan lebih dihargai.",
+                "keunggulan_inovasi": [
+                    "Menghasilkan formula CDS yang lebih efektif dengan bahan baku terbarukan yaitu gliserol dari industri biodiesel.",
+                    "CDS formula dengan gliserol memiliki kinerja yang lebih baik dari CDS komersial yang ada di pasaran.",
+                    "Bisa membantu meningkatkan nilai jual gliserol sebagai produk sampingan industri biodiesel yang harganya melorot terus."
+                ],
+                "potensi_aplikasi": "Formula ini berpotensi diaplikasikan pada berbagai industri yang menghasilkan pencemar udara seperti di industri batubara dan semen, sekaligus sebagai alternatif pemanfaatan gliserol dari industri biodiesel.",
+                "inovator": {
+                    "nama": [
+                        "Anas Bunyamin",
+                        "Erliza Hambali",
+                        "Ani Suryani",
+                        "Herry Suhirman"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-012",
+            "details": {
+                "judul": "Teknik Rekayasa Teknik Bioflokulasi untuk Pemanenan Mikroalga yang Ramah Lingkungan",
+                "deskripsi": "Pemanenan biomassa mikroalga merupakan faktor yang berkontribusi dalam menentukan biaya produksi minyak mikroalga. Teknik pemanenan mikroalga yang umum digunakan adalah flokulasi menggunakan bahan kimia. Teknik pemanenan bioflokulasi menggunakan mikroalga autoflokulan yang banyak mengandung Lipid, berkonsep ramah lingkungan dan hemat biaya.",
+                "perspektif": "Biofuel dari mikroalga telah menarik perhatian, namun hambatan utama adalah mahalnya proses pemanenan. Teknologi bioflokulasi bisa menjadi solusi.",
+                "keunggulan_inovasi": [
+                    "Ramah lingkungan dan tidak menghasilkan limbah",
+                    "Air kultivasi dapat digunakan kembali tanpa pengolahan",
+                    "Persentase recovery sama dengan flokulasi kimia",
+                    "Berpotensi mereduksi biaya pemanenan"
+                ],
+                "potensi_aplikasi": "Dapat dikembangkan menjadi teknik pemanenan mikroalga yang lebih efisien, khususnya untuk menghasilkan minyak (biofuel).",
+                "inovator": {
+                    "nama": [
+                        "Mujizat Kawaroe",
+                        "Safrina Dyah Hardiningtyas",
+                        "Dahlia Wulan Sari",
+                        "Dina Augustine",
+                        "Welmar Olfan Bastern Barat",
+                        "Syarif Hidayatulloh"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-013",
+            "details": {
+                "judul": "Karburator Untuk Bahan Bakar Biogas",
+                "deskripsi": "Karburator untuk bahan bakar biogas dirancang untuk mencampur biogas dan udara dengan rasio campuran yang tepat dan menghasilkan campuran yang mampu terbakar di dalam silinder motor bensin. Modifikasi karburator dapat menggantikan penggunaan bensin dengan energi alternatif biogas.",
+                "perspektif": "Desain karburatordirancang untuk mencampur udara dan biogas dengan rasio campuran yang tepat dan menghasilkan campuran yang mampu terbakar di dalam silinder motor bensin. Dengan modifikasi karburator, penggunaan bensin dapat digantikan dengan energi alternatif biogas.",
+                "keunggulan_inovasi": [
+                    "Karburator mampu mencampur udara dan biogas dengan rasio campuran yang tepat.",
+                    "Karburator menghasilkan campuran yang mampu terbakar di dalam silinder motor bensin.",
+                    "Biogas dihasilkan dengan memanfaatkan limbah.",
+                    "Mampu mengurangi penggunaan bahan bakar minyak dan memanfaatkan bahan bakar alternatif"
+                ],
+                "potensi_aplikasi": "Karburator berbahan bakar biogas dapat diaplikasikan pada industri manufakturing sepeda motor. Selain itu, inovasi ini juga dapat menjadi alternatif pada industri yang menggunakan bensin sebagai bahan bakarnya.",
+                "inovator": {
+                    "nama": [
+                        "Desrial",
+                        "Ade Prisma Pranayuda",
+                        "Panji Laksamana Septiansyah"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-014",
+            "details": {
+                "judul": "Pemanfaatan Metil Ester Sulfonic Acid (MESA) Untuk Katalis Asam Pada Proses Produksi Surfaktan Alkil Poliglikosida",
+                "deskripsi": "Invention of intermediate products of the manufacture of surfactants methyl ester sulfonate (MES) in the form of methyl ester sulfonic acid (MESA) for the acid catalyst in the production of plant-based surfactant alkyl polyglycosides (APG) of fatty alcohol and liquid glucose 85%. MESA can replace commercial acid catalysts that have been frequently used in the production of surfactant alkyl polyglycosides.",
+                "perspektif": "Surfaktan berbahan alami nonionik Methyl ester sulfonic acid (MESA) atau asam metil ester sulfonat merupakan bentuk produk antara dari pembuatan metil ester sulfonat. MESA merupakan senyawa aktif yang bersifat ramah lingkungan, karena disintesis dari metil ester dan direaksikan dengan gas SO3. Metil ester sebagai dari minyak kelapa sawit menjamin keamanan surfaktan dalam lingkungan dan ketersediaan bahan baku yang melimpah serta mampu mengurangi ketergantungan impor.",
+                "keunggulan_inovasi": [
+                    "katalis asam yang ramah lingkungan dan dengan harga terjangkau untuk proses produksi surfaktan alkil poliglikosida",
+                    "surfactant alkil poliglikosida yang dihasilkan memiliki nilai tegangan antarmuka yang rendah",
+                    "proses produksi APG melalui proses dua tahap",
+                    "hasil produksi surfaktan alkil poliglikosida yang mudah larut air"
+                ],
+                "potensi_aplikasi": "Inovasi surfaktan berbahan Methyl ester sulfonic acid (MESA) dapat diaplikasikan pada industri minyak atau pertambangan minyak.",
+                "inovator": {
+                    "nama": [
+                        "Erliza Hambali",
+                        "Pudji Permadi",
+                        "Ani Suryani",
+                        "Mira Rivai",
+                        "Padil",
+                        "Yuni Astuti",
+                        "Ari Imam Sutanto"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-015",
+            "details": {
+                "judul": "SORBEM Soil Super Bright Led Lamp Solusi Penerangan Lampu Jalan yang Ramah Lingkungan dan Mandiri untuk Desa Terpencil dan Jalan Tol",
+                "deskripsi": "Lampu jalan yang menggunakan energi listrik yang berasal dari tanah. Energi tanah yang tersedia terus-menerus menyebabkan sumber tenaga lampu bersifat mandiri. Energi listrik tanah yang kecil arus dan tegangannya, perlu dinaikkan menggunakan rangkaian penaik daya, sehingga mampu untuk mengisi baterai lalu menyalakan lampu jalan.",
+                "perspektif": "Lampu jalan yang minimal sering kali menjadi pemicu kecelakaan lalu lintas. Di wilayah dengan cadangan listrik yang terbatas, menyebabkan ketersediaan lampu jalan terbatas. Dengan adanya lampu jalan yang memanfaatkan sumber energi dari alam, dapat menjadi solusi atas keterbatasan dalam penyediaan energi listrik.",
+                "keunggulan_inovasi": [
+                    "ramah lingkungan",
+                    "bersifat mandiri energi",
+                    "perawatannya mudah",
+                    "tawarkan ketersediaan energi yang berkelanjutan",
+                    "mampu menyala dan padam secara otomatis"
+                ],
+                "potensi_aplikasi": "Sorbem cocok diaplikasikan oleh pemerintah untuk diterapkan pada daerah atau wilayah dengan keterbatasan listrik. Sorbem mendukung PLN dalam penyediaan sumber listrik dengan mengandalkan energi dari alam.",
+                "inovator": {
+                    "nama": [
+                        "Qouamunas Tsani Nuargimah",
+                        "Muhammad Indarto Budiono",
+                        "Dian Puspita Sari",
+                        "Mohammad Arif Rahmatullah"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-016",
+            "details": {
+                "judul": "Mini Power Station ‘Nanohidro’",
+                "deskripsi": "Mini Power Station ‘Nanohidro’ adalah pembangkit listrik tenaga ‘nanohidro’ portable yang menggunakan turbin yang dirangsang oleh tenaga potensial air hujan di saluran air bangunan. Ini merupakan inovasi yang lebih kecil dibandingkan dengan PLTMH umum, sehingga dapat dipindahkan sesuai kebutuhan.",
+                "perspektif": "Perenerapan alat ini diharapkan menjadi kebutuhan pokok masyarakat untuk mengurangi pengeluaran dibandingkan listrik PLN dan menjadi langkah mitigasi pengurangan emisi GRK, untuk mengurangi dampak perubahan iklim.",
+                "keunggulan_inovasi": [
+                    "Biaya pembuatan mini station ini tergolong terjangkau.",
+                    "Arus listrik yang dihasilkan dapat dipakai langsung atau disimpan dalam aki.",
+                    "Bentuknya portable sehingga bersifat aman, mudah dipasang dan dipindahkan.",
+                    "Mengurangi resiko kerusakan atau pencurian.",
+                    "Potensial untuk dijadikan energi alternatif listrik bagi PLN."
+                ],
+                "potensi_aplikasi": "Mini power Station potensial untuk dijadikan energi alternatif listrik bagi PLN.",
+                "inovator": {
+                    "nama": [
+                        "Bregas Budianto",
+                        "Edyanto",
+                        "Resti Salmayenti",
+                        "Dewi Sulistyowati",
+                        "Wibawa Furqona"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-017",
+            "details": {
+                "judul": "Peningkatan Kinerja Rekayasa Membran Fuel Cell Berbahan Dasar Limbah Styrofoam: Aplikasi Membran sebagai Perangkat Energi Terbarukan",
+                "deskripsi": "Penelitian ini membahas cara kerja fuel cell dan penggunaan limbah styrofoam sebagai bahan dasar membran PEM untuk fuel cell.",
+                "perspektif": "Pola pikir 'out-of-the-box'",
+                "keunggulan_inovasi": [
+                    "MEA (Membran Electrode Assemblies) berbahan dasar polistirena tersulfonasi yang dikomposit dengan zeolit dan alginate",
+                    "Membran dapat menjadi generator listrik",
+                    "Memanfaatkan limbah styrofoam yang sulit diuraikan"
+                ],
+                "potensi_aplikasi": "Inovator: Sri Mulijani dan KGS Dahlan",
+                "inovator": {
+                    "nama": [
+                        "Sri Mulijani",
+                        "KGS Dahlan"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-018",
+            "details": {
+                "judul": "Wipozer, Mesin Pendingin Ikan Bertenaga Angin",
+                "deskripsi": "Penanganan ikan segar hasil tangkapan nelayan sangat penting agar kandungan gizinya tetap terjaga dan harga jual ikan tetap tinggi. Wipozer adalah alat untuk membantu nelayan untuk membekukan hasil tangkapan selama melaut.",
+                "perspektif": "Menjaga kesegaran ikan pasca tangkap bisa menyelamatkan 50% nilai ikan, yang berarti menyelamatkan 50% penghasilan nelayan.",
+                "keunggulan_inovasi": [
+                    "Dapat mengoperasikan freezer berdaya 100 watt dengan kapasitas 100 liter",
+                    "Mesin mudah dibuat dan dipasang",
+                    "Berukuran kecil, sehingga dapat dipasang pada kapal nelayan yang kecil"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Radite P. A. Setiawan",
+                        "Diang Sagita",
+                        "M. Munajat Dasir",
+                        "Andriyana"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-019",
+            "details": {
+                "judul": "Sintesa Bioavtur Berbasis CPO sebagai Bahan Bakar",
+                "deskripsi": "Avtur adalah bahan bakar untuk pesawat komersial dengan komponen utama hidrokarbon paraffin C10 – C14. Produksi avtur di Indonesia masih belum mencukupi total pemakaian, sehingga terpaksa dipenuhi dengan avtur impor. Oleh karena itu, upayakan pencarian bahan bakar alternatif lokal untuk mengatasi kekurangan suplai sangat diperlukan. Pemanfaatan bahan baku terbarukan seperti Crude Palm Oil (CPO) menjadi bioavtur dapat menjadi alternatif pengganti avtur.",
+                "perspektif": "Indonesia harus mendorong pengembangan produk-produk hilir sawit bernilai tinggi, dan berpotensi pasar luas, demi menjaga 'keamanan' kebutuhan akan sawit dari hulu.",
+                "keunggulan_inovasi": [
+                    "Densitas sebesar 0.810533, specific gravity 0.81128 g/cm³, dan cair pada suhu -55 ºC",
+                    "Bahan bakar non subsidi, sehingga nilai ekonomi lebih tinggi dibandingkan biodiesel",
+                    "Meningkatkan nilai tambah pengolahan sawit",
+                    "Memenuhi ketentuan internasional mengenai pengolahan sawit yang berkelanjutan"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Erliza Hambali",
+                        "Dwi Setyaningsih"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-020",
+            "details": {
+                "judul": "Biodelignifikasi Biomassa Berlignoselulosa Menggunakan Mikrob Pendegradasi Lignoselulosa untuk Pengembangan Biofuel",
+                "deskripsi": "Energi Biomassa dan Biodelignifikasi Lignoselulosa untuk Pembuatan Bioetanol",
+                "perspektif": "Indonesia memiliki limbah biomassa bernilai energi yang melimpah dan terbarukan, sehingga terobosan inovasi dibutuhkan untuk dikembangkan.",
+                "keunggulan_inovasi": [
+                    "Bahan baku energi berasal dari biomassa tumbuhan yang sifatnya terbarukan dan dapat diolah menjadi ramah lingkungan.",
+                    "Bahan baku tersedia melimpah, kontinyu, dan murah karena berasal dari limbah/pertanian, perkebunan, dan kehutanan."
+                ],
+                "potensi_aplikasi": "Inovasi ini dapat diaplikasikan jika diperoleh sumber biomassa berlignoselulosa yang kontinyu dan mikroba pendegradasi lignin yang potensial untuk menghasilkan bioetanol sebagai bahan bakar alternatif kendaraan terbarukan.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Syamsul Falah, SHut. MSi",
+                        "Dr. Suryani, SP, M.Sc"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-021",
+            "details": {
+                "judul": "Hemat Sehat",
+                "deskripsi": "Minyak atsiri seperti eugenol dan sitronelal yang diisolasi dari cengkeh dan sereh wangi dapat digunakan sebagai bioaditif untuk meningkatkan efisiensi pembakaran bahan bakar solar.",
+                "perspektif": "Minyak atsiri yang biasa digunakan untuk mengharumkan ternyata juga memiliki manfaat untuk meningkatkan kinerja motor bakar dan kualitas emisi gas buangnya.",
+                "keunggulan_inovasi": [
+                    "Bahan aditif untuk solar yang meningkatkan kinerja motor bakar dan dibuat dari bahan baku terbarukan yang ramah lingkungan",
+                    "Bahan bakunya tersedia melimpah di dalam negeri",
+                    "Menurunkan konsumsi bahan bakar solar 30 - 37%",
+                    "Memperbaiki kualitas emisi gas buang serta total partikulat"
+                ],
+                "potensi_aplikasi": "Bioaditif minyak atsiri dapat digunakan sebagai bahan campuran (additive) untuk bahan bakar solar atau biosolar mesin diesel, baik untuk mesin kendaraan, mesin pertanian, maupun mesin diesel lainnya.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Dwi Setyaningsih, S.TP, M.Si"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-022",
+            "details": {
+                "judul": "KE- CELL : Kulit Keprok (Citrus reticulata) Ecoenzyme Fuel Cell dan Potensinya sebagai Energi Terbarukan di Indonesia",
+                "deskripsi": "This research develops ecoenzyme from tangerine peel waste (Citrus reticulata) as a substrate for ecoenzyme fuel cell (EFC). The highest value of voltage produced is 650 mV with the highest current of 28.18 mA. The result of further analysis of the highest power density produced is 750 W/m2, from a three-pair electrode system with 200 rpm stirring.",
+                "perspektif": "Saat ini kita baru bisa memimpikan suatu dunia masa depan, dimana pasok listrik rumah kita yang kini sebagian telah berasal dari panel surya atau kincir angin, nantinya akan bersumber dari pengolahan limbah kulit jeruk, dari septic-tank, atau dari pohon kedondong di samping rumah.",
+                "keunggulan_inovasi": [
+                    "Bahan baku ecoenzyme berupa limbah jeruk keprok, molasse (limbah gula), dan grafit pensil, yang aman bagi lingkungan.",
+                    "Konsep pengolahan limbah yang menggabungkan aspek lingkungan, ekonomi, dan energi terbarukan",
+                    "Telah berhasil menghasilkan tegangan tertinggi sebesar 650 mV, kuat arus sebesar 29.55 mA dan nilai rapat daya (power density) tertinggi 769 W/m2",
+                    "Menghasilkan sisa proses yang dapat dimanfaatkan sebagai pembersih lantai, biofertilizer dan pupuk kompos."
+                ],
+                "potensi_aplikasi": "Penelitian ini berpotensi diaplikasikan dalam pengembangan energi baru berbasis ecoenzyme fuel cell (EFC)",
+                "inovator": {
+                    "nama": [
+                        "Imelia Dewi"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-023",
+            "details": {
+                "judul": "Sinergi Kapang dan Ragi Fungus and Yeast Synergy Rekayasa Bioproses Poduksi Bioetanol dari Limbah Ampas Tahu",
+                "deskripsi": "Teknik pembuatan bioetanol dengan teknik sakarifikasi dan fermentasi simultan, direkayasa menggunakan ko-kultur kapang Aspergillus niger dan khamir Saccharomyces cerevisae.",
+                "perspektif": "Inovasi dalam hal ini adalah upaya manusia merekayasa proses yang terjadi di alam sedemikian rupa, sehingga diperoleh nilai tambah sebanyak mungkin bagi dirinya.",
+                "keunggulan_inovasi": [
+                    "Memanfaatkan limbah ampas tahu yang murah untuk menekan biaya pembuatan bioetanol.",
+                    "Meningkatkan hasil produksi bioetanol.",
+                    "Menghasilkan etanol dari bahan baku yang terbarukan.",
+                    "Pengendalian proses relatif mudah dan sederhana."
+                ],
+                "potensi_aplikasi": "Inovasi ini dapat diaplikasikan sebagai program penanggulangan limbah ampas tahu, yang saat ini banyak dikeluhkan mencemari lingkungan termasuk baunya; sekaligus sebagai program pengembangan sumber energi baru yang terbarukan yang sedang didorong oleh pemerintah.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Khaswar Syamsu, MSc"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        }
+    ]
+}

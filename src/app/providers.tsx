@@ -2,7 +2,7 @@
 
 import { CacheProvider } from "@chakra-ui/next-js";
 import { ChakraProvider } from "@chakra-ui/react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "react-query";
 import { ToastContainer, Bounce } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";

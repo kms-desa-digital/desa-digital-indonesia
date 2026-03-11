@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import Navbar from "Components/navbar";
+import ChatBox from "Components/chat/ChatBot";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,10 +24,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true}>
       <body className={inter.variable} suppressHydrationWarning={true}>
         <Providers>
-          <main>
+          <main suppressHydrationWarning={true}>
             {children}
           </main>
           <Navbar />
+          <ChatBox />
         </Providers>
       </body>
     </html>

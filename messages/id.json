@@ -101,5 +101,16 @@
     "Innovation": {
         "title": "Kategori Inovasi",
         "notFound": "Inovasi tidak ditemukan"
+    },
+    "Chatbot": {
+        "title": "Asisten Desa Digital",
+        "online": "Online",
+        "placeholder": "Ketik pertanyaan anda...",
+        "thinking": "Berpikir...",
+        "welcome": "Halo! Saya asisten virtual Desa Digital. Ada yang bisa saya bantu?",
+        "error": "Maaf, terjadi kesalahan saat menghubungi layanan. Silakan coba lagi nanti.",
+        "ariaOpen": "Buka chat",
+        "ariaClose": "Tutup chat",
+        "ariaSend": "Kirim pesan"
     }
 }

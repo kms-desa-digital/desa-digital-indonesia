@@ -1,0 +1,509 @@
+{
+    "metadata": {
+        "source": "501-Inovasi-IPB-1-TIK-Inovasi.pdf",
+        "total_nodes": 23
+    },
+    "nodes": [
+        {
+            "node_id": "INV-001",
+            "details": {
+                "judul": "Penyelam Pintar",
+                "deskripsi": "Robot Jelajah Bawah Air (RJBA) dirancang untuk mendukung kegiatan observasi dan pengamatan bawah air, menggantikan peran penyelam manusia yang memiliki keterbatasan. RJBA dirancang dengan teknologi yang dapat mempermudah ilmuwan dalam melakukan observasi bawah air, dan visualisasi secara real-time dapat dilihat dari atas permukaan laut dan direkam pada laptop yang terpasang. Sumber energi listrik didapat menggunakan generator listrik berdaya 1.000 Watt dari atas kapal.",
+                "perspektif": "Mengaplikasikan teknologi terkini untuk melakukan pekerjaan yang berbahaya bagi peneliti, yaitu melakukan observasi didalam air, pada kedalaman yang sulit dicapai, sekaligus menjadikannya studi yang terekam dengan baik.",
+                "keunggulan_inovasi": [
+                    "Mampu beroperasi pada kedalaman 30- 40 meter",
+                    "Data hasil pengamatan langsung dapat secara visual ditampilkan di layar GUI",
+                    "Dapat dilakukan penyimpanan data di hardisk memory personal computer / notebook",
+                    "Pengoperasian mudah, seperti melakukan permainan game Platform dapat dilengkapi dengan sensor-sensor sehingga dapat mengetahui data-data lain selain data visual"
+                ],
+                "potensi_aplikasi": "Sebagai alat eksplorasi bawah air, yang dilengkapi dengan alat perekam, dan dapat ditambahkan alat sensor lain yang dibutuhkan bagi industri perikanan, penelitian, konservasi alam dan lingkungan, pengecekan kabel atau pipa dasar laut, dan lain-lain.",
+                "inovator": {
+                    "nama": [
+                        "Indra Jaya",
+                        "Muhammad Iqbal",
+                        "Williandi Setiawan"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-002",
+            "details": {
+                "judul": "Pantau Gerak-Gerik Samudera",
+                "deskripsi": "Monitoring Oceanic Changes Sistem Telemetri Buoy dengan Teknologi GSM Optimasi sistem perikanan di suatu perairan memerlukan kelengkapan data potensi perairan dengan tingkat validasi tinggi, up to date, serta komprehensif. Pemanfaatan potensi perikanan yang optimal memerlukan sistem yang bisa menyediakan data real-time.",
+                "perspektif": "Laut menyimpan misteri, namun bila diikuti secara terus menerus dapat dipelajari sifat dan perilakunya. Hal ini perlu untuk meningkatkan efisiensi dan optimasi pengelolaan sumberdaya kelautan dan perikanan Indonesia.",
+                "keunggulan_inovasi": [
+                    "Mendukung kegiatan ekonomi masyarakat, khususnya masyarakat pesisir dan nelayan dengan informasi kelautan yang real-time",
+                    "Menggunakan teknologi yang sudah \"mature\" dan banyak digunakan",
+                    "Menggunakan bahan dan kemampuan sendiri sehingga biayanya rendah",
+                    "Bisa dimanfaatkan untuk mendukung berbagai kegiatan pengendalian lingkungan dan kegiatan penelitian atau riset pesisir dan kelautan"
+                ],
+                "potensi_aplikasi": "Teknologi ini dapat diaplikasikan untuk mendukung kegiatan masyarakat di wilayah pesisir yang memerlukan data perairan secara akurat dan real-time. Sarana ini juga dapat dimanfaatkan untuk melakukan upaya pengendalian masalah lingkungan hidup dan mendukung penelitian dan riset pesisir dan kelautan",
+                "inovator": {
+                    "nama": [
+                        "Indra Jaya",
+                        "Ayi Rahmat",
+                        "Muhammad Iqbal"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-003",
+            "details": {
+                "judul": "Water Security for Fish Ponds",
+                "deskripsi": "Rancang Bangun Sistem Pengontrolan Jarak Jauh untuk Mengukur Kualitas Air di Kolam Budidaya Ikan Berbasis GSM/GPRS.",
+                "perspektif": "Air bagi ikan, seperti udara bagi manusia. Oleh karena itu, kondisi air yang optimal harus senantiasa dipantau untuk menjamin kesehatan dan keselamatan ikan.",
+                "keunggulan_inovasi": [
+                    "Penggunaan alat ini dapat menggantikan peran sensor multiprobe portable.",
+                    "Mengurangi beban kerja dalam melakukan pengontrolan.",
+                    "Dapat mendeteksi berbagai permasalahan akibat perubahan kualitas air secara cepat, murah dan efisien sehingga akan meningkatkan keuntungan bagi petani ikan."
+                ],
+                "potensi_aplikasi": "Teknologi bisa digunakan di berbagai lokasi yang sulit untuk dijangkau dan dilakukan pengukuran kualitas air secara rutin, selama lokasi tersebut bisa terjangkau oleh sinyak GSM/GPRS.",
+                "inovator": {
+                    "nama": [
+                        "Fahmi Hasan",
+                        "Peni Pitriani",
+                        "Frimadi Chandra",
+                        "Rochiyat",
+                        "Rosalla Tiara Dhewi",
+                        "Dadang Shafrudin"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-004",
+            "details": {
+                "judul": "Model Spasial Dinamik Pendugaan Produksi Padi sebagai Upaya Pencegahan Kerawanan Pangan (Studi Kasus: Provinsi Jawa Barat)",
+                "deskripsi": "Dalam merencanakan stabilitas pasok pangan terutama beras sebagai makanan pokok diperlukan suatu sistem yang memudahkan prediksi jumlah panen padi dan produksi beras. Hal ini penting untuk mendukung kebijakan penentuan jumlah beras yang diimpor ataupun pencetakan sawah baru.",
+                "perspektif": "Inovasi ini dapat mempercepat pemangku kebijakan dalam mengambil keputusan menyangkut ketahanan pangan terutama beras dengan akurat. Tindakan antisipasi dan kebijakan yang tepat dalam keadaan krisis dapat mencegah kerawanan pangan di suatu daerah.",
+                "keunggulan_inovasi": [
+                    "Data perhitungan kuantitatif dinyatakan dalam bentuk angka dan grafik peta spasial",
+                    "Penyajian data yang menyeluruh memudahkan analisa informasi dan mengambil keputusan"
+                ],
+                "potensi_aplikasi": "Model telah dibuat dan divalidasi untuk propinsi Jawa Barat dan berpotensi dikembangkan di propinsi lain atau untuk komoditas lain. Model dapat membantu pemangku kebijakan dalam memutuskan kebijakan pangan dengan akurat dan diterapkan pada dunia riil.",
+                "inovator": {
+                    "nama": [
+                        "Hartrisari Hardjomidjojo",
+                        "Harry Imantho",
+                        "Desi Suyamto"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-005",
+            "details": {
+                "judul": "MedLeaf : Inovasi Teknologi Mobile Cerdas Sistem Identifikasi Tanaman Obat Indonesia",
+                "deskripsi": "Aplikasi MedLeaf membantu masyarakat dan industri herbal untuk mengidentifikasi tanaman obat dengan mudah dan cepat melalui foto.",
+                "perspektif": "Penyediaan informasi akurat dan cepat tentang tanaman obat dapat mengurangi ketidakpastian dalam mengkonsumsi tanaman obat atau jamu, serta membantu industri herbal berkembang.",
+                "keunggulan_inovasi": [
+                    "Membantu masyarakat mengenal kekayaan tanaman obat",
+                    "Tidak memerlukan akses internet, sehingga dapat digunakan kapan saja dan di mana saja",
+                    "Pihak pengembang melakukan update database tanaman obat"
+                ],
+                "potensi_aplikasi": "Digunakan oleh industri berbasis herbal/tanaman obat, juga oleh masyarakat untuk mengidentifikasi tanaman obat secara tepat dan cepat",
+                "inovator": {
+                    "nama": [
+                        "Desta Sandya Pravista",
+                        "Ervizal A.M Zuhud",
+                        "Mega Mayanda Santoni",
+                        "Rahmat Setiawan",
+                        "Yeni Herdiyeni"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-006",
+            "details": {
+                "judul": "Jembatan SMS",
+                "deskripsi": "Jembatan SMS adalah aplikasi SMS (Short Message Service) yang dikembangkan untuk membantu penyandang tunanetra menggunakan layanan SMS. Teknologi lisan-ke-teks (speech-to-text) pada aplikasi ini, akan mengubah suara menjadi teks. Sebaliknya, jika ada pesan SMS yang masuk, teknologi teks-ke-lisan (text-to-speech) akan mengubah pesan teks menjadi suara.",
+                "perspektif": "Inovasi teknologi komputer dan telekomunikasi telah memberikan manfaat dan kemudahan yang luar biasa bagi kehidupan manusia. Mengikut-sertakan kelompok penyandang tunanetra untuk ikut memanfaatkan inovasi tidak hanya bermakna ekonomi semata, tetapi khususnya sangat bermakna sosial kemanusiaan.",
+                "keunggulan_inovasi": [
+                    "Desain antar-muka (interface) yang dirancang khusus untuk penyandang tunanetra.",
+                    "Mudah digunakan",
+                    "Aplikasi T-SMS dapat diunduh secara gratis"
+                ],
+                "potensi_aplikasi": "Aplikasi ini ditujukan khususnya bagi penyandang tunanetra, baik untuk keperluan pekerjaan, maupun untuk kehidupan sehari-hari.",
+                "inovator": {
+                    "nama": [
+                        "Ozi Priawadi",
+                        "Sony HartonoWijaya",
+                        "Lizza Amini Gumilar",
+                        "Nadya Elsanoviany Putri",
+                        "Fadila Andre Mulyanto",
+                        "Rahmad Syaifullah"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-007",
+            "details": {
+                "judul": "Permainan",
+                "deskripsi": "Penyelamatan Hutan Save Our Forest Game Analisis dan Desain Game untuk Penyelamatan Hutan P-SOFT (Play and Save Our Forest)",
+                "perspektif": "Internet telah terbukti mampu mengubah perilaku manusia dan game on-line merupakan media yang digemari generasi muda. Menggabungkan keduanya bisa digunakan untuk mengubah pola pikir dan perilaku generasi muda secara menyenangkan sembari bermain, untuk melakukan hal-hal baik bagi masyarakat seperti pelestarian hutan.",
+                "keunggulan_inovasi": [
+                    "Memberikan hiburan dan membangun kesadaran akan pelestarian lingkungan melalui permainan yang digemari",
+                    "Bisa menjadi wadah komunitas virtual bagi para pemainnya,untuk ikut dalam kegiatan penyelamatan hutan Indonesia",
+                    "Dapat berjalan di PC Computer/Notebook maupun berbagai mobile platform"
+                ],
+                "potensi_aplikasi": "P-SOFT bisa ditawarkan sebagai computer game biasa atau berbasis internet, bisa dikembangkan menjadi program simulasi komputer untuk keperluan pendidikan",
+                "inovator": {
+                    "nama": [
+                        "Firman Ardiansyah",
+                        "Ozi Priawadi",
+                        "Lizza Amini Gumilar",
+                        "Nadya Elsanoviany Putri",
+                        "Fadila Andre Mulyanto",
+                        "Hendrik",
+                        "Rilan"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-008",
+            "details": {
+                "judul": "Deteksi Padi Kurang Gizi",
+                "deskripsi": "Kondisi defisiensi nitrogen pada padi dapat dilakukan dengan Bagan Analisis Warna Daun (BWD). Hasil dari perbandingan visualisasi daun padi dapat deteksi kondisi defisiensi nitrogen yang menandakan padi kurang mendapatkan pupuk N.",
+                "perspektif": "Teknologi akan memberikan sumbangan maksimal apabila bisa dimanfaatkan secara langsung di tempat kerja yang sebenarnya. Menggantikan teknologi lama dengan yang modern dan praktis, memberdayakan petani untuk langsung bertindak tanpa tergantung pada sistem lama yang terbatas distribusinya juga aplikasinya di lapangan.",
+                "keunggulan_inovasi": [
+                    "Deteksi BWD dapat dilakukan secara murah dan instan",
+                    "Praktis bagi petani, hanya memerlukan telepon seluler dengan kamera",
+                    "Terdapat pilihan informasi menggunakan audio"
+                ],
+                "potensi_aplikasi": "Aplikasi ini tidak hanya bagi tanaman padi, tetapi juga untuk tanaman lainnya. Dapat dimanfaatkan oleh berbagai kalangan masyarakat, petani, akademisi, peneliti, penyuluh pertanian, bahkan oleh perusahaan dalam bidang pertanian.",
+                "inovator": {
+                    "nama": [
+                        "Hendrik",
+                        "M. Baidowi",
+                        "Irma Lasmiana",
+                        "Wildan Novebiyatno",
+                        "Firman Ardiansyah"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-009",
+            "details": {
+                "judul": "Makmur Tani di Era Internet",
+                "deskripsi": "Sistem Diseminasi Inovasi Pertanian Berbasis Teknologi Informasi untuk Meningkatkan Keberdayaan Petani Sayuran",
+                "perspektif": "Petani dirugikan bukan hanya karena gagal panen, atau masalah teknis pertanian lainnya. Seringkali masalah mereka adalah kesalahan dalam memilih tanaman, menentukan waktu panen, atau mendapat harga jual terlalu rendah, kesemuanya seringkali karena kelangkaan atau keterlambatan informasi.",
+                "keunggulan_inovasi": [
+                    "Mempercepat dan memperluas sebaran informasi pertanian ke pengguna, pengembang jaringan dan stakeholder lainnya",
+                    "Mendukung petani mengambil keputusan jenis tanaman yang tepat",
+                    "Revitalisasi dan pemberdayaan penyuluh pertanian"
+                ],
+                "potensi_aplikasi": "Model sistem diseminasi inovasi berbasis teknologi informasi ini dapat diaplikasikan ke semua sektor pertanian, semua pemangku kepentingan pertanian, dan dapat dimanfaatkan oleh masyarakat umum. Hal ini akan mendorong kemajuan dunia pertanian, dan keadilan dalam usaha pertanian.",
+                "inovator": {
+                    "nama": [
+                        "Sumardjo",
+                        "Retno S H Mulyandari",
+                        "Darojat",
+                        "Leo Darmawan"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-010",
+            "details": {
+                "judul": "Model Sistem Dinamik Pengelolaan Sampah Perkotaan untuk Menunjang Kebersihan Lingkungan",
+                "deskripsi": "Penyusunan model pengelolaan sampah dimaksudkan untuk mengefisiensikan jadwal pengangkutan sampah kota. Model mensimulasi aliran sampah dari rumah tangga dan pasar menuju TPS hingga ke TPA. Model memprediksi total biaya pengangkutan sampah dan sisa sampah yang tidak terangkut pada suatu wilayah tertentu.",
+                "perspektif": "Model Sistem Dinamik sebagai piranti penunjang analisis/perencanaan kebijakan melalui simulasi kebijakan untuk mengefisienkan jadwal pengangkutan sampah dan biaya pengangkutan sampah kota. Model bersifat umum dan dapat digunakan di kota lainnya di seluruh Indonesia.",
+                "keunggulan_inovasi": [
+                    "Model dibangun menggunakan sistem dinamik dengan output berupa prediksi total biaya pengangkutan sampah dan sisa sampah yang tidak terangkut pada suatu wilayah tertentu.",
+                    "Model dibuat user friendly dan digunakan untuk menilai kinerja pemerintah.",
+                    "Model telah diujicoba dengan data kota Bogor. Hasil simulasi menunjukkan kesesuaian dengan data riil kota Bogor."
+                ],
+                "potensi_aplikasi": "Inovasi ini potensial untuk dimanfaatkan oleh pemerintah sebagai alat penunjang analisis/perencanaan kebijakan terutama yang berkaitan dengan dinas kebersihan.",
+                "inovator": {
+                    "nama": [
+                        "Hartrisari Hardjomijojo",
+                        "Pamoedji"
+                    ],
+                    "status_paten": "Dalam Proses Pengajuan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-011",
+            "details": {
+                "judul": "Visualisasi Informasi Keterhubungan Tanaman Obat dengan Khasiatnya Menggunakan Algoritme Fruchterman-Reingold Virtual Map",
+                "deskripsi": "Informasi mengenai khasiat tanaman herbal yang tersaji dalam bentuk virtual, memberikan kemudahan bagi siapa saja untuk memanfaatkan tanaman herbal. Teknologi ini dapat menelusuri keterhubungan antar tanaman obat berdasarkan khasiat yang dimiliki dan memiliki Interface yang mudah untuk dipahami.",
+                "perspektif": "Peningkatan tren pengobatan herbal mendorong pemanfaatan tanaman herbal Indonesia.",
+                "keunggulan_inovasi": [
+                    "Mendukung penelusuran keterhubungan antar tanaman obat berdasarkan khasiat yang dimiliki.",
+                    "Interface yang mudah untuk dipahami.",
+                    "Memperkenalkan kekayaan keanekaragaman hayati tanaman obat Indonesia pada dunia."
+                ],
+                "potensi_aplikasi": "Dapat dimanfaatkan oleh kalangan industri sebagai alat penelusur khasiat tanaman obat, mempermudah pembuatan racikan baru obat tradisional.",
+                "inovator": {
+                    "nama": [
+                        "Firman Ardiansyah",
+                        "Nadya Elsanoviany Putri",
+                        "Yani Nurhadryani"
+                    ],
+                    "status_paten": "Dalam Proses Pengajuan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-012",
+            "details": {
+                "judul": "Sistem Pakar Pemilihan Lokasi Peternakan Ayam Broiler Berbasis Mobile",
+                "deskripsi": "Perkembangan peternakan broiler secara masif dapat menimbulkan masalah sosial dan lingkungan. Oleh karena itu, dalam penentuan lokasi peternakan diperlukan sistem pemilihan lokasi yang mempertimbangkan faktor ekonomi, sosial dan lingkungan (berkelanjutan). Solusi yang ditawarkan adalah sistem pakar mobile untuk memilih lokasi peternakan broiler.",
+                "perspektif": "Dalam prinsip keberlanjutan ekonomi dan sosial harus selaras dengan lingkungan. Aplikasi ini didasarkan pada prinsip tersebut untuk target yang spesifik.",
+                "keunggulan_inovasi": [
+                    "Sebagai pionir sistem aplikasi penentuan lokasi peternakan ayam",
+                    "Sistem aplikasi dikembangkan berdasarkan data spasial dan dikombinasikan dengan aspek hukum",
+                    "Dapat diinstal pada perangkat android",
+                    "Penentuan lokasi mempertimbangkan empat faktor: ekologi dan dampak lingkungan; ekonomi dan infrastruktur; kondisi alam dan kerentanan bencana alam"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Kudang Boro Seminar",
+                        "Rudi Afnan",
+                        "Arif Kurnia Wijayanto"
+                    ],
+                    "status_paten": "TELAH TERDAFTAR"
+                }
+            }
+        },
+        {
+            "node_id": "INV-013",
+            "details": {
+                "judul": "Sistem Pendukung Keputusan Berbasis Web Penentuan Kemasan Panganan Khas Daerah Indonesia",
+                "deskripsi": "Inovasi ini menyediakan sistem pendukung keputusan berbasis web untuk pemilihan jenis kemasan panganan khas daerah Indonesia. Sistem ini membantu produsen dalam memilih jenis kemasan yang tepat pada produk panganan mereka.",
+                "perspektif": "Menyediakan sistem yang dapat mempermudah aktivitas industri makanan khas daerah, tidak hanya akan semakin memperkenalkan karya asli anak bangsa, tapi juga mempercepat pertumbuhan ekonomi regional.",
+                "keunggulan_inovasi": [
+                    "Menghindarkan kerugian produsen karena pemilihan kemasan yang salah",
+                    "Sistem dikembangkan berdasarkan data dari para pakar teknologi ilmu pangan",
+                    "Dapat mengangkat nilai jual dan citra makanan daerah Indonesia melalui pemilihan kemasan yang tepat"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Kudang Boro Seminar",
+                        "Nugraha Edhi Suyatma",
+                        "Latifah Nurbaiti"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-014",
+            "details": {
+                "judul": "IoT (Internet of Things) untuk Sistem Monitoring dan Kontrol pada Penerangan Jalan Umum Tenaga Surya (PJU-TS) Dilengkapi dengan ACF (Automatic Cooling Fan) Terintegrasi",
+                "deskripsi": "Solar powered street lighting is often malfunctioned due to overheating in its battery box, that also shorten the life of battery. This innovation equips every street lighting unit with an automated cooling fan to stabilize the temperature in each battery box. Further, an IoT system is installed in every street lighting unit to monitor the condition of the lighting unit through the internet.",
+                "perspektif": "Sistem dan perangkat yang bersifat otonom (mandiri), jika dalam jumlah yang banyak, membutuhkan sistem monitoring yang lebih kompleks.",
+                "keunggulan_inovasi": [
+                    "Dilengkapi dengan aplikasi sistem monitoring",
+                    "Kontrol dan pengawasan dapat dilakukan secara real time, melalui koneksi internet"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": "Ayi Rahmat",
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-015",
+            "details": {
+                "judul": "Adaptasi Perubahan Iklim Fokus Anak (APIFA)",
+                "deskripsi": "Anak Penyelamat Iklim",
+                "perspektif": "Dalam kebijakan-kebijakan makro berskala nasional/global, peran-serta anak-anak dan remaja seringkali kurang memperoleh perhatian. Padahal mereka adalah pemilik dan pelaku dunia masa depan.",
+                "keunggulan_inovasi": [
+                    "APIFA berbasis on-line, sehingga setiap anggota dapat berkomunikasi secara real-time",
+                    "Menyediakan peta interaktif hasil analisis C4RA di wilayah masing-masing",
+                    "Menyediakan media pembelajaran yang menarik bagi khalayak anak dan remaja"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Perdinan",
+                        "Lenny N. Rosalin",
+                        "Arif Wibowo",
+                        "Yon Sugiarto",
+                        "Lina Sofiani",
+                        "Richard Wecker",
+                        "Ryco Farysca Adi",
+                        "Rizki Abdul Basit",
+                        "Enggar Yustisi Arini",
+                        "Tri Atmaja",
+                        "Rendy Prihansyah",
+                        "Hilda Ayu Pratikasiwi"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-016",
+            "details": {
+                "judul": "Pengembangan Membran Polisulfon Nanosilika untuk Direct Methanol Fuel Cell (DMFC) dan Metode untuk Mengetahui Kondisi Sumberdaya Laut",
+                "deskripsi": "Pengembangan membran polisulfon nanosilika untuk fuel cell direct methanol dan metode untuk mengetahui kondisi sumberdaya laut dengan menggunakan echo sounder quantitative.",
+                "perspektif": "Teknologi digital telah mengubah dunia dari yang dunia serba kira-kira menjadi dunia dengan angka-angka.",
+                "keunggulan_inovasi": [
+                    "Memanfaatkan teknologi Quantitative Echo Sounder dalam pengelolaan sumberdaya biota laut.",
+                    "Memberikan hasil yang akurat dalam deteksi, kuantifikasi dan klasifikasi sumberdaya biota laut.",
+                    "Memungkinkan monitoring sumber daya laut dan lingkungannya secara berkelanjutan, in situ, real time, dengan biaya yang relatif murah."
+                ],
+                "potensi_aplikasi": "Dapat diaplikasikan untuk pengambilan/analisis data, informasi, dan pengetahuan dalam rangka pengelolaan sumberdaya biota laut, baik untuk kegunaan riset kelautan, pengelolaan dan pemantauan sumber daya kelautan, maupun untuk keperluan komersialisasi dan menjaga kelestariannya.",
+                "inovator": {
+                    "nama": [
+                        "Henry Munandar Manik SPi, M.T, Ph.D Dr. Ir. Totok Hestirianoto, M.Sc"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-017",
+            "details": {
+                "judul": "Smart Advice for Agro-Industry",
+                "deskripsi": "Algoritma Genetika Multiobjektif untuk Perencanaan Lahan dalam Agroindustri Biodiesel Berkelanjutan",
+                "perspektif": "Pemakaian biodiesel bertujuan mengurangi ketergantungan kita pada sumber energi tak terbarukan, dengan mengalihkannya ke sumber energi yang terbarukan. Namun sesuatu yang terbarukan tidak selalu sejalan dengan tujuan kelestarian lingkungan.",
+                "keunggulan_inovasi": [
+                    "Memelopori optimisasi perencanaan lahan sawit untuk industri biodiesel dengan pendekatan komputasi cerdas.",
+                    "Mendukung perencanaan berskala negara/nasional yang bersifat optimalisasi multi-objektif (multi-kriteria) berjangka panjang, dimana konflik di antara fungsi-fungsi tersebut mungkin saja terjadi."
+                ],
+                "potensi_aplikasi": "Aplikasi algortima genetik ini dapat diaplikasikan untuk optimisasi multi-objektif (multi-kriteria) yang kompleks, dimana dalam jangka panjang konflik antar fungsi dan tujuan bisa terjadi, dan menyebabkan optimisasi tidak tercapai.",
+                "inovator": {
+                    "nama": [
+                        "Firdaus Prawiradisastra, S.Kom, M.Kom, Prof. Dr. Ir. Yandra M.Eng."
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-018",
+            "details": {
+                "judul": "Nasihat Cerdas untuk Pak Tani Smart Advice for Farmers",
+                "deskripsi": "Inovasi ini berupa spatial data warehouse untuk mengelola data historis komoditas pertanian Indonesia dengan pendekat analisis data multidimensi yang diintegrasikan dengan aplikasi Spatial Online Analytical Processing (SOLAP). SOLAP adalah aplikasi penunjang pengambilan keputusan, untuk menentukan komoditas yang sesuai untuk dibudidayakan di wilayah tertentu.",
+                "perspektif": "Berikan kail, jangan ikannya. Membantu petani untuk memilih tanaman hortikultura, perkebunan, atau peternakan yang tepat; akan lebih bermanfaat bagi kesejahteraan petani, ketimbang setiap kali memberi subsidi.",
+                "keunggulan_inovasi": [
+                    "Menyajikan ringkasan data produktivitas, produksi dan luas lahan tanaman hortikultura, perkebunan, serta komoditas peternakan yang dapat diakses dimanapun dan kapanpun.",
+                    "Aplikasi dibangun menggunakan perangkat lunak open source sehingga dapat digunakan oleh siapapun tanpa memerlukan autentikasi terlebih dahulu.",
+                    "Dilengkapi modul optimasi data spasial, sehingga penyajian visual pada peta dapat dilakukan dengan cepat."
+                ],
+                "potensi_aplikasi": "Aplikasi yang dibangun merupakan alat bantu penunjang pengambilan keputusan dalam menentukan komoditas yang sesuai untuk dibudidayakan di wilayah tertentu pada waktu tertentu; yang dapat dimanfaatkan oleh para petani, penyuluh pertanian, peneliti, maupun pihak-pihak terkait dalam pembangunan sektor pertanian.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Imas Sukaesih Sitanggang, S. Si. M. Kom"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-019",
+            "details": {
+                "judul": "Teknologi Computer Vision untuk Deteksi Dini Otomatis Penyakit Daun dan Identifikasi Patogen Jabon Berbasis Citra Digital",
+                "deskripsi": "Forestry cultivation is still constrained by attacks of pathogenic leaf diseases. By analyzing the digital image of plant leaves, leaf disease identification can be carried out quickly and accurately, thus more efficient and effective; when compared to commonly used Koch Postulate testing method.",
+                "perspektif": "Pertanian/kehutanan kini telah menjadi industri dimana berlaku aturan industri: efisiensi, mutu, produktivitas, dan kecepatan. Faktor alam tidak lagi boleh didalamkan sebagai alasan untuk kinerja pertanian/kehutanan yang buruk.",
+                "keunggulan_inovasi": [
+                    "Mengidentifikasi patogen penyakit daun menjadi jauh lebih cepat namun tetap akurat (dibanding dengan prosedur Postulat Koch)",
+                    "membantu petugas lapangan melakukan tindakan penanggulangan dengan cepat dan tepat"
+                ],
+                "potensi_aplikasi": "Inovasi dapat diaplikasikan untuk identifikasi penyakit daun untuk tanaman budidaya selain Jabon.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Ir. Elis Nina Herliyana, M.Si.",
+                        "Dr. Ir. Abdul Munif M.Sc"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-020",
+            "details": {
+                "judul": "Sistem Pendukung Keputusan Kebutuhan Pupuk Kelapa Sawit Berbasis Satelit",
+                "deskripsi": "Sistem pendukung keputusan untuk menentukan dosis pupuk berbasis satelit yang memungkinkan akuisisi dan analisis data yang lebih cepat.",
+                "perspektif": "Penghematan atau kesalahan dosis pemakaian pupuk per tanaman atau area mungkin nampak tak seberapa nilainya. Namun jika dihitung dampaknya bagi hasil dan produktivitas hasil pertanian, nilainya menjadi signifikan.",
+                "keunggulan_inovasi": [
+                    "non-desktruktif, perhitungan nutrisi unsur tidak lagi menggunakan sampel daun yang perlu dipotong",
+                    "rendah biaya, perhitungan nutrisi tidak perlu lagi dilakukan di laboratorium yang lama dan mahal",
+                    "pada sistem ini perhitungan kebutuhan pupuk menggunakan citra satelit yang dapat diperoleh secara gratis"
+                ],
+                "potensi_aplikasi": "Bermanfaat bagi petani kelapa sawit kelas menengah ke bawah, khususnya mereka tidak punya akses ke layanan laboratorium. Sistem ini bisa membantu perusahaan sawit besar agar dapat mengurangi biaya analisa kebutuhan pupuk yang cukup mahal, karena luasnya areal perkebunan yang dikelola.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Kudang Boro Seminar",
+                        "M.Sc",
+                        "Dr. Ir. Sudradjat",
+                        "MS",
+                        "Indra Kaliana",
+                        "SKom"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-021",
+            "details": {
+                "judul": "Deteksi Cepat Kualitas Minyak Atsiri dengan Portable Near Infrared Spectroscopy",
+                "deskripsi": "Inovasi ini mengembangkan model prediksi kualitas minyak cengkeh berdasarkan penanda eugenol dan caryophyllene melalui pengukuran spektrum sample dengan Near Infra Red Spectroscopy (NIRS) portable. Data selanjutnya dianalisis dengan Principal Component Analysis (PCA) dan Partial Least Square (PLS) dari software The Unscramble X 10.4.",
+                "perspektif": "Inovasi bisa berarti solusi baru bagi pilihan dilematis antara: murah namun tidak akurat, atau mahal namun akurat; dengan solusi yang murah dan akurat.",
+                "keunggulan_inovasi": [
+                    "Inovasi mudah diaplikasikan pada tingkat petani pengolah minyak atsiri maupun industri minyak cengkeh.",
+                    "Alat ukur yang portable sehingga dapat dibawa ke lapangan, dan data dikirimkan melalui internet untuk di analisis.",
+                    "Pengukuran yang cepat, murah dengan akurasi yang tinggi."
+                ],
+                "potensi_aplikasi": "Pengukuran dengan deteksi cepat kualitas minyak cengkeh ini dapat melakukan pengukuran kualitas langsung di lapangan; sehingga dapat mendukung sistem logistik yang membutuhkan integrasi data secara online serta data traceability; dalam mengelola pasokan minyak cengkeh yang bisa berasal dari berbagai daerah secara serempak.",
+                "inovator": {
+                    "nama": [
+                        "Yohanes Aris Purwanto",
+                        "I Wayan Budiastra",
+                        "Slamet Widodo",
+                        "Yosepha Ayumi M"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-022",
+            "details": {
+                "judul": "Sistem Deteksi Peringatan Dini Kebakaran Gambut Berbasis Android",
+                "deskripsi": "Inovasi ini menyempurnakan sistem peringatan dini kebakaran lahan gambut dengan menambahkan informasi berresolusi tinggi dan karakteristik lahan gambut, serta menampilkan prakiraan tingkat bahaya kebakaran hingga 16 hari kedepan.",
+                "perspektif": "Penanggulangan kebakaran lahan gambut sangat sulit dan biayanya sangat mahal. Inovasi ini mengubah paradigma penanggulangan menjadi paradigma pencegahan dini, bahkan sebelum adanya api.",
+                "keunggulan_inovasi": [
+                    "Memiliki resolusi spasial yang tinggi (5 km).",
+                    "Menyajikan prakiraan tingkat bahaya kebakaran hingga 16 hari kedepan.",
+                    "Mengintegrasikan weather research forecasting (WRF) dan informasi karakteristik lahan gambut.",
+                    "Informasi dapat diakses gratis oleh seluruh masyarakat dan aparat terkait.",
+                    "Memiliki sistem peringatan yang akan mengirimkan notifikasi saat prediksi menunjukkan terjadinya kekeringan ekstrim (yang rawan memicu kebakaran)."
+                ],
+                "potensi_aplikasi": "Sistem peringatan dini ini dapat diaplikasikan untuk menekan kejadian kebakaran lahan, khususnya lahan gambut; sehingga gangguan pada kegiatan ekonomi masyarakat dapat dihindarkan, mencegah gangguan kesehatan, serta meningkatkan kesadaran dan pemberdayaan masyarakat untuk menjaga lingkungan mereka secara mandiri.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Muh Tauﬁk, M.Si",
+                        "Melda Hazrina, S. Si",
+                        "Alﬁ Rizky Sanusi"
+                    ],
+                    "status_paten": "Belum didaftarkan"
+                }
+            }
+        }
+    ]
+}
