@@ -1,22 +1,24 @@
 import styled from 'styled-components'
 
 export const CardContainer = styled.div`
-  overflow: auto;
   width: 100%;
-  white-space: nowrap;
+  overflow: visible;
 `
 
 export const Horizontal = styled.div`
   display: flex;
   gap: 16px;
-    overflow-x: auto;
+  overflow-x: auto;
+  overflow-y: hidden;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
   -ms-overflow-style: none;  /* IE dan Edge lama */
   scrollbar-width: none;     /* Firefox */
   &::-webkit-scrollbar {
     display: none;            /* Chrome, Safari, Edge */
   }
   padding-bottom: 8px;
+  width: 100%;
 `
 
 export const Title = styled.p`

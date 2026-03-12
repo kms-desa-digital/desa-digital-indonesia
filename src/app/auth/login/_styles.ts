@@ -1,4 +1,4 @@
-import { marginStyle } from "Consts/sizing";
+import { marginStyle, MarginProps } from "Consts/sizing";
 import styled from "styled-components";
 
 
@@ -32,19 +32,19 @@ export const Description = styled.p`
   text-align: center;
 `;
 
-export const Label = styled.p`
+export const Label = styled.p<MarginProps>`
   font-size: 14px;
   font-weight: 400;
   color: #4b5563;
-  ${marginStyle}
+  ${props => marginStyle(props)}
 `;
 
-export const ActionContainer = styled.div`
+export const ActionContainer = styled.div<MarginProps>`
   display: flex;
   gap: 4px;
   align-items: center;
   justify-content: center;
-  ${marginStyle}
+  ${props => marginStyle(props)}
 `;
 
 export const Action = styled(Label)`

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"next dev --turbopack\" \"npm run api\"",
+    "dev": "concurrently \"next dev\" \"npm run api\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

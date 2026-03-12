@@ -2,11 +2,11 @@
 
 export const paths = {
   LANDING_PAGE: "/",
-  LOGIN_PAGE: "/login",
-  REGISTER_PAGE: "/register",
-  RESET_PASSWORD_PAGE: "/resetpassword",
-  EMAIL_RESET_PASSWORD_PAGE: "/emailreset",
-  NEW_PASSWORD_PAGE: "/resetpassword/newpassword",
+  LOGIN_PAGE: "/auth/login",
+  REGISTER_PAGE: "/auth/register",
+  RESET_PASSWORD_PAGE: "/auth/reset-password",
+  EMAIL_RESET_PASSWORD_PAGE: "/auth/email-reset",
+  NEW_PASSWORD_PAGE: "/auth/reset-password/new-password",
   NOTIFICATION_PAGE: "/notification",
   BANTUAN_FAQ_PAGE: "/bantuanFAQ",
 
