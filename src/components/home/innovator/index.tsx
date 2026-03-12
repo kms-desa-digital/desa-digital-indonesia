@@ -66,7 +66,7 @@ function Innovator() {
             <Link
               href={paths.INNOVATOR_PROFILE_PAGE.replace(':id', item.id)}
               key={item.id}
-              style={{ textDecoration: 'none', display: 'block', height: '100%' }}
+              style={{ textDecoration: 'none', width: '38%', flexShrink: 0, display: 'block' }}
             >
               <CardInnovator
                 id={item.id}

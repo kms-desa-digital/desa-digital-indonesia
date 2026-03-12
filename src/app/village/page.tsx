@@ -22,12 +22,13 @@ import Dropdown from "Components/village/Filter";
 import Hero from "Components/village/hero";
 import SearchBarVil from "Components/village/SearchBarVil";
 import Container from "Components/container";
+import Recommendation from "Components/village/Recommendation";
 import { useTranslations } from "next-intl";
 
 const defaultHeader = "/images/default-header.svg";
 const defaultLogo = "/images/default-logo.svg";
 
-import { collection, DocumentData, getDocs } from "firebase/firestore";
+import { collection, DocumentData, getDocs, doc, getDoc } from "firebase/firestore";
 import { getProvinces, getRegencies } from "src/services/locationServices";
 
 interface Location {
@@ -39,6 +40,22 @@ const Village: React.FC = () => {
     const t = useTranslations("Village");
     const router = useRouter();
     const [user] = useAuthState(auth);
+    const [userRole, setUserRole] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchUserRole = async () => {
+            if (user) {
+                const userRef = doc(firestore, "users", user.uid);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    setUserRole(userSnap.data()?.role);
+                }
+            } else {
+                setUserRole(null);
+            }
+        };
+        fetchUserRole();
+    }, [user]);
 
     const [provinces, setProvinces] = useState<Location[]>([]);
     const [regencies, setRegencies] = useState<Location[]>([]);
@@ -48,6 +65,16 @@ const Village: React.FC = () => {
 
     const villagesRef = collection(firestore, "villages");
     const [villages, setVillages] = useState<DocumentData[]>([]);
+
+    const parseLocation = (name: string) => {
+        const match = name.match(/^(KABUPATEN|KOTA|KAB\.?)\s+(.*)/i);
+        if (match) {
+            const rawType = match[1].toUpperCase();
+            const normalizedType = rawType.includes('KOTA') ? 'KOTA' : 'KABUPATEN';
+            return { type: normalizedType, coreName: match[2].trim().toUpperCase() };
+        }
+        return { type: null, coreName: name.trim().toUpperCase() };
+    };
 
     const handleFetchProvinces = async () => {
         try {
@@ -61,7 +88,15 @@ const Village: React.FC = () => {
     const handleFetchRegencies = async (provinceId: string) => {
         try {
             const regenciesData = await getRegencies(provinceId);
-            setRegencies(regenciesData);
+            const formattedRegencies = regenciesData.map((reg) => {
+                const { type, coreName } = parseLocation(reg.name);
+                // Type First Format: "KABUPATEN BEKASI" or "KOTA BEKASI"
+                return {
+                    ...reg,
+                    name: type ? `${type} ${coreName}` : reg.name,
+                };
+            });
+            setRegencies(formattedRegencies);
         } catch (error) {
             console.error("Error fetching regencies:", error);
         }
@@ -124,8 +159,38 @@ const Village: React.FC = () => {
     const filteredVillages = villages.filter((item: any) => {
         const matchProvince =
             selectedProvince === "" || item.provinsi === selectedProvince;
-        const matchRegency =
-            selectedRegency === "" || item.kabupatenKota === selectedRegency;
+
+        // Parse Selected Filter (e.g., "BEKASI (KABUPATEN)")
+        let matchRegency = true;
+        if (selectedRegency !== "") {
+            // Selected format is "CORE (TYPE)"
+            const selectedMatch = selectedRegency.match(/(.*)\s\((.*)\)/);
+            if (selectedMatch) {
+                const selectedCore = selectedMatch[1].toUpperCase();
+                const selectedType = selectedMatch[2].toUpperCase(); // KABUPATEN or KOTA
+
+                // Parse Item Data (e.g., "KABUPATEN BEKASI" or "BEKASI")
+                const itemParsed = parseLocation(item.kabupatenKota);
+
+                const coreMatch = itemParsed.coreName === selectedCore;
+
+                // If item has a specific type (KOTA/KAB), it must match selected type.
+                // If item has NO type (just "BEKASI"), we allow it to match (Ambiguous/Legacy data case).
+                let typeMatch = true;
+                if (itemParsed.type) {
+                    // Normalize item type (KAB/KABUPATEN -> KABUPATEN)
+                    const normItemType = itemParsed.type.includes('KOTA') ? 'KOTA' : 'KABUPATEN';
+                    typeMatch = normItemType === selectedType;
+                }
+
+                matchRegency = coreMatch && typeMatch;
+            } else {
+                // Fallback if format is unexpected or manual entry
+                const cleanItemRegency = item.kabupatenKota.replace(/^(KABUPATEN|KOTA|KAB\.?)\s+/i, "").trim();
+                matchRegency = item.kabupatenKota === selectedRegency || cleanItemRegency.toLowerCase() === selectedRegency.toLowerCase();
+            }
+        }
+
         const matchSearch =
             searchTerm === "" ||
             item.namaDesa.toLowerCase().includes(searchTerm.toLowerCase());
@@ -184,13 +249,6 @@ const Village: React.FC = () => {
                                 isHome={false}
                                 onClick={() => {
                                     router.push(`/village/profile/${item.userId}`);
-                                    // Note: Original said generatePath(paths.DETAIL_VILLAGE_PAGE). 
-                                    // Assuming paths.DETAIL_VILLAGE_PAGE corresponds to /village/profile/:id based on Step 210 summary saying "profile -> detail" confusion? 
-                                    // Original index.tsx used paths.DETAIL_VILLAGE_PAGE.
-                                    // Step 274: src/legacy_pages/village/profile exists. src/legacy_pages/village/detail exists.
-                                    // Which one is the public profile? "card village" usually links to profile.
-                                    // Let's check Consts/path if possible. Or guess.
-                                    // Summary from Step 274: village has both `detail` and `profile`.
                                 }}
                             />
                         ))}
