@@ -101,5 +101,16 @@
     "Innovation": {
         "title": "Innovation Categories",
         "notFound": "Innovation not found"
+    },
+    "Chatbot": {
+        "title": "Digital Village Assistant",
+        "online": "Online Now",
+        "placeholder": "Type your question...",
+        "thinking": "Thinking...",
+        "welcome": "Hello! I am the Digital Village virtual assistant. How can I help you?",
+        "error": "Sorry, an error occurred while contacting the service. Please try again later.",
+        "ariaOpen": "Open chat",
+        "ariaClose": "Close chat",
+        "ariaSend": "Send message"
     }
 }

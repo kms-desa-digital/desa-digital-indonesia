@@ -9,13 +9,13 @@ import {
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
-import { doc, getDoc } from "firebase/firestore";
+// import { doc, getDoc } from "firebase/firestore";
 import React, { useState } from "react";
-import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
+// import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { FIREBASE_ERRORS } from "src/firebase/errors";
-import { auth, firestore } from "src/firebase/clientApp";
+// import { FIREBASE_ERRORS } from "src/firebase/errors";
+// import { auth, firestore } from "src/firebase/clientApp";
 import {
     Action,
     ActionContainer,
@@ -33,8 +33,9 @@ const Login: React.FC = () => {
         password: "",
     });
     const [error, setError] = useState("");
-    const [signInWithEmailAndPassword, user, loading, userError] =
-        useSignInWithEmailAndPassword(auth);
+    const [loading, setLoading] = useState(false);
+    // const [signInWithEmailAndPassword, user, loading, userError] =
+    //     useSignInWithEmailAndPassword(auth);
     const [show, setShow] = useState(false);
     const router = useRouter();
     const onShowPassword = () => setShow(!show);
@@ -53,35 +54,69 @@ const Login: React.FC = () => {
         if (loginForm.password.length < 6)
             return setError("Kata sandi minimal 6 karakter");
 
+        setLoading(true);
         try {
-            await signInWithEmailAndPassword(loginForm.email, loginForm.password);
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: loginForm.email,
+                    password: loginForm.password,
+                }),
+            });
+            const data = await res.json();
 
-            if (auth.currentUser) {
-                const userRef = doc(firestore, "users", auth.currentUser.uid);
-                const userDoc = await getDoc(userRef);
-                console.log("user snap", userDoc.data());
-                if (userDoc.exists()) {
-                    const userRole = userDoc.data()?.role;
-                    if (userRole === "admin") {
-                        router.push(paths.ADMIN_PAGE);
-                    } else if (userRole === "ministry") {
-                        router.push(paths.DASHBOARD_MINISTRY_HOME);
-                    } else {
-                        router.push(paths.LANDING_PAGE);
-                    }
-                    toast.success("Berhasil Masuk", {
-                        position: "top-center",
-                        autoClose: 2000,
-                        hideProgressBar: false,
-                        closeOnClick: true,
-                        pauseOnHover: true,
-                        draggable: true,
-                        progress: undefined,
-                    });
-                }
+            if (!res.ok) {
+                setError(data.message || "Login gagal");
+                setLoading(false);
+                return;
             }
+
+            // Simpan token JWT ke localStorage
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("userRole", data.role);
+
+            const userRole = data.role;
+            if (userRole === "admin") {
+                router.push(paths.ADMIN_PAGE);
+            } else if (userRole === "ministry") {
+                router.push(paths.DASHBOARD_MINISTRY_HOME);
+            } else {
+                router.push(paths.LANDING_PAGE);
+            }
+            toast.success("Berhasil Masuk", {
+                position: "top-center",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+
+            // === Firebase auth (di-comment, diganti API MongoDB+JWT) ===
+            // await signInWithEmailAndPassword(loginForm.email, loginForm.password);
+            // if (auth.currentUser) {
+            //     const userRef = doc(firestore, "users", auth.currentUser.uid);
+            //     const userDoc = await getDoc(userRef);
+            //     console.log("user snap", userDoc.data());
+            //     if (userDoc.exists()) {
+            //         const userRole = userDoc.data()?.role;
+            //         if (userRole === "admin") {
+            //             router.push(paths.ADMIN_PAGE);
+            //         } else if (userRole === "ministry") {
+            //             router.push(paths.DASHBOARD_MINISTRY_HOME);
+            //         } else {
+            //             router.push(paths.LANDING_PAGE);
+            //         }
+            //         toast.success("Berhasil Masuk", { ... });
+            //     }
+            // }
         } catch (error) {
-            console.log("Error getting user role:", error);
+            console.log("Error during login:", error);
+            setError("Terjadi kesalahan, coba lagi");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -124,12 +159,9 @@ const Login: React.FC = () => {
                                 {show ? <FaEyeSlash /> : <FaEye />}
                             </InputRightElement>
                         </InputGroup>
-                        {(error || userError) && (
+                        {error && (
                             <Text textAlign="center" color="red" fontSize="10pt" mt={2}>
-                                {error ||
-                                    FIREBASE_ERRORS[
-                                    userError?.message as keyof typeof FIREBASE_ERRORS
-                                    ]}
+                                {error}
                             </Text>
                         )}
 

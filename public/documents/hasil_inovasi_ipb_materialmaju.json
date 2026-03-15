@@ -1,0 +1,1009 @@
+{
+    "metadata": {
+        "source": "501-Inovasi-IPB-1-Material-Maju-Inovasi.pdf",
+        "total_nodes": 43
+    },
+    "nodes": [
+        {
+            "node_id": "INV-001",
+            "details": {
+                "judul": "Anti Karat dari Tanin Gambir",
+                "deskripsi": "Anti karat dari tanin gambir merupakan inovasi yang bertujuan untuk meluruhkan karat dan melindungi logam dari karat.",
+                "perspektif": "Pencegahan terjadinya karat pada peralatan logam akan meningkatkan produktivitas dan mengurangi kerugian di industri.",
+                "keunggulan_inovasi": [
+                    "Merupakan teknologi sederhana, sehingga dapat diadopsi baik oleh industri kecil, menengah, maupun industri besar",
+                    "Dapat diproduksi dengan mesin dan peralatan di dalam negeri",
+                    "Tersedianya bahan baku tanin gambir yang melimpah"
+                ],
+                "potensi_aplikasi": "Inovasi ini sangat potensial diterapkan untuk berbagai industri, diantaranya konstruksi dan bangunan, otomotif, perkapalan, pesawat serta berbagai industri perminyakan, gas bumi dan kimia.",
+                "inovator": {
+                    "nama": [
+                        "E. Gumbira Sa'id",
+                        "Khaswar Syamsu",
+                        "Resa Denasta Syarif",
+                        "Nur Afni Evalia"
+                    ],
+                    "status_paten": "TELAH DI DAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-002",
+            "details": {
+                "judul": "Roti dan Kue",
+                "deskripsi": "Penghambat Kanker Kolon",
+                "perspektif": "Mengatasi masalah kesehatan dan pencernaan yaitu kanker kolon melalui makanan dan bahan bakunya, menggunakan bahan baku lokal yang berlimpah dan berpotensi dipasarkan secara global pula.",
+                "keunggulan_inovasi": [
+                    "Teknologi yang digunakan tidak rumit",
+                    "Manfaat besar terhadap kesehatan terutama mencegah kanker kolon",
+                    "Berpotensi besar dalam membangun industri 'food ingredients' berbasis bahan lokal",
+                    "Enzim pululunase yang digunakan aman untuk kesehatan"
+                ],
+                "potensi_aplikasi": "Produk ini dapat digunakan sebagai bahan dasar untuk membuat berbagai produk pangan fungsional pencegah kanker kolon.",
+                "inovator": {
+                    "nama": [
+                        "Maggy Thenawidjadja Suhartono",
+                        "Endang Yuli Purwani",
+                        "Diah Iskandriati",
+                        "Tresnawati Purwadaria"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-003",
+            "details": {
+                "judul": "Rekayasa Proses Produksi Gambir Bubuk dari Daun Gambir Kering",
+                "deskripsi": "Gambir adalah sejenis tanaman tropis yang telah lama digunakan sebagai antiseptik, bahan pencampur kosmetika atau bahan penyamak kulit. Proses ini diharapkan bisa menggantikan teknologi pembuatan gambir asalan yang harga dan mutunya rendah, atau menjual daun gambir kering ke pabrik asing yang nilai tambahnya terlalu kecil bagi masyarakat.",
+                "perspektif": "Memecahkan situasi dilematik banyak petani pengusaha Indonesia: mengolah sendiri produk mereka dan menghasilkan produk bernilai rendah, atau menjual komoditi pertanian mereka ke industri besar dengan penghasilan rendah.",
+                "keunggulan_inovasi": [
+                    "Proses produksi sederhana dan mudah diaplikasikan",
+                    "Alat dan mesin produksi dapat dibuat di dalam negeri",
+                    "Meningkatkan nilai tambah lokal bagi petani dan pengusaha gambir"
+                ],
+                "potensi_aplikasi": "Inovasi ini akan membantu pemakai produk gambir; industri farmasi, kosmetik, penyamakan kulit dan perwana kain / batik.",
+                "inovator": {
+                    "nama": [
+                        "E. Gumbira Sa'id",
+                        "Khaswar Syamsu",
+                        "Pramita S. Anungputri",
+                        "Aditya Hadiwijoyo"
+                    ],
+                    "status_paten": "TELAH DI DAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-004",
+            "details": {
+                "judul": "Insektisida Berbahan Aktif Senyawa Tumbuhan untuk Pengendali Hama Gudang",
+                "deskripsi": "Pengendali hama yang hijau adalah insektisida berbahan aktif senyawa tumbuhan yang digunakan untuk mengendalikan populasi serangga di gudang. Produk ini aman untuk lingkungan dan produk yang disimpan.",
+                "perspektif": "Gagasan inovasi awalnya mungkin tidak realistis atau ekonomis, tetapi potensi keunggulan baru dapat menjadi nilai tambah yang bernilai tinggi di masa depan.",
+                "keunggulan_inovasi": [
+                    "Bersifat ramah lingkungan karena mudah terdegradasi",
+                    "Aman bagi pengguna",
+                    "Efektif mengatasi hama",
+                    "Menjaga kualitas dan kuantitas produk yang disimpan"
+                ],
+                "potensi_aplikasi": "Teknologi ini memiliki potensi besar untuk diterapkan di bidang pertanian dan perkebunan, baik skala besar maupun kecil di seluruh daerah.",
+                "inovator": {
+                    "nama": [
+                        "Dadang"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-005",
+            "details": {
+                "judul": "Chicken's Microscopic Buddies: Prebiotik Lactobacillus fermentum Sebagai Biokontrol dalam Pencegahan Infeksi Salmonella enteritidis Transovarian pada Ayam Petelur",
+                "deskripsi": "Penelitian ini membahas tentang penggunaan probiotik Lactobacillus fermentum sebagai solusi biokontrol untuk mencegah kontaminasi Salmonella enteritidis transovarian pada telur ayam petelur. Probiotik ini telah terbukti efektif dalam menghambat infeksi dan meningkatkan kesehatan ayam.",
+                "perspektif": "Biokontrol, yaitu menemukan bakteri yang baik, dan menjadi musuh alami bakteri yang jahat; merupakan solusi yang lebih murah, lebih aman, dan bahkan lebih menyehatkan.",
+                "keunggulan_inovasi": [
+                    "Mengurangi jumlah populasi Salmonella enteritidis di ovarium dan telur ayam petelur",
+                    "Meningkatkan konsumsi pakan",
+                    "Meningkatkan produksi telur",
+                    "Menurunkan konversi pakan"
+                ],
+                "potensi_aplikasi": "Industri peternakan unggas dari skala rumahan sampai skala besar yang berorientasi pada peningkatan hasil dan mutu produksinya.",
+                "inovator": {
+                    "nama": [
+                        "Niken Ulupi",
+                        "Irma Isnafia Arif",
+                        "Bram Brahmantiyo"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-006",
+            "details": {
+                "judul": "Kertas Ramah Lingkungan dari Selulosa Mikrobial",
+                "deskripsi": "Kertas ramah lingkungan dari selulosa mikrobial dengan bahan baku utama air kelapa, mengadaptasi proses pembuatan kertas kovensional dari selulosa kayu dengan proses yang lebih sederhana.",
+                "perspektif": "Mencari alternatif penggunaan bahan kayu sebagai kertas sebagai upaya pelestarian lingkungan, sekaligus membuka peluang usaha ekonomis kerakyatan masyarakat pesisir.",
+                "keunggulan_inovasi": [
+                    "Berbahan baku dari komoditas (selulosa mikrobial dari air kelapa) dengan periode produksi dan panen yang jauh lebih pendek jika dibandingkan dengan kayu",
+                    "Selulosa mokrobial relatif murni sehingga tidak memerlukan bahan dan proses delignifikasi",
+                    "Memiliki warna yang cenderung putih/bening sehingga relatif tidak/kurang memerlukan bahan dan proses pemutihan",
+                    "Memiliki beberapa sifat fisik yang lebih baik dibandingkan kertas dari selulosa kayu, batang pisang dan jerami"
+                ],
+                "potensi_aplikasi": "Inovasi ini berpotensi dikembangkan untuk kertas dengan aplikasi khusus, yang memerlukan sifat-sifat unggul selulosa mikrobial.",
+                "inovator": {
+                    "nama": [
+                        "Khaswar Syamsu",
+                        "Han Roliadi",
+                        "Siti Sartika Hardiyanti"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-007",
+            "details": {
+                "judul": "Membran Ultrafiltrasi Selulosa Asetat dari Pulp Kayu Sengon",
+                "deskripsi": "Membran ultrafiltrasi selulosa asetat dari pulp kayu sengon dapat digunakan untuk memisahkan padatan terlarut dan senyawa dengan berat molekul tinggi dari larutan dalam proses pemurnian.",
+                "perspektif": "Pemakaian kayu sengon sebagai bahan bangunan konstruksi ringan berkualitas ekspor telah menjadi inovasi sukses dimasa lalu. Pemakaian kayu sengon sebagai bahan membran ultrafiltrasi berpotensi menjadi 'Inovasi Sengon - Jilid 2'.",
+                "keunggulan_inovasi": [
+                    "Penggunaan energi yang relatif kecil",
+                    "Tanpa penggunaan bahan kimia",
+                    "Tidak terjadi perubahan fasa"
+                ],
+                "potensi_aplikasi": "Membran ultrafiltrasi sengon setidaknya bisa menggantikan membran impor untuk berbagai keperluan industri, bahkan berpotensi 'kompetitif' untuk bersaing secara global.",
+                "inovator": {
+                    "nama": [
+                        "Erliza Noor",
+                        "Cut Meurah R",
+                        "Kaseno",
+                        "A. Aziz Darwis"
+                    ],
+                    "status_paten": "TELAH DIDAFTAR KAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-008",
+            "details": {
+                "judul": "Hamparan Bambu Bebas",
+                "deskripsi": "Untuk mendapatkan balok laminasi yang awet dengan sifat permesinan lebih baik, buku-buku bambu dibuang hingga terbentuk ruas-ruas bambu tanpa buku. Proses baru ini menghasilkan balok laminasi bambu yang memiliki kekuatan, sifat permesinan, dan penampilan yang lebih baik daripada bambu laminasi konvensional.",
+                "perspektif": "Bambu banyak digunakan sebagai bahan baku berbagai peralatan rumah tangga, membuka peluang penggunaan bambu lebih luas lagi.",
+                "keunggulan_inovasi": [
+                    "Lebih awet",
+                    "Lebih kuat",
+                    "Memiliki sifat permesinan"
+                ],
+                "potensi_aplikasi": "Bahan bangunan, mebel, furnitur.",
+                "inovator": {
+                    "nama": [
+                        "Effendi Tri Bachtiar",
+                        "Naresworo Nugroho",
+                        "Edi Suhaimi Bakar"
+                    ],
+                    "status_paten": "GRANTED"
+                }
+            }
+        },
+        {
+            "node_id": "INV-009",
+            "details": {
+                "judul": "Temu Meniran untuk Flu Burung",
+                "deskripsi": "Temu Meniran (Meniran for Avian influenza) adalah obat herbal yang dikombinasikan dengan temulawak untuk membantu menanggulangi dan mencegah infeksi virus Avian influenza (AI). Formula ini telah terbukti efektif pada ayam petelur usia 1 hari.",
+                "perspektif": "Inovasi tepat guna untuk mengatasi ketidaktersediaan pengobatan terhadap flu burung di dalam maupun di luar negeri.",
+                "keunggulan_inovasi": [
+                    "Ekstrak yang mudah digunakan",
+                    "Merupakan obat alami yang aman untuk dikonsumsi",
+                    "Multifungsi, berperan sebagai antioksidan juga",
+                    "Kualitas hasil yang standar",
+                    "Dosis yang digunakan merupakan dosis optimal"
+                ],
+                "potensi_aplikasi": "Bagi industri obat hewan dan peternakan unggas, juga bagi institusi penelitian dan pengembangan obat di dalam negeri maupun di negara lain.",
+                "inovator": {
+                    "nama": [
+                        "Latifah K. Darusman",
+                        "Edy Djauhari",
+                        "Maharani Hasanah",
+                        "Mono Rahardjo",
+                        "Waras Nurcholis",
+                        "Moh Rafi",
+                        "Bambang Pontjo Priosoeryanto"
+                    ],
+                    "status_paten": "TELAH DI DAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-010",
+            "details": {
+                "judul": "Wadah Aman",
+                "deskripsi": "Ramah Lingkungan",
+                "perspektif": "Inovasi biomaterial mampu menggantikan material sintetis, stryrofoam. Bukan hanya itu, bahan inovatif ini lebih baik bagi kesehatan dan bagi alam lingkungan.",
+                "keunggulan_inovasi": [
+                    "Sebagai kemasan alternatif pengganti stryrofoam yang ramah lingkungan serta aman bagi kesehatan",
+                    "Produk ini dapat dibuat dalam berbagai bentuk sesuai kebutuhan",
+                    "Menggunakan teknologi yang sederhana sehingga tidak membutuhkan biaya investasi yang besar",
+                    "Menggunakan bahan baku yang dapat diperbaharui dan dapat terurai secara alami"
+                ],
+                "potensi_aplikasi": "Inovasi manufaktur berbasis pertanian",
+                "inovator": {
+                    "nama": [
+                        "Titi Candra Sunarti",
+                        "Evi Savitri Iriani",
+                        "Indah Yuliasih",
+                        "Dr.Ir.Nur Richana",
+                        "TunTedja"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-011",
+            "details": {
+                "judul": "Kemasan bagi daging sapi menggunakan edible film dari buah lindur (Burguiera gymnorrhiza)",
+                "deskripsi": "Pengemasan daging sapi menggunakan plastik wrapping dan Styrofoam sangat tidak baik bagi kesehatan dan lingkungan. Oleh karena itu, dilakukan inovasi menggunakan edible film sebagai pengemas daging sapi yang mampu mempertahankan kualitas warna dan daya awet daging sapi.",
+                "perspektif": "Kemasan bagi daging tidak hanya harus mempertahankan kondisi daging, namun juga aman bagi kesehatan dan tidak merusak lingkungan. Bila kemasan serupa film plastik untuk daging bisa terbuat dari bahan makanan, tentu akan lebih baik",
+                "keunggulan_inovasi": [
+                    "Ramah lingkungan karena berbasis pati dari Buah Lindur dan dapat diperbaharui.",
+                    "Tidak berbahaya bagi produk yang dikemas maupun bagi kesehatan.",
+                    "Produk ini berpeluang tinggi untuk menghasilkan industri dan bisnis baru.",
+                    "Produk ini akan mampu bersaing dengan produk lainnya karena produknya yang khas dan relatif baru."
+                ],
+                "potensi_aplikasi": "Inovasi ini dapat diaplikasikan pada industri pangan di Indonesia untuk mengemas produk pangan lainnya dengan lebih sehat dan ramah lingkungan.",
+                "inovator": {
+                    "nama": [
+                        "Roni Nugraha",
+                        "Riyan Adi Priyanto",
+                        "Mawaddah Renhoran",
+                        "Tubagus Mohamad Gia Ginanjar",
+                        "Annisa Shylina",
+                        "Siluh Putu Sri Dia Utari"
+                    ],
+                    "status_paten": "TELAH DI DAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-012",
+            "details": {
+                "judul": "Panel Struktur Oriented Strand Board (OSB)",
+                "deskripsi": "Panel struktur Oriented Strand Board (OSB) adalah produk kayu rakyat yang dikembangkan untuk memenuhi permintaan kayu untuk komponen struktur bangunan yang terus meningkat.",
+                "perspektif": "Waktunya telah tiba dimana eksploitasi alam harus diakhiri dan digantikan dengan memproduksi dari alam. Sudah saatnya pula kekuatan bisnis besar dengan kekuatan modal diambil alih oleh kreativitas dan kekuatan masyarakat mandiri.",
+                "keunggulan_inovasi": [
+                    "OSB mengkombinasikan strand kayu berkerapatan lebih rendah dengan yang lebih tinggi, sehingga memperoleh stabilitas dimensi kayu yang lebih baik.",
+                    "OSB bisa memanfaatkan varietas kayu tanaman rakyat yang beragam, dengan mutu relatif rendah",
+                    "Tingkat serangan rayap tanah terhadap OSB yang dihasilkan termasuk kategori sedang."
+                ],
+                "potensi_aplikasi": "Berpotensi diaplikasikan di bidang industrialisasi yang lebih besar dan teknologi pemgembangan untuk mendapatkan alat produksi OSB yang lebih efisien.",
+                "inovator": {
+                    "nama": [
+                        "Fauzi Febrianto",
+                        "Wahyu Hidayat",
+                        "Doni Habisoro",
+                        "Handian Purwawangsa",
+                        "Apri Heri Iswanto"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-013",
+            "details": {
+                "judul": "Pembersih Perkasa Sahabat Alam",
+                "deskripsi": "Pembersih Perkasa Sahabat Alam adalah produk Heavy Duty Cleaner yang dirancang untuk industri dengan lingkungan yang berat, seperti minyak mentah, aspal, oli, gemuk, getah, dan lainnya. Produk ini menggunakan formulasi yang berasal dari surfaktan kelapa sawit, yang membuatnya ramah lingkungan dan memiliki daya deterjen tinggi.",
+                "perspektif": "Indonesia sebagai penghasil minyak kelapa sawit terbesar di dunia, masing-masing sangat terbatas mengolahnya menjadi turunan-turunan CPO untuk aplikasi khusus. Inovasi ini diharapkan bisa menjadi teladan bagi inovasi berbasis CPO yang bernilai tinggi di masa mendatang.",
+                "keunggulan_inovasi": [
+                    "Ramah lingkungan",
+                    "Bahan baku melimpah",
+                    "Daya deterjensi tinggi",
+                    "Ongkos produksi relatif tinggi"
+                ],
+                "potensi_aplikasi": "Digunakan sebagai Heavy Duty Cleaner dan dapat dikembangkan sebagai agen pembersih untuk membersihkan kotoran-kotoran seperti minyak mentah, aspal, getah, dan gemuk.",
+                "inovator": {
+                    "nama": [
+                        "Ani Suryani",
+                        "Erliza Hambali",
+                        "Rachmania Widyastuti"
+                    ],
+                    "status_paten": "TELAH DI DAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-014",
+            "details": {
+                "judul": "Kertas Ramah Lingkungan dari Sabut Kelapa",
+                "deskripsi": "Teknologi ini berkaitan dengan pembuatan kertas ramah lingkungan menggunakan selulosa dari sabut kelapa. Pembuatan pulp dilakukan melalui pemasakan dengan NaOH tanpa proses bleaching, serta penambahan aditif seperti alum dan tapioka.",
+                "perspektif": "Sudah saatnya kita beralih kepada penggunaan teknologi ramah lingkungan. Ketersediaan bahan baku dari limbah yang melimpah menyimpan potensi yang besar untuk dimanfaatkan.",
+                "keunggulan_inovasi": [
+                    "Sabut kelapa dari lahan kebun kelapa seluas 1 Ha bisa mensubstitusi 2,02 ton kayu/tahun.",
+                    "Mengurangi tingkat kerusakan lingkungan dan tingkat CO2 di udara",
+                    "Memanfaatkan potensi limbah sabut kelapa yang mencapai 10.500.000 ton/tahun",
+                    "Waktu panen lebih singkat (6-8 bulan) dibandingkan pohon (6-8 tahun)",
+                    "Ramah lingkungan, ekonomis, dan sustainable"
+                ],
+                "potensi_aplikasi": "Industri pulp dan kertas, industri tisu serbet",
+                "inovator": {
+                    "nama": [
+                        "Khaswar Syamsu"
+                    ],
+                    "status_paten": "TELAH DI DAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-015",
+            "details": {
+                "judul": "Pembuatan Nanokomposit Karbon-\nLimbah MnO2 Baterai untuk Aplikasi Elektroda Superkapasitor",
+                "deskripsi": "Inovasi ini menciptakan nanokomposit karbon-mangan dioksida sebagai elektroda superkapasitor menggunakan limbah baterai, yang memiliki potensi kinerja yang lebih baik dan ramah lingkungan.",
+                "perspektif": "Inovasi ini menawarkan solusi komponen untuk teknologi yang lebih unggul dan ekonomis, sambil mendaur ulang limbah komponen dari teknologi yang sudah mapan.",
+                "keunggulan_inovasi": [
+                    "Menghasilkan komponen dari material yang memiliki potensi kinerja superior, murah dan ramah lingkungan",
+                    "Karakteristik superkapasitor yang dapat menghasilkan daya yang besar dan dapat menyimpan energi dengan lama",
+                    "Mampu mengurangi tingkat penggunaan bahan bakar fosil apabila diaplikasikan pada kendaraan bermotor bertenaga listrik"
+                ],
+                "potensi_aplikasi": "Berpotensi untuk diaplikasikan di industri penghasil superkapasitor, menggantikan teknologi baterai dan kapasitor, untuk digunakan di peralatan elektronik yang butuh tenaga dan daya simpan listrik besar seperti kendaraan listrik.",
+                "inovator": {
+                    "nama": [
+                        "Ahmad Khakim",
+                        "Rizky Amelia",
+                        "Lutpita Mahardika",
+                        "Akhirudin Maddu"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-016",
+            "details": {
+                "judul": "Baju Berpengatur Suhu Thermal Conditioned Cloth",
+                "deskripsi": "Bahan sandang yang ideal bisa menyerap, menyimpan atau melepaskan panas tubuh pada kondisi tertentu yang diinginkan. Teknologi PCM berpotensi untuk diaplikasikan pada pembuatan tekstil, khususnya bahan pakaian.",
+                "perspektif": "Teknologi PCM bisa merevolusikan cara manusia berpakaian. Bayangkan dengan pakaian PCM, kita tidak perlu lagi mengenakan mode pakaian yang berbeda di sepanjang musim, baik dingin maupun panas?",
+                "keunggulan_inovasi": [
+                    "Teknologi ini relatif baru dan belum banyak dikembangkan di industri tekstil",
+                    "Material kain yang dapat berubah bentuk fase untuk iklim tropis",
+                    "Bahan baku mikroalgae dan kitosan tersedia melimpah"
+                ],
+                "potensi_aplikasi": "Teknologi PCM berpotensi untuk diaplikasikan pada pembuatan tekstil, khususnya bahan pakaian. Namun pengembangan PCM masih terbuka luas untuk produk-produk lain yang memerlukan kemampuan menyimpan atau melepaskan panas yang dikandungnya untuk menyesuaikan diri dari suhu lingkungan.",
+                "inovator": {
+                    "nama": [
+                        "Bambang Riyanto",
+                        "Muhammad Fachrirozi"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-017",
+            "details": {
+                "judul": "Pengembangan β– Tricalcium Phosphate β-TCP dari Limbah Cangkang Telur dan Pengujiannya secara In Vivo sebagai Tooth Filler",
+                "deskripsi": "Pengembangan biomaterial keramik kalsium fosfat berbahan dasar limbah cangkang telur untuk penggunaan sebagai filler gigi, khususnya untuk penumbuhan tulang alveolar gigi.",
+                "perspektif": "Bahan dasar tooth filler tersedia banyak dan murah serta memiliki kualitas produk yang sama dengan kualitas impor. Inovasi ini menawarkan industri untuk memperoleh material bermuatan lokal.",
+                "keunggulan_inovasi": [
+                    "Menghasilkan β-TCP murni berkarakteristik sama dengan β-TCP komersial impor.",
+                    "Produk asli Indonesia yang murah.",
+                    "Mengurangi ketergantungan produk impor.",
+                    "Memberikan nilai tambah pada limbah telur yang banyak tersedia sebagai bahan bakunya."
+                ],
+                "potensi_aplikasi": "Berpotensi untuk digunakan pada bidang medis di Indonesia, khususnya kedokteran gigi dan ortopedik.",
+                "inovator": {
+                    "nama": [
+                        "Kiagus Dahlan",
+                        "Akhiruddin Maddu"
+                    ],
+                    "status_paten": "Dalam Proses Pengajuan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-018",
+            "details": {
+                "judul": "Pengembangan Teknologi Proses Produksi Bionanokomposit Filler Biomassa Rotan Aplikasi Komponen Sepeda Motor",
+                "deskripsi": "Pemanfaatan bionanokomposit limbah rotan sebagai bahan baku pembuatan komponen sepeda motor dapat mengatasi pencemaran lingkungan dan mengurangi kebutuhan impor bahan baku komponen sepeda motor.",
+                "perspektif": "Perspektif",
+                "keunggulan_inovasi": [
+                    "Inovasi nanokomposit terbuat dari bahan limbah lokal, memiliki kandungan selulosa tinggi, menghilangkan jaringan non-selulosa dengan waktu singkat, kadar air kecil, proses produksi ramah lingkungan.",
+                    "Produk nanokomposit dihasilkan dengan jumlah besar dalam waktu pendek dan material yang minim sehingga mengurangi tenaga kerja"
+                ],
+                "potensi_aplikasi": "Material maju ini sangat cocok diaplikasikan pada industri manufaktur pembuatan komponen sepeda motor seperti fan comp cover, box luggage, dll. Selain itu dapat juga diaplikasikan pada manufaktur alat transportasi lain dan aplikasi furniture berbasis polimer.",
+                "inovator": {
+                    "nama": [
+                        "Siti Nikmatin",
+                        "Lisdar Sudirman",
+                        "Mersi Kurniati"
+                    ],
+                    "status_paten": "Dalam Proses Pengajuan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-019",
+            "details": {
+                "judul": "Penggunaan Campuran Selulosa Mikrobial Nata De Cassava dan Selulosa Tandan Kosong Kelapa Sawit sebagai Pensubstitusi Selulosa Kayu Dalam Pembuatan Kertas",
+                "deskripsi": "Inovasi tentang penggunaan campuran selulosa mikrobial nata de cassava dan selulosa tandan kosong kelapa sawit sebagai pensubstitusi selulosa kayu dalam pembuatan kertas. Penambahan pulp selulosa mikrobial cenderung meningkatkan kekuatan fisik kertas dan mengurangi kemampuan daya serap air.",
+                "perspektif": "Inovasi kertas ini mampu mensubstitusi selulosa kayu, mengurangi laju deforestasi hutan, meningkatkan kepadatan kertas, indeks tarik, ketahanan lipat, kekuatan fisik kertas, dan mengurangi kemampuan daya serap air.",
+                "keunggulan_inovasi": [
+                    "Meningkatkan kepadatan kertas",
+                    "Meningkatkan indeks tarik",
+                    "Meningkatkan ketahanan lipat",
+                    "Meningkatkan kekuatan fisik kertas",
+                    "Mengurangi kemampuan daya serap air"
+                ],
+                "potensi_aplikasi": "Aplikasi dari inovasi ini sangat baik apabila digunakan di industri kertas terutama untuk kertas tulis, kertas gambar, kertas kalkir dan juga untuk kertas kemasan. Penggunaan selulosa nata de cassava mampu memberikan substitusi penggunaan kayu dalam pembuatan kertas. Industri perkebunan kelapa sawit juga memperoleh manfaat dengan adanya inovasi ini karena penggunaan tandan kosong kelapa sawit yang sudah tidak digunakan.",
+                "inovator": {
+                    "nama": [
+                        "Khaswar Syamsu",
+                        "Liesbetini Haditjaroko",
+                        "Gamma Irca Pradikta",
+                        "Han Roliadi"
+                    ],
+                    "status_paten": "Telah Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-020",
+            "details": {
+                "judul": "Bio Glukosamin Berbasis Kulit Pupa Ulat Sutra untuk Kesehatan Sendi dan Anti Osteoarthritis",
+                "deskripsi": "Bio Glukosamin berbasis kulit pupa ulat sutra merupakan glukosamin hidroklorid yang diproduksi dengan teknologi presure hydrolisis. Produk ini memiliki keunggulan dalam hal kualitas, efisiensi, dan aplikasi yang beragam.",
+                "perspektif": "Bentuk obat dan suplemen dari glukosamin dapat diformulasi dalam berbagai sediaan seperti tablet, kapsul, sirup, dan lainnya.",
+                "keunggulan_inovasi": [
+                    "Produk diproduksi melalui teknologi presure hydrolisis dengan bantuan autoclave.",
+                    "Proses depolimerisasi berjalan dengan sempurna menghasilkan partikel glukosamin yang lebih fine.",
+                    "Teknik produksi ini cukup aman, tidak membahayakan pelaku proses.",
+                    "Reagen berkonsentrasi rendah dan waktu proses yang lebih singkat.",
+                    "Produk dapat menggunakan bahan baku kitin atau kitosan, dengan kitosan menghasilkan rendemen dan kelarutan yang lebih tinggi."
+                ],
+                "potensi_aplikasi": "Bio Glucosamin dapat diaplikasikan sebagai agen penstabil pelumasan sendi, obat bagi berbagai keluhan pada persendian dan tulang, atau sebagai suplemen pencegah gangguan pada sendi seperti osteoarthritis.",
+                "inovator": {
+                    "nama": [
+                        "Pipih Suptijah",
+                        "Clara M. Kusharto"
+                    ],
+                    "status_paten": "Dalam Proses Pengajuan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-021",
+            "details": {
+                "judul": "Re-recycle Green Product Composite : Polybag Composite",
+                "deskripsi": "Polybag composite (PC) merupakan produk komposit berbahan dasar limbah lignoselulosa dan limbah plastik yang ramah lingkungan. PC adalah produk kreatif dan inovatif yang diharapkan dapat menggantikan polybag berbahan dasar plastik polietilena.",
+                "perspektif": "Polybag Composite, produk unggul dan prospektif, mampu bersaing dan kreatif. Penggunaan produk ramah lingkungan ini, efisien dalam mengurangi plastik. Nilai tambah dan manfaat serta keunggulan dari karya kreatif dan inovatif ini adalah menekan penggunaan plastik polietilena sebagai wadah bibit, mendaurulang limbah polietilena dan polipropilena di alam serta mampu terurai dan terdegradasi dalam tanah lebih cepat dibanding polybag biasa.",
+                "keunggulan_inovasi": [
+                    "mampu meningkatkan nilai tambah pada limbah plastic maupun limbah lignoselulosa",
+                    "mampu menggantikan polybag plastic biasa",
+                    "tergolong baru, kreatif, inovatif, dan utama di Indonesia serta bersifat sustainable",
+                    "mampu didaur ulang dengan mudah"
+                ],
+                "potensi_aplikasi": "cocok digunakan pada usaha pertanian, perkebunan, kehutanan serta dapat dimanfaatkan oleh industri plastik sebagai sarana pemanfaatan limbah plastik",
+                "inovator": {
+                    "nama": [
+                        "Nur Arif Rohman",
+                        "Moh. Arif Rohmatullah",
+                        "M. Imam Ardiansyah",
+                        "Siti Rosidah",
+                        "Fauzi Febrianto"
+                    ],
+                    "status_paten": "Dalam Proses Pengajuan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-022",
+            "details": {
+                "judul": "Ba-Va Pad: Popok Ramah Lingkungan Berbasis Umbi Gadung dan Limbah Kulit Pisang",
+                "deskripsi": "Disposable diapers akhir-akhir ini banyak menimbulkan masalah lingkungan. Inovasi popok ramah lingkungan bernama Ba-Va Pad dengan bahan dasar umbi gadung dan limbah kulit pisang.",
+                "perspektif": "Ba-Va Pad merupakan solusi tepat bagi permasalahan penumpukan limbah popok yang sulit terurai, karena menggunakan lapisan biodegradable plastik serta dilengkapi dengan absorban ekstrak selulosa limbah kulit pisang untuk peningkatan daya serap. Ba-Va Pad dapat terurai secara alami dalam tanah, ramah lingkungan dengan memanfaatkan limbah kulit pisang, serta dapat membuka peluang usaha baru untuk budidaya umbi gadung sebagai upaya optimalisasi potensi sumber daya lokal Indonesia.",
+                "keunggulan_inovasi": [
+                    "Bisa terurai dalam 1.5 bulan di tanah",
+                    "Tidak mencemari perairan karena tidak menggunakan SAP",
+                    "Aman bagi pengguna karena tidak menggunakan pemutih berbahaya",
+                    "Ramah lingkungan karena memanfaatkan limbah kulit pisang",
+                    "Meningkatkan potensi sumber daya alam lokal Indonesia (umbi gadung)"
+                ],
+                "potensi_aplikasi": "Ba-Va Pad potensial untuk diaplikasikan pada dunia kesehatan terutama yang berhubungan dengan kesehatan wanita.",
+                "inovator": {
+                    "nama": [
+                        "Irmanida Batubara",
+                        "Anis Wamtazul Liana",
+                        "Hilman Anggara",
+                        "M.As'ad",
+                        "Melati Devina G.W.S"
+                    ],
+                    "status_paten": "Dalam Proses Pengajuan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-023",
+            "details": {
+                "judul": "Material Medis Penambal Membran Telinga Berbasis Komposit Chitosan",
+                "deskripsi": "Proses penutupan perforasi membran telinga dengan perawatan bedah memerlukan biaya tinggi dan donor jaringan hidup. Metode bedah sintetik menjadi bahaya laten, di tengah teknologi implantasi organ. Material medis penambal dari chitosan menjadi inspirasi baru dalam mempertahankan impuls suara saat pemulihan membran telinga berlangsung.",
+                "perspektif": "Model penambal perforasi ini dapat dimanfaatkan pada bidang kedokteran THT sebagai kandidat autograft organik tanpa harus menunggu donor jaringan hidup. Melalui uji klinis, model ini dapat diproduksi massal dalam skala industri menjadi chitosan patch scaffold (setara paper patch scaffold) sehingga mengurangi permasalahan tuna rungu di Indonesia, khususnya akibat tuli konduktif.",
+                "keunggulan_inovasi": [
+                    "Material medis penambal dari chitosan lebih elastis dari penambal kertas komersial secara mekanik.",
+                    "Sensitivitas dan koefisien serap suara membrane sangat baik, sehingga suara dapat melaju dan menyerap intensitas suara dengan baik."
+                ],
+                "potensi_aplikasi": "Material penambal ini berpotensi digunakan pada proses pemulihan pelubangan/kerobekan (perforasi) membran telinga tanpa harus menunggu donor jaringan hidup. Aplikasi material ini dapat membantu dalam bidang kedokteran, dengan mempertahankan status audiogram penderita tuna rungu mendekati normal.",
+                "inovator": {
+                    "nama": [
+                        "Bambang Riyanto",
+                        "Wini Trilaksani",
+                        "I Wayan Darya kartika"
+                    ],
+                    "status_paten": "Dalam Proses Pengajuan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-024",
+            "details": {
+                "judul": "Carboxy Methyl Cellulose (CMC) dari Selulosa Mikrobial Nata de Cassava",
+                "deskripsi": "Inovasi ini menciptakan Carboxy Methyl Cellulose (CMC) dari selulosa mikrobial nata de cassava, yang memiliki tingkat kemurnian lebih tinggi dan waktu produksi yang jauh lebih singkat dibandingkan CMC tradisional.",
+                "perspektif": "Bioteknologi modern berpotensi menghasilkan berbagai bahan industri dengan kemurnian / spesifikasi lebih tinggi, bahkan dengan biaya yang lebih murah.",
+                "keunggulan_inovasi": [
+                    "Terbuat dari selulosa mikrobial yang memiliki tingkat kemurnian lebih tinggi",
+                    "Waktu produksi yang jauh lebih singkat",
+                    "Memiliki derajat polimerisasi dan indeks kristalinitas lebih tinggi",
+                    "Mengurangi pemakaian bahan kimia",
+                    "Memanfaatkan limbah pengolahan ubi kayu"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Khaswar Syamsu",
+                        "Rhama Rakhmatullah"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-025",
+            "details": {
+                "judul": "Panel Oriented Strand Board (OSB) Kuat dan Awet dari Strand Bambu yang Disteam",
+                "deskripsi": "Papan Unting Super dari Bambu Super Strand Boards dari Steam Treated Bamboo Strands sebagai pengganti kayu lapis (plywood). Inovasi ini memiliki keunggulan seperti tingkat efisiensi bahan, kekuatan fisik, kekuatan inti, dan keawetan alami yang lebih baik.",
+                "perspektif": "Indonesia memiliki sumber daya bambu yang besar, umumnya belum memperoleh sentuhan teknologi. Bambu memiliki berbagai sifat unggul untuk dijadikan material industri.",
+                "keunggulan_inovasi": [
+                    "Bambu tersedia dalam jumlah banyak dan mudah diterima oleh masyarakat",
+                    "Mempunyai stabilitas dimensi yang baik",
+                    "Mempunyai keteguhan rekat serta keawetan alami yang lebih unggul dibandingkan dengan OSB dari kayu",
+                    "Proses pengolahan tidak menggunakan zat kimia beracun"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Fauzi Febrianto",
+                        "Wahyu Hidayat",
+                        "Lina Karlinasari",
+                        "Arinana"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-026",
+            "details": {
+                "judul": "Helm Ramah Lingkungan dari Pengolahan Limbah Tandan Kosong Kelapa Sawit (TKKS) dan Polimer Recycle",
+                "deskripsi": "Helm sepeda motor di Indonesia telah menggunakan standar SNI 1811-2007. Namun, helm ini memiliki kekuatan mekanik yang lebih rendah dibandingkan dengan helm standar dunia. Teknologi reinforcement polimer ABS pada helm serat tandan kosong meningkatkan kualitas mekaniknya.",
+                "perspektif": "Kelapa sawit adalah salah satu sumber daya alam superior; dari biji hingga tandan kosongnya dapat dimanfaatkan untuk kepentingan manusia.",
+                "keunggulan_inovasi": [
+                    "Menggunakan prinsip green process (tanpa bahan kimia) dan zero waste",
+                    "Helm lebih ringan karena densitas biokomposit < 1 g/cm³",
+                    "Memiliki sifat mekanik serta termal yang unggul"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Siti Nikmatin"
+                    ],
+                    "status_paten": "TELAH TERDAFTAR"
+                }
+            }
+        },
+        {
+            "node_id": "INV-027",
+            "details": {
+                "judul": "Produksi Nanoklorofil dari Sargassum Sp.",
+                "deskripsi": "Produksi nanopigmen klorofil dengan metode homogenisasi berkecepatan tinggi untuk meningkatkan serapan cahaya pada Dye Sensitized Solar Cells (DSSC).",
+                "perspektif": "Upaya mengolah sumber daya kelautan dengan teknologi nano menunjukkan potensi inovasi yang tak terbatas.",
+                "keunggulan_inovasi": [
+                    "Warna lebih cerah",
+                    "Ukuran partikel seragam dan lebih kecil",
+                    "Konsentrasi klorofil lebih tinggi",
+                    "Stabilitas pigmen lebih tinggi",
+                    "Tingkat dispersi yang lebih baik"
+                ],
+                "potensi_aplikasi": "-",
+                "inovator": {
+                    "nama": [
+                        "Erliza Noor",
+                        "Akhiruddin Maddu",
+                        "Meika S. Rusli",
+                        "Andi Ridwan Makkulawu",
+                        "Hanum Nur Rachmawati"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-028",
+            "details": {
+                "judul": "Selulosa Nano Komposit Unggul Diperkuat",
+                "deskripsi": "Nanokristal Selulosa dari Limbah Sludge, LIMBAH PENGISI MATERIAL MAJU WASTE AS ADVANCED MATERIAL FILER",
+                "perspektif": "Teknologi nano berpotensi mengubah masalah limbah menjadi berkah bernilai tinggi.",
+                "keunggulan_inovasi": [
+                    "Menggunakan limbah, biodegradable sehingga bersahabat dengan lingkungan",
+                    "Dapat digunakan untuk beragam produk komposit",
+                    "Sifat konduktivitas, optik, stabilitas panas, keteguhan tarik, modulus patah dan elongasi patah yang unggul"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Fauzi Febrianto",
+                        "Siti Nikmatin",
+                        "Sucahyo Sadiyo",
+                        "Nyoman Jaya",
+                        "Wistara",
+                        "Risnasari"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-029",
+            "details": {
+                "judul": "Penerapan Teknologi Nano untuk Penanganan Limbah Padat Industri Gula",
+                "deskripsi": "Penelitian ini membahas penerapan teknologi nano pada limbah bagasse dari industri gula, dengan fokus pada pembuatan nanosilika dari limbah tersebut.",
+                "perspektif": "Teknologi nano yang terus berkembang membuka potensi baru dalam pemanfaatan material terbuang.",
+                "keunggulan_inovasi": [
+                    "Hasil pengujian ukuran partikel dengan menggunakan PSA diperoleh nilai rata-rata ukuran partikel sebesar 397.7nm",
+                    "Hasil pengujian nilai PDI diperoleh nilai rata-rata sebesar 0.32",
+                    "Ukuran partikel meningkat seiring dengan peningkatan interaksi antara suhu dan waktu sintesis"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Nastiti Siswi Indrasti",
+                        "Akhiruddin Maddu",
+                        "Andes Ismayana"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-030",
+            "details": {
+                "judul": "Bioplastik dari Nanofiber Selulosa Tandan",
+                "deskripsi": "Inovasi ini menciptakan bioplastik biodegradable dari selulosa tandan kosong kelapa sawit dengan menggunakan teknologi nanoteknologi untuk meningkatkan kualitas mekaniknya.",
+                "perspektif": "Pengembangan plastik dari bahan limbah dengan meningkatkan sifat mekaniknya adalah tren masa depan dalam pengembangan plastik biodegradable.",
+                "keunggulan_inovasi": [
+                    "Bersifat biodegradable dan ramah lingkungan",
+                    "Memiliki rendemen tinggi karena kadar selulosa yang tinggi",
+                    "Memiliki sifat fisik mekanik yang baik dengan menggunakan nano teknologi",
+                    "Memanfaatkan hasil limbah sehingga biaya produksinya rendah"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Khaswar Syamsu",
+                        "Akhiruddin Maddu",
+                        "Nur Alim Bachmid"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-031",
+            "details": {
+                "judul": "Produksi dan Karakterisasi Material Biokomposit Selulosa asetat Eichornia crassipes-Kitosan Limbah Kulit Crustacea sebagai Bahan Baku Pembuatan Biopolybag Ramah Lingkungan",
+                "deskripsi": "Produksi dan Karakterisasi Material Biokomposit Selulosa asetat Eichornia crassipes-Kitosan Limbah Kulit Crustacea sebagai Bahan Baku Pembuatan Biopolybag Ramah Lingkungan",
+                "perspektif": "Plastik merupakan jawaban untuk bahan kuat dan tidak mudah rusak, namun keberhasilannya membahayakan alam. Oleh karena itu, teknologi dituntut untuk menyempurnakannya agar lebih ramah lingkungan.",
+                "keunggulan_inovasi": [
+                    "Biopolybag lebih mudah terdegradasi dan ramah lingkungan",
+                    "Dapat ditanam langsung ke dalam tanah bersama dengan tanaman",
+                    "Hasil degradasi biopolybag dapat menjadi sumber nutrisi bagi tanaman"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Zurila Salas",
+                        "Iis Tentia",
+                        "Agustin",
+                        "Gempur Irawan SP",
+                        "Syaefudin"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-032",
+            "details": {
+                "judul": "Formulasi Paving Block Berbahan Limbah Padat Tanah Pemucat Bekas (Spent Bleaching Earth) Dari Tanah, Kembali Ke Tanah",
+                "deskripsi": "Inovasi ini memanfaatkan spent bleaching earth sebagai bahan pengganti perekat dalam pembuatan paving block, agar mengurangi dampak buruk dari limbah padat SBE. SBE diambil dari residu minyak hasil produksi biodiesel secara in-situ.",
+                "perspektif": "Mengolah limbah dari industri komoditas besar, menjadi produk bernilai jual tinggi, dapat menciptakan rantai pasok yang berkelanjutan bagi industri lain.",
+                "keunggulan_inovasi": [
+                    "Memberikan nilai tambah pada SBE, yang merupakan limbah padat yang mencemari lingkungan",
+                    "Paving block memiliki nilai tekan yang memenuhi standar SNI 03-0691-1996",
+                    "Paving block memiliki ketahanan terhadap korosi, dan konduktivitas panas yang tinggi",
+                    "Berpotensi dikembangkan oleh industri skala besar, berdasarkan kajian teknoeonomi"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Ani Suryani",
+                        "Suprihatin",
+                        "Gutan Pari",
+                        "Sudrajat Mukti Mardiko"
+                    ],
+                    "status_paten": "TELAH DIPATENKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-033",
+            "details": {
+                "judul": "Film Nanokomposit Ramah Lingkungan dari Matrik Biopolimer dan Penguat Nanoserat Tandan Kosong Kelapa Sawit",
+                "deskripsi": "Inovasi ini menciptakan film nanokomposit menggunakan polimer Polyvinyl alcohol (PVA), biopolimer kitosan, dan nanoserat tandan kosong kelapa sawit (TKKS). Film ini memiliki karakteristik fisik dan mekanik yang lebih baik dibandingkan campuran PVA dan kitosan, serta meningkatkan degradabilitas dan sifat termalnya.",
+                "perspektif": "Menggabungkan berbagai kelebihan sifat bahan menjadi produk komposit dengan teknologi nano membuka peluang pengembangan produk-produk inovatif yang multifungsi.",
+                "keunggulan_inovasi": [
+                    "Menggabungkan tiga komponen yang dapat saling memperkuat sifat satu sama lain",
+                    "Memiliki sifat bio-degradable sehingga ramah bagi lingkungan",
+                    "Memanfaatkan limbah TKKS menjadi bahan yang bernilai ekonomis tinggi"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Achmad Solikhin",
+                        "Yusuf Sudo Hadi",
+                        "Yusram Massijaya",
+                        "Siti Nikmatin"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-034",
+            "details": {
+                "judul": "Pengembangan Gelatin Kulit Ikan Tuna sebagai Upaya Mengurangi Ketergantungan Produk Impor Dijamin Halal",
+                "deskripsi": "Pengembangan gelatin kulit ikan tuna sebagai upaya mengurangi ketergantungan produk impor dengan memanfaatkan limbah tuna yang mengandung kolagen.",
+                "perspektif": "Tuntutan akan persyaratan halal yang semakin ketat di seluruh dunia, membuka peluang inovasi untuk mengembangkan produk-produk makanan dari sumber-sumber yang dijamin halal.",
+                "keunggulan_inovasi": [
+                    "Produk gelatin yang dijamin halal",
+                    "Proses pembuatan gelatin lebih cepat dan sederhana",
+                    "Memanfaatkan limbah industri ikan tuna"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Mala Nurilmala",
+                        "Agoes Mardiono Jacoeb",
+                        "Taufik Hidayat",
+                        "Rofi Ahmad Dzaky"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-035",
+            "details": {
+                "judul": "Pengembangan Teknologi Bioplastik Mulsa Berbasis Klobot Jagung dengan Matriks Polimer LLDPE",
+                "deskripsi": "Inovasi ini memanfaatkan limbah klobot jagung untuk membuat mulsa bioplastik ramah lingkungan.",
+                "perspektif": "Di masa depan, inovasi memanfaatkan bahan dan limbah yang ramah lingkungan; tidak lagi untuk mencapai keunggulan tetapi menjadi keharusan, demi kehidupan yang berkelanjutan.",
+                "keunggulan_inovasi": [
+                    "Kandungan serat yang tinggi sehingga mudah terdegradasi",
+                    "Klobot jagung relatif mudah didapatkan",
+                    "Ketahanan panas dan kekuatan mekanik yang tinggi"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Sidik Rubadi P",
+                        "Mersi Kurniati",
+                        "Akhiruddin Maddu"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-036",
+            "details": {
+                "judul": "Gelatin Mikro Kristalin dari Limbah Ikan",
+                "deskripsi": "Inovasi ini adalah tentang metode pengolahan gelatin mikro kristalin dari limbah ikan, dengan metode asam encer dilengkapi dengan hidroekstraksi. Proses pengolahan ini relatif sederhana, namun menghasilkan mutu produk setara gelatin impor dan rendemen yang tinggi.",
+                "perspektif": "Lebih banyak lagi inovasi tepat guna perlu segera dikembangkan, untuk mengolah berbagai limbah yang melimpah; dan ternyata dapat menggantikan bahan baku industri yang mahal dan masih diimpor.",
+                "keunggulan_inovasi": [
+                    "Metode pembuatan gelatin metode asam encer dengan hidroekstrasi tergolong paling sederhana, namun dengan mutu hasil setara gelatin impor, dan rendemen yang tinggi.",
+                    "Bahan baku limbah ikan tersedia dengan murah dan melimpah.",
+                    "Dijamin halal."
+                ],
+                "potensi_aplikasi": "Gelatin ikan mikro kristalin dapat diaplikasikan untuk berbagai keperluan industri pangan: sebagai pengental, pembentuk gel, memperbaiki tekstur, penstabil, pengisi (filler); di industri farmasi: sebagai penyalut obat, kapsul, pengental sirup; maupun di industri kosmetika sebagai penstabil, pengental, pengisi, pembentuk tekstur, anti-aging, pelembab, dan sebagai microencapsulator.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Pipih Suptijah",
+                        "MBA"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-037",
+            "details": {
+                "judul": "Jaring Ikan Ramah Lingkungan",
+                "deskripsi": "Fishing gear from synthetic (plastic) polymers when wasted in the sea cause marine pollution, sometimes referred as \"ghost fishing\", which endangers the marine ecosystem, and interfere with sea voyage. In fact, around 640,000 tons of fishing gear like this pollute the sea every year.",
+                "perspektif": "Dampak negatif pemakaian produk plastik di darat telah disadari dunia, dan kini dampaknya yang bahkan lebih negatif lagi di laut mulai mendapat perhatian serius.",
+                "keunggulan_inovasi": [
+                    "Inovasi benang jaring berbahan alami diharapkan dapat mengurangi masalah lingkungan laut, dan mengurangi ghost fishing",
+                    "Aplikasi kitosan sebagai polimer alami yang degradable teruji dapat meningkatkan karakteristik benang jaring",
+                    "Kitosan tidak mudah larut dalam air, ketahan kimia cukup baik, dan dapat terdegradasi secara alami",
+                    "Bahan dasar serat yang dijadikan pembuatan benang jaring tersedia melimpah dan murah harganya"
+                ],
+                "potensi_aplikasi": "Inovasi ini berpotensi terus dikembangkan untuk menggantikan benang jaring dari bahan plastik. Ketersediaan bahan serat alami yang melimpah, dapat menjadikan Indonesia sebagai produsen benang jaring ramah lingkungan untuk kebutuhan global.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Ir. Diniah, M.Si.",
+                        "Dr. Ir. Gondo Puspito, M.Sc.",
+                        "Ir. Mokhamad Dahri Iskandar, M.Si"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-038",
+            "details": {
+                "judul": "Peningkatan Sifat Fisis, Mekanis dan Keawetan Kayu Sengon Melalui Impregnasi Partikel Nano SiO2",
+                "deskripsi": "Peningkatan sifat fisik, mekanik dan keawetan kayu sengon melalui impregnasi partikel nano SiO2 dalam 50% larutan monoethylene glycol (MEG).",
+                "perspektif": "Teknologi menjadikan kayu yang tumbuh cepat menjadi kayu kuat, dan menghasilkan kayu olahan dengan warna dan bau yang tidak berubah.",
+                "keunggulan_inovasi": [
+                    "Meningkatkan sifat fisik, mekanik dan keawetan kayu sengon ke kelas mutu kayu yang lebih tinggi.",
+                    "Menghasilkan kayu olahan dengan warna dan bau yang tidak berubah.",
+                    "Biaya pengolahan (impregnasi) murah, dan prosesnya sederhana."
+                ],
+                "potensi_aplikasi": "Sejalan dengan berkembangnya industri kehutanan, kayu dari pohon-pohon yang cepat tumbuh namun mutunya rendah akan semakin banyak. Inovasi teknologi peningkatan mutu kayu ini dapat diaplikasikan oleh masyarakat luas.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Istie Sekartining Rahayu, S.Hut, M.Si.",
+                        "Prof. Dr. Ir. I Wayan Darmawan, M.Sc.F.trop",
+                        "Lukmanul Hakim Zaini, S.Hut, MSc.",
+                        "Dr. Ir. Trisna Priadi, M.Eng.Sc",
+                        "Esti Prihatini"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-039",
+            "details": {
+                "judul": "Pengembangan Membran Polisulfon Nanosilika untuk Direct Methanol Fuel Cell (DMFC)",
+                "deskripsi": "Pengembangan membran elektrolit DMFC berbahan polisulfon nanosilika yang memiliki kinerja yang lebih baik dibandingkan membran komersial.",
+                "perspektif": "DMFC diharapkan menjadi sumber energi listrik 'portable' masa depan, namun terkendala karena efisiensinya yang masih rendah. Setiap inovasi untuk meningkatkan efisiensinya layak diapresiasi.",
+                "keunggulan_inovasi": [
+                    "Membran elektrolit DMFC berbahan polisulfon lebih murah dibandingkan membran komersial",
+                    "Filler nanosilika yang dibuat dari limbah abu ketel industri gula meningkatkan kinerja membran",
+                    "Proses sulfonasi meningkatkan hidrofilitas polisulfon karena semakin banyak gugus sulfonat yang masuk ke dalam rantai polisulfon",
+                    "Katalis Ag dan Cu menggantikan katalis Pt yang mahal",
+                    "Fabrikasi membran elektrolit dalam bentuk membrane electrode assembly (MEA) dapat langsung diaplikasikan pada sistem DMFC"
+                ],
+                "potensi_aplikasi": "Membran polisulfon tersulfonasi berpengisi nanosilika ini dapat dikembangkan untuk sistem sel bahan bakar lain, seperti microbial fuel cell, proton exchange fuel cell, solid oxide fuel cell, dan alkaline fuel cell.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Nastiti Siswi Indrasti",
+                        "Dr. Ir. Andes Ismayana",
+                        "Dr. Akhiruddin Maddu",
+                        "S.Si, M.Si"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-040",
+            "details": {
+                "judul": "Pengembangan Biosensor Lingkungan untuk Deteksi Pestisida Organoklorin Berbasis Elektroda Pasta Karbon Termodifikasi Nanopartikel Zeolit",
+                "deskripsi": "Pengembangan biosensor lingkungan untuk deteksi pestisida organoklorin berbasis elektroda pasta karbon termodifikasi nanopartikel zeolit, yang memiliki potensi aplikasi dalam kegiatan monitoring lingkungan.",
+                "perspektif": "Teknologi Nano membuka peluang baru untuk pengembangan berbagai biosensor yang semakin dibutuhkan di era Industri 4.0; yang semakin bermutu, semakin mudah dipakai, serta semakin murah sekaligus.",
+                "keunggulan_inovasi": [
+                    "Menggantikan Gas Chromatography (GC) yang mahal dan preparasi sampel yang lama.",
+                    "Dengan teknologi biosensor, deteksi dan analisis dapat dilakukan secara in situ.",
+                    "Alat yang kecil dan portable, mudah untuk dibawa ke lapangan.",
+                    "Pemakaian yang mudah dan tidak membutuhkan personel dengan kompetensi khusus.",
+                    "Sensitif untuk menganalisis contoh pada konsentrasi yang rendah.",
+                    "Penciptaan nilai tambah bagi zeolite yang murah dan tersedia melimpah."
+                ],
+                "potensi_aplikasi": "Biosensor lingkungan berbasis elektroda pasta karbon yang termodifikasi nanopartikel zeolit ini dapat dimanfaatkan untuk kegiatan monitoring lingkungan, yang wajib dilakukan oleh semua instansi dan/atau perusahaan; yang dalam proses melakukan kegiatannya menghasilkan limbah atau berpotensi mengandung limbah atau polutan.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Henny Purwaningsih, S.Si, M.Si"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-041",
+            "details": {
+                "judul": "Resistive Residual Waste: Serat Tandan Kosong Kelapa Sawit Nonwoven Sebagai Material Biokomposit Anti Peluru",
+                "deskripsi": "Inovasi ini mengembangkan serat lignoselulosa dari limbah tandan kosong kelapa sawit (TKKS) sebagai pengganti serat sintetis penguat polimer termoset epoxy dan polyester pada aplikasi komposit anti peluru.",
+                "perspektif": "Limbah TKKS merupakan limbah terbanyak di industri perkebunan kita yang nilai pemanfaatannya masih sangat rendah, bahkan terbuang percuma. Padahal di dalam limbah tersebut terkandung berbagai komponen bahan baku dan bahan pangan yang bernilai ekonomis tinggi.",
+                "keunggulan_inovasi": [
+                    "Meningkatkan nilai tambah limbah TKKS yang tersedia melimpah dan bernilai rendah.",
+                    "Proses pengolahan TKKS menjadi serat lignoselulosa relatif tidak mencemari lingkungan.",
+                    "Teruji memiliki sifat mekanik setara dengan serat kevlar dalam menyerap energi kinetik proses tumbukan.",
+                    "Inovasi baru dalam pengembangan teknologi dan industri biokomposit."
+                ],
+                "potensi_aplikasi": "Inovasi ini dikembangkan untuk menggantikan filler serat sintetik komposit polimer untuk aplikasi pembuatan material komposit anti peluru; namun masih berpotensi untuk diaplikasikan dalam pengembangan produk biopolimer lainnya.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Siti Nikmatin S.Si M.Si"
+                    ],
+                    "status_paten": "Terdaftar (PID201904109)"
+                }
+            }
+        },
+        {
+            "node_id": "INV-042",
+            "details": {
+                "judul": "Pestisida Aman di Sekitar Kita",
+                "deskripsi": "Peningkatan Kinerja Insektisida Nabati dari Ekstrak Mimba (Azadirachtin indica) untuk Pengendalian Hama Ulat Grayak pada Kedelai Menggunakan Surfaktan DEA dari Olein Sawit",
+                "perspektif": "Perhatian dunia dalam ketahanan pangan telah bergeser, dari fokus pada produktivitas produksi pangan, menuju ke fokus keamanan pangan serta kelestarian lingkungan",
+                "keunggulan_inovasi": [
+                    "Menghasilkan alternatif pembasmi hama ulat grayak pada tanaman kedelai yang lebih ramah bagi lingkungan",
+                    "Meningkatkan nilai tambah bagi biji nimba",
+                    "Menggunakan surfaktan DEA dari olein sawit yang tersedia murah dan melimpah, untuk menggantikan DEA yang selama ini diimpor"
+                ],
+                "potensi_aplikasi": "Inovasi ini berpotensi untuk menggantikan penggunaan insektisida sintetik yang saat ini umum digunakan dalam pengendalian hama ulat grayak pada tanaman kedelai. Pada aplikasi yang berlebihan, insektisida sintetik selain memicu resistensi hama, juga telah mengakibatkan resurjensi hama, ledakan hama kedua, selain juga menyebabkan pencemaran pada bahan pangan dan lingkungan",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Erliza Hambali",
+                        "Prof. Dr. Ani Suryani",
+                        "Ir. Djoko Prijono M.Agr.Sc",
+                        "Drs. Eddy Sapto Hartanto",
+                        "Nobel Christian Siregar ST M.Eng"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-043",
+            "details": {
+                "judul": "Nanokomposit Poly Vinyl Alcohol (PVA) dengan Penguat LCNF Bambu",
+                "deskripsi": "Inovasi ini mengolah serat nano-lignoselulosa (LCNF) bambu yang diisolasi melalui proses delignifikasi pada berbagai level dan dilanjutkan dengan perlakuan mekanis wet disk-milling. Nanokomposit PVA dengan penguat LCNF bambu memiliki sifat mekanis dan termal yang unggul.",
+                "perspektif": "Serat alam semakin mendapat perhatian dunia untuk sebagai bahan pembuatan komposit material maju, karena sifatnya yang ramah lingkungan dan terbarukan.",
+                "keunggulan_inovasi": [
+                    "Penggunaan bambu sebagai bahan serat nano-lignoselulosa (LCNF) meningkatkan nilai tambah bambu.",
+                    "Proses isolasi LCNF bambu sederhana, mudah, dan minim pemakaian bahan kimia.",
+                    "Penguat LCNF bambu lebih efektif memberikan peningkatan sifat yang signifikan dibandingkan nanoselulosa dari bahan lain.",
+                    "Nanokomposit PVA dengan LCNF bambu memiliki sifat mekanis dan termal yang lebih baik/bersaing dengan serat mikrofibril komersial."
+                ],
+                "potensi_aplikasi": "Serat nano-lignoselulosa (LCNF) dan aplikasinya sebagai nanokomposit-LCNF bambu memiliki sifat-sifat unggul untuk dikembangkan pada berbagai produk komposit maju untuk industri plastik dan pengemasan.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Fauzi Febrianto, MS",
+                        "Dr. Ir. Deded Sarip Nawawi, M.Sc",
+                        "Muhammad Iqbal Maulana",
+                        "Marwanto"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        }
+    ]
+}

@@ -1,0 +1,1998 @@
+{
+    "metadata": {
+        "source": "501-Inovasi-IPB-1-Lainlain-Inovasi.pdf",
+        "total_nodes": 88
+    },
+    "nodes": [
+        {
+            "node_id": "INV-001",
+            "details": {
+                "judul": "Papan Wangi Anti Nyamuk",
+                "deskripsi": "Papan Wangi Anti Nyamuk adalah produk yang mengubah limbah padat hasil penyulingan rumput akar wangi menjadi papan partikel sebagai alternatif kayu, yang memiliki sifat alami anti serangga seperti nyamuk.",
+                "perspektif": "Inovasi ini melakukan lebih dari sekadar mengubah limbah menjadi sesuatu yang lebih berguna, yaitu menawarkan substitusi material kayu dengan sifat khas alami anti serangga (nyamuk).",
+                "keunggulan_inovasi": [
+                    "Memanfaatkan limbah yang dianggap tidak bermanfaat",
+                    "Proses pembuatan cukup sederhana",
+                    "Papan partikel yang dihasilkan memiliki bau khas akar wangi yang dapat mengusir nyamuk"
+                ],
+                "potensi_aplikasi": "Papan partikel dapat digunakan untuk mengganti kayu sebagai bahan bangunan. Penemuan ini bisa digunakan pada industri peralatan dan mesin serta industri tekstil, kertas, dan lain-lain.",
+                "inovator": {
+                    "nama": [
+                        "Erliza Hambali",
+                        "Paribotro Sutigno"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-002",
+            "details": {
+                "judul": "04",
+                "deskripsi": "Plastik Ramah Lingkungan",
+                "perspektif": "Ketika seluruh dunia bicara berbagai Green Program, material baru pengganti plastik yang merusak lingkungan pun hadir dengan bahan alami sebagai Green Plastic.",
+                "keunggulan_inovasi": [
+                    "Kekuatan dan kekerasannya dapat divariasikan sesuai kebutuhan",
+                    "Resisten terhadap kelembaban",
+                    "Dapat didegradasi secara biologis",
+                    "Biaya bahan baku relatif jauh lebih murah"
+                ],
+                "potensi_aplikasi": "Industri kemasan dan bahan plastik.",
+                "inovator": {
+                    "nama": [
+                        "Khaswar Syamsu",
+                        "Ani Suryani",
+                        "Anas M. Fauzi",
+                        "Bagus Wicaksono"
+                    ],
+                    "status_paten": "GRANTED"
+                }
+            }
+        },
+        {
+            "node_id": "INV-003",
+            "details": {
+                "judul": "Penyaring Mikro dari Air Kelapa",
+                "deskripsi": "Penjelasan tentang proses pembuatan penyaring mikro dari air kelapa menggunakan bahan alami dan teknologi yang tepat guna.",
+                "perspektif": "Membuat mikro filter alami yang lebih baik dan dapat digunakan oleh industri rumahan dengan teknologi tepat guna.",
+                "keunggulan_inovasi": [
+                    "Bahan murah dan mudah didapat",
+                    "Menggunakan bahan yang alami"
+                ],
+                "potensi_aplikasi": "Dapat diaplikasikan pada industri buah olahan, tetapi masih berpotensi luas dalam bidang filtrasi mikro.",
+                "inovator": {
+                    "nama": [
+                        "Ani Suryani",
+                        "H. A. Aziz Darwis",
+                        "Khaswar Syamsu"
+                    ],
+                    "status_paten": "GRANTED"
+                }
+            }
+        },
+        {
+            "node_id": "INV-004",
+            "details": {
+                "judul": "Protease dari Limbah Tahu",
+                "deskripsi": "Protease dari limbah tahu merupakan produk enzim yang dapat digunakan dalam berbagai industri, seperti kosmetik, pangan, dan penyamakan kulit. Penelitian menunjukkan bahwa enzim ini dapat dihasilkan dari isolasi mikroba penghasil protease dari limbah cair tahu.",
+                "perspektif": "Penggunaan media baru dengan suplemen bahan alami lainnya dalam proses pembuatan enzim protease.",
+                "keunggulan_inovasi": [
+                    "Bekerja baik pada pH 6-9, suhu 50-60 °C, tahan garam tinggi, dan tahan pelarut Dimethyl Formamida",
+                    "Memanfaatkan limbah tahu yang tidak memiliki nilai ekonomis, sehingga biaya produksi lebih murah",
+                    "Performa lebih baik dibandingkan protease asli"
+                ],
+                "potensi_aplikasi": "Dapat dikembangkan untuk penyediaan enzim protease yang dibutuhkan berbagai industri.",
+                "inovator": {
+                    "nama": [
+                        "Maggy T. Suhartono"
+                    ],
+                    "status_paten": "GRANTED"
+                }
+            }
+        },
+        {
+            "node_id": "INV-005",
+            "details": {
+                "judul": "Perekat Kayu Alami Tahan Air",
+                "deskripsi": "Perekat kayu alami yang dibuat dari modifikasi karet trans-1,4-isopropena dengan anhidrida maleat dan pemanfaatannya sebagai perekat kayu lapis.",
+                "perspektif": "Sifat unggul satu bahan digabungkan untuk menutupi kelemahan produk lain, dan anda dapatkan produk yang mendekati sempurna.",
+                "keunggulan_inovasi": [
+                    "Bahan bersifat recycleable (dapat didaur ulang)",
+                    "Bahan bersifat renewable",
+                    "Bahan bersifat bio-degradable",
+                    "Produk kayu yang dihasilkan mempunyai ketahanan yang baik terhadap kelembaban, cuaca dan air"
+                ],
+                "potensi_aplikasi": "Tepat diaplikasikan dalam industri perabotan yang berbahan dasar kayu, khususnya jika kealamian diberikan nilai lebih, misalnya untuk aplikasi kesehatan dan makanan.",
+                "inovator": {
+                    "nama": [
+                        "Fauzi Febrianto",
+                        "Tati Karliati",
+                        "Wasrin Syafili"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-006",
+            "details": {
+                "judul": "Mesin Pembeku Vakum untuk Produk Berkadar Air Tinggi",
+                "deskripsi": "Mesin pembeku vakum yang dirancang untuk produk makanan dengan kandungan air tinggi, yang memiliki keunggulan dalam hal laju pembekuan dan sebaran suhu serta mencegah oksidasi udara.",
+                "perspektif": "Metode pembekuan vakum telah dikenal umum untuk pembekuan makanan dengan kandungan air tinggi yang menawarkan banyak keuntungan dan membutuhkan pendingin yang cepat dan efisien.",
+                "keunggulan_inovasi": [
+                    "Laju pembekuan berlangsung cepat, melebihi laju pembekuan lempeng sentuh",
+                    "Proses penurunan dan pengendalian tekanan dalam ruang pembeku lebih efektif karena menggunakan sistem perangkap dingin",
+                    "Sistem wadah dapat mengurangi percikan yang dapat mengotori ruang pembeku"
+                ],
+                "potensi_aplikasi": "Tepat untuk industri makanan dan industri lain yang berkaitan dengan pembekuan produk berkadar air tinggi.",
+                "inovator": {
+                    "nama": [
+                        "Armansyah H. Tambunan",
+                        "Dyah Wulandani",
+                        "Leopold O. Nelwan",
+                        "Irshan Zainuddin"
+                    ],
+                    "status_paten": "GRANTED"
+                }
+            }
+        },
+        {
+            "node_id": "INV-007",
+            "details": {
+                "judul": "KomPress Kayu",
+                "deskripsi": "Perbaikan Kualitas Kayu Sawit (Elaeis guineensis Jacq.) dengan Teknik 'KomPress' yang berupaya meningkatkan kualitas kayu sawit sehingga dapat dimanfaatkan sebagai bahan bangunan dan furnitur berkualitas dan bernilai tinggi.",
+                "perspektif": "Pohon industri pada umumnya mempunyai batas umur tertentu dan kemudian ditebang dan menjadi beban sebagai limbah. Teknik pengolahan yang menjadikannya mempunyai nilai tambah tinggi, memberikan potensi usaha baru.",
+                "keunggulan_inovasi": [
+                    "Prosesnya sederhana",
+                    "Investasi rendah",
+                    "Mendorong terbukanya lapangan pekerjaan dan perputaran ekonomi masyarakat"
+                ],
+                "potensi_aplikasi": "Tepat diterapkan di perkebunan kelapa sawit dan industri kayu bangunan serta furniture.",
+                "inovator": {
+                    "nama": [
+                        "Edi Suhaimi Bakar",
+                        "Yusram M",
+                        "Osly Rochman",
+                        "Bahruni"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-008",
+            "details": {
+                "judul": "Papan Semen-Gypsum dari Tanaman Kenaf",
+                "deskripsi": "Papan Semen-Gypsum dari Tanaman Kenaf adalah produk baru yang dikembangkan menggunakan teknologi pengerasan autoclave. Produk ini menggunakan serat kenaf sebagai bahan dasar dan menggantikan penggunaan semen dengan gypsum.",
+                "perspektif": "Tersedianya material baru yang lebih murah tentu akan menguntungkan bagi industri konstruksi, apalagi jika memiliki kualitas lebih baik dan menggunakan bahan-bahan alam.",
+                "keunggulan_inovasi": [
+                    "Sifat fisis dan mekanis lebih baik, terutama sifat mekanis dengan nilai keteguhan rekat, keteguhan lentur, keteguhan patah lebih baik",
+                    "Kekuatan pegang sekrup lebih tinggi dibanding papan semen-gypsum biasa",
+                    "Ketahanan terhadap rayap kayu kering dan rayap tanah"
+                ],
+                "potensi_aplikasi": "Dapat dikembangkan di industri bahan bangunan.",
+                "inovator": {
+                    "nama": [
+                        "Dede Hermawan",
+                        "Rohny Setiawan Maail",
+                        "Yusuf Sudohadi"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-009",
+            "details": {
+                "judul": "Candid Camera untuk Ikan Koi - Nishikogoi Gender Analyzer (NGA)",
+                "deskripsi": "Nishikogoi Gender Analyzer (NGA) dirancang untuk memudahkan identifikasi jenis kelamin ikan Koi, khususnya dalam budidaya monosex. Alat ini dapat melakukan identifikasi secara cepat dan otomatis, menghemat waktu dan biaya.",
+                "perspektif": "Mata manusia secara alami mampu mendeteksi perbedaan yang kentara dan mengambil keputusan terbaik. Bagaimana bila proses identifikasi jenis kelamin ikan Koi dilakukan secara modern menggunakan teknologi?",
+                "keunggulan_inovasi": [
+                    "Berkat algoritma JST, dapat mendeteksi jenis kelamin Koi lebih dini",
+                    "Lebih efisien dan efektif karena bisa menghemat waktu dan biaya pelaksanaan sortir"
+                ],
+                "potensi_aplikasi": "Industri pemulia (breeder) ikan Koi",
+                "inovator": {
+                    "nama": [
+                        "Indra Jaya",
+                        "Ayi Rahmat",
+                        "Muhammad Iqbal"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-010",
+            "details": {
+                "judul": "Mandi Kitosan untuk Kekuatan!",
+                "deskripsi": "Proses Peningkatan Kualitas Kayu dengan Senyawa Kitosan",
+                "perspektif": "Perspektif",
+                "keunggulan_inovasi": [
+                    "Sifat mekanis kayu menjadi lebih kuat dan kayu lebih awet",
+                    "Pemrosesan yang tidak merusak lingkungan",
+                    "Kitosan hasil limbah ekspor udang dapat digunakan"
+                ],
+                "potensi_aplikasi": "Pemanfaat kitosan untuk penguatan kayu bisa diaplikasikan di industri pengolahan kayu, konstruksi, mebel, dan lain-lain.",
+                "inovator": {
+                    "nama": [
+                        "Dodi Nandika",
+                        "Surjono Surjokusumo",
+                        "Yudi Rismayadi",
+                        "Arinana"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-011",
+            "details": {
+                "judul": "Warmth for The Cat Fish",
+                "deskripsi": "Sistem Resirkulasi dan Sistem Penghangatan Air untuk Pembenihan Ikan Komersial seperti ikan Patin membutuhkan kondisi yang ideal agar pertumbuhan benih menjadi lebih cepat. Salah satu kondisi yang dibutuhkan adalah kehangatan air yang konstan, sirkulasi air dan udara yang baik, dan filtrasi yang baik.",
+                "perspektif": "Menciptakan kondisi ideal untuk pembenihan harus dilakukan dengan cara yang paling ekonomis, terutama bila tujuannya untuk komersial.",
+                "keunggulan_inovasi": [
+                    "Tidak memerlukan penggantian air",
+                    "Menghemat penggunaan bahan bakar minyak tanah untuk penghangatan"
+                ],
+                "potensi_aplikasi": "Sistem resirkulasi dan sistem penghangatan sir secara spesifik dikembangkan untuk pembenihan ikan atau hewan air lainnya.",
+                "inovator": {
+                    "nama": [
+                        "Budi Indra Setiawan"
+                    ],
+                    "status_paten": "GRANTED"
+                }
+            }
+        },
+        {
+            "node_id": "INV-012",
+            "details": {
+                "judul": "Menyulap Limbah Menjadi Berkah",
+                "deskripsi": "Pemanfaatan Limbah Kayu dan Anyaman Bambu Betung sebagai Bahan Baku Papan Komposit Berkualitas Tinggi",
+                "perspektif": "Inovasi besar tidak hanya menciptakan nilai ekonomis, tetapi juga sosial dan lingkungan demi kehidupan yang lebih baik dan berkesinambungan.",
+                "keunggulan_inovasi": [
+                    "Papan komposit ramah lingkungan",
+                    "Kualitas lebih baik dibandingkan kayu lapis",
+                    "Diversifikasi pemanfaatan bambu bernilai tambah tinggi",
+                    "Membantu ekonomi petani bambu",
+                    "Tahan terhadap serangan rayap"
+                ],
+                "potensi_aplikasi": "Industri pengolahan kayu panel/kayu lapis",
+                "inovator": {
+                    "nama": [
+                        "Muh. Yusram Massijaya",
+                        "Yusuf Sudohadi",
+                        "Sukma Surya Kusumah"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-013",
+            "details": {
+                "judul": "Membuat Gedhek Modern",
+                "deskripsi": "Bamboo Lapis Unggulan sebagai Bahan Baku Furniture dan Bahan Bangunan",
+                "perspektif": "Tak ada rotan akar pun jadi, tak ada kayu bambu pun berpotensi, asalkan kita mau berinovasi.",
+                "keunggulan_inovasi": [
+                    "Memiliki kualitas (sifat fisik dan mekanis) yang lebih baik dibandingkan dengan bambu lapis lainnya",
+                    "Memiliki nilai parameter yang memenuhi standar JAS 2003"
+                ],
+                "potensi_aplikasi": "Inovasi bambu lapis bisa digunakan oleh industri mebel dan bangunan",
+                "inovator": {
+                    "nama": [
+                        "Jajang Surya",
+                        "Muh. Yusram Massijaya",
+                        "Sukma Surya Kusumah"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-014",
+            "details": {
+                "judul": "Bioplastik dari Onggok Tapioka Ramah Lingkungan",
+                "deskripsi": "Bioplastik dari onggok dan tapioka merupakan bahan alternatif yang ramah lingkungan dibandingkan plastik sintetis. Bahan ini dapat diurai secara alamiah dan tidak beracun.",
+                "perspektif": "Plastik komposit dari bahan alami, berasal dari bahan yang terbaharui (renewable), serta tidak beracun adalah tren dari pengembangan bahan plastik masa depan untuk meningkatkan sifat biodegradable bahan plastik yang belum ramah lingkungan.",
+                "keunggulan_inovasi": [
+                    "Bahan baku onggok dan tapioka mudah didapat",
+                    "Proses pembuatan mudah dan sederhana",
+                    "Karakteristik plastik komposit menyerupai plastik sintetik",
+                    "Dapat diurai secara biologis (biodegradable)"
+                ],
+                "potensi_aplikasi": "Bahan ini dapat diaplikasikan untuk berbagai keperluan yang membutuhkan material plastik, seperti industri kemasan dan lain-lain.",
+                "inovator": {
+                    "nama": [
+                        "Indah Yuliasih",
+                        "Sugiarto",
+                        "Titi Candra Sunarti"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-015",
+            "details": {
+                "judul": "Pelacak Pembalak yang Tak Tampak",
+                "deskripsi": "Metode penandaan asal-usul kayu dengan label, pahat atau paku, terbukti mudah dimanipulasi. Untuk itu, dikembangkan metode pembuktian yang tidak mudah dimanipulasi dengan menggunakan sumber informasi Deoxyribonucleic Acid (DNA) yang tersimpan di kayu.",
+                "perspektif": "Pengawasan pengusahaan hutan dan tata niaga kayu saat ini bersifat fisik, legal, administratif, dan terbukti rawan manipulasi. Penandaan kayu menggunakan informasi genetik bisa menjadi solusi teknologi yang ampuh dan efektif untuk mengatasi kerawanan tersebut.",
+                "keunggulan_inovasi": [
+                    "Dapat menduga asal kayu yang terdapat di pasaran atau di tempat penimbunan kayu, sehingga dapat diketahui apakah kayu tersebut legal atau tidak, berdasarkan database lokal DNA yang diisolasi dari kayu",
+                    "Dapat dimanfaatkan sebagai penunjang kegiatan sertifikasi produk hutan lestari kayu-kayu komersial di Indonesia (Chain of Custody Certification; CoC), misalnya kayu Jati, Meranti, dll",
+                    "Secara teknis inovasi ini memberikan pembuktian ilmiah yang akurat dan sulit dimanipulasi. Informasi DNA ini dapat diintegrasikan ke dalam sistem tata usaha kayu yang ada"
+                ],
+                "potensi_aplikasi": "Usaha di bidang kehutanan, lembaga/unit pemerintah yang bertanggung jawab untuk pengawasan pengusahaan dan tata niaga kayu.",
+                "inovator": {
+                    "nama": [
+                        "Iskandar Z. Siregar",
+                        "Ulfah J. Siregar",
+                        "Tedi Yunanto"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-016",
+            "details": {
+                "judul": "Tanah Rusak Bermanfaat Kembali Melalui Pemberian Asam Humat",
+                "deskripsi": "Penelitian ini membahas tentang pentingnya pemberian pupuk organik dalam mengatasi masalah tanah rusak dan rendah produktivitas pada tanaman kelapa sawit.",
+                "perspektif": "Bahan-bahan anorganik akan lebih berguna jika digunakan berdampingan dengan bahan-bahan organik.",
+                "keunggulan_inovasi": [
+                    "Asam humat bersifat organik sehingga ramah lingkungan",
+                    "Proses produksi dan aplikasi dari asam humat cukup mudah",
+                    "Jumlah yang dibutuhkan sedikit",
+                    "Dapat menghemat tenaga"
+                ],
+                "potensi_aplikasi": "Untuk perkebunan terutama kelapa sawit, tanaman pangan dan tanaman hortikultura.",
+                "inovator": {
+                    "nama": [
+                        "Suwardi"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-017",
+            "details": {
+                "judul": "Mesin Pemilah Kayu Konstruksi",
+                "deskripsi": "Mesin pemilah kayu yang inovatif ini bisa menggantikan mesin penguji yang masih diimpor dengan harga yang tinggi dan dapat memberikan penanda mutu pada semua jenis kayu tanpa merusaknya.",
+                "perspektif": "Inovasi dalam metode pengukuran dan pemilahan kayu, untuk menghasilkan kayu bermutu konstruksi sangat dibutuhkan. Apalagi jika alat dapat dibuat lebih sederhana, praktis dan ekonomis di dalam negeri.",
+                "keunggulan_inovasi": [
+                    "Sederhana, dioperasikan secara manual",
+                    "Mudah dibongkar pasang",
+                    "Alat pemindai pada mesin tersebut cukup akurat",
+                    "Mampu menguji kayu dalam berbagai bentuk dan jenis tanpa merusak",
+                    "Memberikan penanda mutu pada kayu secara cepat dan akurat"
+                ],
+                "potensi_aplikasi": "Industri perkayuan, perusahaan bahan bangunan, badan litbang dan perguruan tinggi, perusahaan mebel/furnitur, perencana, dan pengembang.",
+                "inovator": {
+                    "nama": [
+                        "HM Surjono Surjokusumo",
+                        "Naresworo Nugroho",
+                        "Effendi Tri Bachtiar"
+                    ],
+                    "status_paten": "GRANTED"
+                }
+            }
+        },
+        {
+            "node_id": "INV-018",
+            "details": {
+                "judul": "Papan Partikel Tanpa Perekat Sintesis (Binderless Particle Board) dari Limbah Industri Perkayuan dan Pertanian",
+                "deskripsi": "Papan partikel dari kayu sisa dan hasil gergajian menggunakan perekat sintesis berbasis formaldehida yang emisinya berbahaya bagi kesehatan juga lingkungan. Menjawab tantangan ini, dikembangkan proses pembuatan papan partikel tanpa menggunakan perekat.",
+                "perspektif": "Kita semua ingin selalu sehat dan tidak ingin menggunakan perabotan rumah tangga yang mengandung bahan-bahan kimia berbahaya.",
+                "keunggulan_inovasi": [
+                    "Bahan kayu yang digunakan adalah limbah dari industri kayu atau pertanian",
+                    "Tidak menggunakan perekat sintesis",
+                    "Produk yang dihasilkan juga berfungsi sebagai peredam suara"
+                ],
+                "potensi_aplikasi": "Industri perkayuan dan furnitur",
+                "inovator": {
+                    "nama": [
+                        "Dede Hermawan",
+                        "Sukma Surya"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-019",
+            "details": {
+                "judul": "Inkubator Bakau",
+                "deskripsi": "Mangrove forest can prevent floods. Unfortunately, many mangrove forest in Indonesia are damaged by brackish water due to beach abrasion. This damage can cause flooding in coastal areas.",
+                "perspektif": "Teknik dan praktek sederhana yang telah dianggap ‘biasa’, ternyata ampuh digunakan untuk menyelamatkan hutan bakau yang telah rusak, serta mencegah terjadinya bencana.",
+                "keunggulan_inovasi": [
+                    "Teknik sederhana dan mudah dilakukan",
+                    "Dapat mengembalikan hutan payau yang telah rusak terabrasi",
+                    "Berhasil dalam uji-coba bersama PT Jasa Marga dan Dinas Kehutanan DKI"
+                ],
+                "potensi_aplikasi": "Dapat diaplikasikan dalam program-program kehutanan, lingkungan, kelautan, maupun proyek pengembangan jalan raya; khususnya di kawasan pesisir.",
+                "inovator": {
+                    "nama": [
+                        "Cecep Kusmana",
+                        "Istomo",
+                        "Tarma Purwanegara"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-020",
+            "details": {
+                "judul": "Rumah Bambu",
+                "deskripsi": "Rumah Bambu adalah rumah pra-pabrikasi yang menggunakan panel sandwich dari bambu sebagai komponen utama. Panel sandwich ini terdiri dari lapisan kayu tebal di bagian luar dan lapisan bambu vertikal di bagian tengah.",
+                "perspektif": "Bersatu kita teguh, bercerai kita runtuh. Menyusun bambu secara vertikal dan mengikatnya dalam susunan tertentu, didapatkan kekuatan yang dibutuhkan untuk konstruksi.",
+                "keunggulan_inovasi": [
+                    "Siap menghadapi kelangkaan kayu",
+                    "Panel sandwich bambu memiliki rasio kekuatan dan kekakuan yang memenuhi syarat sebagai bahan konstruksi",
+                    "Produk panel sandwich memiliki ketahanan dan kekuatan yang tinggi, serta keindahan interior yang alami"
+                ],
+                "potensi_aplikasi": "Bisa diaplikasikan di sektor konstruksi dan bangunan, dapat digunakan untuk dinding, lantai dan plafon",
+                "inovator": {
+                    "nama": [
+                        "Naresworo Nugroho"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-021",
+            "details": {
+                "judul": "Biopestisida Bio-LC4: Alternatif Pemantauan dan Pengendalian Penyakit Tanaman",
+                "deskripsi": "Biopestisida Bio-LC4 merupakan solusi alternatif yang ramah lingkungan untuk mengendalikan berbagai jenis patogen tanaman dan bahkan patogen manusia. Diperoleh dari ekstrak miselium Lentinus isolat LC4, Biopestisida Bio-LC4 memiliki kandungan senyawa aktif kuat yang dapat menghambat perkembangan patogen tanaman dan penyakit manusia.",
+                "perspektif": "Pestisida kimia, meskipun efektif dalam mengendalikan patogen tanaman, seringkali merugikan manusia dalam jangka panjang. Biopestisida Bio-LC4 hadir sebagai alternatif yang lebih aman dan berkelanjutan.",
+                "keunggulan_inovasi": [
+                    "Berspektrum luas untuk bakteri dan patogen tanaman",
+                    "Bahan baku relatif murah dan hijau",
+                    "Mampu mengurangi impor pestisida kimia yang mahal",
+                    "Proses produksi sederhana",
+                    "Pertumbuhan tanaman lebih baik dibandingkan dengan pestisida kimia"
+                ],
+                "potensi_aplikasi": "Perkebunan, pertanian, industri pestisida, dan bidang kesehatan manusia",
+                "inovator": {
+                    "nama": [
+                        "Lisdar I. Sudirman"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-022",
+            "details": {
+                "judul": "Mata Ajaib",
+                "deskripsi": "OptIPB Sensor, Sensor Optik Berbasis Kristal Fotonik untuk Kendali Mutu Larutan secara Waktu-Nyata dan Kontinu, dengan potensi aplikasi dalam industri minuman atau industri lain yang memanfaatkan cairan dalam tahap produksinya.",
+                "perspektif": "Sistem pengukuran akurat secara waktu-nyata, dengan hasil yang dapat dilihat secara langsung, terintegrasi dengan sistem pencatatan digital untuk pemantauan kualitas proses produksi menjadi inovasi yang sangat dibutuhkan oleh industri.",
+                "keunggulan_inovasi": [
+                    "Akurasi tinggi, praktis dan mudah digunakan",
+                    "Kompatibel untuk diintegrasikan dengan perangkat komputer",
+                    "Dapat dikembangkan sesuai dengan kebutuhan pemakai dan tujuan tertentu",
+                    "Ramah lingkungan karena tidak membutuhkan reagen atau zat kimia perantara lainnya",
+                    "Diproduksi di dalam negeri sehingga memudahkan layanan purna jual"
+                ],
+                "potensi_aplikasi": "Mengukur perubahan fisik larutan (warna, kekeruhan, kesadahan, salinitas dan lain-lain) akibat perubahan konsentrasi zat terlarut, dibanding dengan larutan referensi (kalibrator) dan diaplikasikan di industri minuman atau industri lain yang memanfaatkan cairan ditahapan produksinya.",
+                "inovator": {
+                    "nama": [
+                        "Husin Alatas",
+                        "Mamat Rahmat",
+                        "Hasan Mayditia",
+                        "Fabian Rinaldi"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-023",
+            "details": {
+                "judul": "Penjurian Nasi yang Adil",
+                "deskripsi": "Alat tanak nasi laboratoris (Altanalab) digunakan untuk mengukur sifat-sifat tanak dari berbagai jenis beras, termasuk sifat pulen/pera, penyerapan air, dan sifat-sifat lain yang berkaitan dengan pembuatan kue dan snack. Alat ini juga dapat digunakan untuk mengolah beras atau butiran lainnya menjadi nasi untuk uji organoleptik.",
+                "perspektif": "Penelitian mengenai sifat tanak nasi dari berbagai jenis beras dapat digunakan sebagai bahan pertimbangan bagi konsumen dan pemerintah untuk mengembangkan varietas baru yang sesuai dengan preferensi konsumen.",
+                "keunggulan_inovasi": [
+                    "Waktu yang diperlukan untuk menanak relatif singkat (30 menit)",
+                    "Dapat menganalisa 48-60 contoh beras dengan kapasitas masing-masing 50-60 gram",
+                    "Beras yang ditanak dengan Altanalab berasal dari bentuk butiran dan tidak perlu di cuci, sehingga materi pentingnya tidak hilang",
+                    "Hasil tanak nasi Altanalab dapat digunakan untuk menilai kepulenan maupun keperaan dari varietas beras"
+                ],
+                "potensi_aplikasi": "Dapat digunakan oleh lembaga-lembaga penelitian, industri perguruan tinggi atau laboratorium yang bergerak di bidang pertanian dan pangan, baik peneliti perorangan ataupun institusi.",
+                "inovator": {
+                    "nama": [
+                        "H. Musa Hubeis"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-024",
+            "details": {
+                "judul": "Akuarium Multiguna",
+                "deskripsi": "Akuarium multiguna menggunakan sistem resirkulasi air, sehingga penggantian air bisa dilakukan 30 hari sekali. Sistem ini menggunakan satu jenis bak/akuarium saja, dan bisa sebagai bak untuk ikan, filtrasi, tandon atau suplai. Untuk mempertahankan temperatur yang optimum, kolektor surya sebagai penghangat air bisa di gunakan.",
+                "perspektif": "Reduce- Mengurangi penggunaan air baru, Reuse - Menggunakan ulang air yang ada dan Recycle- mendaur ulang air yang kotor, menjadikan budidaya perikanan dengan sirkulasi tertutup lebih aman, praktis, ekonomis dan menjanjikan.",
+                "keunggulan_inovasi": [
+                    "Meningkatkan efisiensi penggunaan air, energi dan tenaga manusia",
+                    "Menurunkan investasi sarana dan prasarana",
+                    "Pengisian akuarium menjadi lebih praktis",
+                    "Level air di setiap akuarium seragam dan mudah disesuaikan",
+                    "Mengatur suhu air dan kadar oksigen mudah dilakukan"
+                ],
+                "potensi_aplikasi": "Industri perikanan, ikan hias, kolam, dan tambak.",
+                "inovator": {
+                    "nama": [
+                        "Budi Indra Setiawan"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-025",
+            "details": {
+                "judul": "Pot Pupuk Praktis",
+                "deskripsi": "Pot Pupuk Praktis adalah inovasi pot untuk pembibitan tanaman hutan yang dibuat dari bahan organik limbah. Inovasi ini bertujuan untuk meningkatkan efisiensi penanaman, mengurangi penggunaan bahan kimia seperti pupuk, dan menjaga lingkungan.",
+                "perspektif": "Penggunaan limbah organik untuk pembuatan pot, menghasilkan pot untuk pembibitan yang praktis, ramah lingkungan dan mengandung unsur hara yang dapat menjadi pupuk untuk bibit tanaman.",
+                "keunggulan_inovasi": [
+                    "Mengusung konsep (Reduce, Reuse, Recycle, Replanting, and Replace)",
+                    "Bahan baku yang digunakan adalah bahan baku alami dan memanfaatkan sampah organik",
+                    "Praktis dan mengandung unsur hara sehingga tidak perlu menambah pupuk saat ditanam di lapangan",
+                    "Waktu tanam lebih efisien karena tidak perlu membuka pot terlebih dahulu dan kerusakan pada akar dapat dihindari"
+                ],
+                "potensi_aplikasi": "Pot berbahan dasar organik mempunyai potensi aplikasi yang sangat luas, tidak hanya untuk pembibitan tanaman kehutanan tapi juga tanaman perkebunan, tanaman pertanian bahkan tanaman hias.",
+                "inovator": {
+                    "nama": [
+                        "Sri Wilarso Budi",
+                        "Lina Karlinasari",
+                        "Andi Sukendro"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-026",
+            "details": {
+                "judul": "Alat Timbangan Biomassa dan Massa Karbon Pohon",
+                "deskripsi": "Pengembangan alat ukur biomassa dan massa karbon pohon dengan dasar model persamaan alometrik, melibatkan analisis data lapangan dan laboratorium.",
+                "perspektif": "Pengembangan alat ukur yang handal dapat membantu industri kehutanan dan memudahkan perdagangan karbon global.",
+                "keunggulan_inovasi": [
+                    "Pengukuran tidak merusak pohon",
+                    "Cara penghitungan yang sederhana, praktis, mudah dan cepat",
+                    "Mudah diterapkan oleh masyarakat",
+                    "Memperkecil resiko kecelakaan dalam tugas pengukuran pohon"
+                ],
+                "potensi_aplikasi": "Dapat dipakai oleh praktisi kehutanan, pengusaha industri kehutanan, bahkan oleh masyarakat luas.",
+                "inovator": {
+                    "nama": [
+                        "Elias",
+                        "Nyoman Jaya Wistara"
+                    ],
+                    "status_paten": "TELAH DI DAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-027",
+            "details": {
+                "judul": "Genteng Komposit dari Limbah Kayu dan Plastik",
+                "deskripsi": "Perumahan sederhana dan murah memerlukan material yang ekonomis namun berkualitas. Genteng komposit dari kayu dan plastik dapat menjadi solusi yang baik. Bahan plastik sisa dan serbuk kayu sisa digunakan untuk menciptakan genteng yang ringan, tahan air, dan mudah dalam pemasangannya. Genteng ini cocok untuk daerah rawan gempa.",
+                "perspektif": "Inovasi peluang besar dalam pengembangannya sebagai produk yang memanfaatkan barang yang tak berguna menjadi berharga.",
+                "keunggulan_inovasi": [
+                    "Ketersediaan bahan baku melimpah",
+                    "Lebih murah, ramah lingkungan, ringan, dan tak berdebu",
+                    "Mudah pembuatan dan pemasangannya"
+                ],
+                "potensi_aplikasi": "Bagi kontraktor perumahan maupun masyarakat luas, karena ringan juga cocok untuk daerah rawan gempa.",
+                "inovator": {
+                    "nama": [
+                        "Agus Sutejo"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-028",
+            "details": {
+                "judul": "Alat Pencuci Rumput Laut dengan Pedal Power",
+                "deskripsi": "Alat pencuci rumput laut yang menggunakan bagian dari sepeda, mudah dipindah-pindahkan dan dapat langsung digunakan di lokasi panen.",
+                "perspektif": "Motivasi untuk melakukan proses pencucian pasca panen rumput laut.",
+                "keunggulan_inovasi": [
+                    "Menekan waktu proses penanganan pasca panen rumput laut",
+                    "Meningkatkan harga rumput laut dan menguntungkan petani budidaya rumput laut",
+                    "Rumput laut yang dicuci lebih bersih, merata, dan konsisten"
+                ],
+                "potensi_aplikasi": "Pengolah/industri rumput laut dan petani rumput laut",
+                "inovator": {
+                    "nama": [
+                        "Indra Jaya",
+                        "Williandi Setiawan",
+                        "Ayi Rachmat",
+                        "Acta Withamana"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-029",
+            "details": {
+                "judul": "Mesin Tanam 3 in 1 Transplanter",
+                "deskripsi": "Mesin tanam pohon (transplanter) yang cocok untuk lahan bergunung-gunung, memberikan kemudahan bagi penanam dan ramah lingkungan.",
+                "perspektif": "Menanam pohon bukan hanya hobi, tetapi juga industri yang memerlukan inovasi, otomasi, dan mekanisasi untuk efisiensi.",
+                "keunggulan_inovasi": [
+                    "Mudah dioperasikan dan portable",
+                    "Rancangan mesin yang sederhana, sehingga bisa diproduksi oleh bengkel UKM",
+                    "Ramah lingkungan karena tidak menggunakan BBM, melainkan aki (baterai)",
+                    "Tingkat kebisingan dan getaran rendah"
+                ],
+                "potensi_aplikasi": "Mesin tanam bisa dimanfaatkan oleh petani, pekebun, program reboisasi, pembuatan biopori, penanggulangan banjir, serta perusahaan-perusahaan hutan tanaman industri dan kegiatan-kegiatan kehutanan lainnya.",
+                "inovator": {
+                    "nama": [
+                        "Unang Ridwan"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-030",
+            "details": {
+                "judul": "Mendulang Emas Sutra",
+                "deskripsi": "Teknik enzimatisasi untuk menguji kualitas benang sutra emas yang lebih ramah lingkungan dan memiliki potensi nilai jual tinggi.",
+                "perspektif": "Inovasi dibilang hebat karena prosesnya lebih sederhana, lebih mudah dilakukan, lebih cepat dan lebih ramah lingkungan, sehingga biayanya lebih rendah, padahal hasilnya lebih bermutu, sehingga nilainya lebih tinggi",
+                "keunggulan_inovasi": [
+                    "Teknologi pengujian mudah dilakukan, waktu singkat, dan biaya relatif murah",
+                    "Kualitas benang sutra yang dihasilkan lebih tinggi dibandingkan dengan yang diuji secara kimiawi",
+                    "Aman dilakukan dan ramah lingkungan"
+                ],
+                "potensi_aplikasi": "Industri Benang Sutra Emas",
+                "inovator": {
+                    "nama": [
+                        "Abdi Gunawan",
+                        "Dedy Duryadi Solihin"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-031",
+            "details": {
+                "judul": "Klon Sengon yang Resisten Terhadap Hama Boktor",
+                "deskripsi": "Pohon sengon merupakan pohon yang mudah dibudidayakan, multiguna dan memasok sekitar 70% kebutuhan kayu di Pulau Jawa. Klona Sengon yang resisten terhadap hama Boktor telah dihasilkan dan diuji.",
+                "perspektif": "Pohon sengon merupakan pohon yang multiguna dan sangat popular di masyarakat. Inovasi yang berhubungan dengan upaya agar pohon ini bebas gangguan atau penyakit, akan memberikan dampak positif yang luas untuk masyarakat dari segi sosial maupun ekonomi.",
+                "keunggulan_inovasi": [
+                    "Klon-klon Sengon yang dihasilkan dari proses seleksi lebih unggul dibandingkan dengan tanaman yang ada saat ini.",
+                    "Sengon menjadi tumbuh dan lebih cepat dan lebih baik.",
+                    "Sengon menjadi resisten terhadap hama boktor.",
+                    "Biaya perawatan dan produksi menjadi lebih hemat."
+                ],
+                "potensi_aplikasi": "Industri berbahan dasar kayu (mebel, alat-alat rumah tangga, pulp, kertas, dan lain-lain).",
+                "inovator": {
+                    "nama": [
+                        "Ulfah J. Siregar",
+                        "Arum S. Wulandari",
+                        "Noor F. Haneda"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-032",
+            "details": {
+                "judul": "Kebal Peluru dengan Tulang Ikan",
+                "deskripsi": "Teknologi kebal peluru menggunakan bahan keramik yang dibuat dari limbah tulang ikan. Teknologi ini memiliki potensi aplikasi di berbagai sektor seperti militer, otomotif, dan sensor.",
+                "perspektif": "Mengembangkan material maju dari sumber yang baru, jika dilakukan secara sekaligus dengan mengembangkan aplikasinya secara lintas sektor, berpotensi menciptakan berbagai karya inovasi yang besar.",
+                "keunggulan_inovasi": [
+                    "Material maju hidroksiapatit diperoleh dari bahan limbah.",
+                    "Hidroksiapatit bisa digunakan sebagai bahan pengisi pada bedah ortopedi.",
+                    "Hidroksiapatit juga adalah bahan baku bio-keramik yang berpotensi menjadi substitusi bahan baku impor.",
+                    "Bahan baku tulang ikan tersedia murah dan melimpah."
+                ],
+                "potensi_aplikasi": "Sebagai bahan baku material maju bio-keramik untuk bidang militer, otomotif, penyaring partikel pada mesin diesel, dan juga menjadi substitusi produk piezoceramic sensor, menggantikan bahan baku impor.",
+                "inovator": {
+                    "nama": [
+                        "Bambang Riyanto",
+                        "Nurrahman"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-033",
+            "details": {
+                "judul": "Kotak Ajaib agar Tahan Lama",
+                "deskripsi": "Proses penyimpanan dan distribusi buah (dalam hal ini pepaya) oleh petani masih dilakukan secara konvensional, dengan pengemas sederhana seperti keranjang atau kardus. Akibatnya, kualitas dan harga pepaya menjadi turun di mata konsumen.",
+                "perspektif": "Berbagai inovasi dikembangkan untuk meningkatkan produktifitas hasil panen, padahal tidak kurang pentingnya untuk menjaga nilai panen tersebut terus tinggi sampai di tangan konsumen. Menjaga nilai panen buah-buahan pada kenyaataan sering lebih bernilai ketimbang meningkatkan hasil panen.",
+                "keunggulan_inovasi": [
+                    "Teknologi tepat guna dengan potensi ekonomi yang tinggi untuk skala nasional maupun internasional.",
+                    "Perkembangan penerapannya tidak terbatas pada buah pepaya, tetapi juga untuk buah klimatik lainnya seperti pisang dan apel.",
+                    "Bahan baku sekam padi yang merupakan limbah pertanian, sehingga sangat mudah untuk diperbanyak ke dalam skala industri dan pengganti styrofoam yang tidak ramah lingkungan."
+                ],
+                "potensi_aplikasi": "Segala jenis usaha atau bisnis yang berhubungan dengan buah-buahan, dan memerlukan proses penanganan yang lebih baik dan distribusi yang lebih luas.",
+                "inovator": {
+                    "nama": [
+                        "Mohammad Wahyu Sautomo",
+                        "Winarso D Widodo",
+                        "Andi Nurzamzam Arman",
+                        "Nazi",
+                        "Eska Wardana",
+                        "Haryati Widyastuti"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-034",
+            "details": {
+                "judul": "Lacak Darah",
+                "deskripsi": "Selamatkan Jiwa\nTrack Blood Save Life\nI-Blood Bank: Mengurangi Resiko Kekurangan Persediaan Darah di Seluruh Cabang PMI\nMenggunakan Sistem Informasi Persediaan Darah\nKurang terintegrasinya informasi dan sulitnya untuk menginformasikan kekurangan stok darah yang menyebabkan proses pasok silang lambat dilaksanakan dan hal ini mengancam jiwa pasien yang membutuhkan darah.",
+                "perspektif": "Informasi dan komunikasi atas ketersediaan dan lokasi stok darah bisa menjadi penentu hidup matinya seseorang. Menjadikannya tersedia, selalu terbarukan dan bisa diakses kapanpun juga bisa menyelamatkan banyak jiwa.",
+                "keunggulan_inovasi": [
+                    "Sistem informasi persediaan darah berbasis web pertama di Indonesia",
+                    "I-Blood Bank juga dikembangkan dalam versi mobile untuk mengakomodasi kebutuhan user yang menggunakan smartphone, tabletdan sebagainya.",
+                    "Efektif dan efisien dalam mencari persediaan darah untuk calon resipien",
+                    "Memfasilitasi penyebarluasan informasi permintaan saat tidak adanya darah dan dibutuhkan donor pengganti."
+                ],
+                "potensi_aplikasi": "Sistem informasi ini telah direncanakan akan diimplementasikan secara nasional oleh Unit Donor Darah Pusat (UDDP) PMI. Sistem ini didesain untuk bank darah, namun konsepnya bisa diterapkan untuk produk maupun sistem informasi publik lainnya.",
+                "inovator": {
+                    "nama": [
+                        "Novaldo Caesar",
+                        "Viani Rahmawati",
+                        "Fiqrotul Ulya",
+                        "Fahri Amirullah",
+                        "Sony Hartono Wijaya"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-035",
+            "details": {
+                "judul": "SPPD: Sistem Peringatan Polusi Dini PEWS: Pollution Early Warning System",
+                "deskripsi": "Sistem Pendeteksi Nirkabel Gas Nitrogen Diokasida (NO) Berbasis Sensor Kristal Fotonik dan Efek Beer Lambert",
+                "perspektif": "Masalah pencemaran udara sudah menjadi demikian komplek dan dinamis, khususnya di perkotaan yang padat penduduknya. Sistem monitoring polusi yang lebih responsif, dengan memanfaatkan teknologi era internet, diperlukan untuk menghindarkan masyarakat dari ancaman kesehatan massal yang serius.",
+                "keunggulan_inovasi": [
+                    "Mampu memantau dan melaporkan tingkat pencemaran NO di udara secara in-situ dan secara real-time",
+                    "Biaya operasional lebih murah dibandingkan metoda saat ini",
+                    "Inovasi telah dipatenkan",
+                    "Dapat dikembangkan ke berbagai aplikasi selain pengendalian lingkungan publik, misalnya untuk di lingkungan industri, atau untuk pemantauan bahaya NO akibat erupsi gunung berapi."
+                ],
+                "potensi_aplikasi": "Dirancang untuk monitoring dan pengendalian pencemaran NO secara umum, termasuk polusi udara di perkotaan, di lingkungan industri yang menghasilkan NO, maupun dalam penanggulangan bencana lingkungan lainnya.",
+                "inovator": {
+                    "nama": [
+                        "Mamat Rahmat",
+                        "Husin Alatas",
+                        "Arief Sabdo Yuwono",
+                        "Kundang Boro Seminar",
+                        "Erus Rustami",
+                        "Muhammad Azis",
+                        "Wenny Maulina",
+                        "Dita Rahayu Budiarti"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-036",
+            "details": {
+                "judul": "Produksi Bibit Kelapa Kopyor True to Type dengan Persilangan Terkontrol dan Peningkatan Produksi Buah Kopyor",
+                "deskripsi": "Inovasi ini memanfaatkan teknik pembenihan true-to-type (murni sesuai induk) kelapa hibrida melalui persilangan terkontrol untuk menghasilkan bibit pohon kelapa kopyor unggul, dengan tingkat probabilitas pembentukan kelapa kopyor yang lebih tinggi. Inovasi ini juga melakukan perbaikan teknik budidaya, melalui penggunaan lebah madu sebagai polinator, teknologi drainase, jarak tanam, pemupukan dan pengendalian hama, untuk menghasilkan lebih banyak kelapa kopyor.",
+                "perspektif": "Mengindustrikan tanaman pangan dapat memberikan dampak ekonomi yang besar bagi masyarakat mengingat tingginya nilai ekonomi, beragamnya manfaat dan besarnya permintaan pasar domestik maupun ekspor akan kelapa kopyor.",
+                "keunggulan_inovasi": [
+                    "Produksi bibit kopyor yang dihasilkan true-to-type",
+                    "Meningkatnya jumlah produksi buah kopyor total dan buah kopyor per tandan",
+                    "Integrasi teknik budidaya kelapa dan budidaya lebah madu dapat meningkatkan persentase buah kopyor jadi per tandan, juga nilai tambah ekonomi dari budidaya lebah madu."
+                ],
+                "potensi_aplikasi": "Industri makanan dan agribisnis baik skala besar, menengah maupun kecil.",
+                "inovator": {
+                    "nama": [
+                        "Sudarsono",
+                        "Hengky Novarianto",
+                        "Sudrajat",
+                        "Meldy LA Hosang",
+                        "Diny Dinarti",
+                        "Megayani Sri Rahayu",
+                        "Ismail Maskromo"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-037",
+            "details": {
+                "judul": "Teknik Pembuatan Trigliserida Rantai Menengah dari Minyak Kelapa/Palm Oil untuk Membuat Pengganti Lecak",
+                "deskripsi": "Teknik pembuatan trigliserida rantai menengah dari minyak kelapa/sawit melalui fraksinasi dan pencampuran dengan stearin minyak sawit untuk memproduksi cocoa butter. Ini juga mencakup pengembangan CBS (Cocoa Butter Substitutes) dari minyak nabati.",
+                "perspektif": "Pada awalnya, harga ditentukan oleh sumber daya alam dan kebutuhan, kemudian oleh teknologi pengolahan sumber alam. Sumber alam yang nilainya rendah kini dibantu oleh teknologi menjadi lebih bernilai, bisa menggantikan sumber lain yang harganya sudah tinggi.",
+                "keunggulan_inovasi": [
+                    "Menggantikan cocoa butter dengan biaya lebih murah",
+                    "Meningkatkan nilai produk dari kelapa/kelapa sawit dan membantu mengurangi ketergantungan industri pada komoditas minyak kelapa dan sawit"
+                ],
+                "potensi_aplikasi": "Inovasi ini dapat ditawarkan sebagai Cocoa Butter Substitutes (CBS) yang lebih murah, serta pengembangan produk makanan dan kosmetik yang semula mahal jika menggunakan lemak coklat.",
+                "inovator": {
+                    "nama": [
+                        "Mursalin"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-038",
+            "details": {
+                "judul": "Selamat Tinggal",
+                "deskripsi": "Getah Kuning, atau Gamboge, merupakan penyebab kualitas buah manggis rendah dan tidak layak ekspor. Inovasi ini menemukan penyebab kemunculan getah kuning pada buah manggis dan cara pengendaliannya.",
+                "perspektif": "Dengan sedikit investasi tambahan, dan sedikit perhatian khusus saat proses pembuahan, kualitas manggis bisa didongkrak, demikian pula harga jual dan daya ekspornya.",
+                "keunggulan_inovasi": [
+                    "Bahan baku mudah didapat dan harganya murah",
+                    "Produk meraih mutu dan nilai komersial yang maksimal",
+                    "Memperbesar potensi ekspor buah manggis"
+                ],
+                "potensi_aplikasi": "Inovasi ini potensial untuk diterapkan di perkebunan manggis baik skala besar, skala perkebunan rakyat, bahkan pohon manggis di pekarangan kita.",
+                "inovator": {
+                    "nama": [
+                        "Roedhy Poerwanto"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-039",
+            "details": {
+                "judul": "Teknologi Reaktivasi Bleaching Earth sebagai Upaya Efisiensi Bahan Penolong dan Penanganan Limbah Industri Refinery Minyak Sawit",
+                "deskripsi": "Teknologi Reaktivasi Bleaching Earth (RBE) merupakan inovasi yang dapat mengubah residu minyak sawit menjadi bahan absorbent yang dapat digunakan kembali hingga lima kali, tanpa mengubah komposisi kimia dan meningkatkan kualitas.",
+                "perspektif": "Bahan penyerap (absorbent) sering kali dianggap sebagai bahan yang hanya bisa dipakai sekali lalu di buang. Bahan yang diserap dalam proses ternyata justru membantu mendaur ulang bahan penyerap untuk selanjutnya dapat dipakai kembali, bahkan berkali-kali.",
+                "keunggulan_inovasi": [
+                    "Reactivated Bleaching Earth (RBE) dapat digunakan kembali sebagai bahan absorbent pada proses bleaching di industri minyak sawit.",
+                    "Proses daur ulang/reaktivasi dapat dilakukan berulang hingga lima kali atau lebih.",
+                    "Tidak mengubah komposisi kimiawi absorbent, bahkan menghasilkan kualitas absorbent yang lebih baik."
+                ],
+                "potensi_aplikasi": "Teknologi RBE dapat dimanfaatkan oleh industri minyak sawit maupun industri minyak nabati lainnya.",
+                "inovator": {
+                    "nama": [
+                        "Ani Suryani",
+                        "Suprihati",
+                        "Gustan Pari",
+                        "Amelia Aswad"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-040",
+            "details": {
+                "judul": "Produksi Pewarna Bubuk Alami Ekstrak Biji Pinang (Areca catechu L.)",
+                "deskripsi": "Produksi pewarna alami dari biji pinang menggunakan teknologi ekstraksi dan spray dryer untuk memenuhi permintaan industri yang meningkat.",
+                "perspektif": "Bijian pinang memiliki potensi sebagai pewarna alami yang aman dan ramah lingkungan, meskipun masih terbatas.",
+                "keunggulan_inovasi": [
+                    "Indonesia sebagai produsen utama biji pinang di dunia",
+                    "Penggunaan bahan yang relatif aman, tidak melibatkan bahan kimia berbahaya",
+                    "Proses produksi yang efisien dengan pengeringan spray dryer",
+                    "Produk pewarna alami instan dan siap guna, praktis, tanpa residu"
+                ],
+                "potensi_aplikasi": "Pewarnaan tekstil, pengawet, obat, kosmetik, dan penyamakan kulit",
+                "inovator": {
+                    "nama": [
+                        "E. Gumbira Sa'id",
+                        "Khaswar Syamsu",
+                        "Yernisa"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-041",
+            "details": {
+                "judul": "Meja Putar\nCanggih yang\nKompetitif",
+                "deskripsi": "Hi-Tech Yet Competitive Turntable Instrumen Spin Coating untuk Membentuk Lapisan Film Tipis",
+                "perspektif": "Di era teknologi yang berkembang cepat, berbagai inovasi dikembangkan untuk meningkatkan kinerja produk ataupun proses agar tidak terlindas persaingan. Pada saat yang sama, inovasi juga di pacu terus untuk mencapai efisiensi dan kesederhanaan operasional demi menekan biaya produksi.",
+                "keunggulan_inovasi": [
+                    "Portable, mudah dipindahkan ke berbagai tempat jika diperlukan.",
+                    "Biaya pembuatan film jauh lebih murah dibanding dengan menggunakan mesin impor, atau harga film di pasaran internasional.",
+                    "Komponen mesin spin coating tersedia dari sumber lokal"
+                ],
+                "potensi_aplikasi": "Aplikasi ini terbuka luas untuk pembuatan lapisan film tipis dari ukuran mikro hingga nanometer yang mengharuskan efisiensi material maupun biaya. Aplikasi industri lapisan tipis merentang luas dari industri semikonduktor elektronik, pelapisan optik, hingga industri sensor.",
+                "inovator": {
+                    "nama": [
+                        "Irzaman",
+                        "Heriyanto Syafutra",
+                        "Husin Alatas",
+                        "Ardian Arif",
+                        "Hanedi Darmasetiawan"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-042",
+            "details": {
+                "judul": "TRIPLEM : Desain Meja Makan Multifungsi untuk Dapur Minimalis",
+                "deskripsi": "Guna menyiasati ruang di rumah-rumah yang berukuran kecil, disain minimalis kini semakin dibutuhkan. Perabotan yang menggabungkan beberapa fungsi sekaligus, kini menjadi pilihan. Salah satu yang memiliki potensi besar untuk dikembangkan adalah perabotan multifungsi di ruang makan yang digabung dengan dapur.",
+                "perspektif": "Dapur minimalis tentu butuh peralatan dan perlengkapan dapur yang ukurannya minimalis juga, namun dengan fasilitas memadai, sehingga dibutuhkan peralatan yang multifungsi dan all in one.",
+                "keunggulan_inovasi": [
+                    "Multifungsi, all in one",
+                    "Tahan air, api dan mudah dibersihkan",
+                    "Lebih praktis dan menghemat tempat",
+                    "Cocok untuk perumahan tipe sederhana",
+                    "Harga ekonomis"
+                ],
+                "potensi_aplikasi": "Desain bisa ditawarkan ke industri perabotan dan dijual sebagai kitchen set multi fungsi sekaligus meja makan.",
+                "inovator": {
+                    "nama": [
+                        "Lilis Heryati",
+                        "Isna Nurlela Nasution",
+                        "Nur Khoiriyah",
+                        "Azka Lathifa Zahratu Azra",
+                        "Megawati Simanjuntak"
+                    ],
+                    "status_paten": "GRANTED"
+                }
+            }
+        },
+        {
+            "node_id": "INV-043",
+            "details": {
+                "judul": "Emas dengan Kitosan",
+                "deskripsi": "Inovasi Recovery Technology Eco-Friendly menggunakan kitosan sebagai pengganti sianida atau karbon dalam pengolahan limbah emas, yang dapat mengikat emas hingga 95% tanpa perlakuan khusus.",
+                "perspektif": "Upaya mendukung konsep bisnis berwawasan lingkungan sangat penting bagi industri pertambangan emas.",
+                "keunggulan_inovasi": [
+                    "Menggunakan bahan baku kitosan yang mudah terurai di alam dan ramah lingkungan",
+                    "Memperbaiki citra industri pertambangan emas dengan konsep eco-friendly waste management system"
+                ],
+                "potensi_aplikasi": "Sistem Manajemen Limbah Industri Pertambangan, khususnya tambang emas.",
+                "inovator": {
+                    "nama": [
+                        "Kurrataa'yun",
+                        "Hana Putri Pratiwi",
+                        "Muhammad Rizki Faisal",
+                        "Rofiqoh Inayati Agustina",
+                        "Rian Triana",
+                        "Anja Meryandini"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-044",
+            "details": {
+                "judul": "Bakteri Sahabat",
+                "deskripsi": "Inokulan Bakteri Non-rhizobia sebagai Pupuk Hayati pada Pembibitan Sengon",
+                "perspektif": "Pemahaman ilmiah tentang faktor-faktor penentu pertumbuhan tanaman, semakin mengarahkan teknologi budidaya tanaman mendekati rahasia alam yang lestari, yaitu bagaimana bakteri secara alami memegang peranan penting dalam pertumbuhan tanaman",
+                "keunggulan_inovasi": [
+                    "Formula bakteri Burkholderia cepacia sebagai inokulan pupuk hayati belum tersedia di pasar",
+                    "Ramah lingkungan, tidak meninggalkan residu kimia",
+                    "Mampu meningkatkan produktivitas tanaman sengon pada lahan marginal"
+                ],
+                "potensi_aplikasi": "Produk inovasi ini dapat diaplikasikan pada pembibitan/penyemaian tanaman dari famili momosa dan legume berkayu.",
+                "inovator": {
+                    "nama": [
+                        "Nisa Rachmania Mubarik",
+                        "Muhammad Afnansyah"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-045",
+            "details": {
+                "judul": "Inovasi Mesin Pencetak Opak Singkong Elektrik",
+                "deskripsi": "Mesin ini dirancang untuk meningkatkan efisiensi dan keamanan dalam proses pencetakan opak singkong. Mesin ini menggunakan pemanas listrik dan conveyor non-stick untuk mencetak opak singkong dengan lebih cepat dan aman.",
+                "perspektif": "Inovasi ini memiliki potensi besar untuk membantu pengrajin opak, meningkatkan produktivitas dan kualitas produk.",
+                "keunggulan_inovasi": [
+                    "Lebih aman dibandingkan metode pencetakan opak manual",
+                    "Produksi opak singkong menjadi semakin cepat dan efisien",
+                    "Dibuat secara ergonomis dan praktis untuk industri rumah tangga"
+                ],
+                "potensi_aplikasi": "Inovasi ini dapat digunakan oleh industri opak, serta industri lain yang menggunakan proses pengolahan serupa seperti krupuk atau emping.",
+                "inovator": {
+                    "nama": [
+                        "Asep Andi",
+                        "Heri Heriyati",
+                        "Fajar Febriyadi",
+                        "Radite P.A.S"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-046",
+            "details": {
+                "judul": "Pelangi Alami",
+                "deskripsi": "Pewarnaan kain mori batik menggunakan bahan alami Gambir, Secang, dan Kunyit untuk mengembangkan industri batik di Indonesia.",
+                "perspektif": "Sumber daya alam Indonesia berlimpah dan belum sepenuhnya digali pemanfaatannya. Bahan-bahan ramuan jamu seperti Gambir, Secang, dan Kunyit dapat diolah menjadi produk bernilai tinggi.",
+                "keunggulan_inovasi": [
+                    "Bahan pewarna alami Gambir, Secang, dan Kunyit tersedia melimpah.",
+                    "Telah melalui pengujian aspek mutu pewarna batik, kecerahan warna, ketajaman warna kain, proses pencelupan dan penjemuran, serta nilai perubahan warna keseluruhan.",
+                    "Bahan pewarna dapat dibuat dengan mesin dan peralatan sederhana.",
+                    "Menghasilkan spektrum warna yang khas dan eksotik."
+                ],
+                "potensi_aplikasi": "Dapat dimanfaatkan pada pengusaha dan pengrajin batik yang menginginkan pewarna alami yang bernuansa khas dan eksotik, namun dengan harga terjangkau.",
+                "inovator": {
+                    "nama": [
+                        "E. Gumbira Sa'id",
+                        "Ono Suparno",
+                        "Hana Rina Pransiska"
+                    ],
+                    "status_paten": "TIDAK INGIN DIPATENKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-047",
+            "details": {
+                "judul": "Pohon Sehat",
+                "deskripsi": "Pohon Sehat adalah teknologi yang dirancang untuk meningkatkan produktivitas penyadapan getah pada pohon pinus. Teknik ini mencakup penggunaan metode bor untuk membuat lubang sadap yang lebih kecil dan mendekatkan diri pada batas minimal yang diperlukan untuk pemulihan luka sadap.",
+                "perspektif": "Mens sana in corpore sano. Prinsip bahwa jiwa yang sehat ada di dalam badan yang sehat, berlaku juga bagi pohon pinus. Dengan meminimalkan pelukaan pada saat penyadapan, produktivitas sadap lebih baik, dan jenuh sadap dapat dihindari.",
+                "keunggulan_inovasi": [
+                    "Bisa mengembalikan produktivitas pohon pinus yang telah jenuh (tidak dapat disadap)",
+                    "Mempertahankan fungsi fisiologi tanaman dengan ukuran bidang sadap yang kecil",
+                    "Menurunkan risiko tumbangan pohon akibat penyadapan"
+                ],
+                "potensi_aplikasi": "Teknologi ini dapat digunakan untuk meningkatkan produktivitas pohon pinus baru dan juga untuk tegakan pinus yang sudah jenuh (usia pohon antara 21-30 tahun) agar dapat kembali produktif hingga usia potong pohon pinus, yaitu sekitar 50 tahun.",
+                "inovator": {
+                    "nama": [
+                        "Gunawan Santosa",
+                        "Muhdin"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-048",
+            "details": {
+                "judul": "Alat Penangkap dan Penyaring Debu Jatuh Udara",
+                "deskripsi": "Inovasi ini berhubungan dengan alat penangkap dan penyaring debu jatuh udara ambien, yaitu debu yang berada dalam udara atmosfer, yang bila debu tersebut jatuh ke bawah menuju permukaan bumi, baik karena gaya beratnya, maupun karena terbawa oleh air hujan. Jumlah debu yang tertahan oleh filter kemudian dapat dipakai untuk menyatakan konsentrasi debu jatuh dalam udara ambien dalam angka nominal dengan satuan berat per luas permukaan per satuan waktu aplikasi di lapangan setelah filtrat ditimbang.",
+                "perspektif": "Dengan menggunakan alat penangkap dan penyaring debu ada beberapa keuntungan baru menyangkut efisiensi, yaitu efisiensi waktu, biaya, dan tenaga. Implikasinya adalah peningkatan mutu keilmuan peneliti dan praktisi Teknik Lingkungan di lapangan, penurunan biaya pemantauan lingkungan dan analisis laboratorium, serta keamanan dan kenyamanan bekerja.",
+                "keunggulan_inovasi": [
+                    "Lebih praktis",
+                    "Lebih ringan",
+                    "Lebih kompak dan terpadu",
+                    "Lebih murah dibandingkan dengan alat sejenis produk impor yang berasal dari negara industri maju"
+                ],
+                "potensi_aplikasi": "Dalam aplikasinya di lapangan alat penangkap dan penyaring debu jatuh udara ambien dipasang di lapangan terbuka yang merupakan lokasi pemantauan kualitas lingkungan. Inovasi ini dapat diterapkan oleh instansi yang berhubungan dengan monitoring kualitas lingkungan.",
+                "inovator": {
+                    "nama": [
+                        "Arief Sabdo Yuwono",
+                        "Samsuar",
+                        "Rofie Fatimah"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-049",
+            "details": {
+                "judul": "Pengembangan Cross Laminated Lumber dari Limbah Batang Kelapa Sawit dalam Rangka Penciptaan Lapangan Kerja Masyarakat Sekitar Perkebunan Sawit di Indonesia",
+                "deskripsi": "Inovasi ini dirancang untuk menghasilkan cross laminated lumber berkualitas tinggi dari limbah batang kelapa sawit, yang memiliki potensi besar untuk mengurangi defisit bahan baku dan meningkatkan pendapatan masyarakat di sekitar perkebunan sawit.",
+                "perspektif": "Produk ini memberikan nilai pada limbah batang kelapa sawit, meningkatkan supply bahan baku industri pengolahan kayu, dan meningkatkan pendapatan masyarakat di sekitar perkebunan sawit.",
+                "keunggulan_inovasi": [
+                    "Meningkatkan kualitas cross laminated lumber dari limbah batang kelapa sawit",
+                    "Meningkatkan supply bahan baku industri pengolahan kayu",
+                    "Meningkatkan pendapatan masyarakat di sekitar perkebunan sawit"
+                ],
+                "potensi_aplikasi": "Industri manufaktur",
+                "inovator": {
+                    "nama": [
+                        "Muh. Yusram Massijaya",
+                        "Yusuf Sudo Hadi"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-050",
+            "details": {
+                "judul": "Pengembangan Metode Geospasial dalam Menyusun Peta Biomassa Lanskap Resolusi Sedang Menggunakan Data Terestris dan Citra Satelit",
+                "deskripsi": "Menyusun Peta Biomassa Lanskap tanpa Tebang Pohon, Volume biomassa di atas permukaan tanah sangat menentukan emisi karbon potensial yang bisa dilepaskan ke atmosfer sebagai akibat deforestari dan degradasi hutan. Metode yang sudah diterapkan dinilai tidak efektif. Inovasi metode yang dilakukan adalah dengan pengembangan metode geospasial dalam menyusun peta biomassa lanskap resolusi sedang menggunakan data terestris dan citra satelit.",
+                "perspektif": "Menyusun Peta Biomassa Lanskap tanpa Tebang Pohon, Volume biomassa di atas permukaan tanah sangat menentukan emisi karbon potensial yang bisa dilepaskan ke atmosfer sebagai akibat deforestari dan degradasi hutan. Hari demi hari interest penelitian yang berkaitan dengan estimasi biomassa semakin meningkat. Sebagian besar penelitian sebelumnya focus pada estimasi biomassa di atas permukaan tanah (BAT, above ground biomass/AGB) menggunakan pendekatan terestrial dan penginderaan jauh optic.",
+                "keunggulan_inovasi": [
+                    "Memprediksi jumlah biomassa di atas tanah menggunakan penginderaan jauh tanpa penebangan pohon.",
+                    "Model spasial untuk memprediksi laju perkembangan deforestasi."
+                ],
+                "potensi_aplikasi": "Pemetaan tata guna lahan, bidang konstruksi, badan koordinasi survei dan pemetaan nasional (bakosurtanal), meteorologi, dan geofisika.",
+                "inovator": {
+                    "nama": [
+                        "I Nengah Surati Jaya"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-051",
+            "details": {
+                "judul": "Rekayasa Mobile Sprayer Machine Untuk Pemeliharaan Tanaman Tebu Lahan Kering",
+                "deskripsi": "Mobile Sprayer Machine digunakan untuk pemeliharaan tanaman tebu di lahan kering. Mesin ini dapat bergerak dan berpindah dengan mudah di antara barisan tanaman tebu, memungkinkan aplikasi nutrisi cair ke bagian tanaman yang sulit dijangkau oleh sprayer konvensional.",
+                "perspektif": "Meningkatkan distribusi nutrisi ke bagian tanaman yang sulit dijangkau oleh sprayer konvensional.",
+                "keunggulan_inovasi": [
+                    "Berfungsi untuk bergerak dan berpindah dengan mudah di area kebun tebu.",
+                    "Dapat mengaplikasikan droplet nutrisi ke stomata tebu, meningkatkan produktivitas tebu dan kadar gula tebu.",
+                    "Menyediakan tekanan pompa yang seragam, sehingga droplet herbisida tersebar merata dan pola sebarannya tidak dipengaruhi oleh angin."
+                ],
+                "potensi_aplikasi": "Berkaitan dengan pabrik-pabrik gula, mobile sprayer machine dapat digunakan untuk mengaplikasikan herbisida, pupuk cair, dan pemicu kemasakan tebu (ripener) untuk mendapatkan produktivitas tebu (TCH) dan rendemen giling tinggi.",
+                "inovator": {
+                    "nama": [
+                        "Gatot Pramuhadi",
+                        "M. Yanuar Jarwadi",
+                        "Agus Sutejo"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-052",
+            "details": {
+                "judul": "Mini Transporter Tipe Crawler",
+                "deskripsi": "Mini Transporter Tipe Crawler merupakan alat pengangkutan atau traktor yang dirancang khusus untuk pengangkutan hasil panen kelapa sawit dan material lainnya. Alat ini memiliki bak yang mampu mengangkut sampai 650 kg dan dirancang dengan sistem trek menggunakan bahan kayu.",
+                "perspektif": "Mini Transporter Tipe Crawler mampu mempermudah pengangkutan sawit di lahan perkebunan yang beragam, mampu mengurangi tenaga kerja dan mempersingkat pekerjaan serta meningkatkan kinerja.",
+                "keunggulan_inovasi": [
+                    "Mesin ini tangguh, irit bbm solar dan dilengkapi dengan starter elektrik.",
+                    "Bongkar muatan mesin ini menggunakan sistem hidrolik, praktis dan meningkatkan kinerja.",
+                    "Trek dari besi baja dengan 'ground pressure' rendah, bertraksi besar dan cocok di segala medan, khususnya di tanah gambut dan mampu mengangkut sampai 650 kg.",
+                    "Kemudi mesin menggunakan sistem tongkat (mudah dikendalikan dan stabil) serta menggunakan sistem transmisi dengan kopling (perpindahan gigi tanpa hentakan)",
+                    "Mampu melaju dengan kecepatan 1,5 - 5 km/jam."
+                ],
+                "potensi_aplikasi": "Mesin mini transporter tipe crawler sangat cocok diaplikasikan pada industri perkebunan kelapa sawit karena kemampuannya yang dapat digunakan disegala medan, terutama di lahan gambut.",
+                "inovator": {
+                    "nama": [
+                        "Desrial",
+                        "Muhamad Yulianto",
+                        "Romadhon Akhir Rudiansyah"
+                    ],
+                    "status_paten": "TELAH DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-053",
+            "details": {
+                "judul": "Sistem Irigasi Sawah Otomatis Bertenaga",
+                "deskripsi": "Sistem Irigasi Sawah Otomatis Bertenaga adalah inovasi yang mengoptimalkan penggunaan air irigasi dengan teknologi modern, terutama melalui penggunaan tenaga surya.",
+                "perspektif": "Modernisasi pertanian diperlukan untuk meningkatkan produktivitas, efisiensi, dan mengatasi kekurangan tenaga kerja di sektor pertanian.",
+                "keunggulan_inovasi": [
+                    "Meningkatkan efisiensi penggunaan air irigasi dengan penggunaan irigasi tertutup",
+                    "Dirancang dengan modul yang sederhana dan user-oriented bagi petani",
+                    "Memanfaatkan tenaga surya sehingga dapat tetap beroperasi di area yang belum terjangkau listrik"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Satyanto Krido Saptomo",
+                        "M. Yanuar J. Purwanto",
+                        "Budi Indra Setiawan",
+                        "Sudirman Sirait",
+                        "Rady Purbakawaca"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-054",
+            "details": {
+                "judul": "Bakteri Pengurai Kitin Kutu Daun Aphis Gossypii",
+                "deskripsi": "Pengendalian kutu daun menggunakan enzim kitinase yang dihasilkan oleh bakteri Bacillus cereus.",
+                "perspektif": "Predator alami harus menjadi bagian dari sistem pengendalian hama karena secara langsung dapat mengedukasi petani untuk menjaga kelestarian lingkungan.",
+                "keunggulan_inovasi": [
+                    "Berkaca dalam kurun waktu tiga jam setelah pengaplikasian",
+                    "Enzim kitinase yang berasal dari B. cereus II.14 mudah diproduksi dalam skala besar dalam kurun waktu 48 jam",
+                    "Bersifat selektif dan hanya menyerang serangga yang memiliki struktur kitin seperti eksoskeleton kutu daun",
+                    "Tidak menimbulkan penumpukan residu kimia pada tanaman"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Nisa Rachmania Mubarik",
+                        "Nicho Nurdebyandaru",
+                        "Taruni Sri Prawasti"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-055",
+            "details": {
+                "judul": "Pepton Ikan HTS Tidak Layak Konsumsi untuk Nutrien Mikroorganism Olah Ikan Rucah Jadi Berkah Turn Fish Refuse into Blessing",
+                "deskripsi": "Bubuk pepton yang dihasilkan teknologi ini merupakan produk lokal yang memiliki kualitas dan komposisi asam amino sebanding dengan produk komersial sejenis di pasaran. Teknologi ini dapat memberikan nilai tambah pada limbah tangkap sampingan ikan dan mengurangi pencemaran lingkungan.",
+                "perspektif": "Pemanfaatan bioteknologi pada ikan rucah meningkatkan nilai barang yang miskin manfaat menjadi substitusi barang impor yang bernilai tinggi.",
+                "keunggulan_inovasi": [
+                    "Menggunakan enzim dengan konsentrasi rendah, sehingga dapat menghemat penggunaan enzim",
+                    "Memerlukan waktu hidrolisis yang singkat (5 jam)",
+                    "Pepton yang dihasilkan memilki kandungan asam amino lebih tinggi dibandingkan dengan produk asam amino komersial"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Tati Nurhayati",
+                        "Bustami Ibrahim",
+                        "Pipih Suptijah",
+                        "Ella Salamah",
+                        "Risa Nurul Fitra",
+                        "Eska Rizky Wiji Astuti"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-056",
+            "details": {
+                "judul": "Teknologi Pengendalian Pemulihan Tebal (Spring Back) pada Kayu Terpadatkan (Densified Wood)",
+                "deskripsi": "Lebih Padat,\nLebih Keras, Lebih\nKuat\nMore Compact,\nHarder, and\nStronger\nKetersedian kayu dengan diameter besar yang semakin sedikit mendorong\npenggunaan kayu berdiameter lebih kecil. Hanya saja, kayu dengan\ndiameter lebih kecil memiliki kualitas dan kerapatan yang lebih rendah,\nsehingga diperlukan penempaan (wood compression) sebelum digunakan.\nSalah satu permasalahan dalam penempaan adalah kecenderungan kayu\nkembali pada ketebalan semula (spring back) karena pengaruh kelembaban\nudara. Inovasi ini menawarkan teknologi impregnasi dengan senyawa\nkitosan untuk mempertahankan ketebalan kayu yang ditempa, sekaligus\nmembuatnya tahan rayap dan ramah lingkungan.",
+                "perspektif": "Inovasi ini dapat memberikan jalan keluar untuk industri kayu tetap berproduksi secara kontinyu tanpa tergantung kayu hutan.",
+                "keunggulan_inovasi": [
+                    "Memungkinkan pemanfaatan kayu berdiameter kecil",
+                    "Mempertahankan kekuatan dan estetika kayu",
+                    "Menggunakan bahan yang ramah lingkungan"
+                ],
+                "potensi_aplikasi": "-",
+                "inovator": {
+                    "nama": [
+                        "Dodi Nandika",
+                        "I Wayan Darmawan",
+                        "Irsan Alipraja",
+                        "Arinana"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-057",
+            "details": {
+                "judul": "M-POK Mesin Pencetak Opak Beras Ketan Otomatis sebagai Solusi Home Industry Pengrajin",
+                "deskripsi": "Inovasi ini menawarkan mesin pencetak opak untuk menggantikan proses pembuatan opak secara manual. Dengan memanfaatkan teknologi yang sederhana, mesin pencetak opak ini mampu memproduksi lebih banyak, terstandar, dan dengan kualitas yang lebih baik.",
+                "perspektif": "Inovasi bagi industri kecil mendorong peningkatan produktivitas, mutu dan standar; yang pada gilirannya dapat meningkatkan kesejahteraan rakyat banyak.",
+                "keunggulan_inovasi": [
+                    "Menghasilkan produk dengan standar bentuk dan ketebalan yang seragam",
+                    "Mampu memproduksi 3.600 opak per jam",
+                    "Dapat membuat berbagai variasi bentuk opak yang berbeda"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Radite P.A. Setiawan",
+                        "Andriyana",
+                        "Diang Sagita",
+                        "Candra Gupta",
+                        "Holil"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-058",
+            "details": {
+                "judul": "Inovasi Pengutip Brondolan Sawit Berbasis Solar Cell Charger sebagai Teknologi Tepat Guna untuk Mengurangi Losses Saat Pemanenan Sawit",
+                "deskripsi": "Inovasi ini adalah mesin pengutip berondolan kelapa sawit untuk menggantikan proses pengutipan manual. Ini meminimalisir berondolan yang tercecer pada saat panen. Mesin pengutip ini dirancang menggunakan listrik yang bersumber dari pembangkit listrik tenaga surya. Selain ramah lingkungan, pengoperasian mesin pengutip tidak tergantung pada sumber listrik dari luar.",
+                "perspektif": "Sebagai penghasil kelapa sawit terbesar di dunia, lahan bagi berbagai inovasi terbuka luas, untuk menciptakan nilai tambah dan meningkatkan daya saing industri sawit.",
+                "keunggulan_inovasi": [
+                    "Menggunakan sistem energi tenaga surya sehingga hemat energi dan ramah lingkungan",
+                    "Baterai yang digunakan memiliki daya 120 watthour dan dapat bertahan selama 4 jam, sementara untuk pengisian hanya memerlukan waktu 2 jam",
+                    "Memiliki kapasitas penampung brondolan hingga 5 kg",
+                    "Dapat bekerja pada keadaan lahan yang tidak rata",
+                    "Memperhatikan aspek ergonomis manusia sehingga dapat mengurangi tingkat kelelahan kerja buruh sawit"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Lenny Saulia",
+                        "Diang Sagita",
+                        "Chandra Gupta",
+                        "Andriyana",
+                        "Ayatulloh Nur Amin",
+                        "Vicky Syaiful Ulum"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-059",
+            "details": {
+                "judul": "Pengembangan Kombinasi Enzim Rekombinan DNA Polimerase PolPfu dan Enzim Reverse Transkriptase MMLV Berbasis Gen Sintetik Untuk Mendukung Ketersediaan Reagensia Bidang Bioteknologi di Indonesia",
+                "deskripsi": "Teknik PCR/RT-PCR merupakan salah satu teknik untuk memperbanyak DNA/RNA dalam biologi molekuler yang telah umum digunakan. Dalam teknik ini, enzim DNA polimerase termofil dan enzim reverse transcriptase adalah regensia pereaksi yang sangat penting. Namun hingga saat ini, regensia tersebut harus didatangkan dari luar negeri dengan harga yang relatif mahal.",
+                "perspektif": "Pengembangan enzim rekombinan yang penting dalam biologi molekuler dalam negeri tidak hanya membantu dalam penyediaan bahan baku yang cepat, namun juga relatif lebih murah.",
+                "keunggulan_inovasi": [
+                    "Memudahkan dilakukannya konstruksi rekayasa genetik dengan memutasi beberapa sekuens nukleotida",
+                    "Menghindari efek dari individual codon usage (codon preferences) yang akan berpengaruh terhadap efektivitas ekspresi gen",
+                    "Gen target bisa dikonstruksi langsung ke dalam vektor ekspresi yang dipilih"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": "Uus Saepuloh",
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-060",
+            "details": {
+                "judul": "Anggrek Phalaenopsis 'Salbellina IPB'",
+                "deskripsi": "Tanaman anggrek bulan (Phalaenopsis) merupakan tanaman hias yang sangat diminati oleh masyarakat. Namun untuk memenuhi permintaan yang tinggi, umumnya petani bunga mengimpor bibit dari luar negeri. Dalam rangka menyediakan varietas baru, dilakukan inovasi untuk menyilangkan dua spesies anggrek bulan yaitu spesies Phal. Salu Spot dan Phal. Bellina. Inovasi ini menghasilkan anggrek bulan hibrida yang masih membawa karakter spesies asli dengan ukuran yang lebih besar dari spesies induk, mempunyai tipe bercorak, tangkai bunga pendek, berbentuk bintang, dan beraroma wangi.",
+                "perspektif": "Perspektif",
+                "keunggulan_inovasi": [
+                    "Tanaman merupakan persilangan dari spesies asli Indonesia",
+                    "Hasil anggrek persilangan dapat lebih mudah beradaptasi di lingkungan tropis",
+                    "Tanaman dapat berbunga hingga dua kali dalam setahun",
+                    "Daya tahan bunga dapat mencapai 3 bulan"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Dewi Sukma",
+                        "Sudarsono",
+                        "Sandra A. Aziz",
+                        "Saleh Wijaya",
+                        "Himmiyatul Baqiyah"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-061",
+            "details": {
+                "judul": "Nano Spray Serum Anti Aging Berbasis Kolagen Teripang Gamma",
+                "deskripsi": "Efek penuaan seperti keriput, hilangnya kekenyalan kulit, dan bintik hitam akan dirasakan oleh setiap orang. Untuk itu diciptakan sebuah inovasi yaitu serum nano kolagen yang bermanfaat sebagai anti aging bersumber dari teripang gamma.",
+                "perspektif": "Dengan teknologi sederhana, banyak potensi bahan alam yang rusak saat pasca panen diselamatkan menjadi bahan bernilai tinggi.",
+                "keunggulan_inovasi": [
+                    "Produk larut pada air dengan PH Netral",
+                    "Memiliki kemurnian optimal dan aman",
+                    "Menggunakan teknologi nano sehingga menunjukkan hasil lebih cepat",
+                    "Kolagen berasal dari teripang sehingga halal"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": "Pipih Suptijah",
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-062",
+            "details": {
+                "judul": "Potensi Kacang Hias Arachis pintoi Karp. dan Karp. sebagai Biomulsa pada Budidaya Pertanian di Lahan Kering",
+                "deskripsi": "Potensi Kacang Hias Arachis pintoi Karp. dan Karp. sebagai Biomulsa pada Budidaya Pertanian di Lahan Kering",
+                "perspektif": "Ketika kita jeli mengamati ekosistem alam, kita akan menemukan berbagai gagasan inovatif. Yang perlu kita lakukan adalah lihat, amati dan jadikan inovasi.",
+                "keunggulan_inovasi": [
+                    "Multiguna: sebagai tanaman hias, hijauan pakan ternak dan penutup tanah (biomulsa)",
+                    "Toleran terhadap kekeringan, naungan, kemasaman dan kondisi kesuburan tanah rendah",
+                    "Mudah diperbanyak secara vegetatif dengan stek batang",
+                    "Tahan hama, penyakit dan meningkatkan kesuburan tanah",
+                    "Menekan gulma sekitar 60%, Menekan laju erosi tanah lebih dari 70%"
+                ],
+                "potensi_aplikasi": "-",
+                "inovator": {
+                    "nama": [
+                        "M. Achmad Chozin",
+                        "Dwi Guntoro",
+                        "Ade Sumiahadi"
+                    ],
+                    "status_paten": "BELUM DIDAFTARKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-063",
+            "details": {
+                "judul": "SIDEVOBER Sistem Pendeteksi Volume dan Perkiraan Berat Tandan Buah Segar Kelapa Sawit",
+                "deskripsi": "SIDEVOBER adalah sistem pendeteksian volume dan berat tandan buah segar (TBS) kelapa sawit menggunakan teknologi pengolahan citra berbasis depth pixel. Sistem ini memberikan perkiraan sementara volume dan berat TBS dari citra.",
+                "perspektif": "Teknologi pengolahan citra digital yang semakin cepat dan murah akan mengambil alih berbagai alat ukur konvensional.",
+                "keunggulan_inovasi": [
+                    "Lengkap dengan kamera Kinect yang dapat mengukur berat dan volume dengan tingkat keakuratan tinggi, cepat, dan real-time, serta hemat biaya.",
+                    "Praktis dalam penggunaannya.",
+                    "Proses penimbangan dapat dilakukan hanya dengan mengambil gambar tanpa bongkar-muat TBS kelapa sawit dari keranjang timbang."
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Radite Praeko Agus Setiawan",
+                        "Giska Setya Priaji",
+                        "Andriyana",
+                        "Alrayan"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-064",
+            "details": {
+                "judul": "Aplikasi Spatio-Temporal Data Mining pada Data Titik Panas sebagai Indikator Kebakaran Lahan Gambut",
+                "deskripsi": "Penanggulangan kebakaran lahan dengan metode konvensional belum dapat menyelesaikan masalah ini. Inovasi ini merupakan aplikasi untuk mendeteksi titik panas sebagai indikator kebakaran hutan, yang ditampilkan dalam bentuk tabel dan peta berbasis web.",
+                "perspektif": "Kebakaran lahan gambut adalah akibat ulah manusia, bukan bencana alam. Oleh karena itu merupakan tanggung jawab manusia, dengan ilmu pengetahuan dan teknologi, untuk menemukan solusinya.",
+                "keunggulan_inovasi": [
+                    "Aplikasi berbasis web sehingga dapat digunakan pada berbagai platform",
+                    "Menunjang pengambilan keputusan oleh aparat terkait dan masyarakat untuk menanggulangi kebakaran",
+                    "Dilengkapi dengan algoritma untuk interpretasi data dan pengambilan keputusan"
+                ],
+                "potensi_aplikasi": "-",
+                "inovator": {
+                    "nama": [
+                        "Imas Sukaesih Sitanggang",
+                        "Lailan Syaufina",
+                        "Husnul Khotimah",
+                        "Apriliani Wulandari",
+                        "Aizul Fadin"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-065",
+            "details": {
+                "judul": "Minuman Sehat Sari Pulp Kakao yang Mengandung Antioksidan Tinggi Limbah Cokelat Berkhasiat",
+                "deskripsi": "Inovasi ini mengolah limbah pulp kakao menjadi minuman yang sehat, enak, dan kaya antioksidan.",
+                "perspektif": "Limbah adalah cerminan ketidak-mampuan kita memanfaatkan ilmu pengetahuan dan teknologi untuk menciptakan nilai tambah. Dunia masa depan tidak mengenal 'kata' limbah.",
+                "keunggulan_inovasi": [
+                    "Kandungan mikroba pengotor yang minimum",
+                    "Kandungan antioksidan dan senyawa fenol yang cukup tinggi",
+                    "Potensi limbah pulp kakao yang berlimpah"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Khaswar Syamsu",
+                        "Ana Makrifatul Zanah"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-066",
+            "details": {
+                "judul": "Pemanfaatan Gliserol Ester sebagai Anti Foam tanpa Busa",
+                "deskripsi": "Timbulnya busa dalam proses pengolahan dapat menghambat proses untuk berlangsung secara normal. Penggunaan defoamer hanya dapat menurunkan stabilitas busa, sedangkan anti-foam selain menurunkan stabilitas juga menurunkan tendensi pembentukan foaming sejak awal.",
+                "perspektif": "Pemanfaatan produk samping dari suatu industri besar sebagai bahan baku untuk memudahkan proses industri lain adalah ciri khas dari inovasi yang berkelanjutan.",
+                "keunggulan_inovasi": [
+                    "Bahan baku minyak sawit yang ramah lingkungan dan pasokannya berlimpah",
+                    "Lebih efektif menurunkan volume busa dibanding anti-foam berbasis silicon oil",
+                    "Proses pembuatan anti-foam yang mudah",
+                    "Memberikan nilai tambah bagi industri minyak sawit"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Erliza Hambali",
+                        "Mira Rivai",
+                        "Ari Imam Sutanto",
+                        "Rista Fitria"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-067",
+            "details": {
+                "judul": "JAGAU (Jakarta Anti Galau) Solusi Alternatif untuk Mewujudkan Kali Bersih dan Atasi Banjir",
+                "deskripsi": "Inovasi mesin ‘Jagau’ menawarkan solusi alternatif untuk membersihkan sampah dan menjaga kebersihan sungai secara keberlanjutan, dengan komponen utama berupa kerangka tabung, baling-baling bersudu empat, dan conveyor yang diintegrasikan dengan suatu sistem kendali otomatik.",
+                "perspektif": "Jakarta sebagai kota metropolitan sudah saatnya memanfaatkan sarana dan prasarana otomatis dan berteknologi, menggantikan pekerjaan-pekerjaan yang bersifat padat karya.",
+                "keunggulan_inovasi": [
+                    "Inovasi telah disesuaikan dengan karakteristik sungai-sungai di Jakarta",
+                    "Pada saat kelebihan beban, sistem kendali otomatis dapat dialihkan menjadi manual",
+                    "Mengurangi aktivitas manual dan kontak langsung dengan sampah yang tidak baik bagi kesehatan"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "M. Prayoga Sunandar",
+                        "M. Joffy Mahardika",
+                        "Ahmad Safrizal",
+                        "Abdul Ghofur"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-068",
+            "details": {
+                "judul": "Biosensor Glukosa Berbasis Glukosa Oksidase dari Aspergillus Niger IPB CC.08.610 Teramobil Glutaraldehid pada Pasta Karbon Termodifikasi Nanoserat Polianilin Peka Tapi Tenaga Sensitive Yet Energizing",
+                "deskripsi": "Inovasi ini mengintegrasikan enzim glukosa oksidase yang telah diamobilisasi pada elektroda pasta karbon yang dimodifikasi dengan nanoserat polianilin yang konduktif, sehingga mampu mentransfer elektron yang dihasilkan dari reaksi redoks.",
+                "perspektif": "Inovasi akan membuat terobosan-terobosan besar di masa mendatang, berkat ”perkawinan silang” berbagai teknologi: teknologi bio, teknologi nano, dan teknologi elektronik / digital.",
+                "keunggulan_inovasi": [
+                    "Enzim glukosa oksidase diproduksi di dalam negeri, dari isolat lokal IPB Aspergillus niger IPB CC.08.610",
+                    "Enzim yang digunakan tidak harus murni (cukup tahap fraksinasi amonium sulfat)",
+                    "Elektroda yang dikembangkan berbasis partikel nano, sehingga mengurangi jumlah pemakaian enzim",
+                    "Elektroda yang dihasilkan memiliki sensitivitas yang tinggi"
+                ],
+                "potensi_aplikasi": "Inovator belum menyebutkan potensi aplikasi spesifik selain untuk biosensor glukosa.",
+                "inovator": {
+                    "nama": [
+                        "Laksmi Ambarsari",
+                        "Akhiruddin Maddu",
+                        "Titi Rohmayanti"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-069",
+            "details": {
+                "judul": "OCEANTAG: Rancang Bangun Electronic Fish Tag Berbasis Mikrokontroler dengan Sensor Radio Frequency Identification (RFID) untuk Identifikasi Populasi Organisme Laut",
+                "deskripsi": "OCEANTAG adalah teknologi tagging satwa laut berbasis RFID yang dirancang untuk memantau pergerakan satwa laut secara nirkabel. Teknologi ini memiliki ukuran kecil dan portabel, serta telah teruji akurasinya.",
+                "perspektif": "Konservasi satwa laut di Indonesia perlu dilakukan bukan karena alasan tekanan internasional, tetapi untuk kelestarian satwa laut dan demi menjamin keberlanjutan industri perikanan.",
+                "keunggulan_inovasi": [
+                    "Teknologi OCEANTAG mudah untuk diaplikasikan",
+                    "Akurasinya telah teruji"
+                ],
+                "potensi_aplikasi": "- Inovator: Hawis Madduppa, Totok Hestirianoto Diwa Perkasa, Beginer Subhan, Dondy Arafat, Prakas Santoso dan Nurlita Putri Anggraini\n- Status Paten: DALAM PROSES PENGAJUAN",
+                "inovator": {
+                    "nama": [
+                        "Hawis Madduppa",
+                        "Totok Hestirianoto Diwa Perkasa",
+                        "Beginer Subhan",
+                        "Dondy Arafat",
+                        "Prakas Santoso",
+                        "Nurlita Putri Anggraini"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-070",
+            "details": {
+                "judul": "Lalat Ganjur Orseolia javanica Kieffer &amp; van Leeuwen-Reijvaan (Diptera: Cecidomyiidae) Sebagai Agen Pengenali Hayati Alang-alang",
+                "deskripsi": "Alang-alang (Imperata cylindrical) merupakan gulma invasif yang dapat mengancam produktivitas pertanian Indonesia. Nyamuk ganjur alang-alang Orseolia Javanica digunakan untuk menekan populasi alang-alang di lapangan.",
+                "perspektif": "Pengendalian alang-alang non-kimiawi, ramah lingkungan",
+                "keunggulan_inovasi": [
+                    "Pengendalian alang-alang non-kimiawi, ramah lingkungan",
+                    "Agen pengendali hayati, nyamuk ganjur dapat berkembang sendiri secara terus-menerus di lapang, ekonomis dan efisien",
+                    "Mudah dilakukan, cukup menyebar nyamuk dewasa yang siap bertelur di areal alang-alang"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Purnama Hidayat Ikbal Aviansyah",
+                        "Bayu Lintang Gumilang",
+                        "Arini"
+                    ],
+                    "status_paten": "TIDAK INGIN DIPATENKAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-071",
+            "details": {
+                "judul": "PORL Pomade Rumput Laut Sargassum sp. Diperkaya Tropical Herbs untuk Rambut Sehat dan Stylish",
+                "deskripsi": "Inovasi ini menawarkan produk ‘PORL’ (Pomade Rumput Laut) yang berbahan dasar rumput laut. Bahan rumput laut digunakan sebagai stabilizer, pembentuk gel, dan sumber vitamin. Minyak kemiri dan minyak jarak ditambahkan sebagai antibakteri, penyeimbang pH kulit kepala, dan membantu produksi minyak alami rambut.",
+                "perspektif": "Kekayaan laut Indonesia adalah yang terkaya di dunia. Di sisi lain, pemahaman akan kekayaan dan pemanfaatan sumberdaya laut kita, barangkali adalah yang paling miskin.",
+                "keunggulan_inovasi": [
+                    "Memiliki kandungan vitamin dan antioksidan yang tinggi",
+                    "Mencegah penurunan kadar pigmen dalam rambut",
+                    "Proses pembuatan menggunakan teknologi yang sederhana"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Nurjanah",
+                        "Taufik Hidayat",
+                        "Ryan Fachrozan",
+                        "Akhmad Sudadi"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-072",
+            "details": {
+                "judul": "Refraksi Batok dan Enrichment Bungkil Inti Sawit untuk Menghasilkan Bahan Baku Industri Pakan Berkualitas Tinggi",
+                "deskripsi": "Bungkil inti sawit mengandung berbagai nutrisi penting untuk pakan ternak, namun kandungan batok mengandung serat kasar yang tidak dapat dicerna oleh ternak. Inovasi ini memisahkan batok dengan metode penyaringan dan pemisahan udara, kemudian dilakukan proses pelleting dan crumbling untuk menghasilkan bungkil inti sawit dengan kadar serat kasar lebih rendah, kadar protein kasar lebih tinggi, dan kecepatan pelepasan nutrisi yang sesuai dengan fisiologi pencernaan ternak.",
+                "perspektif": "Limbah adalah akibat dari ketidakmampuan ilmu dan teknologi untuk secara ekonomis memisahkan bagian yang berguna untuk hal tertentu dengan bagian yang berguna untuk hal lain.",
+                "keunggulan_inovasi": [
+                    "Bahan baku tersedia melimpah",
+                    "Proses pengolahan relatif sederhana",
+                    "Dapat digunakan untuk ternak unggas dan ruminansia",
+                    "Harganya berpotensi kompetitif dibanding bungkil kedelai dan bungkil jagung"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Nahrowi",
+                        "Zaenal Abidin",
+                        "Agus Wiyono",
+                        "Anuraga Jayanegara"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-073",
+            "details": {
+                "judul": "Pengembangan Foaming Agent dari Minyak Sawit sebagai Racun Api untuk Pemadam Kebakaran",
+                "deskripsi": "Pengembangan foaming agent ramah lingkungan dari minyak sawit untuk pemadam kebakaran lahan besar.",
+                "perspektif": "Ekosistem alam memiliki kemampuan menjaga kelestariannya sendiri, jika tidak diganggu oleh ulah manusia. Inovasi teknologi bertujuan untuk mengembalikan kemampuan alami ini.",
+                "keunggulan_inovasi": [
+                    "Bahan baku tersedia berlimpah",
+                    "Mudah terdegradasi secara alami, sehingga aman lingkungan",
+                    "Memiliki stabilitas busa yang baik untuk pemadam kebakaran tipe A"
+                ],
+                "potensi_aplikasi": "",
+                "inovator": {
+                    "nama": [
+                        "Mira Rivai",
+                        "Erliza Hambali",
+                        "Ani Suryani",
+                        "Rista Fitria",
+                        "Shaeful Firmansyah"
+                    ],
+                    "status_paten": "DALAM PROSES PENGAJUAN"
+                }
+            }
+        },
+        {
+            "node_id": "INV-074",
+            "details": {
+                "judul": "Instrumentasi Pengukur Panjang dan Berat Ikan",
+                "deskripsi": "Inovasi ini bertujuan mengantarkan nelayan dan perikanan Indonesia menyesuaikan diri dengan era Industry 4.0, dengan fokus pada penyediaan data panjang-berat ikan hasil tangkapan secara real-time dan akurat.",
+                "perspektif": "Ketersediaan data ikan tangkapan nelayan yang real-time dan akurat akan menciptakan nilai dan manfaat bukan hanya bagi pemerintah, tapi juga bagi seluruh stakeholders di sepanjang rantai pasok ikan, dari nelayan sampai ke konsumen akhir.",
+                "keunggulan_inovasi": [
+                    "Menyediakan data panjang dan berat setiap ikan sekaligus",
+                    "Meningkatkan partisipasi nelayan dan pembudidaya ikan dalam pencatatan data perikanan",
+                    "Sistem terhubung dengan server database sehingga hasil pengukuran dapat digunakan bersama untuk berbagai keperluan"
+                ],
+                "potensi_aplikasi": "Inovasi ini dapat dimanfaatkan baik oleh pelaku perikanan tangkap maupun perikanan budidaya, untuk keperluan statistik pemerintah, serta untuk kegiatan riset dan penelitian di bidang perikanan",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Indra Jaya",
+                        "Muhammad Iqbal"
+                    ],
+                    "status_paten": "Dalam Proses Pengajuan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-075",
+            "details": {
+                "judul": "Aplikasi Bahan Baku Bubur Rumput Laut Sargassum sp. dan Eucheuma cottonii dalam Pembuatan Kosmetik Lip Balm",
+                "deskripsi": "Pelembab bibir (lip balm) perlu mengandung antioksidan dan bahan aktif penghambat aktivitas radikal bebas, serta bisa mengatasi permasalahan bibir lainnya. Inovasi ini menawarkan formula/ komposisi rumput laut Sargassum sp. dan E. cottonii optimal untuk sediaan pelembab bibir.",
+                "perspektif": "Wanita akan sangat berhati-hati mengulaskan bahan apapun di bibir mereka, sehingga produk untuk bibir yang dibuat dari bahan alami pasti lebih merebut hati.",
+                "keunggulan_inovasi": [
+                    "Pembuatan kosmetika dari bahan alami langsung merupakan inovasi yang kompetitif",
+                    "karena kosmetika lain pada umumnya menggunakan sediaan ekstrak bahan aktif",
+                    "Penggunaan sediaan ekstrak meningkatkan biaya produksi, serta risiko tersisanya residu pelarut kimia dari sediaan ekstraksi",
+                    "Dapat mengklaim sebagai produk yang lebih aman, ramah lingkungan, zero waste, dan dijamin sepenuhnya alami",
+                    "Belum banyak produk yang dapat mengklaim sebagai produk kosmetika yang dibuat sepenuhnya dari kekayaan laut",
+                    "Meningkatkan nilai tambah rumput laut yang selama ini belum termanfaatkan optimal"
+                ],
+                "potensi_aplikasi": "Inovasi ini dapat terus dikembangkan untuk membuat produk-produk alami lainnya, untuk menciptakan nilai tambah bagi kekayaan rumput laut Indonesia yang saat ini belum termanfaatkan. Prosesnya yang relatif sederhana, langsung, ramah lingkungan, dan zero-waste merupakan modal yang kompetitif di masa depan.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Nurjanah, MS",
+                        "Dr. Asadatun Abdullah, S.Pi M.Si",
+                        "Ryan Fachrozan, S.Pi"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-076",
+            "details": {
+                "judul": "Track Termites from Its Sound",
+                "deskripsi": "Pengembangan Sistem Deteksi Rayap Tanah Berbasis Sinyal Akustik",
+                "perspektif": "Pengujian atau deteksi yang bersifat 'non-destructive' selain tidak mengorbankan target, biasanya memberikan keuntungan lain yaitu lebih cepat, lebih murah, dan lebih mudah dibanding pengujian yang bersifat 'destructive'. Keunggulan Inovasi Non-destruktif, tidak perlu merusak kayu untuk pemasangan sensor akustik. Dirancang untuk mendeteksi rayap terganas di Indonesia, yakni Coptotermes curvignathus. Mampu mendeteksi sinyal rayap pada dimensi kayu (cm): 20 (panjang) x 9.5 (lebar) x 2.5 (dalam). Potensi Aplikasi Dapat ditawarkan bagi perusahaan pengendali hama (pest control), atau bagi masyarakat umum yang ingin melakukan pemeriksaan pada bangunan mereka sendiri. Aparat pemerintah juga dapat memanfaatkan inovasi ini, antara lain untuk pemeriksaan pohon perkotaan dari serangan rayap, atau menjadi bagian dari inspeksi keamanan bangunan.",
+                "keunggulan_inovasi": [
+                    "Non-destruktif, tidak perlu merusak kayu untuk pemasangan sensor akustik.",
+                    "Dirancang untuk mendeteksi rayap terganas di Indonesia, yakni Coptotermes curvignathus.",
+                    "Mampu mendeteksi sinyal rayap pada dimensi kayu (cm): 20 (panjang) x 9.5 (lebar) x 2.5 (dalam)."
+                ],
+                "potensi_aplikasi": "Dapat ditawarkan bagi perusahaan pengendali hama (pest control), atau bagi masyarakat umum yang ingin melakukan pemeriksaan pada bangunan mereka sendiri. Aparat pemerintah juga dapat memanfaatkan inovasi ini, antara lain untuk pemeriksaan pohon perkotaan dari serangan rayap, atau menjadi bagian dari inspeksi keamanan bangunan.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Kudang Boro Seminar",
+                        "Prof. Dr. Ir. Dodi Nandika",
+                        "Dr. Akhiruddin Maddu",
+                        "Muhammad Achirul Nanda"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-077",
+            "details": {
+                "judul": "Limbah BBM Sumber BBM Pemanfaatan Gliserol Hasil Samping Industri Biodiesel sebagai Aditif pada Water Based Mud dan Oil Based Mud",
+                "deskripsi": "Penelitian ini membahas pemanfaatan gliserol hasil samping industri biodiesel sebagai aditif dalam Water Based Mud (WBM) dan Oil Based Mud (OBM). Gliserol tersebut digunakan untuk meningkatkan efisiensi dan keamanan dalam proses pemboran.",
+                "perspektif": "Langkah konkrit pengembangan energi terbarukan untuk menggantikan energi minyak bumi yang tak terbarukan. Bahkan produk sampingan dari pengolahan energi terbarukan yang ramah lingkungan, dapat menggantikan bahan tak ramah lingkungan untuk mencari sumber energi tak terbarukan.",
+                "keunggulan_inovasi": [
+                    "Aplikasi gliserol dalam formulasi WBM dan gliserol ester untuk OBM menciptakan nilai tambah bagi pemanfaatan produk samping/ limbah proses pembuatan biodiesel.",
+                    "Gliserol maupun Gliserol Ester memiliki nilai pour point rendah dan flash point tinggi, sehingga tahan dipakai pada sumur dengan suhu reservoir yang tinggi, selain juga tahan dipakai pada pemboran sumur di laut dalam dengan suhu rendah, karena tidak mudah membeku.",
+                    "WBM dan OBM yang dihasilkan bersifat ramah lingkungan biodegradable, dan bersumber dari bahan terbarukan."
+                ],
+                "potensi_aplikasi": "Gliserol murni dan gliserol ester yang dihasilkan membuka peluang baru yaitu perluasan aplikasi gliserol minyak sawit bagi industri perminyakan, khususnya sebagai aditif pada drilling fluids untuk pemboran sumur minyak pengembangan maupun workover sumur-sumur tua. Potensi ekonomi pemanfaatan gliserol dan gliserol ester sebagai bahan formulasi WBM dan OBM cukup potensial, mengingat komponen biaya WBM dan OBM berkisar 40-60% dari keseluruhan biaya pemboran.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Erliza Hambali"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-078",
+            "details": {
+                "judul": "Krim Lulur dari Ekstrak Rumput Laut Cokelat Sargassum sp. dan Karagenan",
+                "deskripsi": "Krim lulur ini mengandung ekstrak Sargassum sp. dan karagenan yang berfungsi menanggalkan sel kulit mati, daki, dan memberikan pelindungan bagi kulit dari radikal bebas.",
+                "perspektif": "Sel kulit mati sekalipun 'dekil' berfungsi sebagai protective shield alami bagi kulit kita. Jika dibuang, kulit baru kita memerlukan pelindung sementara dan harus segera!",
+                "keunggulan_inovasi": [
+                    "Penggunaan bahan alami dari laut, yang teruji aman untuk aplikasi kosmetik pembersih dan pelindung kulit.",
+                    "Memanfaatkan rumput laut Sargassum sp. yang nilai ekonominya rendah.",
+                    "Proses pembuatan sederhana, sehingga mudah dilakukan oleh industri skala UKM.",
+                    "Aktivitas antioksidan tinggi (IC50 = 50,60 ppm).",
+                    "Nilai pH berada dalam batas aman sesuai standar SNI."
+                ],
+                "potensi_aplikasi": "Inovasi ini dikembangkan khusus untuk pembuatan krim lulur, agar dapat memanfaatkan bahan alami dari laut yang melimpah di Indonesia, dan dapat dilakukan oleh pelaku industri kecil / industri rumah tangga.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Sri Purwaningsih, M.Si.",
+                        "Dr. Azrifitria, MSi",
+                        "Rima Nur Fadhilah, S.Pi",
+                        "Eka Deskawati, M.Si"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-079",
+            "details": {
+                "judul": "Inovasi Penyimpanan Isolat Mikroalgae Berfilamen Spirogyra sp.",
+                "deskripsi": "Penyimpanan isolat mikroalgae berfilamen Spirogyra sp. dilakukan dalam media agar (padat) dengan dua metode: gores (surface) dan pencampuran (mix). Hasilnya, mikroalgae bisa bertahan hingga satu bulan, lebih lama dibandingkan dengan penyimpanan dalam media cair. Selain itu, biaya produksi dan penyimpanan lebih rendah karena kebutuhan media dan ruang penyimpanan jauh lebih sedikit.",
+                "perspektif": "Mutu dan keberhasilan suatu penelitian ditentukan oleh kompetensi para peneliti serta sarana dan manajemen pendukung.",
+                "keunggulan_inovasi": [
+                    "Teknik penyimpanan isolat mikroalgae berfilamen baru",
+                    "Masa penyimpanan lebih lama (hingga 1 bulan)",
+                    "Memungkinkan penyediaan stok siap untuk industri",
+                    "Volume penyimpanan lebih ringkas, kebutuhan media lebih sedikit"
+                ],
+                "potensi_aplikasi": "Sebagai penyedia stok siap isolat murni untuk penelitian dan sebagai bahan baku industri.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Ir. Niken T. M. Pratiwi, M.Si",
+                        "Inna Puspa Ayu, S.Pi, M.Si",
+                        "Tri Apriadi, S.Pi, M.Si"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-080",
+            "details": {
+                "judul": "Sistem Pemantau Elektronik Kapal-kapal Ikan Tradisional untuk Meningkatkan Efisiensi Nelayan di Era Industri 4.0",
+                "deskripsi": "Inovasi ini bertujuan membantu nelayan tradisional untuk tetap relevan di era Industri 4.0 melalui sistem pemantau elektronik yang mudah diterapkan pada kapal ikan. Sistem ini mencakup aplikasi mobile fishER yang dapat diinstal di kapal dan memungkinkan pencatatan dan rekaman operasi penangkapan ikan.",
+                "perspektif": "Di era global saat ini, efektivitas dan daya saing menjadi kunci utama dalam pekerjaan.",
+                "keunggulan_inovasi": [
+                    "Kompak, handal, kedap air, dan dapat digunakan dalam jangka waktu yang lama tanpa perlu di-charging, serta harga yang kompetitif.",
+                    "Data dapat diakses melalui website dan aplikasi pelaporan yang sesuai kebutuhan."
+                ],
+                "potensi_aplikasi": "Dapat diaplikasikan pada semua kapal-kapal ikan tradisional di seluruh Indonesia dan negara-negara lain, serta mendukung berbagai riset kelautan dan perhubungan laut.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Indra Jaya",
+                        "Muhammad Iqbal, MSi"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-081",
+            "details": {
+                "judul": "Measurement of Waters Transparency",
+                "deskripsi": "Measurement of waters transparency is important to assess the fertility of a waters both inland waters such as lakes, dams, ponds and rivers, as well as sea waters. In this innovation, an instrument for measuring water brightness based on the conventional Secchi Disk device has been developed to provide more objective results and not operator-dependent.",
+                "perspektif": "Kecerahan perairan seringkali menunjukkan seberapa baik perlakuan kita pada ekosistem perairan. Pemantauan hal ini bisa memberikan peringatan dini, untuk menghindarkan berbagai musibah perairan.",
+                "keunggulan_inovasi": [
+                    "Menggunakan sensor elektronik untuk menghasilkan pengukuran yang objektif, tidak operator dependent.",
+                    "Memberikan hasil yang lebih lengkap dan terinci, termasuk pengukuran profil intensitas cahaya dan warna (RGB) terhadap kedalaman perairan.",
+                    "Dapat digunakan di perairan dangkal maupun perairan dalam.",
+                    "Data yang diperoleh dapat disimpan secara elektronik, dan dapat dilihat secara langsung di layar display."
+                ],
+                "potensi_aplikasi": "Inovasi ini dapat diaplikasikan di semua kegiatan perairan; baik tambak, sungai, danau; maupun di perairan laut seperti budidaya keramba ikan, budidaya rumput laut, serta berbagai kegiatan oseanografi.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Indra Jaya, MSc",
+                        "Muhammad Iqbal, MSi",
+                        "Agist Saeful Anggara"
+                    ],
+                    "status_paten": "Dalam Proses Pengajuan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-082",
+            "details": {
+                "judul": "Produksi Xanthan Gum Skala Pengembangan Menggunakan Limbah Padat Tapioka",
+                "deskripsi": "Penelitian ini membahas produksi xanthan gum menggunakan limbah padat tapioka sebagai sumber karbon, yang dapat mengurangi pencemaran lingkungan dan meningkatkan efisiensi penggunaan sumber daya.",
+                "perspektif": "Pemahaman tentang aplikasi ilmu pengetahuan dan teknologi, serta kepekaan pada permasalahan lingkungan sekitar adalah modal dasar berinovasi.",
+                "keunggulan_inovasi": [
+                    "Memanfaatkan limbah padat tapioka sebagai sumber karbon",
+                    "Limbah padat tapioka tersedia melimpah dan harganya murah",
+                    "Produk xanthan gum berkualitas baik dan spektrumnya tidak berbeda dengan produk komersial"
+                ],
+                "potensi_aplikasi": "Inovasi ini berpotensi diaplikasikan untuk memproduksi xanthan gum dengan mutu dan harga yang kompetitif, dengan memanfaatkan sumber karbon dari limbah yang murah.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Ir. Akhmad Endang Zainal Hasan, M.Si",
+                        "Dr. Aton Yulianto, Meng; Siwi Putri Andini"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-083",
+            "details": {
+                "judul": "Rumah Idaman",
+                "deskripsi": "Para Lele",
+                "perspektif": "Peningkatan Kuantias dan Kualitas Benih Ikan Lele melalui Penerapan Teknologi Microbial Environment Conditioning for Aquaculture (MECA)",
+                "keunggulan_inovasi": [
+                    "Meningkatkan kualitas induk, kualitas benih, dan kualitas produksi ikan lele sekaligus.",
+                    "Menghasilkan pakan alami tambahan bagi ikan lele, sehingga pakan yang diberikan dapat lebih efisien.",
+                    "Penggunaan air untuk kegiatan budidaya juga akan lebih efisien dan kualitas air tetap optimal.",
+                    "Meminimalkan pencemaran lingkungan, serta tidak membahayakan organisme lainnya yang berada di sekitar lingkungan budidaya."
+                ],
+                "potensi_aplikasi": "Inovasi ini berpotensi untuk diaplikasikan pada budidaya ikan lele berskala masyarakat ataupun skala industri, dengan memanfaatkan limbah yang ada seperti molases atau limbah tepung lainnya, menunjukkan potensi untuk memelihara kelestarian lingkungan.",
+                "inovator": {
+                    "nama": [
+                        "Dr. Julie Ekasari (Ketua Tim)",
+                        "Prof. Dr. Muhammad Zairin Jr.",
+                        "Prof. Dr. Muhammad Agus Suprayudi",
+                        "Prof. Dr. Widanarni"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-084",
+            "details": {
+                "judul": "Saung Iklim",
+                "deskripsi": "Inovasi ‘Saung Iklim’ menyediakan wadah untuk pengembangan kapasitas petani (padi) melalui media interaktif berbasis web, khususnya untuk meningkatkan literasi tentang perubahan iklim, dan membuat prediksi waktu tanam yang tepat dengan mempertimbangkan informasi tanah, golongan air, dan manajemen pertanian sesuai tipe iklim di wilayahnya.",
+                "perspektif": "Pola pikir petani perlu diubah, dari sepenuhnya hanya menggantungkan nasib pada kehendak alam, menuju keyakinan bahwa mereka dapat memanfaatkan dan bekerjasama dengan alam.",
+                "keunggulan_inovasi": [
+                    "Secara terpadu menyediakan bagi petani (padi) berbagai layanan informasi terkait dengan perubahan iklim",
+                    "Menyediakan informasi dan paket-paket pembelajaran/pelatihan tentang cara mengantisipasi dampak iklim terhadap tanaman (padi)",
+                    "Menyediakan perangkat keras interaktif yang dapat digunakan di lapangan (saung), untuk menganalisis informasi iklim dan memprediksi produksi tanaman (padi) pada berbagai kondisi iklim."
+                ],
+                "potensi_aplikasi": "Saung Iklim berpotensi dijadikan sebagai model dan aplikasi pengembangan kapasitas petani berbasis internet dalam lingkup nasional. Saung iklim juga dapat dimanfaatkan untuk membantu pemerintah dalam mengalokasikan bantuan sarana produksi pertanian (saprotan) secara tepat sasaran.",
+                "inovator": {
+                    "nama": [
+                        "Perdinan Yon Sugiarto",
+                        "I Putu Santikayasa",
+                        "Tri Atmaja",
+                        "Ryco Farysca",
+                        "Adi Rizki",
+                        "Abdul Basit",
+                        "Enggar Yustisi Arini",
+                        "Rendy Prihansyah"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-085",
+            "details": {
+                "judul": "Indikator Pendeteksi Kematangan Buah",
+                "deskripsi": "Inovasi ini mengembangkan label pendeteksi kematangan buah berdasarkan indikator warna. Seiring dengan pematangan buah, terjadi penambahan produksi gas etilen yang memicu perubahan warna label.",
+                "perspektif": "Teknologi dibutuhkan manusia untuk menterjemahkan sinyal kematangan yang sebenarnya dikirimkan buah; namun lebih dimengerti oleh hewan ketimbang oleh manusia. Dengan teknologi ini, menduga-duga, kecewa dan marah-marah, semoga akan tinggal jadi sejarah.",
+                "keunggulan_inovasi": [
+                    "Produk buah-buahan dapat berkomunikasi dengan konsumen melalui label di kemasan",
+                    "Tingkat dan perubahan kematangan buah dapat dinformasikan secara otomatis, cepat, dan tepat",
+                    "Sangat membantu memilih buah, khususnya bagi buah-buah yang tidak berubah warna kulit dalam proses pematangannya",
+                    "Buah pada rak pajang terhindar dari kerusakan akibat konsumen yang memencet, mengupas atau melukai buah untuk mengetahui kematangan buah"
+                ],
+                "potensi_aplikasi": "Aplikasi komersial indikator kematangan buah masih sangat prospektif dengan merebaknya fresh market atau toko buah-buahan",
+                "inovator": {
+                    "nama": [
+                        "Dr. Endang Warsiki, S.TP., MSi, Prof. Dr. Ir. Khaswar Syamsu, MSc",
+                        "Dr. Chananpat Rardniyom",
+                        "Dr. Ade Iskandar",
+                        "Vivin Jenika Putri",
+                        "Alberto Berchmans Perangin-angin"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-086",
+            "details": {
+                "judul": "Star-Trex Alat Transportasi yang Aman dan Mandiri Energi untuk Penambangan Belerang di Gunung Ijen",
+                "deskripsi": "Inovasi Star-Trex adalah gerobak pengangkut yang dikembangkan untuk membantu petambang belerang mengangkut belerang dari atas gunung secara lebih efektif, lebih aman, dan mandiri energi. Motor listrik DC 500 W 24 V dipakai saat gerobak naik menuju puncak gunung dalam keadaan kosong. Saat turun dengan sekitar 230-250 kilogram hasil tambang, dua buah motor beralih berfungsi menjadi generator yang menghasilkan listrik yang disimpan di dalam dua unit aki.",
+                "perspektif": "Untuk mengendalikan gravitasi kebanyakan teknologi memakai energi, padahal dengan aplikasi yang tepat energi gravitasi justru dapat menghasilkan energi.",
+                "keunggulan_inovasi": [
+                    "Kapasitas angkut jauh lebih besar dibandingkan dengan menggunakan tenaga manusia.",
+                    "Waktu untuk mendaki ke atas gunung lebih singkat.",
+                    "Mandiri energi: energi yang dipakai untuk mendaki menggunakan energi yang dihasilkan saat turun.",
+                    "Transportasi yang lebih aman dan tidak melelahkan"
+                ],
+                "potensi_aplikasi": "Inovasi Star-Trex berpotensi dimanfaatkan oleh para petambang sulfur (Gunung Ijen), dan bisa dikembangkan sebagai transportasi bagi wisatawan yang aman, yang saat ini dirasakan sebagai hambatan bagi promosi wisata Gunung Ijen",
+                "inovator": {
+                    "nama": [
+                        "Achmad Widodo Sanhaji"
+                    ],
+                    "status_paten": "Belum Didaftarkan"
+                }
+            }
+        },
+        {
+            "node_id": "INV-087",
+            "details": {
+                "judul": "Pengembangan Teknologi Tepat Guna dalam Pemberdayaan Masyarakat Nelayan",
+                "deskripsi": "Inovasi ini mengembangkan atraktor cumi-cumi, habitat buatan tempat cumi-cumi berkumpul, menempelkan telurnya, serta sebagai daerah asuhan; untuk meningkatkan daya dukung sumberdaya cumi-cumi.",
+                "perspektif": "Salah satu upaya penting dalam menjaga kelestarian sumber daya laut kita, adalah dengan memperbaiki habitat atau bahkan membuat habitat buatan bagi satwa laut tersebut untuk berkumpul, bertelur dan mengasuh anak-anaknya.",
+                "keunggulan_inovasi": [
+                    "Atraktor dibuat dari bahan-bahan yang mudah didapat oleh masyarakat nelayan.",
+                    "Berhasil menggalang berpartisipasi langsung nelayan untuk meningkatkan kehidupan mereka sendiri, serta membangun kesadaran untuk melestarikan lingkungan.",
+                    "Atraktor telah teruji meningkatkan hasil tangkapan cumi-cumi oleh nelayan."
+                ],
+                "potensi_aplikasi": "Inovasi ini telah diaplikasikan di 30 kabupaten perairan Indonesia, dan dapat diadaptasikan ke kawasan-kawasan perairan laut lainnya, dimana cumi-cumi merupakan sumber penghasilan penting bagi nelayan. Inovasi ini juga dapat mendukung konsep perikanan berkelanjutan, serta mendukung pengembangan kawasan pantai secara terpadu.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Mulyono, M.Sc",
+                        "Dr. Roza Yusfiandayani",
+                        "Dr. Sulaeman Martasuganda"
+                    ],
+                    "status_paten": "Terdaftar (S00201911443)"
+                }
+            }
+        },
+        {
+            "node_id": "INV-088",
+            "details": {
+                "judul": "Metode Penanaman Pohon dengan Teknik Tanam Rumpang untuk Rehabilitasi Hutan Alam Terdegradasi",
+                "deskripsi": "Inovasi ini menawarkan metoda alternatif bagi rehabilitasi hutan terdegradasi, dengan sistem tebang habis permudaan buatan (THPB) dan menghasilkan hutan monokultur. Metoda rehabilitasi dengan teknik rumpang hanya membuka 40% hutan alam terdegradasi dalam bentuk rumpang yang tersebar dengan luasan kecil-kecil, sehingga dapat menjaga keseimbangan ekologi dari aspek kerusakan lingkungan, aspek biodiversitas, maupun aspek sosial-budaya masyarakat di sekitar hutan.",
+                "perspektif": "Upaya untuk memulihkan hutan alam yang terdegradasi jika dilakukan secara massal atau ‘asal-asalan’ seringkali justru menjerumuskan kita pada kerusakan alam yang lebih parah.",
+                "keunggulan_inovasi": [
+                    "Dirancang berdasarkan proses alami permudaan hutan dan suksesi ekosistem hutan alam.",
+                    "Menjaga keanekaragaman hayati hutan alam, mengurangi erosi tanah, serta menjaga kesuburan tanah dan kondisi iklim mikro yang optimal untuk pertumbuhan pohon.",
+                    "Menghemat biaya pembersihan rumpang dan sekaligus berfungsi untuk menahan menjalarnya gulma dan liana pada jalur tanam."
+                ],
+                "potensi_aplikasi": "Inovasi metoda rumpang dapat diaplikasikan untuk memulihkan ekosistem hutan alam yang telah terdegradasi; baik oleh pemerintah, lembaga swadaya masyarakat, ataupun pemegang konsesi hutan, yang peduli pada upaya menjaga kelestarian ekosistem hutan alam.",
+                "inovator": {
+                    "nama": [
+                        "Prof. Dr. Ir. Elias"
+                    ],
+                    "status_paten": "Telah Terdaftar"
+                }
+            }
+        }
+    ]
+}
