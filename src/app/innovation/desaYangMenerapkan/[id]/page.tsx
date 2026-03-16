@@ -24,17 +24,18 @@ import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { auth, firestore } from "src/firebase/clientApp";
 import { useAuthState } from "react-firebase-hooks/auth";
-import {
-    doc,
-    getDoc,
-    collection,
-    getDocs,
-    orderBy,
-    query,
-    startAfter,
-    limit,
-    where,
-} from "firebase/firestore";
+// import {
+//     doc,
+//     getDoc,
+//     collection,
+//     getDocs,
+//     orderBy,
+//     query,
+//     startAfter,
+//     limit,
+//     where,
+// } from "firebase/firestore";
+import { getAppliedVillages } from "Services/innovationServices";
 
 const SkeletonCard = () => (
     <Box borderWidth="1px" borderRadius="lg" padding="4" mb={4} bg="white">
@@ -69,79 +70,38 @@ const DesaYangMenerapkan: React.FC = () => {
     const [hasMore, setHasMore] = useState(true);
     const itemsPerPage = 5;
 
-    const fetchData = async (isNextPage = false) => {
+    const fetchData = async () => {
         setLoading(true);
-
-        type Inovasi = {
-            id: string;
-            namaDesa: string;
-            deskripsi?: string;
-            status: string;
-            inovasiId: string;
-            desaId: string;
-            kabupatenKota: string;
-        };
-
         try {
-            let q;
-            if (isNextPage && lastVisible) {
-                q = query(
-                    collection(firestore, "claimInnovations"),
-                    where("inovasiId", "==", inovasiId),
-                    orderBy("createdAt", "desc"),
-                    startAfter(lastVisible),
-                    limit(itemsPerPage)
-                );
-            } else {
-                q = query(
-                    collection(firestore, "claimInnovations"),
-                    where("inovasiId", "==", inovasiId),
-                    orderBy("createdAt", "desc"),
-                    limit(itemsPerPage)
-                );
-            }
+            const res: any = await getAppliedVillages(inovasiId);
+            const villages = res.villages || [];
+            
+            // Map MongoDB result to match UI expectation
+            const formattedData = villages.map((v: any) => ({
+                id: v.id,
+                namaDesa: v.namaDesa,
+                desaId: v.userId || v.id,
+                kabupatenKota: v.kabupaten || v.kabupatenKota,
+                status: "Terverifikasi", // Yang muncul di sini diasumsikan sudah terverifikasi di inovasi tersebut
+                createdAt: { seconds: Date.now() / 1000 } // Dummy timestamp if not available in this view
+            }));
 
-            const docs = await getDocs(q);
-            setLastVisible(docs.docs[docs.docs.length - 1]);
-            setHasMore(docs.docs.length === itemsPerPage);
-
-            const newData: Inovasi[] = docs.docs.map(
-                (doc) => ({ id: doc.id, ...doc.data() } as Inovasi)
-            );
-
-            // Ambil data kabupatenKota dari dokumen village
-            const enrichedData = await Promise.all(
-                newData.map(async (item) => {
-                    try {
-                        const villageRef = doc(firestore, "villages", item.desaId);
-                        const villageSnap = await getDoc(villageRef);
-                        const villageData = villageSnap.exists()
-                            ? villageSnap.data()
-                            : {};
-                        return {
-                            ...item,
-                            kabupatenKota:
-                                villageData.lokasi?.kabupatenKota?.label ||
-                                "Tidak diketahui",
-                        };
-                    } catch (e) {
-                        console.error("Error fetching village data:", e);
-                        return {
-                            ...item,
-                            kabupatenKota: "Gagal mengambil data",
-                        };
-                    }
-                })
-            );
-
-            setData(enrichedData);
-            setFilteredData(enrichedData);
+            setData(formattedData);
+            setFilteredData(formattedData);
+            setHasMore(false); // New API currently doesn't support pagination, but we can implement it later if needed
         } catch (err) {
             console.error("Error fetching data:", err);
         } finally {
             setLoading(false);
         }
     };
+
+    /*
+    const fetchDataFirebase = async (isNextPage = false) => {
+        setLoading(true);
+        // ... logic firebase
+    };
+    */
 
     useEffect(() => {
         if (user && inovasiId) fetchData();
@@ -164,14 +124,14 @@ const DesaYangMenerapkan: React.FC = () => {
     const handleNextPage = async () => {
         if (hasMore) {
             setCurrentPage((prev) => prev + 1);
-            await fetchData(true);
+            await fetchData();
         }
     };
 
     const handlePrevPage = async () => {
         if (currentPage > 1) {
             setCurrentPage((prev) => prev - 1);
-            await fetchData(false);
+            await fetchData();
         }
     };
 

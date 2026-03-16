@@ -20,18 +20,20 @@ import {
     useToast,
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar";
-import {
-    addDoc,
-    collection,
-    doc,
-    getDoc,
-    increment,
-    serverTimestamp,
-    updateDoc,
-    getDocs,
-    where,
-    query
-} from "firebase/firestore";
+// import {
+//     addDoc,
+//     collection,
+//     doc,
+//     getDoc,
+//     increment,
+//     serverTimestamp,
+//     updateDoc,
+//     getDocs,
+//     where,
+//     query
+// } from "firebase/firestore";
+import { getDoc, doc, updateDoc, increment } from "firebase/firestore"; // Masih dipakai untuk temp vendor check kl perlu
+import { addInnovation, updateInnovation } from "Services/innovationServices";
 import {
     deleteObject,
     getDownloadURL,
@@ -354,118 +356,76 @@ const AddInnovation: React.FC = () => {
         }
 
         try {
+            // ==========================================
+            // LOGIC MIGRASI: SEMUA KE MONGODB API
+            // ==========================================
+            const innovationPayload: any = {
+                statusInovasi: selectedStatus,
+                namaInovasi: name,
+                kategori: selectedCategory?.label,
+                tahunDibuat: year,
+                inputDesaMenerapkan: villages,
+                deskripsi: description,
+                hargaMinimal: priceMin,
+                hargaMaksimal: priceMax,
+                manfaat: benefit.map((item) => ({
+                    judul: item.benefit,
+                    deskripsi: item.description,
+                })),
+                infrastruktur: finalRequirements,
+                modelBisnis: modelBisnis,
+                innovatorId: user.uid,
+                namaInnovator: innovatorData.namaInovator,
+                innovatorImgURL: innovatorData?.logo || null,
+            };
+
+            let newId = innovationId;
+
             if (status === "Ditolak") {
-                const docRef = doc(firestore, "innovations", innovationId);
-                const docSnap = await getDoc(docRef);
-                const existingData = docSnap.data();
-                const existingImages = existingData?.images || [];
-
-                const imagesToDelete = existingImages.filter(
-                    (img: string) => !selectedFiles.includes(img)
-                );
-
-                if (imagesToDelete) {
-                    for (const image of imagesToDelete) {
-                        const imageRef = ref(storage, image);
-                        await deleteObject(imageRef).catch((error) => {
-                            console.error("Error deleting image:", error);
-                        });
-                    }
-                }
-
-                const imagesRef = ref(storage, `innovations/${innovationId}/images`);
-                const downloadURLs: string[] = [];
-
-                for (let i = 0; i < selectedFiles.length; i++) {
-                    const file = selectedFiles[i];
-
-                    if (file.startsWith("data:")) {
-                        const imageRef = ref(imagesRef, `${i}`);
-                        await uploadString(imageRef, file, "data_url").then(async () => {
-                            const downloadURL = await getDownloadURL(imageRef);
-                            downloadURLs.push(downloadURL);
-                            console.log("Updated new img: ", downloadURL);
-                        });
-                    } else {
-                        downloadURLs.push(file);
-                        console.log("Existing image URL added:", file);
-                    }
-                }
-
-                await updateDoc(docRef, {
-                    images: downloadURLs,
-                });
-
-                await updateDoc(docRef, {
-                    statusInovasi: selectedStatus,
-                    namaInovasi: name,
-                    kategori: selectedCategory?.label,
-                    tahunDibuat: year,
-                    modelBisnis: selectedModels,
-                    deskripsi: description,
-                    hargaMinimal: priceMin,
-                    hargaMaksimal: priceMax,
-                    manfaat: benefit.map((item) => ({
-                        judul: item.benefit,
-                        deskripsi: item.description,
-                    })),
-                    infrastruktur: finalRequirements,
-                    editedAt: serverTimestamp(),
-                    status: "Menunggu",
-                });
-                setStatus("Menunggu");
-                setAlertStatus("info");
+                // UPDATE / AJUKAN ULANG
+                await updateInnovation(innovationId, innovationPayload);
+                console.log("Inovasi diupdate (Mongo): ", innovationId);
             } else {
-                const innovationDocRef = await addDoc(
-                    collection(firestore, "innovations"),
-                    {
-                        statusInovasi: selectedStatus,
-                        namaInovasi: name,
-                        kategori: selectedCategory?.label,
-                        tahunDibuat: year,
-                        inputDesaMenerapkan: villages,
-                        deskripsi: description,
-                        hargaMinimal: priceMin,
-                        hargaMaksimal: priceMax,
-                        manfaat: benefit.map((item) => ({
-                            judul: item.benefit,
-                            deskripsi: item.description,
-                        })),
-                        infrastruktur: finalRequirements,
-                        modelBisnis: modelBisnis,
-                        createdAt: serverTimestamp(),
-                        editedAt: serverTimestamp(),
-                        status: "Menunggu",
-                        catatanAdmin: null,
-                        innovatorId: user.uid,
-                        namaInnovator: innovatorData.namaInovator,
-                        innovatorImgURL: innovatorData?.logo || null,
-                    }
-                );
-
-                setInnovationId(innovationDocRef.id);
-                console.log("ID inovasi: ", innovationDocRef.id);
-
-                if (selectedFiles.length > 0) {
-                    const imageUrls = await uploadFiles(selectedFiles, innovationDocRef.id);
-                    await updateDoc(innovationDocRef, {
-                        images: imageUrls,
-                    });
-                    console.log("Images uploaded", imageUrls);
-                }
+                // ADD BARU
+                const res = await addInnovation(innovationPayload);
+                newId = res.innovationId;
+                setInnovationId(newId);
+                console.log("Inovasi ditambahkan (Mongo): ", newId);
             }
 
+            // Handle Image Upload (Masih via Firebase Storage)
+            if (selectedFiles.length > 0) {
+                const imageUrls = await uploadFiles(selectedFiles, newId);
+                // Update record di MongoDB dengan image URLs yang baru
+                await updateInnovation(newId, { images: imageUrls });
+                console.log("Images uploaded & Mongo updated", imageUrls);
+            }
+
+            setStatus("Menunggu");
+            setAlertStatus("info");
+            setIsFormLocked(true);
+
+            /*
+            // FIREBASE LAMA (COMMENTED)
+            if (status === "Ditolak") {
+                // ... logic firebase update
+            } else {
+                // ... logic firebase add
+            }
+            */
             toast({
-                title:
-                    "Pengajuan sedang diverifikasi admin. Pengajuan ini akan disimpan pada halaman Pengajuan inovasi.",
+                title: "Pengajuan sedang diverifikasi admin.",
                 status: "success",
                 duration: 3000,
                 isClosable: true,
                 position: "top",
             });
+            setIsEditable(false);
+            setLoading(false);
+            setAlertStatus("info");
         } catch (error) {
-            console.log("error", error);
-            setError("Gagal menambahkan inovasi");
+            console.error("Submission error:", error);
+            setError("Gagal menyimpan data inovasi ke database.");
             setLoading(false);
             toast({
                 title: "Gagal menambahkan inovasi",
@@ -475,9 +435,6 @@ const AddInnovation: React.FC = () => {
                 isClosable: true,
             });
         }
-        setIsEditable(false);
-        setLoading(false);
-        setAlertStatus("info");
     };
 
     useEffect(() => {

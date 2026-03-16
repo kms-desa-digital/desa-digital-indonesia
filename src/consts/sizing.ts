@@ -7,9 +7,9 @@ export type MarginProps = {
   mb?: number
 }
 
-export const marginStyle = (props: MarginProps) => {
+export const marginStyle = <T extends object>(props: T & MarginProps) => {
   let styles = ''
-  const { mx, my, ml, mr, mt, mb } = props
+  const { mx, my, ml, mr, mt, mb } = props as MarginProps
 
   if (mx !== undefined) {
     styles += `
@@ -61,9 +61,9 @@ export type PaddingProps = {
   pb?: number
 }
 
-export const paddingStyle = (props: PaddingProps) => {
+export const paddingStyle = <T extends object>(props: T & PaddingProps) => {
   let styles = ''
-  const { px, py, pl, pr, pt, pb } = props
+  const { px, py, pl, pr, pt, pb } = props as PaddingProps
 
   if (px !== undefined) {
     styles += `

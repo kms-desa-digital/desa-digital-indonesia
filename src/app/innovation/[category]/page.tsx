@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { paths } from "Consts/path";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
 import CardInnovation from "Components/card/innovation";
@@ -11,8 +10,9 @@ import {
     DetailContainer,
     Container as CategoryContainer
 } from "../_styles";
-import { getDocuments, getDocumentById } from "src/firebase/inovationTable";
-import { DocumentData } from "firebase/firestore";
+// import { getDocuments, getDocumentById } from "src/firebase/inovationTable";
+// import { DocumentData } from "firebase/firestore";
+import { getInnovationByCategory } from "Services/innovationServices";
 
 import { Image } from "@chakra-ui/react";
 import { useTranslations } from "next-intl";
@@ -41,76 +41,47 @@ export default function InnovationCategoryPage() {
         }
     };
 
-    const [data, setData] = useState<DocumentData[]>([]);
-    const [innovators, setInnovators] = useState<Record<string, DocumentData>>(
-        {}
-    );
-    const [loadingInnovators, setLoadingInnovators] = useState<boolean>(true);
+    const [data, setData] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getDocuments("innovations")
-            .then((detailInovasi) => {
-                setData(detailInovasi);
+        setLoading(true);
+        getInnovationByCategory(category)
+            .then((res: any) => {
+                setData(res.innovations || []);
             })
             .catch((error) => {
                 console.error("Error fetching innovation details:", error);
+            })
+            .finally(() => {
+                setLoading(false);
             });
-    }, []);
-
-    useEffect(() => {
-        const fetchInnovators = async () => {
-            setLoadingInnovators(true);
-            const innovatorData: Record<string, DocumentData> = {};
-            for (const item of data) {
-                if (item.innovatorId) {
-                    const detailInnovator = await getDocumentById(
-                        "innovators",
-                        item.innovatorId
-                    );
-                    innovatorData[item.innovatorId] = detailInnovator;
-                }
-            }
-            setInnovators(innovatorData);
-            setLoadingInnovators(false);
-        };
-
-        if (data.length > 0) {
-            fetchInnovators();
-        }
-    }, [data]);
-
-    const innovationByCategory = data.filter(
-        (item) => item.kategori === category
-    );
+    }, [category]);
 
     return (
         <Container page>
             <TopBar title={getTranslatedCategory(category)} onBack={() => router.back()} />
             <CategoryContainer>
-                {innovationByCategory.length === 0 ? (
+                {loading ? (
+                   <DetailContainer>
+                       {[1,2,3].map(i => (
+                           <Skeleton key={i} height={150} borderRadius={8} style={{ marginBottom: 12 }} />
+                       ))}
+                   </DetailContainer>
+                ) : data.length === 0 ? (
                     <p>{t("notFound")}</p>
                 ) : (
                     <DetailContainer>
-                        {innovationByCategory.map((item, idx) => (
+                        {data.map((item, idx) => (
                             <CardInnovation
                                 key={idx}
                                 {...item}
                                 innovatorLogo={
-                                    loadingInnovators ? (
-                                        <Skeleton circle width={50} height={50} />
-                                    ) : (
-                                        innovators[item.innovatorId]?.logo || (
-                                            <Image src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />
-                                        )
+                                    item.innovatorImgURL || (
+                                         <Image src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />
                                     )
                                 }
-                                innovatorName={
-                                    loadingInnovators ? (
-                                        <Skeleton width={100} />
-                                    ) : (
-                                        innovators[item.innovatorId]?.namaInovator || item.namaInnovator
-                                    )
-                                }
+                                innovatorName={item.namaInnovator}
                                 onClick={() =>
                                     router.push(`/innovation/detail/${item.id}`)
                                 }
