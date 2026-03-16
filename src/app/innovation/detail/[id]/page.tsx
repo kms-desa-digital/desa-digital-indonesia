@@ -43,7 +43,8 @@ import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
 import { useUser } from "src/contexts/UserContext";
 import { auth, firestore } from "src/firebase/clientApp";
-import { getDocumentById } from "src/firebase/inovationTable";
+// import { getDocumentById } from "src/firebase/inovationTable";
+import { getInnovationById, getAppliedVillages } from "Services/innovationServices";
 import {
     ActionContainer,
     BenefitContainer,
@@ -70,19 +71,17 @@ function DetailInnovation() {
     const [isExpanded, setIsExpanded] = useState(false);
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [user] = useAuthState(auth);
-    const [data, setData] = useState<DocumentData>({});
-    const [innovatorData, setDatainnovator] = useState<DocumentData>({});
-    const [village, setVillage] = useState<DocumentData[]>([]);
+    const [data, setData] = useState<any>({});
+    const [innovatorData, setDatainnovator] = useState<any>({});
+    const [village, setVillage] = useState<any[]>([]);
     const [admin, setAdmin] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    const villageSafe = Array.isArray(village) ? (village as Village[]) : [];
-    const villageMap = new Map(
-        villageSafe.map((v) => [v.namaDesa, { userId: v.userId, logo: v.logo }])
-    );
+    const villageSafe = Array.isArray(village) ? village : [];
+    const villageMap = new Map();
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -99,9 +98,9 @@ function DetailInnovation() {
 
     useEffect(() => {
         if (id) {
-            getDocumentById("innovations", id)
-                .then((detailInovasi) => {
-                    setData(detailInovasi);
+            getInnovationById(id)
+                .then((res: any) => {
+                    setData(res.innovation || {});
                 })
                 .catch((error) => {
                     console.error("Error fetching innovation details:", error);
@@ -111,63 +110,48 @@ function DetailInnovation() {
 
     useEffect(() => {
         if (data.innovatorId) {
-            getDocumentById("innovators", data.innovatorId)
-                .then((detailInnovator) => {
-                    setDatainnovator(detailInnovator);
-                })
-                .catch((error) => {
-                    console.error("Error fetching innovator details:", error);
-                });
+            // Using Firebase for innovator details until /api/innovators exists
+            const fetchInnovator = async () => {
+                const docRef = doc(firestore, "innovators", data.innovatorId);
+                const snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    setDatainnovator(snap.data());
+                }
+            }
+            fetchInnovator();
         }
     }, [data.innovatorId]);
 
     useEffect(() => {
-        const fetchData = async () => {
-            if (!id) {
-                console.error("Innovation ID is not provided.");
-                return;
-            }
-
+        const fetchVillages = async () => {
+            if (!id) return;
             try {
-                const innovationRef = doc(firestore, "innovations", id);
-                const innovationSnap = await getDoc(innovationRef);
-
-                if (!innovationSnap.exists()) {
-                    console.error("Innovation document not found!");
-                    return;
-                }
-
-                const innovationData = innovationSnap.data();
-                const villageIds = innovationData.desaId;
-
-                if (!villageIds || villageIds.length === 0) {
-                    console.log("No villages linked to this innovation.");
-                    setVillage([]);
-                    return;
-                }
-
-                const villagesRef = collection(firestore, "villages");
-
-                const villagesQuery = query(
-                    villagesRef,
-                    where(documentId(), "in", villageIds)
-                );
-
-                const villagesSnapshot = await getDocs(villagesQuery);
-
-                const villagesData = villagesSnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                }));
-
-                setVillage(villagesData);
+                const res: any = await getAppliedVillages(id);
+                setVillage(res.villages || []);
             } catch (error) {
                 console.error("Error fetching related villages:", error);
             }
         };
-
-        fetchData();
+        fetchVillages();
     }, [id]);
+
+    /*
+    useEffect(() => {
+        const fetchData = async () => {
+            if (!id || !data.desaId) return;
+            // Using Firebase for village lookup until /api/villages exists
+            try {
+                const villagesRef = collection(firestore, "villages");
+                const q = query(villagesRef, where(documentId(), "in", data.desaId));
+                const snap = await getDocs(q);
+                setVillage(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            } catch (error) {
+                console.error("Error fetching related villages:", error);
+            }
+        };
+        fetchData();
+    }, [id, data.desaId]);
+    */
 
     type Village = {
         namaDesa: string;
@@ -214,7 +198,7 @@ function DetailInnovation() {
                 status: "Ditolak",
                 catatanAdmin: modalInput,
             });
-            setData((prevData) => ({
+            setData((prevData: any) => ({
                 ...prevData,
                 status: "Ditolak",
                 catatanAdmin: modalInput,
@@ -440,7 +424,7 @@ function DetailInnovation() {
                             {Array.isArray(data.manfaat) && data.manfaat.length > 0 ? (
                                 data.manfaat.map(
                                     (
-                                        item: { judul: string; deskripsi: string },
+                                        item: any,
                                         index: number
                                     ) => (
                                         <Flex
@@ -504,7 +488,7 @@ function DetailInnovation() {
                     </Text>
                     {Array.isArray(data.infrastruktur) &&
                         data.infrastruktur.length > 0 ? (
-                        data.infrastruktur.map((item, index) => (
+                        data.infrastruktur.map((item: any, index: number) => (
                             <BenefitContainer key={index}>
                                 <Icon src="/icons/check-circle.svg" alt="check" />
                                 <Description>{item}</Description>

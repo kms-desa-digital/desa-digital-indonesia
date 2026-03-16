@@ -34,6 +34,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [authUser, loadingAuth, authError] = useAuthState(auth);
+  const [uid, setUid] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [isInnovatorVerified, setInnovatorVerified] = useState(false);
   const [isVillageVerified, setVillageVerified] = useState(false);
@@ -46,79 +47,68 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
       setError(null);
 
+      // 1. Prioritas: Cek JWT Token (MongoDB)
+      const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+      
+      if (token) {
+        try {
+          const res = await fetch("/api/auth/me", {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setUid(data.user.uid);
+            setRole(data.user.role);
+            setInnovatorVerified(data.user.isInnovatorVerified);
+            setVillageVerified(data.user.isVillageVerified);
+            setInnovationVerified(data.user.isInnovationVerified);
+            setLoading(false);
+            return; // Berhasil load via JWT
+          } else if (res.status === 401) {
+             localStorage.removeItem("token");
+          }
+        } catch (err) {
+          console.error("JWT verification failed:", err);
+        }
+      }
+
+      // 2. Fallback: Firebase Auth (Lama)
       try {
-        if (!authUser) {
+        if (!authUser && !loadingAuth) {
+          setUid(null);
           setRole(null);
           setInnovatorVerified(false);
           setVillageVerified(false);
-        } else {
-          // 1) Fetch role dari koleksi "users"
+        } else if (authUser) {
+          setUid(authUser.uid);
+          // Fetch role dari koleksi "users"
           const userSnap = await getDoc(doc(firestore, "users", authUser.uid));
           const userData = userSnap.exists() ? userSnap.data() : {};
           setRole((userData as any).role || null);
 
-          // 2) Cek status inovator (jika ada)
-          const innovSnap = await getDoc(
-            doc(firestore, "innovators", authUser.uid)
-          );
-          setInnovatorVerified(
-            innovSnap.exists() &&
-              (innovSnap.data() as any).status === "Terverifikasi"
-          );
+          // Cek status inovator
+          const innovSnap = await getDoc(doc(firestore, "innovators", authUser.uid));
+          setInnovatorVerified(innovSnap.exists() && (innovSnap.data() as any).status === "Terverifikasi");
 
-          // 3) Cek status desa (jika ada)
-          const villageSnap = await getDoc(
-            doc(firestore, "villages", authUser.uid)
-          );
-          setVillageVerified(
-            villageSnap.exists() &&
-              (villageSnap.data() as any).status === "Terverifikasi"
-          );
-
-          const innovationSnap = await getDoc(
-            doc(firestore, "innovations", authUser.uid)
-          );
-          setInnovationVerified(
-            innovationSnap.exists() &&
-              (innovationSnap.data() as any).status === "Terverifikasi"
-          );
-
-          let q;
-          q = query(
-            collection(firestore, "innovations"),
-            where("inovatorId", "==", authUser.uid)
-          );
-          await getDocs(q).then((snapshot) => {
-            if (snapshot.empty) {
-              setInnovationVerified(false);
-            } else {
-              snapshot.forEach((doc) => {
-                const data = doc.data();
-                if (data.status === "Terverifikasi") {
-                  setInnovationVerified(true);
-                }
-              });
-            }
-          });
+          // Cek status desa
+          const villageSnap = await getDoc(doc(firestore, "villages", authUser.uid));
+          setVillageVerified(villageSnap.exists() && (villageSnap.data() as any).status === "Terverifikasi");
         }
       } catch (err: any) {
-        console.error("Error loading user context:", err);
+        console.error("Error loading firebase user context:", err);
         setError(err);
       } finally {
-        setLoading(false);
+        if (!loadingAuth) setLoading(false);
       }
     };
 
-    // tunggu dulu auth selesai
-    if (!loadingAuth) {
-      loadUserData();
-    }
+    loadUserData();
   }, [authUser, loadingAuth]);
 
   return (
     <UserContext.Provider
       value={{
-        uid: authUser?.uid || null,
+        uid,
         role,
         isInnovatorVerified,
         isVillageVerified,
