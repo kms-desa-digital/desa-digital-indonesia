@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input, Button, Text, Flex, Box } from "@chakra-ui/react";
+import { Input, Button, Text, Flex, Box, Link } from "@chakra-ui/react";
 import { Background, Container, Title, Description } from "./_styles";
 import { useRouter } from "next/navigation";
 // import { auth } from "src/firebase/clientApp";
@@ -18,6 +18,7 @@ const EmailReset: React.FC = () => {
     const [email, setEmail] = useState("");
     const [sending, setSending] = useState(false);
     const [error, setError] = useState("");
+    const [resetLink, setResetLink] = useState("");
     // const [sendPasswordResetEmail, sending, error] =
     //     useSendPasswordResetEmail(auth);
     const [success, setSuccess] = useState(false);
@@ -26,6 +27,7 @@ const EmailReset: React.FC = () => {
         event.preventDefault();
         setSending(true);
         setError("");
+        setResetLink("");
         try {
             const res = await fetch("/api/auth/email-reset", {
                 method: "POST",
@@ -41,6 +43,7 @@ const EmailReset: React.FC = () => {
             }
 
             setSuccess(true);
+            setResetLink(data.resetLink || "");
             console.log("Email berhasil dikirim", email);
 
             // === Firebase auth (di-comment, diganti API MongoDB) ===
@@ -72,9 +75,11 @@ const EmailReset: React.FC = () => {
                         Masukkan email akun Anda untuk kami kirimkan tautan reset password.
                     </Description>
                     {success ? (
-                        <Text textAlign="start" color="green" fontSize="10pt" mt="4px">
-                            Kode berhasil dikirim. Silahkan cek email Anda
-                        </Text>
+                        <>
+                            <Text textAlign="start" color="green" fontSize="10pt" mt="4px">
+                                Link reset password berhasil dibuat.
+                            </Text>
+                        </>
                     ) : (
                         <>
                             <form onSubmit={onSubmit}>
