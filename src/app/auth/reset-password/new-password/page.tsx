@@ -45,6 +45,11 @@ const NewPassword: React.FC = () => {
             const token = searchParams.get("token");
             const email = searchParams.get("email");
 
+            if (!token || !email) {
+                setError("Link reset password tidak valid atau tidak lengkap");
+                return;
+            }
+
             const res = await fetch("/api/auth/forgot-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

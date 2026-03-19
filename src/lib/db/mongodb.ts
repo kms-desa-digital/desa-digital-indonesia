@@ -1,10 +1,8 @@
 import { MongoClient } from "mongodb";
 
-const url = process.env.MONGODB_URL;
 const options = {
   serverSelectionTimeoutMS: 5000,
   connectTimeoutMS: 10000,
-  directConnection: true,
 };
 
 // Gunakan fungsi untuk mendapatkan URL agar selalu fresh dari process.env

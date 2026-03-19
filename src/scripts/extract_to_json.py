@@ -1,126 +1,156 @@
 import json
 import os
+import re
+import time
+from typing import Union
 import pdfplumber
-import ollama
+import google.generativeai as genai
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-# 1. Definisikan Schema Pydantic
+# LOAD ENV
+load_dotenv(".env.local")
+GOOGLE_API_KEY = os.getenv("GOOGLE_GENERATIVE_AI_API_KEY")
+if not GOOGLE_API_KEY:
+    raise ValueError("GOOGLE_GENERATIVE_AI_API_KEY tidak ditemukan di .env.local")
+
+
+# CONFIG MODEL
+genai.configure(api_key=GOOGLE_API_KEY)
+model = genai.GenerativeModel("gemma-3-27b-it")
+
+
+# PYDANTIC SCHEMA
 class InovatorSchema(BaseModel):
-    nama: str = Field(description="Nama inovator, gabungkan jika lebih dari satu. Kosongkan jika tidak ada.")
-    status_paten: str = Field(description="Status paten, kosongkan jika tidak ada.")
+    nama: list[str] = Field(default_factory=list)
+    status_paten: Union[str, list[str]] = ""
 
 class InovasiSchema(BaseModel):
-    judul: str
-    deskripsi: str
-    perspektif: str
-    keunggulan_inovasi: str
-    potensi_aplikasi: str
-    inovator: InovatorSchema
+    judul: str = ""
+    deskripsi: str = ""
+    perspektif: str = ""
+    keunggulan_inovasi: list[str] = Field(default_factory=list)
+    potensi_aplikasi: Union[str, list[str]] = ""
+    inovator: InovatorSchema = InovatorSchema()
 
-def ask_ollama_to_extract(text):
-    """
-    Menggunakan Ollama lokal (llama3.2:3b) untuk mengekstrak data dari teks PDF.
-    """
+
+# CLEAN JSON
+def clean_json(text):
+    text = text.strip()
+    text = text.replace("```json", "")
+    text = text.replace("```", "")
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+
+    if match:
+        return match.group()
+    return text
+
+
+# AI EXTRACTION
+def ask_ai_to_extract(text):
+    schema = InovasiSchema.model_json_schema()
+
     prompt = f"""
-    Ekstrak data inovasi dari teks dokumen di bawah ini.
-    Ambil informasi yang relevan dan masukkan ke dalam struktur JSON yang diminta.
-    Jika informasi untuk suatu bagian tidak ditemukan dalam teks, isi dengan string kosong "".
+    Kamu adalah sistem ekstraksi dokumen inovasi.
+
+    TUGAS:
+    Ekstrak informasi dari teks dan masukkan ke JSON.
+
+    ATURAN:
+    1. Salin teks VERBATIM dari dokumen.
+    2. Jangan merangkum.
+    3. Jangan menambah informasi baru.
+    4. Jika tidak ditemukan isi gunakan "" atau [].
+    5. OUTPUT HARUS HANYA JSON.
+
+    Schema JSON:
+    {json.dumps(schema, indent=2)}
 
     TEKS DOKUMEN:
     {text}
     """
-    
-    try:
-        # Memanggil Ollama dan memaksa output mengikuti skema Pydantic
-        response = ollama.chat(
-            model='llama3.2:3b',
-            messages=[{'role': 'user', 'content': prompt}],
-            format=InovasiSchema.model_json_schema(), # Fitur Structured Output Ollama
-            options={'temperature': 0.0} # Dibuat 0 agar tidak berhalusinasi
-        )
-        
-        # Output dari Ollama sudah berupa string JSON yang valid sesuai skema
-        return json.loads(response['message']['content'])
-    except Exception as e:
-        print(f"Gagal memanggil Ollama: {str(e)}")
-        return None
 
-def extract_pdf_to_pageindex_ollama(pdf_path, output_json, max_pages=None):
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = model.generate_content(
+                prompt,
+                generation_config={
+                    "temperature": 0,
+                    "top_p": 0.1,
+                    "max_output_tokens": 2048
+                }
+            )
+
+            raw_text = response.text
+            cleaned = clean_json(raw_text)
+            data = json.loads(cleaned)
+            validated = InovasiSchema(**data)
+            result = validated.model_dump()
+
+            if isinstance(result["inovator"]["status_paten"], list):
+                result["inovator"]["status_paten"] = ", ".join(result["inovator"]["status_paten"])
+            if isinstance(result["potensi_aplikasi"], list):
+                result["potensi_aplikasi"] = "\n".join(result["potensi_aplikasi"])
+            return result
+
+        except Exception as e:
+            print(f"[Retry {attempt}] Gagal ekstraksi:", e)
+            time.sleep(2)
+
+    print("[ERROR] Ekstraksi gagal")
+    return None
+
+
+# EXTRACT PDF PER HALAMAN
+def extract_pdf_to_json(pdf_path, output_json):
     if not os.path.exists(pdf_path):
-        print(f"File {pdf_path} tidak ditemukan!")
+        print("File tidak ditemukan:", pdf_path)
         return
-
+    os.makedirs(os.path.dirname(output_json), exist_ok=True)
     all_nodes = []
-    
-    # Kita kembali menggunakan bbox karena Llama 3.2 3B tidak bisa melihat gambar
-    bbox_title_desc = (845, 200, 1250, 700)
-    bbox_details = (100, 100, 800, 850)    
 
-    print("--- Memulai Ekstraksi dengan OLLAMA (llama3.2:3b) ---")
+    print("Memulai ekstraksi per halaman menggunakan Gemma 3 27B...")
 
     with pdfplumber.open(pdf_path) as pdf:
         total_pages = len(pdf.pages)
-        limit = max_pages if max_pages else total_pages
-        
-        for i in range(0, limit, 2):
-            if i + 1 >= total_pages: break
-            
-            try:
-                page_odd = pdf.pages[i]
-                page_even = pdf.pages[i+1]
+        for i in range(total_pages):
+            page_number = i + 1
+            print(f"Memproses halaman {page_number}")
+            text = pdf.pages[i].extract_text() or ""
+            if not text.strip():
+                continue
 
-                # Ekstrak Teks menggunakan layout mode
-                txt_right = page_odd.crop(bbox_title_desc).extract_text(layout=True) or ""
-                txt_left = page_even.crop(bbox_details).extract_text(layout=True) or ""
-                
-                raw_full_text = f"{txt_right}\n\n{txt_left}"
+            extracted = ask_ai_to_extract(text)
 
-                if len(raw_full_text.strip()) < 50:
-                    continue
+            if not extracted:
+                continue
 
-                print(f"Memproses Inovasi {(i // 2) + 1} (Halaman {i+1} & {i+2})...")
-                
-                # Lempar teks mentah ke Llama 3.2
-                extracted = ask_ollama_to_extract(raw_full_text)
-                
-                if not extracted:
-                    print("  ⚠ Gagal ekstraksi, skip node ini.")
-                    continue
+            node_id = f"INV-{len(all_nodes)+1:03d}"
+            node_data = {
+                "node_id": node_id,
+                "page": page_number,
+                "details": extracted
+            }
 
-                # Susun data PageIndex
-                node_id = f"INV-{(i // 2) + 1:03d}"
-                node_data = {
-                    "node_id": node_id,
-                    "summary": {
-                        "judul": extracted.get("judul", "Tanpa Judul"),
-                        "overview": extracted.get("deskripsi", "")[:200] + "..."
-                    },
-                    "details": extracted
-                }
-                
-                all_nodes.append(node_data)
-                print(f"  ✓ Berhasil: {node_data['summary']['judul'][:30]}")
+            all_nodes.append(node_data)
+            result = {
+                "metadata": {
+                    "source": os.path.basename(pdf_path),
+                    "total_nodes": len(all_nodes)
+                },
+                "nodes": all_nodes
+            }
 
-            except Exception as e:
-                print(f"  ⚠ Terjadi kesalahan di halaman {i+1}-{i+2}: {str(e)}")
+            with open(output_json, "w", encoding="utf-8") as f:
+                json.dump(result, f, ensure_ascii=False, indent=4)
 
-    page_index_tree = {
-        "metadata": {
-            "source": os.path.basename(pdf_path),
-            "total_nodes": len(all_nodes),
-            "engine": "Ollama (llama3.2:3b)"
-        },
-        "nodes": all_nodes
-    }
+    print("\nSelesai ekstraksi.")
+    print(f"{len(all_nodes)} inovasi tersimpan ke {output_json}")
 
-    with open(output_json, 'w', encoding='utf-8') as f:
-        json.dump(page_index_tree, f, ensure_ascii=False, indent=4)
-    
-    print(f"\nSelesai! {len(all_nodes)} node tersimpan ke {output_json}")
 
-# --- JALANKAN ---
+# MAIN
 if __name__ == "__main__":
     input_file = "public/documents/501-Inovasi-IPB-1-TIK-Inovasi.pdf"
-    output_file = "public/documents/hasil_inovasi_ipb_ollama.json"
-    
-    extract_pdf_to_pageindex_ollama(input_file, output_file, max_pages=10)
+    output_file = "public/documents/hasil_inovasi_ipb_tik2.json"
+    extract_pdf_to_json(input_file, output_file)
