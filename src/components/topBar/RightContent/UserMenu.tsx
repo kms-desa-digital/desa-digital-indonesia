@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Button,
   Flex,
@@ -14,7 +16,7 @@ import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import {
   collection,
   doc,
-  DocumentData,
+  // DocumentData, 
   getDoc,
   getFirestore,
   onSnapshot,
@@ -24,9 +26,11 @@ import {
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
+// import { useAuthState } from "react-firebase-hooks/auth";
 import { toast } from "react-toastify";
 import { auth, firestore } from "../../../firebase/clientApp";
+import { useUser } from "../../../contexts/UserContext";
+import { useAuthToken } from "../../../hooks/useAuthToken";
 
 type UserMenuProps = {
   user?: User | null;
@@ -34,64 +38,86 @@ type UserMenuProps = {
 
 const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
   const router = useRouter();
-  const [userLogin] = useAuthState(auth);
-  const [userData, setUserData] = useState<DocumentData | undefined>();
+
+  // const [userLogin] = useAuthState(auth); 
+  const { role: contextRole } = useUser();
+  const { token, role: tokenRole, setTokenAndRole } = useAuthToken();
+
+  // const [userData, setUserData] = useState<DocumentData | undefined>(); 
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
+  // Ambil role dari token atau context
+  useEffect(() => {
+    const role = tokenRole || contextRole;
+    setUserRole(role);
+  }, [tokenRole, contextRole]);
+
+  // Ambil role dari Firestore + cek profile berdasarkan role
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // Jika pengguna berhasil login
         const db = getFirestore();
 
-        // Ambil data pengguna dari koleksi "users" berdasarkan UID
         const usersRef = collection(db, "users");
         const userQuery = query(usersRef, where("id", "==", user.uid));
+
         onSnapshot(userQuery, (snapshot) => {
           if (!snapshot.empty) {
             const userData = snapshot.docs[0].data();
-            setUserRole(userData.role); // Set state userRole
-            // console.log("User ", userData);
-            // Cek koleksi berdasarkan role pengguna
+            setUserRole(userData.role);
+
             if (userData.role === "village") {
               const villagesRef = collection(db, "villages");
               const villageQuery = query(
                 villagesRef,
                 where("id", "==", user.uid)
               );
+
               onSnapshot(villageQuery, (villageSnapshot) => {
                 setProfileExists(!villageSnapshot.empty);
+
+                if (!villageSnapshot.empty) {
+                  const data = villageSnapshot.docs[0].data();
+                  setStatus(data?.status);
+                }
               });
-              console.log("Profile Exists: ", profileExists);
+
             } else if (userData.role === "innovator") {
               const innovatorsRef = collection(db, "innovators");
               const innovatorQuery = query(
                 innovatorsRef,
                 where("id", "==", user.uid)
               );
+
               onSnapshot(innovatorQuery, (innovatorSnapshot) => {
                 setProfileExists(!innovatorSnapshot.empty);
+
+                if (!innovatorSnapshot.empty) {
+                  const data = innovatorSnapshot.docs[0].data();
+                  setStatus(data?.status);
+                }
               });
+
             } else {
-              setProfileExists(false); // Jika role tidak sesuai, profil dianggap tidak ada
+              setProfileExists(false);
             }
           } else {
-            setUserRole(null); // Set role ke null jika data pengguna tidak ditemukan
-            setProfileExists(false); // Set profileExists ke false
+            setUserRole(null);
+            setProfileExists(false);
           }
         });
       } else {
-        // Reset state jika pengguna logout
         setUserRole(null);
         setProfileExists(false);
       }
     });
 
-    return () => unsubscribe(); // Bersihkan listener
+    return () => unsubscribe();
   }, []);
 
+  /*
   useEffect(() => {
     const fetchUser = async () => {
       if (userLogin?.uid) {
@@ -105,7 +131,9 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
     };
     fetchUser();
   }, [userLogin]);
+  */
 
+  /*
   useEffect(() => {
     const fetchVillage = async () => {
       if (user) {
@@ -114,13 +142,14 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
         if (villageSnap.exists()) {
           const villageData = villageSnap.data();
           setStatus(villageData?.status);
-          console.log("Status: ", villageData?.status);
         }
       }
     };
     fetchVillage();
   }, [user]);
+  */
 
+  /*
   useEffect(() => {
     const fetchInnovator = async () => {
       if (user) {
@@ -129,12 +158,12 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
         if (innovatorSnap.exists()) {
           const innovatorData = innovatorSnap.data();
           setStatus(innovatorData?.status);
-          console.log("Status: ", innovatorData?.status);
         }
       }
     };
     fetchInnovator();
   }, [user]);
+  */
 
   const handleProfileClick = () => {
     if (!user) return;
@@ -158,6 +187,8 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
 
   const handleLogout = async () => {
     try {
+      setTokenAndRole(null, null);
+      window.dispatchEvent(new Event("auth:tokenChanged"));
       await signOut(auth);
       router.push("/");
     } catch (error) {
@@ -166,11 +197,6 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
       toast.success("Berhasil Logout", {
         position: "top-center",
         autoClose: 2000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
       });
     }
   };
@@ -181,64 +207,78 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
         <Button
           padding={1}
           as={IconButton}
-          aria-label="Options"
-          icon={(
+          aria-label="Notification"
+          icon={
             <Image
               src={notification}
               alt="Bell"
               width={24}
               height={24}
-              style={{ width: '24px', height: '24px' }}
+              style={{ width: "24px", height: "24px" }}
             />
-          )}
+          }
           height="40px"
-          alignSelf="center"
         />
+
         <MenuButton
           as={IconButton}
-          aria-label="Options"
-          icon={(
+          aria-label="Profile"
+          icon={
             <Image
               src={profileIcon}
               alt="Profile"
               width={24}
               height={24}
-              style={{ width: '24px', height: '24px' }}
+              style={{ width: "24px", height: "24px" }}
             />
-          )}
+          }
           height="40px"
-          alignSelf="center"
         />
 
         <MenuList>
-          {user ? (
+          {user || token ? (
             <>
               <MenuItem onClick={handleProfileClick}>
                 {profileExists ? "Profile" : "Isi Profile"}
               </MenuItem>
+
               <MenuItem
                 onClick={() => {
-                  if (userRole === "innovator") {
+                  const currentRole = (userRole || tokenRole || contextRole)?.toLowerCase();
+                  if (currentRole === "innovator") {
                     router.push(paths.REPORT_INNOVATOR);
-                  } else if (userRole === "village") {
+                  } else if (currentRole === "village") {
                     router.push(paths.REPORT_VILLAGE);
-                  } else if (userRole === "admin") {
+                  } else if (currentRole === "admin") {
                     router.push(paths.REPORT_ADMIN);
                   }
-                }
-                }
+                }}
               >
                 Report
               </MenuItem>
+
+              {(userRole?.toLowerCase() === "admin" ||
+                tokenRole?.toLowerCase() === "admin" ||
+                contextRole?.toLowerCase() === "admin") && (
+                  <MenuItem
+                    onClick={() => router.push(paths.CHATBOT_INGEST)}
+                  >
+                    Chatbot Data
+                  </MenuItem>
+                )}
+
               <MenuItem onClick={handleLogout}>Logout</MenuItem>
-              <MenuItem onClick={() => router.push(paths.BANTUAN_FAQ_PAGE)}>Bantuan dan FAQ</MenuItem>
-            </>
-          ) : (
-            <>
-              <MenuItem onClick={() => router.push(paths.LOGIN_PAGE)}>
-                Login
+
+              <MenuItem
+                onClick={() => router.push(paths.BANTUAN_FAQ_PAGE)}
+              >
+                Bantuan dan FAQ
               </MenuItem>
             </>
+          ) : (
+            <MenuItem onClick={() => router.push(paths.LOGIN_PAGE)}>
+              Login
+            </MenuItem>
           )}
         </MenuList>
       </Menu>

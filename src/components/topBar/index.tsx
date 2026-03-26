@@ -10,6 +10,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { toast } from "react-toastify";
 import { useUser } from "src/contexts/UserContext";
+import { useAuthToken } from "Hooks/useAuthToken";
 import { auth, firestore } from "../../firebase/clientApp";
 import UserMenu from "./RightContent/UserMenu";
 import { FaCheck } from "react-icons/fa";
@@ -30,11 +31,23 @@ function TopBar(props: TopBarProps) {
   const params = useParams();
   const id = typeof params?.id === 'string' ? params.id : '';
   const [user] = useAuthState(auth);
+  const { isAuthenticated } = useAuthToken();
   const [village, setVillage] = useState(false);
   const { isVillageVerified } = useUser();
   const [claimStatus, setClaimStatus] = useState("");
 
-  const allowedPaths = [paths.LANDING_PAGE, paths.ADMIN_PAGE];
+  const allowedPaths = [
+    paths.LANDING_PAGE,
+    paths.ADMIN_PAGE,
+    paths.VILLAGE_PAGE,
+    paths.INNOVATOR_PAGE,
+    "/admin",
+    "/village",
+    "/innovator",
+    "/dashboard"
+  ];
+
+  // Cek apakah pathname saat ini ada di allowedPaths (hanya exact match)
   const isUserMenuVisible = allowedPaths.includes(pathname);
   const isClaimButtonVisible =
     pathname.includes("/innovation/detail/") && id;
@@ -203,7 +216,7 @@ function TopBar(props: TopBarProps) {
 
           {!isClaimButtonVisible &&
             isUserMenuVisible &&
-            (user ? (
+            (user || isAuthenticated ? (
               <UserMenu user={user} />
             ) : (
               <Flex align="center" gap="1px">

@@ -2,83 +2,207 @@
 // ingest file json inovasi ke MongoDB dengan embedding vector
 // ==================================================================
 
-import { connectToDatabase } from "@/lib/db/mongodb"; 
+import { connectToDatabase } from "@/lib/db/mongodb";
 
-// Fungsi untuk mengubah teks (pertanyaan user) menjadi Vector menggunakan Ollama lokal
-export async function generateEmbeddings(text: string): Promise<number[]> {
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434";
+const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "embeddinggemma:latest";
+
+const EMBEDDING_TIMEOUT_MS = 60000;
+
+// fungsi untuk ubah teks jadi embedding vector dari Ollama
+export async function generateEmbeddings(
+  text: string
+): Promise<number[]> {
   try {
-    const response = await fetch("http://127.0.0.1:11434/api/embed", {
+    // timeout supaya request tidak menggantung
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => controller.abort(),
+      EMBEDDING_TIMEOUT_MS
+    );
+
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/embed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "nomic-embed-text", 
+        model: OLLAMA_EMBED_MODEL,
         input: text,
       }),
+      signal: controller.signal,
     });
-    
+
+    clearTimeout(timeout);
+
+    // handle kalau response gagal
     if (!response.ok) {
       const errorDetail = await response.text();
-      throw new Error(`Ollama Error (HTTP ${response.status}): ${errorDetail}`);
+      throw new Error(
+        `Ollama Error (HTTP ${response.status}): ${errorDetail}`
+      );
     }
 
     const data = await response.json();
-    return data.embeddings[0];
+
+    // ambil vector pertama dari hasil embedding
+    const vector = Array.isArray(data?.embeddings)
+      ? data.embeddings[0]
+      : null;
+
+    // validasi vector
+    if (!Array.isArray(vector) || vector.length === 0) {
+      throw new Error(
+        "Ollama Error: embedding kosong atau tidak valid"
+      );
+    }
+
+    return vector;
   } catch (error) {
     console.error("Error generate embedding:", error);
     throw error;
   }
 }
 
-export async function searchInnovation(query: string) {
+// cari dokumen dari collection doc_embeddings
+export async function searchDocEmbeddings(query: string) {
   if (!query) return null;
 
   try {
     const db = await connectToDatabase();
-    // Gunakan collection yang sama dengan file ingestion Anda
-    const collection = db.collection("knowledge_base");
+    const collection = db.collection("doc_embeddings");
 
-    // Ubah pertanyaan user menjadi vektor
+    // ubah query jadi vector
     const queryVector = await generateEmbeddings(query);
 
-    // Lakukan pencarian Semantic Vector di MongoDB Atlas
     const cursor = collection.aggregate([
       {
         $vectorSearch: {
-          index: "vector_index", 
-          path: "embedding_vector", 
+          index: "vector_index",
+          path: "embedding_vector",
           queryVector: queryVector,
-          numCandidates: 5, // Mengambil 5 kandidat terdekat untuk dievaluasi
-          limit: 3 // Mengambil 3 hasil paling relevan
-        }
+          numCandidates: 5,
+          limit: 3,
+        },
       },
       {
         $project: {
-          embedding_vector: 0, 
-          score: { $meta: "vectorSearchScore" } 
-        }
-      }
+          embedding_vector: 0,
+          score: { $meta: "vectorSearchScore" },
+        },
+      },
     ]);
 
     const results = await cursor.toArray();
 
-    // Kembalikan data jika ada. 
-    // Skor kemiripan (score) berkisar antara 0 - 1. Semakin mendekati 1 semakin mirip.
-    // Kita set batas bawah 0.6 agar bot tidak menjawab ngawur jika pertanyaannya melenceng jauh.
-    const validResults = results.filter(res => res.score > 0.6);
+    // filter berdasarkan threshold
+    const validResults = results.filter(
+      (res) => res.score > 0.6
+    );
 
     if (validResults.length > 0) {
-      console.log(`\nPencarian Berhasil (${validResults.length} Dokumen)`);
-      validResults.forEach((doc, idx) => {
-        console.log(`[${idx + 1}] ${doc.judul} (Skor: ${doc.score.toFixed(3)})`);
+      console.log(
+        `\nPencarian berhasil (${validResults.length} data)`
+      );
+
+      validResults.forEach((doc, i) => {
+        console.log(
+          `${i + 1}. ${doc.judul} (score: ${doc.score.toFixed(3)})`
+        );
       });
-      return validResults; // Mengembalikan kumpulan dokumen (Array)
+
+      return validResults;
     }
 
-    console.log("Tidak ada dokumen yang mencapai batas skor relevansi.");
+    console.log("Tidak ada hasil yang cukup relevan");
     return null;
   } catch (error) {
-    console.error("Kesalahan pencarian Vector MongoDB:", error);
+    console.error("Error saat pencarian:", error);
     return null;
+  }
+}
+
+// cari data dari collection db_embeddings
+export async function searchDatabaseEmbeddings(query: string) {
+  if (!query) return [];
+
+  try {
+    const db = await connectToDatabase();
+    const collection = db.collection("db_embeddings");
+
+    const queryVector = await generateEmbeddings(query);
+
+    const cursor = collection.aggregate([
+      {
+        $vectorSearch: {
+          index: "vector_index_db",
+          path: "embedding_vector",
+          queryVector: queryVector,
+          numCandidates: 5,
+          limit: 3,
+        },
+      },
+      {
+        $project: {
+          embedding_vector: 0,
+          score: { $meta: "vectorSearchScore" },
+        },
+      },
+    ]);
+
+    const results = await cursor.toArray();
+
+    // filter hasil yang cukup relevan
+    return results.filter((res) => res.score > 0.6);
+  } catch (error) {
+    console.error("Error saat pencarian db_embeddings:", error);
+    return [];
+  }
+}
+
+// fungsi utama: search ke dua collection sekaligus
+export async function searchAllSources(query: string) {
+  if (!query) return { docResults: [], dbResults: [] };
+
+  try {
+    // jalankan paralel biar lebih cepat
+    const [docResults, dbResults] = await Promise.all([
+      searchDocEmbeddings(query).then((res: any) => res ?? []),
+      searchDatabaseEmbeddings(query),
+    ]);
+
+    console.log(
+      `\nSearch Results: doc=${docResults.length}, db=${dbResults.length}`
+    );
+
+    // tampilkan hasil dari doc_embeddings
+    if (docResults.length > 0) {
+      console.log("--- Hasil dari doc_embeddings ---");
+
+      docResults.forEach((doc: any, i: number) => {
+        console.log(
+          `  ${i + 1}. ${
+            doc.judul ?? doc.content?.slice(0, 50)
+          } (score: ${doc.score?.toFixed(3)})`
+        );
+      });
+    }
+
+    // tampilkan hasil dari db_embeddings
+    if (dbResults.length > 0) {
+      console.log("--- Hasil dari db_embeddings ---");
+
+      dbResults.forEach((doc: any, i: number) => {
+        console.log(
+          `  ${i + 1}. [${doc.source_collection}] ${
+            doc.metadata?.label ?? "?"
+          } (score: ${doc.score?.toFixed(3)})`
+        );
+      });
+    }
+
+    return { docResults, dbResults };
+  } catch (error) {
+    console.error("Error searchAllSources:", error);
+    return { docResults: [], dbResults: [] };
   }
 }
 
@@ -126,23 +250,29 @@ export async function searchInnovation(query: string) {
 
 //     // Looping untuk membuka dan menggabungkan setiap file JSON
 //     for (const file of files) {
-//       const filePath = path.join(dirPath, file);
-//       const fileContent = fs.readFileSync(filePath, "utf-8");
-//       const data = JSON.parse(fileContent);
+//       try {
+//         const filePath = path.join(dirPath, file);
+//         const fileContent = fs.readFileSync(filePath, "utf-8");
+//         // Hilangkan BOM UTF-8 agar JSON.parse tidak gagal pada karakter awal tersembunyi.
+//         const sanitizedContent = fileContent.replace(/^\uFEFF/, "");
+//         const data = JSON.parse(sanitizedContent);
 
-//       if (data.nodes && Array.isArray(data.nodes)) {
-//         // Ekstrak nama bidang dari nama file (contoh: "hasil_inovasi_ipb_pangan.json" -> "pangan")
-//         const categoryMatch = file.match(/hasil_inovasi_ipb_(.*?)\.json/);
-//         const bidang = categoryMatch ? categoryMatch[1].toUpperCase() : "UMUM";
+//         if (data.nodes && Array.isArray(data.nodes)) {
+//           // Ekstrak nama bidang dari nama file (contoh: "hasil_inovasi_ipb_pangan.json" -> "pangan")
+//           const categoryMatch = file.match(/hasil_inovasi_ipb_(.*?)\.json/);
+//           const bidang = categoryMatch ? categoryMatch[1].toUpperCase() : "UMUM";
 
-//         // Sisipkan informasi kategori ke dalam setiap node
-//         const nodesWithMetadata = data.nodes.map((node: any) => ({
-//           ...node,
-//           kategori: bidang
-//         }));
+//           // Sisipkan informasi kategori ke dalam setiap node
+//           const nodesWithMetadata = data.nodes.map((node: any) => ({
+//             ...node,
+//             kategori: bidang
+//           }));
 
-//         // Gabungkan ke array utama
-//         allNodes = allNodes.concat(nodesWithMetadata);
+//           // Gabungkan ke array utama
+//           allNodes = allNodes.concat(nodesWithMetadata);
+//         }
+//       } catch (fileError) {
+//         console.error(`Gagal parse file JSON: ${file}`, fileError);
 //       }
 //     }
 

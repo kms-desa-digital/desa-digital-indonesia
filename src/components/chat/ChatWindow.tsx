@@ -44,7 +44,6 @@ const ChatWindow = ({ onClose, messages, setMessages }: ChatWindowProps) => {
         setInput('');
         setIsLoading(true);
 
-        // Buat ID untuk assistant message di awal
         const assistantMessageId = `assistant-${Date.now()}`;
 
         try {
@@ -64,20 +63,27 @@ const ChatWindow = ({ onClose, messages, setMessages }: ChatWindowProps) => {
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
-                    
+
                     const chunk = decoder.decode(value);
                     assistantMessage += chunk;
-                    
+
                     setMessages(prev => {
                         const updated = [...prev];
                         const lastMsg = updated[updated.length - 1];
+
                         if (lastMsg?.id === assistantMessageId) {
-                            // Update existing assistant message
-                            updated[updated.length - 1] = { ...lastMsg, content: assistantMessage };
+                            updated[updated.length - 1] = {
+                                ...lastMsg,
+                                content: assistantMessage
+                            };
                         } else {
-                            // Create new assistant message dengan ID tetap
-                            updated.push({ id: assistantMessageId, role: 'assistant', content: assistantMessage });
+                            updated.push({
+                                id: assistantMessageId,
+                                role: 'assistant',
+                                content: assistantMessage
+                            });
                         }
+
                         return updated;
                     });
                 }
@@ -91,12 +97,25 @@ const ChatWindow = ({ onClose, messages, setMessages }: ChatWindowProps) => {
 
     return (
         <Flex direction="column" height="100%">
-            {/* Header */}
-            <HStack p={4} bg="green.500" color="white" justify="space-between" borderTopRadius="16px">
+            
+            {/* HEADER */}
+            <HStack
+                p={4}
+                bg="green.500"
+                color="white"
+                justify="space-between"
+                borderTopRadius="20px"
+                boxShadow="0 2px 6px rgba(0,0,0,0.1)"
+            >
                 <VStack align="start" spacing={0}>
-                    <Text fontWeight="bold" fontSize="lg">{t('title')}</Text>
-                    <Text fontSize="xs" opacity={0.9}>{t('online')}</Text>
+                    <Text fontWeight="bold" fontSize="lg">
+                        {t('title')}
+                    </Text>
+                    <Text fontSize="xs" opacity={0.9}>
+                        {t('online')}
+                    </Text>
                 </VStack>
+
                 <IconButton
                     aria-label={t('ariaClose')}
                     icon={<X size={20} />}
@@ -108,19 +127,20 @@ const ChatWindow = ({ onClose, messages, setMessages }: ChatWindowProps) => {
                 />
             </HStack>
 
-            {/* Messages Container */}
+            {/* MESSAGES */}
             <VStack
                 flex={1}
                 overflowY="auto"
                 p={4}
                 spacing={3}
                 align="stretch"
-                bg="gray.50"
+                bg="gray.100"
                 css={{
                     '&::-webkit-scrollbar': { width: '4px' },
-                    '&::-webkit-scrollbar-track': { background: '#f1f1f1' },
-                    '&::-webkit-scrollbar-thumb': { background: '#888', borderRadius: '4px' },
-                    '&::-webkit-scrollbar-thumb:hover': { background: '#555' },
+                    '&::-webkit-scrollbar-thumb': {
+                        background: '#bbb',
+                        borderRadius: '4px'
+                    }
                 }}
             >
                 {messages.length === 0 && (
@@ -130,31 +150,47 @@ const ChatWindow = ({ onClose, messages, setMessages }: ChatWindowProps) => {
                         </Text>
                     </Box>
                 )}
+
                 {messages.map((m: any) => (
                     <ChatMessage key={m.id} message={m} />
                 ))}
+
                 {isLoading && (
                     <ChatMessage
                         message={{ id: 'loading', content: t('thinking'), role: 'assistant' }}
                         isLoading
                     />
                 )}
+
                 <div ref={messagesEndRef} />
             </VStack>
 
-            {/* Input Area */}
-            <HStack p={3} bg="white" borderTop="1px" borderColor="gray.200" spacing={2}>
-                <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', gap: '8px' }}>
+            {/* INPUT */}
+            <HStack
+                p={3}
+                bg="white"
+                borderTop="1px"
+                borderColor="gray.100"
+            >
+                <form
+                    onSubmit={handleSubmit}
+                    style={{ width: '100%', display: 'flex', gap: '8px' }}
+                >
                     <Input
                         placeholder={t('placeholder')}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         borderRadius="full"
-                        bg="gray.50"
+                        bg="gray.100"
                         border="none"
+                        px={4}
                         fontSize="14px"
-                        _focus={{ bg: 'gray.100', boxShadow: 'none' }}
+                        _focus={{
+                            bg: 'white',
+                            boxShadow: '0 0 0 2px rgba(34,197,94,0.2)'
+                        }}
                     />
+
                     <IconButton
                         type="submit"
                         aria-label={t('ariaSend')}
@@ -162,9 +198,13 @@ const ChatWindow = ({ onClose, messages, setMessages }: ChatWindowProps) => {
                         borderRadius="full"
                         bg="green.500"
                         color="white"
-                        minW="40px"
-                        h="40px"
-                        _hover={{ bg: 'green.600' }}
+                        minW="42px"
+                        h="42px"
+                        boxShadow="0 4px 10px rgba(34,197,94,0.3)"
+                        _hover={{
+                            bg: 'green.600',
+                            transform: 'scale(1.05)'
+                        }}
                         _active={{ bg: 'green.700' }}
                         isDisabled={!input.trim() || isLoading}
                     />
