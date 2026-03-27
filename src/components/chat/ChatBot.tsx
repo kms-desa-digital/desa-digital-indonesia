@@ -9,7 +9,7 @@ import { useTranslations } from 'next-intl';
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const [messages, setMessages] = useState<any[]>([]); // State di parent
+    const [messages, setMessages] = useState<any[]>([]);
     const t = useTranslations('Chatbot');
 
     useEffect(() => {
@@ -24,7 +24,6 @@ const Chatbot = () => {
 
     return (
         <>
-            {/* Chat Window */}
             {isOpen && (
                 <Box
                     position="fixed"
@@ -34,11 +33,10 @@ const Chatbot = () => {
                     maxWidth="315px"
                     height="600px"
                     bg="white"
-                    borderRadius="16px"
-                    boxShadow="2xl"
+                    borderRadius="20px"
+                    boxShadow="0 10px 30px rgba(0,0,0,0.12)"
                     zIndex={999}
                     overflow="hidden"
-                
                 >
                     <ChatWindow 
                         onClose={toggleChat} 
@@ -48,7 +46,6 @@ const Chatbot = () => {
                 </Box>
             )}
 
-            {/* Floating Button */}
             <IconButton
                 aria-label={t('ariaOpen')}
                 icon={isOpen ? <X size={24} /> : <MessageCircle size={24} />}

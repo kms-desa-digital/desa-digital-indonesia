@@ -76,6 +76,12 @@ const Login: React.FC = () => {
             localStorage.setItem("token", data.token);
             localStorage.setItem("userRole", data.role);
 
+            // Dispatch custom event untuk notify listeners tentang perubahan token
+            window.dispatchEvent(new Event("auth:tokenChanged"));
+
+            // Refresh halaman agar state token ter-update sebelum navigate
+            router.refresh();
+
             const userRole = data.role;
             if (userRole === "admin") {
                 router.push(paths.ADMIN_PAGE);
@@ -84,6 +90,7 @@ const Login: React.FC = () => {
             } else {
                 router.push(paths.LANDING_PAGE);
             }
+            
             toast.success("Berhasil Masuk", {
                 position: "top-center",
                 autoClose: 2000,
