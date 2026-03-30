@@ -13,6 +13,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Desa Digital Indonesia",
   description: "KMS Desa Digital",
+  icons: {
+    icon: "/icons/smart-agri.svg",
+  },
 };
 
 export default function RootLayout({

@@ -52,7 +52,6 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     // Jangan izinkan ubah field sensitif secara langsung
     delete body._id
     delete body.userId
-    delete body.status
     delete body.catatanAdmin
     
     body.updatedAt = new Date()

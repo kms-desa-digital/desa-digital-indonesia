@@ -15,6 +15,7 @@ import {
   where,
 } from "firebase/firestore";
 import { firestore } from "../../firebase/clientApp";
+import { getVillages } from "Services/villageServices";
 
 const BestBanner: React.FC = () => {
   const t = useTranslations("Home");
@@ -24,36 +25,33 @@ const BestBanner: React.FC = () => {
 
   useEffect(() => {
     const fetchTopData = async () => {
-      const innovatorQuery = query(
-        collection(firestore, "innovators"),
-        // where("status", "==", "Terverifikasi"),
-        orderBy("jumlahDesaDampingan", "desc"),
-        limit(3)
-      )
+      try {
+        // Innovators still use Firebase as API is not ready
+        const innovatorQuery = query(
+          collection(firestore, "innovators"),
+          orderBy("jumlahDesaDampingan", "desc"),
+          limit(3)
+        );
 
-      const villageQuery = query(
-        collection(firestore, "villages"),
-        // where("status", "==", "Terverifikasi"),
-        orderBy("jumlahInovasiDiterapkan", "desc"),
-        limit(3)
-      )
+        const innovatorSnapshot = await getDocs(innovatorQuery);
+        const innovatorsData = innovatorSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setInnovators(innovatorsData);
 
-      const [innovatorSnapshot, villageSnapshot] = await Promise.all([
-        getDocs(innovatorQuery),
-        getDocs(villageQuery),
-      ]);
-
-      const innovatorsData = innovatorSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      const villagesData = villageSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setInnovators(innovatorsData);
-      setVillages(villagesData);
-    }
+        // Villages now use MongoDB API to synchronize with the cards below
+        const response: any = await getVillages("Terverifikasi");
+        const fetchedVillages = response.villages || response.data || [];
+        const sortedVillages = fetchedVillages
+          .sort((a: any, b: any) => (b.jumlahInovasiDiterapkan || 0) - (a.jumlahInovasiDiterapkan || 0))
+          .slice(0, 3);
+          
+        setVillages(sortedVillages);
+      } catch (error) {
+        console.error("Error fetching Top Data for Banner:", error);
+      }
+    };
     fetchTopData();
   }, []);
 

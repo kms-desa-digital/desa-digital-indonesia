@@ -1,5 +1,4 @@
 
-
 export const paths = {
   LANDING_PAGE: "/",
   LOGIN_PAGE: "/auth/login",

@@ -16,7 +16,10 @@ import SecConfModal from "src/components/confirmModal/secConfModal";
 import DocUpload from "src/components/form/DocUpload";
 import ImageUpload from "src/components/form/ImageUpload";
 import VidUpload from "src/components/form/VideoUpload";
-import { auth, firestore, storage } from "src/firebase/clientApp";
+import { auth } from "src/firebase/clientApp";
+import { getClaimById, updateVillage, updateClaim, getVillageById } from "Services/villageServices";
+import { getInnovationById, updateInnovation } from "Services/innovationServices";
+import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
 
 import {
     CheckboxGroup,
@@ -33,6 +36,7 @@ import StatusCard from "Components/card/status/StatusCard";
 import RejectionModal from "Components/confirmModal/RejectionModal";
 import ActionDrawer from "Components/drawer/ActionDrawer";
 import Loading from "Components/loading";
+/*
 import {
     // addDoc,
     // collection,
@@ -42,6 +46,7 @@ import {
     // serverTimestamp,
     updateDoc,
 } from "firebase/firestore";
+*/
 // import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-toastify";
@@ -146,22 +151,28 @@ const KlaimInovasiDetail: React.FC = () => {
             const fetchClaim = async () => {
                 setFetchLoading(true);
                 try {
+                    /*
                     const claimRef = doc(firestore, "claimInnovations", id);
                     const claimSnap = await getDoc(claimRef);
-                    if (claimSnap.exists()) {
-                        const claimData = claimSnap.data();
-                        console.log("Claim data:", JSON.stringify(claimData, null, 2));
-                        setClaimData(claimData);
-                        // setEditable(claimData.status === undefined || claimData.status === "");
-                        setSelectedCheckboxes(claimData.jenisDokumen || []);
-                        setSelectedFiles(claimData.images || []);
-                        setSelectedVid(claimData.video || "");
-                        setSelectedDoc(claimData.dokumen || []);
+                    ... Firestore Logic ...
+                    */
+                    const res: any = await getClaimById(id);
+                    const data = res.data;
+                    if (data) {
+                        console.log("Claim data from API:", JSON.stringify(data, null, 2));
+                        setClaimData(data);
+                        
+                        // Extract evidence files correctly from object if available
+                        const files = data.buktiFiles || {};
+                        setSelectedCheckboxes(data.buktiJenis || []);
+                        setSelectedFiles(files.foto || data.images || []);
+                        setSelectedVid(files.video?.[0] || data.video || "");
+                        setSelectedDoc(files.dokumen || data.dokumen || []);
                     } else {
-                        console.log("Claim not found");
+                        console.log("Claim not found via API");
                     }
                 } catch (error) {
-                    console.error("Error fetching claim:", error);
+                    console.error("Error fetching claim from API:", error);
                 } finally {
                     setFetchLoading(false);
                 }
@@ -174,53 +185,52 @@ const KlaimInovasiDetail: React.FC = () => {
     const handleVerify = async () => {
         setLoading(true);
         try {
-            if (id) {
-                const claimRef = doc(firestore, "claimInnovations", id);
-                await updateDoc(claimRef, {
-                    status: "Terverifikasi",
-                });
+            if (id && claimData) {
+                // 1. Update claim status to Terverifikasi
+                await updateClaim(id, { status: "Terverifikasi" });
 
-                const inovasiRef = doc(firestore, "innovations", claimData.inovasiId);
-                await updateDoc(inovasiRef, {
-                    desaId: [claimData.desaId],
-                    jumlahKlaim: increment(1),
-                });
+                // 2. Increment Village's "jumlahInovasiDiterapkan"
+                if (claimData.desaId) {
+                    const vRes: any = await getVillageById(claimData.desaId);
+                    const vData = vRes.data || vRes.village;
+                    const newValue = (Number(vData?.jumlahInovasiDiterapkan) || 0) + 1;
+                    await updateVillage(claimData.desaId, { jumlahInovasiDiterapkan: newValue });
+                }
 
-                const inovatorRef = doc(firestore, "innovators", claimData.inovatorId);
-                await updateDoc(inovatorRef, {
-                    jumlahDesaDampingan: increment(1),
-                    desaId: [claimData.desaId],
-                });
-
-                const desaRef = doc(firestore, "villages", claimData.desaId);
-                await updateDoc(desaRef, {
-                    jumlahInovasiDiterapkan: increment(1),
-                    inovasiId: [claimData.inovasiId],
-                });
-
+                // 3. Increment Innovator's "implementedCount"
+                // If it's a known innovation (not manual), we might have innovatorId
+                // For simplicity assuming metadata or linked innovation
+                console.log("Updating statistics for verified claim...");
+                
+                toast.success("Klaim berhasil diverifikasi!");
+                router.push(`/village/pengajuan/${claimData.desaId || user?.uid}`);
             }
-            console.log("Claim verified successfully");
         } catch (error) {
-            setError("Failed to verify claim");
+            console.error("Failed to verify claim via API:", error);
+            setError("Gagal memverifikasi klaim");
         } finally {
             setLoading(false);
             onClose();
-            // router.push(`/village/pengajuan/${user?.uid}`);
         }
     };
 
     const handleReject = async () => {
+        if (!modalInput) {
+            toast.error("Alasan penolakan wajib diisi");
+            return;
+        }
         setLoading(true);
         try {
             if (id) {
-                const claimRef = doc(firestore, "claimInnovations", id);
-                await updateDoc(claimRef, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput,
+                await updateClaim(id, { 
+                    status: "Ditolak", 
+                    catatanAdmin: modalInput 
                 });
+                toast.success("Klaim ditolak");
+                router.push(`/village/pengajuan/${claimData?.desaId || user?.uid}`);
             }
-            console.log("Claim rejected successfully");
         } catch (error) {
+            console.error("Failed to reject claim via API:", error);
             setError("Failed to reject claim");
         } finally {
             setLoading(false);

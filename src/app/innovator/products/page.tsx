@@ -6,8 +6,9 @@ import CardInnovation from "Components/card/innovation";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
 import { useRouter } from "next/navigation";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { firestore } from "src/firebase/clientApp";
+// import { collection, getDocs, query, where } from "firebase/firestore";
+// import { firestore } from "src/firebase/clientApp";
+import { getInnovation } from "Services/innovationServices";
 
 const InnovationListPage = () => {
     const router = useRouter();
@@ -18,15 +19,17 @@ const InnovationListPage = () => {
         const fetchInnovations = async () => {
             try {
                 setLoading(true);
+                /*
                 const q = query(collection(firestore, "innovations"), where("status", "==", "Terverifikasi"));
                 const querySnapshot = await getDocs(q);
-                const data = querySnapshot.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                }));
+                ... Firestore Logic ...
+                */
+                const res = await getInnovation();
+                // If API doesn't filter by status, we can filter locally or use a different endpoint
+                const data = (res.innovations || []).filter((item: any) => item.status === "Terverifikasi");
                 setInnovations(data);
             } catch (error) {
-                console.error("Error fetching innovations:", error);
+                console.error("Error fetching innovations via API:", error);
             } finally {
                 setLoading(false);
             }

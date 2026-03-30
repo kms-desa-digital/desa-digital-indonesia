@@ -22,6 +22,7 @@ import {
     useDisclosure,
 } from "@chakra-ui/react";
 import StatusCard from "Components/card/status/StatusCard";
+/*
 import {
     DocumentData,
     collection,
@@ -32,8 +33,13 @@ import {
     updateDoc,
     where,
 } from "firebase/firestore";
+*/
+import { DocumentData } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth, firestore } from "src/firebase/clientApp";
+// import { auth, firestore } from "src/firebase/clientApp";
+import { auth } from "src/firebase/clientApp";
+import { getVillageById, updateVillage, getVillageInnovations } from "Services/villageServices";
+import { getUserById } from "Services/userServices";
 import {
     ActionContainer,
     Background,
@@ -66,6 +72,15 @@ export default function DetailVillagePage() {
     const [loading, setLoading] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState(""); // Catatan admin
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const truncateText = (text: string, wordLimit: number) => {
+        if (!text) return "";
+        const words = text.split(" ");
+        return words.length > wordLimit
+            ? words.slice(0, wordLimit).join(" ") + "..."
+            : text;
+    };
 
     const formatLocation = (lokasi: any) => {
         if (!lokasi) return "No Location";
@@ -80,11 +95,14 @@ export default function DetailVillagePage() {
         setLoading(true);
         try {
             if (id) {
+                /*
                 const docRef = doc(firestore, "villages", id);
                 await updateDoc(docRef, {
                     status: "Terverifikasi",
                 });
-                setVillage((prev) =>
+                */
+                await updateVillage(id, { status: "Terverifikasi" });
+                setVillage((prev: any) =>
                     prev ? ({
                         ...prev,
                         status: "Terverifikasi",
@@ -93,7 +111,7 @@ export default function DetailVillagePage() {
                 throw new Error("Village ID is undefined");
             }
         } catch (error) {
-            // setError(error.message);
+            console.error("Error verifying village via API:", error);
         }
         setLoading(false);
         onClose();
@@ -103,12 +121,18 @@ export default function DetailVillagePage() {
         setLoading(true);
         try {
             if (id) {
+                /*
                 const docRef = doc(firestore, "villages", id);
                 await updateDoc(docRef, {
                     status: "Ditolak",
                     catatanAdmin: modalInput, // Simpan alasan penolakan ke Firestore
                 });
-                setVillage((prev) =>
+                */
+                await updateVillage(id, {
+                    status: "Ditolak",
+                    catatanAdmin: modalInput,
+                });
+                setVillage((prev: any) =>
                     prev ? ({
                         ...prev,
                         status: "Ditolak",
@@ -118,7 +142,7 @@ export default function DetailVillagePage() {
                 throw new Error("Village ID is undefined");
             }
         } catch (error) {
-            console.error("Error during rejection:", error);
+            console.error("Error during rejection via API:", error);
         }
         setLoading(false);
         setOpenModal(false); // Tutup modal setelah menyimpan
@@ -127,13 +151,26 @@ export default function DetailVillagePage() {
     useEffect(() => {
         const fetchUser = async () => {
             if (userLogin?.uid) {
-                const userRef = doc(firestore, "users", userLogin.uid);
-                const userSnap = await getDoc(userRef);
-                if (userSnap.exists()) {
-                    setAdmin(userSnap.data()?.role === "admin");
-                    if (userSnap.data()?.id === id) {
-                        setOwner(true);
+                try {
+                    /*
+                    const userRef = doc(firestore, "users", userLogin.uid);
+                    const userSnap = await getDoc(userRef);
+                    if (userSnap.exists()) {
+                        setAdmin(userSnap.data()?.role === "admin");
+                        if (userSnap.data()?.id === id) {
+                            setOwner(true);
+                        }
                     }
+                    */
+                    const res: any = await getUserById(userLogin.uid);
+                    if (res.data) {
+                        setAdmin(res.data.role === "admin");
+                        if (res.data.id === id) {
+                            setOwner(true);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Error fetching user role via API:", err);
                 }
             }
         };
@@ -145,6 +182,7 @@ export default function DetailVillagePage() {
         const fetchVillageData = async () => {
             if (id) {
                 try {
+                    /*
                     const docRef = doc(firestore, "villages", id);
                     const docSnap = await getDoc(docRef);
 
@@ -162,8 +200,19 @@ export default function DetailVillagePage() {
                     } else {
                         console.error("No such document!");
                     }
+                    */
+                    const res: any = await getVillageById(id);
+                    const villageData = res.village || res.data;
+                    if (villageData) {
+                        setVillage(villageData);
+                    } else {
+                        console.error("No such village found via API!");
+                    }
+
+                    const resInv: any = await getVillageInnovations(id);
+                    setInnovations(resInv.innovations || resInv.data || []);
                 } catch (error) {
-                    console.error("Error fetching village data:", error);
+                    console.error("Error fetching village data from API:", error);
                 }
             } else {
                 console.error("Village ID is undefined");
@@ -178,7 +227,7 @@ export default function DetailVillagePage() {
             <TopBar title="Detail Desa" onBack={() => router.back()} />
             <div style={{ position: "relative", width: "100%" }}>
                 <Background src={village?.header || "/images/default-header.svg"} alt="background" />
-                <Logo mx={16} my={-40} src={village?.logo || "/images/default-logo.svg"} alt="logo" />
+                <Logo src={village?.logo || "/images/default-logo.svg"} alt="logo" />
             </div>
             <div>
                 <ContentContainer>
@@ -189,7 +238,45 @@ export default function DetailVillagePage() {
                     </ActionContainer>
                     <div>
                         <SubText margin-bottom={16}>Tentang</SubText>
-                        <Description>{village?.deskripsi}</Description>
+                        <Description>
+                            {isExpanded ? (
+                                <>
+                                    {village?.deskripsi}
+                                    {village?.deskripsi && village.deskripsi.split(" ").length > 20 && (
+                                        <Text
+                                            as="span"
+                                            fontSize="12px"
+                                            fontWeight="700"
+                                            color="#347357"
+                                            cursor="pointer"
+                                            textDecoration="underline"
+                                            onClick={() => setIsExpanded(!isExpanded)}
+                                        >
+                                            {" "}
+                                            Lebih Sedikit
+                                        </Text>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    {truncateText(village?.deskripsi || "", 20)}
+                                    {village?.deskripsi && village.deskripsi.split(" ").length > 20 && (
+                                        <Text
+                                            as="span"
+                                            fontSize="12px"
+                                            fontWeight="700"
+                                            color="#347357"
+                                            cursor="pointer"
+                                            textDecoration="underline"
+                                            onClick={() => setIsExpanded(!isExpanded)}
+                                        >
+                                            {" "}
+                                            Selengkapnya
+                                        </Text>
+                                    )}
+                                </>
+                            )}
+                        </Description>
                     </div>
                     <div>
                         <SubText>Potensi Desa</SubText>
@@ -384,7 +471,7 @@ export default function DetailVillagePage() {
                         >
                             <SubText>Inovasi yang Diterapkan</SubText>
                             <Text
-                                onClick={() => router.push("/target-page")} // TODO: Check target page
+                                onClick={() => router.push(`/village/detail/${id}/innovations`)} // Redirect to innovations list page
                                 cursor="pointer"
                                 color="var(--Primary, #347357)"
                                 fontSize="12px"

@@ -2,7 +2,7 @@ import styled from 'styled-components'
 import Readiness from '@public/images/readiness2-background.jpg'
 
 export const Background = styled.div`
-  background-image: url(${Readiness});
+  background-image: url(${Readiness.src});
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;

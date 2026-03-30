@@ -7,6 +7,7 @@ import { paths } from "Consts/path";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import EnlargedImage from "Components/village/Image";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 
 import {
@@ -22,18 +23,9 @@ import {
     useDisclosure,
     Image,
 } from "@chakra-ui/react";
-import {
-    DocumentData,
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    query,
-    updateDoc,
-    where,
-} from "firebase/firestore";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { auth, firestore } from "src/firebase/clientApp";
+import { auth } from "src/firebase/clientApp";
+// import { auth, firestore } from "src/firebase/clientApp";
+import { getVillageById, updateVillage, getVillageInnovations } from "Services/villageServices";
 import {
     ActionContainer,
     Background,
@@ -58,8 +50,8 @@ export default function ProfileVillage() {
     const router = useRouter();
     const [userLogin] = useAuthState(auth);
     // const innovationsRef = collection(firestore, "innovations");
-    const [innovations, setInnovations] = useState<DocumentData[]>([]);
-    const [village, setVillage] = useState<DocumentData | undefined>(undefined);
+    const [innovations, setInnovations] = useState<any[]>([]);
+    const [village, setVillage] = useState<any | undefined>(undefined);
     const [owner, setOwner] = useState(false);
     const [admin, setAdmin] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -69,12 +61,16 @@ export default function ProfileVillage() {
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
 
-    const formatLocation = (lokasi: any) => {
-        if (!lokasi) return "No Location";
-        const kecamatan = lokasi.kecamatan?.label || "Unknown Subdistrict";
-        const kabupaten = lokasi.kabupatenKota?.label || "Unknown City";
-        const provinsi = lokasi.provinsi?.label || "Unknown Province";
+    const formatLocation = (villageData: any) => {
+        if (!villageData) return "No Location";
+        const lokasi = villageData.lokasi || {};
+        const kecamatan = lokasi.kecamatan?.label || villageData.kecamatan || "Unknown Subdistrict";
+        const kabupaten = lokasi.kabupatenKota?.label || villageData.kabupatenKota || villageData.kabupaten || "Unknown City";
+        const provinsi = lokasi.provinsi?.label || villageData.provinsi || "Unknown Province";
 
+        if (kecamatan === "Unknown Subdistrict" && kabupaten === "Unknown City" && provinsi === "Unknown Province") {
+             return "No Location";
+        }
         return `KECAMATAN ${kecamatan}, ${kabupaten}, ${provinsi}`;
     };
 
@@ -82,11 +78,14 @@ export default function ProfileVillage() {
         setLoading(true);
         try {
             if (id) {
+                /*
                 const docRef = doc(firestore, "villages", id);
                 await updateDoc(docRef, {
                     status: "Terverifikasi",
                 });
-                setVillage((prev) => ({
+                */
+                await updateVillage(id, { status: "Terverifikasi" });
+                setVillage((prev: any) => ({
                     ...prev,
                     status: "Terverifikasi",
                 }));
@@ -94,7 +93,7 @@ export default function ProfileVillage() {
                 throw new Error("Village ID is undefined");
             }
         } catch (error) {
-            // setError(error.message);
+            console.error("Error verifying village:", error);
         }
         setLoading(false);
         onClose();
@@ -108,12 +107,18 @@ export default function ProfileVillage() {
         setLoading(true);
         try {
             if (id) {
+                /*
                 const docRef = doc(firestore, "villages", id);
                 await updateDoc(docRef, {
                     status: "Ditolak",
                     catatanAdmin: modalInput, // Simpan alasan penolakan ke Firestore
                 });
-                setVillage((prev) => ({
+                */
+                await updateVillage(id, {
+                    status: "Ditolak",
+                    catatanAdmin: modalInput,
+                });
+                setVillage((prev: any) => ({
                     ...prev,
                     status: "Ditolak",
                     catatanAdmin: modalInput,
@@ -129,6 +134,7 @@ export default function ProfileVillage() {
     };
 
     useEffect(() => {
+        /*
         const fetchUser = async () => {
             if (userLogin?.uid) {
                 const userRef = doc(firestore, "users", userLogin.uid);
@@ -140,11 +146,15 @@ export default function ProfileVillage() {
             }
         };
         fetchUser();
-    });
+        */
+        // Note: Admin status should ideally come from auth context or a /me endpoint
+        // For now, assuming userLogin reflects the user's state
+    }, [userLogin]);
 
     useEffect(() => {
         const fetchVillageData = async () => {
             if (id) {
+                /*
                 const docRef = doc(firestore, "villages", id);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
@@ -153,46 +163,34 @@ export default function ProfileVillage() {
                         setOwner(true);
                     }
                 }
-            }
-        };
-        fetchVillageData();
-    });
-
-    useEffect(() => {
-        const fetchVillageAndInnovations = async () => {
-            if (!id) return;
-
-            // Fetch data dari collection villages berdasarkan id
-            const villageRef = doc(firestore, "villages", id);
-            const villageSnap = await getDoc(villageRef);
-
-            if (villageSnap.exists()) {
-                const villageData = villageSnap.data();
-                const inovasiDiterapkan = villageData?.inovasiDiterapkan || [];
-
-                // Ambil semua inovasiId dari field inovasiDiterapkan
-                const inovasiIds = inovasiDiterapkan.map(
-                    (inovasi: any) => inovasi.inovasiId
-                );
-                if (inovasiIds.length > 0) {
-                    // Fetch data dari collection innovations berdasarkan inovasiId
-                    const innovationsRef = collection(firestore, "innovations");
-                    const innovationsQuery = query(
-                        innovationsRef,
-                        where("__name__", "in", inovasiIds)
-                    );
-                    const innovationsSnapshot = await getDocs(innovationsQuery);
-
-                    const innovationsData = innovationsSnapshot.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data()
-                    }));
-                    setInnovations(innovationsData);
+                */
+                try {
+                    const response: any = await getVillageById(id);
+                    const data = response.village || response.data;
+                    setVillage(data);
+                    if (data?.userId === userLogin?.uid) {
+                        setOwner(true);
+                    }
+                } catch (error) {
+                    console.error("Error fetching village data:", error);
                 }
             }
         };
+        fetchVillageData();
+    }, [id, userLogin]);
 
-        fetchVillageAndInnovations();
+    useEffect(() => {
+        const fetchVillageInnovationsData = async () => {
+            if (!id) return;
+            try {
+                const response: any = await getVillageInnovations(id);
+                setInnovations(response.innovations || []);
+            } catch (error) {
+                console.error("Error fetching village innovations:", error);
+            }
+        };
+
+        fetchVillageInnovationsData();
     }, [id]);
 
     return (
@@ -200,7 +198,7 @@ export default function ProfileVillage() {
             <TopBar title="Profil Desa" onBack={() => router.back()} />
             <div style={{ position: "relative", width: "100%" }}>
                 <Background src={village?.header || "/images/default-header.svg"} alt="background" />
-                <Logo mx={16} my={-40} src={village?.logo || "/images/default-logo.svg"} alt="logo" />
+                <Logo src={village?.logo || "/images/default-logo.svg"} alt="logo" />
             </div>
             <div>
                 <ContentContainer>
@@ -225,7 +223,7 @@ export default function ProfileVillage() {
                     <Title> {village?.namaDesa} </Title>
                     <ActionContainer>
                         <Icon src="/icons/location.svg" alt="loc" />
-                        <Description>{formatLocation(village?.lokasi)}</Description>
+                        <Description>{formatLocation(village)}</Description>
                     </ActionContainer>
                     <div>
                         <SubText margin-bottom={16}>Tentang</SubText>

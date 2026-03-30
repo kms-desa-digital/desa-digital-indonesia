@@ -162,7 +162,10 @@ export const Background = styled.img`
 export const Logo = styled.img`
   width: 80px;
   height: 80px;
-  ${marginStyle}
+  margin-left: 16px;
+  margin-right: 16px;
+  margin-top: -40px;
+  margin-bottom: -40px;
   border-radius: 50%;
   object-fit: cover;
   position: absolute;

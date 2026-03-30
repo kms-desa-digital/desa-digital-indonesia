@@ -9,13 +9,7 @@ import {
     NotifContainer, Title
 } from "./_styles";
 
-type NotifProps = {
-    title?: string;
-    description?: string;
-}
-
-function Notification(props: NotifProps) {
-    // const { title, description } = props; // unused
+function Notification() {
 
     return (
         <Container page>

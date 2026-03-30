@@ -27,18 +27,15 @@ import {
 } from "@chakra-ui/react";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
-import {
-    deleteDoc,
-    doc,
-    getDoc,
-    serverTimestamp,
-    updateDoc,
-} from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import ImageUpload from "src/components/form/ImageUpload";
-import { firestore, storage } from "src/firebase/clientApp";
+// import { deleteDoc, doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { auth } from "src/firebase/clientApp";
+// import { firestore, storage } from "src/firebase/clientApp";
+import { storage } from "src/firebase/clientApp";
+import { getInnovationById, updateInnovation, deleteInnovation } from "Services/innovationServices";
 import { NavbarButton } from "./_styles";
 
 const categories = [
@@ -105,14 +102,17 @@ const EditInnovation: React.FC = () => {
                 return;
             }
             try {
-                console.log("Fetching document with ID:", id);
+                console.log("Fetching innovation via API with ID:", id);
+                /*
                 const docRef = doc(firestore, "innovations", id);
                 const docSnap = await getDoc(docRef);
-                console.log("Document fetched:", docSnap.exists());
+                ... Firestore Logic ...
+                */
+                const res: any = await getInnovationById(id);
+                const data = res.innovation;
 
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    console.log("Fetched data:", data);
+                if (data) {
+                    console.log("Fetched data from API:", data);
                     setTextInputsValue({
                         name: data.namaInovasi || "",
                         year: data.tahunDibuat || "",
@@ -124,7 +124,8 @@ const EditInnovation: React.FC = () => {
                     });
                     setSelectedStatus(data.statusInovasi || "");
                     setCategory(data.kategori || "");
-                    const otherModel = data.modelBisnis?.find(
+                    
+                    const otherModel = (data.modelBisnis || []).find(
                         (model: string) => !predefinedModels.includes(model)
                     );
 
@@ -138,7 +139,7 @@ const EditInnovation: React.FC = () => {
                         setSelectedModels(data.modelBisnis || []);
                     }
                     const mappedManfaat =
-                        data.manfaat?.map((item: { judul: string; deskripsi: string }) => ({
+                        (data.manfaat || []).map((item: { judul: string; deskripsi: string }) => ({
                             benefit: item.judul || "",
                             description: item.deskripsi || "",
                         })) || [];
@@ -147,10 +148,10 @@ const EditInnovation: React.FC = () => {
                     setRequirements(data.infrastruktur || []);
                     setSelectedFiles(data.images || []);
                 } else {
-                    console.log("No such document!");
+                    console.log("No such Innovation found via API!");
                 }
             } catch (error) {
-                console.error("Error fetching innovation:", error);
+                console.error("Error fetching innovation from API:", error);
             } finally {
                 setLoading(false);
             }
@@ -282,9 +283,7 @@ const EditInnovation: React.FC = () => {
             return;
         }
         try {
-            const innovationDocRef = doc(firestore, "innovations", id);
-
-            await updateDoc(innovationDocRef, {
+            const updateBody = {
                 statusInovasi: selectedStatus,
                 namaInovasi: name,
                 kategori: category,
@@ -299,32 +298,26 @@ const EditInnovation: React.FC = () => {
                     deskripsi: item.description,
                 })),
                 infrastruktur: finalRequirements,
-                editedAt: serverTimestamp(),
-            });
+                images: selectedFiles // Assuming API handles Storage or we upload first then update
+            };
 
-            console.log("Document updated with ID: ", innovationDocRef.id);
-
-            // Handle image updates
-            if (selectedFiles.length > 0) {
-                try {
-                    const imageUrls = await uploadFiles(
-                        selectedFiles,
-                        innovationDocRef.id
-                    );
-                    await updateDoc(innovationDocRef, {
-                        images: imageUrls,
-                    });
-                    console.log("Images uploaded", imageUrls);
-                } catch (uploadError) {
-                    console.error("Error uploading images:", uploadError);
-                    setError("Gagal mengupload gambar");
-                }
+            // If there are new base64 images, we still need to upload them to storage
+            // OR if the API takes base64, we can send it directly. 
+            // For now, let's stick to the current Firebase Storage upload and then update API
+            
+            const newImages = selectedFiles.filter(f => f.startsWith("data:"));
+            if (newImages.length > 0) {
+                const uploadedUrls = await uploadFiles(selectedFiles, id);
+                updateBody.images = uploadedUrls;
             }
+
+            await updateInnovation(id, updateBody);
+            console.log("Innovation updated via API with ID: ", id);
 
             setLoading(false);
             setIsSuccessOpen(true);
         } catch (error) {
-            console.log("error", error);
+            console.error("Error updating innovation via API:", error);
             setError("Gagal mengubah inovasi");
             setLoading(false);
         }
@@ -333,8 +326,11 @@ const EditInnovation: React.FC = () => {
     const onDeleteInnovation = async () => {
         setLoading(true);
         try {
+            /*
             const innovationDocRef = doc(firestore, "innovations", id);
             await deleteDoc(innovationDocRef);
+            */
+            await deleteInnovation(id);
             setLoading(false);
             toast({
                 title: "Inovasi dihapus.",
@@ -344,9 +340,13 @@ const EditInnovation: React.FC = () => {
                 isClosable: true,
             });
             router.push("/");
-        } catch (error) {
-            console.log("error", error);
-            setError("Gagal menghapus inovasi");
+        } catch (error: any) {
+            console.error("Error deleting innovation via API:", error);
+            if (error.response?.data?.message === "ID tidak valid") {
+                 setError("ID tidak valid (Database mismatch)");
+            } else {
+                 setError("Gagal menghapus inovasi");
+            }
             setLoading(false);
         }
     };

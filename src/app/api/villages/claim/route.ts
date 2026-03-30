@@ -107,16 +107,27 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const desaId = searchParams.get('desaId')
     const status = searchParams.get('status')
+    const search = searchParams.get('search')
+    const limit = parseInt(searchParams.get('limit') || '0')
+    const skip = parseInt(searchParams.get('skip') || '0')
 
     const db = await connectToDatabase()
     const filter: any = {}
     if (desaId) filter.desaId = desaId
     if (status) filter.status = status
+    if (search) {
+      filter.namaInovasi = { $regex: search, $options: 'i' }
+    }
 
-    const claims = await db.collection('claimInnovations')
-      .find(filter)
-      .sort({ createdAt: -1 })
-      .toArray()
+    let query = db.collection('claimInnovations').find(filter).sort({ createdAt: -1 })
+    
+    // Get total count for pagination metadata
+    const total = await db.collection('claimInnovations').countDocuments(filter)
+
+    if (skip > 0) query = query.skip(skip)
+    if (limit > 0) query = query.limit(limit)
+
+    const claims = await query.toArray()
 
     const result = claims.map(doc => ({
       ...doc,
@@ -124,7 +135,15 @@ export async function GET(request: NextRequest) {
       _id: doc._id.toString(),
     }))
 
-    return new NextResponse(JSON.stringify({ claims: result }, null, 2), {
+    return new NextResponse(JSON.stringify({ 
+      claims: result,
+      pagination: {
+        total,
+        limit,
+        skip,
+        hasMore: total > skip + result.length
+      }
+    }, null, 2), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     })

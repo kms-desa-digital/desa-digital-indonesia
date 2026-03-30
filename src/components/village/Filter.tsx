@@ -1,6 +1,6 @@
 import { border } from '@chakra-ui/react';
 import { marginStyle } from 'Consts/sizing';
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import Select from 'react-select';
 
 interface Option {
@@ -19,6 +19,7 @@ const Dropdown: React.FC<DropdownProps> = ({
   options,
   onChange
 }) => {
+  const selectId = useId();
   const [selectedOption, setSelectedOption] = useState<Option | null>(null);
 
   const handleCategoryChange = (selected: Option | null) => {
@@ -60,6 +61,7 @@ const Dropdown: React.FC<DropdownProps> = ({
 
   return (
     <Select
+      instanceId={selectId}
       value={selectedOption}
       onChange={handleCategoryChange}
       options={options.map((opt) => ({

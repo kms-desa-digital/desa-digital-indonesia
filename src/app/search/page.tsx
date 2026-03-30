@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { firestore } from "src/firebase/clientApp";
-import { collection, getDocs } from "firebase/firestore";
+// import { firestore } from "src/firebase/clientApp";
+// import { collection, getDocs } from "firebase/firestore";
+import { getInnovation } from "Services/innovationServices";
 import CardInnovation from "Components/card/innovation";
 import { paths } from "Consts/path";
 import Container from "Components/container";
@@ -42,12 +43,16 @@ function SearchPage() {
         setResults([]);
 
         try {
+            /*
             const collectionRef = collection(firestore, "innovations");
             const snapshot = await getDocs(collectionRef);
+            ... Firestore Logic ...
+            */
+            const res: any = await getInnovation();
+            const innovations = res.innovations || [];
 
-            const filtered = snapshot.docs
-                .map((doc) => ({ id: doc.id, ...doc.data() } as InovationData))
-                .filter((item) => {
+            const filtered = innovations
+                .filter((item: any) => {
                     const namaInovasi = (item.namaInovasi || "").toLowerCase().trim();
                     const isVerified = item.status === "Terverifikasi";
 
@@ -55,11 +60,11 @@ function SearchPage() {
                     if (!namaInovasi) return false;
                     return keyword ? namaInovasi.includes(keyword) : isVerified;
                 })
-                .sort((a, b) => (a.namaInovasi || "").localeCompare(b.namaInovasi || ""));
+                .sort((a: any, b: any) => (a.namaInovasi || "").localeCompare(b.namaInovasi || ""));
 
             setResults(filtered);
         } catch (error) {
-            console.error("Error fetching data:", error);
+            console.error("Error fetching data via API:", error);
         }
 
         setLoading(false);

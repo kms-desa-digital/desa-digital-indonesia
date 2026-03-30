@@ -10,6 +10,8 @@ import {
   svgStyle,
 } from './_categoryInnovationStyle';
 
+import { getInnovation } from 'Services/innovationServices';
+
 const COLORS = ['#244E3B', '#347357', '#568A73', '#95C2AF', '#B1BFB9', '#91B495', '#6A9D8F'];
 
 const PieChartInnovation = ({ onSliceClick }: { onSliceClick: (categoryName: string) => void }) => {
@@ -22,30 +24,35 @@ const PieChartInnovation = ({ onSliceClick }: { onSliceClick: (categoryName: str
 
   useEffect(() => {
     const fetchData = async () => {
-    const db = getFirestore();
-    const snapshot = await getDocs(collection(db, 'innovations'));
+    try {
+        const responseData = await getInnovation();
+        const innovationsData = responseData.innovations || [];
+        
+        const counts: Record<string, number> = {};
 
-    const counts: Record<string, number> = {};
+        innovationsData.forEach((item: any) => {
+            const kategori = item?.kategori;
 
-    snapshot.forEach(doc => {
-        const kategori = doc.data()?.kategori;
+            if (kategori && kategori !== 'ND' && kategori !== '-') {
+            counts[kategori] = (counts[kategori] || 0) + 1;
+            }
+        });
 
-        if (kategori && kategori !== 'ND' && kategori !== '-') {
-        counts[kategori] = (counts[kategori] || 0) + 1;
-        }
-    });
+        const sortedEntries = Object.entries(counts).sort(([, a], [, b]) => b - a);
 
-    const sortedEntries = Object.entries(counts).sort(([, a], [, b]) => b - a);
+        const allData = sortedEntries.map(([name, value], index) => ({
+            id: index + 1,
+            name,
+            value,
+            color: COLORS[index % COLORS.length],
+        }));
 
-    const allData = sortedEntries.map(([name, value], index) => ({
-        id: index + 1,
-        name,
-        value,
-        color: COLORS[index % COLORS.length],
-    }));
-
-    setCategories(allData);
-    setLoading(false);
+        setCategories(allData);
+    } catch (error) {
+        console.error("Error fetching innovations for pie chart:", error);
+    } finally {
+        setLoading(false);
+    }
     };
 
     fetchData();

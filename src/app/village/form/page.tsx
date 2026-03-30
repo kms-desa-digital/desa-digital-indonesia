@@ -10,30 +10,18 @@ import {
     useToast,
 } from "@chakra-ui/react";
 import { NavbarButton } from "../profile/[id]/_styles";
-import LocationSelector from "Components/form/LocationSellector";
 import MultiSellect from "Components/form/MultiSellect";
 import TopBar from "Components/topBar";
-import {
-    doc,
-    getDoc,
-    serverTimestamp,
-    setDoc,
-    updateDoc
-} from "firebase/firestore";
-import {
-    deleteObject,
-    getDownloadURL,
-    ref,
-    uploadString,
-} from "firebase/storage";
 import React, { useEffect, useRef, useState } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "src/firebase/clientApp";
 import FormSection from "Components/form/FormSection";
 import HeaderUpload from "Components/form/HeaderUpload";
 import ImageUpload from "Components/form/ImageUpload";
 import LogoUpload from "Components/form/LogoUpload";
-import { auth, firestore, storage } from "src/firebase/clientApp";
+import LocationSelector from "Components/form/LocationSellector";
+import { getVillageById, createVillage, updateVillage } from "Services/villageServices";
 import {
     getDistricts,
     getProvinces,
@@ -42,6 +30,13 @@ import {
 } from "src/services/locationServices";
 import ConfModal from "Components/confirmModal/confModal";
 import SecConfModal from "Components/confirmModal/secConfModal";
+import {
+    ref,
+    uploadString,
+    getDownloadURL,
+    deleteObject
+} from "firebase/storage";
+import { storage } from "src/firebase/clientApp";
 
 interface Option {
     value: string;
@@ -274,7 +269,7 @@ const AddVillage: React.FC = () => {
                         imagesArray.push(readerEvent.target.result as string);
 
                         if (imagesArray.length === files.length) {
-                            setSelectedFiles((prev) => {
+                            setSelectedFiles((prev: any) => {
                                 // Cegah lebih dari maxFiles
                                 if (prev.length + imagesArray.length > maxFiles) {
                                     const availableSlots = maxFiles - prev.length;
@@ -322,14 +317,14 @@ const AddVillage: React.FC = () => {
             textInputValue.instagram ||
             textInputValue.website
         ) {
-            setTextInputValue((prev) => ({ ...prev, [name]: value }));
+            setTextInputValue((prev: any) => ({ ...prev, [name]: value }));
         } else if (textInputValue.description) {
             if (wordCount <= 100) {
-                setTextInputValue((prev) => ({ ...prev, [name]: value }));
+                setTextInputValue((prev: any) => ({ ...prev, [name]: value }));
             }
         } else {
             if (wordCount <= 30) {
-                setTextInputValue((prev) => ({ ...prev, [name]: value }));
+                setTextInputValue((prev: any) => ({ ...prev, [name]: value }));
             }
         }
     };
@@ -368,219 +363,79 @@ const AddVillage: React.FC = () => {
             const { kondisijalan, jaringan, listrik, teknologi: teknologiDropdown, kemampuan } = dropdownValue;
 
             const userId = user.uid;
-            const docRef = doc(firestore, "villages", userId);
-            // Cek dan hapus foto lama jika ada yang dihapus
-            const docSnap = await getDoc(docRef);
-            const existingData = docSnap.data();
+            let logoUrl = selectedLogo;
+            let headerUrl = selectedHeader;
+            let imageUrls = selectedFiles;
 
-            if (status === "Ditolak") {
-                // Jika logo baru dipilih dan berbeda dengan logo yang ada
-                if (selectedLogo && selectedLogo !== existingData?.logo) {
-                    if (existingData?.logo) {
-                        // Hapus logo lama dari Firebase Storage
-                        const logoRef = ref(storage, existingData.logo);
-                        await deleteObject(logoRef);
-                        console.log("Logo deleted from storage");
-                    }
-
-                    // Upload logo baru ke Firebase Storage
-                    const logoRef = ref(storage, `villages/${userId}/logo`);
-                    await uploadString(logoRef, selectedLogo, "data_url").then(
-                        async () => {
-                            const downloadURL = await getDownloadURL(logoRef);
-                            // Perbarui URL logo di Firestore
-                            await updateDoc(docRef, {
-                                logo: downloadURL,
-                            });
-                            console.log("Logo updated in Firestore");
-                        }
-                    );
-                }
-
-                // Jika header baru dipilih dan berbeda dengan header yang ada
-                if (selectedHeader && selectedHeader !== existingData?.header) {
-                    if (existingData?.header) {
-                        // Hapus header lama dari Firebase Storage
-                        const headerRef = ref(storage, existingData.header);
-                        await deleteObject(headerRef);
-                        console.log("Header deleted from storage");
-                    }
-
-                    // Upload header baru
-                    const headerRef = ref(storage, `villages/${userId}/header`);
-                    await uploadString(headerRef, selectedHeader, "data_url").then(
-                        async () => {
-                            const downloadURL = await getDownloadURL(headerRef);
-                            // Update header URL di Firestore
-                            await updateDoc(docRef, {
-                                header: downloadURL,
-                            });
-                            console.log("Header updated in Firestore");
-                        }
-                    );
-                }
-                const existingImages = existingData?.images || [];
-                const imagesToDelete = existingImages.filter(
-                    (img: string) => !selectedFiles.includes(img)
-                );
-
-                // Hapus gambar yang tidak ada dalam selectedFiles
-                if (imagesToDelete) {
-                    for (const image of imagesToDelete) {
-                        const imageRef = ref(storage, image);
-                        await deleteObject(imageRef).catch((error) => {
-                            console.error("Error deleting image:", error);
-                        });
-                    }
-                }
-
-                // Upload gambar baru yang ada dalam selectedFiles
-                const imagesRef = ref(storage, `villages/${userId}/images`);
-                const downloadURLs: string[] = [];
-
-                for (let i = 0; i < selectedFiles.length; i++) {
-                    const file = selectedFiles[i];
-
-                    // Cek apakah file merupakan data URL (base64)
-                    if (file.startsWith("data:")) {
-                        // Jika file adalah data URL, upload ke Firebase Storage
-                        const imageRef = ref(imagesRef, `${i}`);
-                        await uploadString(imageRef, file, "data_url").then(async () => {
-                            const downloadURL = await getDownloadURL(imageRef);
-                            downloadURLs.push(downloadURL); // Tambahkan URL ke array
-                            console.log("File available at", downloadURL);
-                        });
-                    } else {
-                        // Jika file sudah berupa URL, langsung tambahkan ke array downloadURLs
-                        downloadURLs.push(file);
-                        console.log("Existing image URL added:", file);
-                    }
-                }
-
-                // Update images URL di Firestore
-                await updateDoc(docRef, {
-                    images: downloadURLs,
-                });
-
-                await updateDoc(docRef, {
-                    namaDesa: name,
-                    deskripsi: description,
-                    potensiDesa: selectedPotensi.map((potensi) => potensi.value),
-                    geografisDesa: geografis,
-                    infrastrukturDesa: infrastruktur,
-                    kesiapanDigital: kesiapan,
-                    kesiapanTeknologi: teknologi,
-                    pemantapanPelayanan: pelayanan,
-                    sosialBudaya: sosial,
-                    sumberDaya: resource,
-                    whatsapp: whatsapp,
-                    instagram: instagram,
-                    website: website,
-                    lokasi: {
-                        provinsi: selectedProvince,
-                        kabupatenKota: selectedRegency,
-                        kecamatan: selectedDistrict,
-                        desaKelurahan: selectedVillage,
-                    },
-                    status: "Menunggu", // Set status menjadi "Menunggu" setelah dikirim ulang
-                    editedAt: serverTimestamp(), // Tandai waktu edit
-                    kondisijalan: kondisijalan || "",
-                    jaringan: jaringan || "",
-                    listrik: listrik || "",
-                    teknologi: teknologiDropdown || "",
-                    kemampuan: kemampuan || "",
-                });
-
-                console.log("Document updated with ID: ", userId);
-                setStatus("Menunggu");
-            } else {
-                // Jika statusnya bukan "Ditolak", buat dokumen baru seperti biasa
-                await setDoc(docRef, {
-                    namaDesa: name,
-                    userId: userId,
-                    deskripsi: description,
-                    potensiDesa: selectedPotensi.map((potensi) => potensi.value),
-                    geografisDesa: geografis,
-                    infrastrukturDesa: infrastruktur,
-                    kesiapanDigital: kesiapan,
-                    kesiapanTeknologi: teknologi,
-                    pemantapanPelayanan: pelayanan,
-                    sosialBudaya: sosial,
-                    sumberDaya: resource,
-                    whatsapp: whatsapp,
-                    instagram: instagram,
-                    website: website,
-                    jumlahInovasiDiterapkan: 0,
-                    lokasi: {
-                        provinsi: selectedProvince,
-                        kabupatenKota: selectedRegency,
-                        kecamatan: selectedDistrict,
-                        desaKelurahan: selectedVillage,
-                    },
-                    status: "Menunggu", // Status pertama kali dikirim adalah "Menunggu"
-                    catatanAdmin: "",
-                    createdAt: serverTimestamp(),
-                    editedAt: serverTimestamp(),
-                    kondisijalan: kondisijalan || "",
-                    jaringan: jaringan || "",
-                    listrik: listrik || "",
-                    teknologi: teknologiDropdown || "",
-                    kemampuan: kemampuan || "",
-                });
-
-                if (selectedLogo) {
-                    const logoRef = ref(storage, `villages/${userId}/logo`);
-                    await uploadString(logoRef, selectedLogo, "data_url").then(
-                        async () => {
-                            const downloadURL = await getDownloadURL(logoRef);
-                            await updateDoc(doc(firestore, "villages", userId), {
-                                logo: downloadURL,
-                            });
-                            console.log("File available at", downloadURL);
-                        }
-                    );
-                } else {
-                    setError("Logo harus diisi");
-                    setLoading(false);
-                    return;
-                }
-
-                // Upload header if provided
-                if (selectedHeader) {
-                    const headerRef = ref(storage, `villages/${userId}/header`);
-                    await uploadString(headerRef, selectedHeader, "data_url").then(
-                        async () => {
-                            const downloadURL = await getDownloadURL(headerRef);
-                            await updateDoc(doc(firestore, "villages", userId), {
-                                header: downloadURL,
-                            });
-                            console.log("File available at", downloadURL);
-                        }
-                    );
-                }
-                if (selectedFiles.length > 0) {
-                    const imagesRef = ref(storage, `villages/${userId}/images`);
-                    const downloadURLs: string[] = [];
-
-                    for (let i = 0; i < selectedFiles.length; i++) {
-                        const imageRef = ref(imagesRef, `${i}`);
-                        await uploadString(imageRef, selectedFiles[i], "data_url").then(
-                            async () => {
-                                const downloadURL = await getDownloadURL(imageRef);
-                                downloadURLs.push(downloadURL); // Tambahkan URL ke array
-                                console.log("File available at", downloadURL);
-                            }
-                        );
-                    }
-
-                    // Simpan seluruh array URL ke Firestore
-                    await updateDoc(doc(firestore, "villages", userId), {
-                        images: downloadURLs,
-                    });
-                }
-                console.log("Document written with ID: ", userId);
-                setStatus("Menunggu");
+            // Upload Logo to Storage if it's base64
+            if (selectedLogo && selectedLogo.startsWith("data:image")) {
+                const logoRef = ref(storage, `villages/${userId}/logo`);
+                await uploadString(logoRef, selectedLogo, "data_url");
+                logoUrl = await getDownloadURL(logoRef);
+                console.log("Logo uploaded to storage");
             }
+
+            // Upload Header to Storage if it's base64
+            if (selectedHeader && selectedHeader.startsWith("data:image")) {
+                const headerRef = ref(storage, `villages/${userId}/header`);
+                await uploadString(headerRef, selectedHeader, "data_url");
+                headerUrl = await getDownloadURL(headerRef);
+                console.log("Header uploaded to storage");
+            }
+
+            // Upload Gallery Images to Storage if they are base64
+            const uploadedImageUrls = await Promise.all(
+                selectedFiles.map(async (file, index) => {
+                    if (file && file.startsWith("data:image")) {
+                        const imageRef = ref(storage, `villages/${userId}/gallery/image_${index}`);
+                        await uploadString(imageRef, file, "data_url");
+                        return await getDownloadURL(imageRef);
+                    }
+                    return file; // Already URL
+                })
+            );
+            imageUrls = uploadedImageUrls;
+
+            const villagePayload = {
+                namaDesa: name,
+                userId: userId,
+                deskripsi: description,
+                potensiDesa: selectedPotensi.map((potensi: any) => potensi.value),
+                geografisDesa: geografis,
+                infrastrukturDesa: infrastruktur,
+                kesiapanDigital: kesiapan,
+                kesiapanTeknologi: teknologi,
+                pemantapanPelayanan: pelayanan,
+                sosialBudaya: sosial,
+                sumberDaya: resource,
+                whatsapp: whatsapp,
+                instagram: instagram,
+                website: website,
+                lokasi: {
+                    provinsi: selectedProvince,
+                    kabupatenKota: selectedRegency,
+                    kecamatan: selectedDistrict,
+                    desaKelurahan: selectedVillage,
+                },
+                status: "Menunggu",
+                kondisijalan: kondisijalan || "",
+                jaringan: jaringan || "",
+                listrik: listrik || "",
+                teknologi: teknologiDropdown || "",
+                kemampuan: kemampuan || "",
+                logo: logoUrl,
+                header: headerUrl,
+                images: imageUrls
+            };
+
+            if (status === "Ditolak" || status === "Terverifikasi") {
+                await updateVillage(userId, villagePayload);
+                console.log("Village updated via API (Storage URLs stored)");
+            } else {
+                await createVillage(villagePayload);
+                console.log("Village created via API (Storage URLs stored)");
+            }
+            setStatus("Menunggu");
 
             toast({
                 title: "Profile berhasil dibuat",
@@ -613,69 +468,69 @@ const AddVillage: React.FC = () => {
                 setError("User is not logged in.");
                 return;
             }
+            /*
             const docRef = doc(firestore, "villages", user.uid);
             const docSnap = await getDoc(docRef);
+            ... Firestore Logic ...
+            */
+            try {
+                const response: any = await getVillageById(user.uid);
+                const data = response.data;
+                if (data) {
+                    // Set nilai form dengan data yang diambil dari API
+                    setTextInputValue({
+                        name: data.namaDesa || "",
+                        description: data.deskripsi || "",
+                        geografis: data.geografisDesa || "",
+                        infrastruktur: data.infrastrukturDesa || "",
+                        kesiapan: data.kesiapanDigital || "",
+                        teknologi: data.kesiapanTeknologi || "",
+                        pelayanan: data.pemantapanPelayanan || "",
+                        sosial: data.sosialBudaya || "",
+                        resource: data.sumberDaya || "",
+                        whatsapp: data.whatsapp || "",
+                        instagram: data.instagram || "",
+                        website: data.website || "",
+                    });
 
-            if (docSnap.exists()) {
-                const data = docSnap.data();
+                    setDropdownValue({
+                        kondisijalan: data.kondisijalan || null,
+                        jaringan: data.jaringan || null,
+                        listrik: data.listrik || null,
+                        teknologi: data.teknologi || null,
+                        kemampuan: data.kemampuan || null,
+                    });
 
-                // Set nilai form dengan data yang diambil dari Firestore
-                setTextInputValue({
-                    name: data.namaDesa || "",
-                    description: data.deskripsi || "",
-                    geografis: data.geografisDesa || "",
-                    infrastruktur: data.infrastrukturDesa || "",
-                    kesiapan: data.kesiapanDigital || "",
-                    teknologi: data.kesiapanTeknologi || "",
-                    pelayanan: data.pemantapanPelayanan || "",
-                    sosial: data.sosialBudaya || "",
-                    resource: data.sumberDaya || "",
-                    whatsapp: data.whatsapp || "",
-                    instagram: data.instagram || "",
-                    website: data.website || "",
-                });
-
-                setDropdownValue({
-                    kondisijalan: data.kondisijalan || null,
-                    jaringan: data.jaringan || null,
-                    listrik: data.listrik || null,
-                    teknologi: data.teknologi || null,
-                    kemampuan: data.kemampuan || null,
-                });
-
-                // console.log(data.logo)
-                setSelectedPotensi(
-                    data.potensiDesa.map((potensi: string) => ({
-                        value: potensi,
-                        label: potensi.charAt(0).toUpperCase() + potensi.slice(1),
-                    }))
-                );
-
-                setSelectedLogo(data.logo);
-                setSelectedHeader(data.header);
-                setSelectedFiles(Object.values(data.images || {}));
-
-                setSelectedProvince(data.lokasi?.provinsi);
-                setSelectedRegency(data.lokasi?.kabupatenKota);
-                setSelectedDistrict(data.lokasi?.kecamatan);
-                setSelectedVillage(data.lokasi?.desaKelurahan);
-
-                // Tentukan apakah form bisa diedit berdasarkan status
-                if (data.status === "Menunggu") {
-                    setIsEditable(false); // Jika status "pending", form tidak bisa diedit
-                    setStatus("Menunggu");
-                    setAlertStatus("info");
-                    setAlertMessage(
-                        `Profil sudah didaftakan. Menunggu verifikasi admin.`
+                    setSelectedPotensi(
+                        (data.potensiDesa || []).map((potensi: string) => ({
+                            value: potensi,
+                            label: potensi.charAt(0).toUpperCase() + potensi.slice(1),
+                        }))
                     );
-                } else if (data.status === "Ditolak") {
-                    setIsEditable(true); // Jika diverifikasi atau ditolak, form bisa diedit
-                    setStatus("Ditolak");
-                    setAlertStatus("error");
-                    setAlertMessage(
-                        `Pengajuan ditolak dengan catatan: ${data.catatanAdmin || ""}`
-                    );
+
+                    setSelectedLogo(data.logo || "");
+                    setSelectedHeader(data.header || "");
+                    setSelectedFiles(data.images || []);
+
+                    setSelectedProvince(data.lokasi?.provinsi);
+                    setSelectedRegency(data.lokasi?.kabupatenKota);
+                    setSelectedDistrict(data.lokasi?.kecamatan);
+                    setSelectedVillage(data.lokasi?.desaKelurahan);
+
+                    if (data.status === "Menunggu") {
+                        setIsEditable(false);
+                        setStatus("Menunggu");
+                        setAlertStatus("info");
+                        setAlertMessage(`Profil sudah didaftakan. Menunggu verifikasi admin.`);
+                    } else if (data.status === "Ditolak") {
+                        setIsEditable(true);
+                        setStatus("Ditolak");
+                        setAlertStatus("error");
+                        setAlertMessage(`Pengajuan ditolak dengan catatan: ${data.catatanAdmin || ""}`);
+                    }
                 }
+            } catch (error) {
+                console.error("Error fetching village data from API:", error);
             }
         };
 

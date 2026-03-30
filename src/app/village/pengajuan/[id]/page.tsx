@@ -22,17 +22,10 @@ import {
 import { ChevronDownIcon, SearchIcon } from "@chakra-ui/icons";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
-import { auth, firestore } from "src/firebase/clientApp";
+import { auth } from "src/firebase/clientApp";
 import { useAuthState } from "react-firebase-hooks/auth";
-import {
-    collection,
-    getDocs,
-    orderBy,
-    query,
-    startAfter,
-    limit,
-    where,
-} from "firebase/firestore";
+// import { auth, firestore } from "src/firebase/clientApp";
+import { getClaims } from "Services/villageServices";
 import CardNotification from "Components/card/notification/CardNotification";
 import Right from "@public/icons/arrow-right.svg";
 import Left from "@public/icons/arrow-left.svg";
@@ -64,104 +57,74 @@ const PengajuanKlaim: React.FC = () => {
     const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
 
     // Pagination Status
-    const [lastVisible, setLastVisible] = useState<any>(null);
     const [currentPage, setCurrentPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
+    const [hasMore, setHasMore] = useState(false);
     const itemsPerPage = 5;
 
-    const fetchData = async (isNextPage = false) => {
+    const fetchData = async (page = 1) => {
         setLoading(true);
-
-        type klaimInovasi = {
-            id: string;
-            namaInovasi: string;
-            deskripsi?: string;
-            status: string;
-            desaId: string;
-            createdAt: { seconds: number; nanoseconds: number };
-        };
+        const skipValue = (page - 1) * itemsPerPage;
 
         try {
-            let q;
-            if (isNextPage && lastVisible) {
-                q = query(
-                    collection(firestore, "claimInnovations"),
-                    where("desaId", "==", user?.uid),
-                    orderBy("createdAt", "desc"),
-                    startAfter(lastVisible),
-                    limit(itemsPerPage)
-                );
-            } else {
-                q = query(
-                    collection(firestore, "claimInnovations"),
-                    where("desaId", "==", user?.uid),
-                    orderBy("createdAt", "desc"),
-                    limit(itemsPerPage)
-                );
-            }
-
-            const docs = await getDocs(q);
-            setLastVisible(docs.docs[docs.docs.length - 1]);
-            setHasMore(docs.docs.length === itemsPerPage);
-
-            const newData: klaimInovasi[] = docs.docs.map(
-                (doc) => ({ id: doc.id, ...doc.data() } as klaimInovasi)
+            const response: any = await getClaims(
+              user?.uid, 
+              selectedFilter && selectedFilter !== "Semua" ? selectedFilter : undefined,
+              itemsPerPage,
+              skipValue,
+              searchTerm || undefined
             );
-            const filteredByUser = newData.filter(
-                (item) => item.desaId === user?.uid
-            );
+            
+            const claimsData = response.claims || response.data?.claims || [];
+            const pagination = response.pagination || response.data?.pagination || {};
 
-            setData(filteredByUser);
-            setFilteredData(filteredByUser);
+            setData(claimsData);
+            setFilteredData(claimsData);
+            setHasMore(pagination.hasMore || false);
         } catch (err) {
-            console.error("Error fetching data:", err);
+            console.error("Error fetching claims from API:", err);
+            setData([]);
+            setFilteredData([]);
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        if (user) fetchData();
-    }, [user]);
+        if (user) {
+            setCurrentPage(1);
+            fetchData(1);
+        }
+    }, [user, selectedFilter, searchTerm]); // Tambah searchTerm ke dependency
 
-    useEffect(() => {
-        let filtered = [...data];
-        if (searchTerm) {
-            const lower = searchTerm.toLowerCase();
-            filtered = filtered.filter((item) =>
-                (item.namaInovasi || "").toLowerCase().includes(lower)
-            );
-        }
-        if (selectedFilter && selectedFilter !== "Semua") {
-            filtered = filtered.filter((item) => item.status === selectedFilter);
-        }
-        setFilteredData(filtered);
-    }, [searchTerm, selectedFilter, data]);
+// Client side UI filtering removed in favor of server side search/filter
 
     const handleNextPage = async () => {
         if (hasMore) {
-            setCurrentPage((prev) => prev + 1);
-            await fetchData(true);
+            const nextPage = currentPage + 1;
+            setCurrentPage(nextPage);
+            await fetchData(nextPage);
         }
     };
 
     const handlePrevPage = async () => {
         if (currentPage > 1) {
-            setCurrentPage((prev) => prev - 1);
-            await fetchData(false);
+            const prevPage = currentPage - 1;
+            setCurrentPage(prevPage);
+            await fetchData(prevPage);
         }
     };
 
-    const formatTimestamp = (timestamp: {
-        seconds: number;
-        nanoseconds: number;
-    }) => {
-        if (!timestamp?.seconds) return "Invalid Date";
-        return new Date(timestamp.seconds * 1000).toLocaleDateString("id-ID", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        });
+    const formatTimestamp = (dateStr: string) => {
+        if (!dateStr) return "-";
+        try {
+            return new Date(dateStr).toLocaleDateString("id-ID", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            });
+        } catch (e) {
+            return dateStr;
+        }
     };
 
     return (
