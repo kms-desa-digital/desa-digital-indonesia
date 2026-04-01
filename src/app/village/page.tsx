@@ -7,8 +7,8 @@ import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useQuery } from "react-query";
 import { useRouter } from "next/navigation";
-import { getUsers } from "Services/userServices";
-import { auth, firestore } from "src/firebase/clientApp";
+import { auth } from "src/firebase/clientApp";
+// import { auth, firestore } from "src/firebase/clientApp";
 import {
     CardContent,
     Column1,
@@ -28,8 +28,9 @@ import { useTranslations } from "next-intl";
 const defaultHeader = "/images/default-header.svg";
 const defaultLogo = "/images/default-logo.svg";
 
-import { collection, DocumentData, getDocs, doc, getDoc } from "firebase/firestore";
+// import { collection, DocumentData, getDocs, doc, getDoc } from "firebase/firestore";
 import { getProvinces, getRegencies } from "src/services/locationServices";
+import { getVillages } from "Services/villageServices";
 
 interface Location {
     id: string;
@@ -42,6 +43,7 @@ const Village: React.FC = () => {
     const [user] = useAuthState(auth);
     const [userRole, setUserRole] = useState<string | null>(null);
 
+    /* 
     useEffect(() => {
         const fetchUserRole = async () => {
             if (user) {
@@ -56,6 +58,7 @@ const Village: React.FC = () => {
         };
         fetchUserRole();
     }, [user]);
+    */
 
     const [provinces, setProvinces] = useState<Location[]>([]);
     const [regencies, setRegencies] = useState<Location[]>([]);
@@ -63,8 +66,8 @@ const Village: React.FC = () => {
     const [selectedRegency, setSelectedRegency] = useState<string>("");
     const [searchTerm, setSearchTerm] = useState<string>("");
 
-    const villagesRef = collection(firestore, "villages");
-    const [villages, setVillages] = useState<DocumentData[]>([]);
+    // const villagesRef = collection(firestore, "villages");
+    const [villages, setVillages] = useState<any[]>([]);
 
     const parseLocation = (name: string) => {
         const match = name.match(/^(KABUPATEN|KOTA|KAB\.?)\s+(.*)/i);
@@ -135,10 +138,11 @@ const Village: React.FC = () => {
         setSearchTerm(e.target.value);
     };
 
-    const { data: users, isFetched } = useQuery<any>("villages", getUsers);
+    const [isFetched, setIsFetched] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
+            /*
             const snapShot = await getDocs(villagesRef);
             const villagesData = snapShot.docs.map((doc) => {
                 const data = doc.data();
@@ -151,7 +155,21 @@ const Village: React.FC = () => {
                 };
             })
                 .filter((item) => item.status === 'Terverifikasi');
-            setVillages(villagesData);
+            */
+            try {
+                const response: any = await getVillages("Terverifikasi");
+                const fetchedVillages = response.villages || response.data || [];
+                const villagesData = fetchedVillages.map((item: any) => ({
+                    ...item,
+                    provinsi: item.lokasi?.provinsi?.label || item.provinsi || "",
+                    kabupatenKota: item.lokasi?.kabupatenKota?.label || item.kabupatenKota || item.kabupaten || "",
+                    namaDesa: item.lokasi?.desaKelurahan?.label || item.namaDesa || item.desa || "",
+                }));
+                setVillages(villagesData);
+                setIsFetched(true);
+            } catch (error) {
+                console.error("Error fetching villages from API:", error);
+            }
         };
         fetchData();
     }, []);
@@ -248,7 +266,7 @@ const Village: React.FC = () => {
                                 id={item.userId}
                                 isHome={false}
                                 onClick={() => {
-                                    router.push(`/village/profile/${item.userId}`);
+                                    router.push(`/village/detail/${item.userId || item.id}`);
                                 }}
                             />
                         ))}

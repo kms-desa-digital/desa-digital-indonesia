@@ -1,10 +1,10 @@
 import styled from 'styled-components'
 
-export const LoadingContainer = styled.div`
+export const LoadingContainer = styled.div<{ fullHeight?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
-  height: ${({ fullHeight }: { fullHeight?: boolean }) => (fullHeight ? '100vh' : 'auto')};
+  height: ${({ fullHeight }) => (fullHeight ? '100vh' : 'auto')};
 `
 
 export const LoadingSpinner = styled.div`

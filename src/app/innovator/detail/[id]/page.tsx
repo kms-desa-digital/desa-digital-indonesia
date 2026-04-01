@@ -17,16 +17,11 @@ import Container from "Components/container";
 import ActionDrawer from "Components/drawer/ActionDrawer";
 import TopBar from "Components/topBar/index";
 import { paths } from "Consts/path";
-import {
-    DocumentData,
-    collection,
-    doc,
-    getDoc,
-    getDocs,
-    query,
-    updateDoc,
-    where,
-} from "firebase/firestore";
+// import { DocumentData, collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
+import { getInnovation } from "Services/innovationServices";
+import { getUserById } from "Services/userServices";
+import { DocumentData } from "firebase/firestore"; // Still used for type
 import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { FaWandMagicSparkles } from "react-icons/fa6";
@@ -68,13 +63,16 @@ const DetailInnovator: React.FC = () => {
                 setLoading(false);
                 return;
             }
+            /*
             const docRef = doc(firestore, "innovators", id);
             await updateDoc(docRef, {
                 status: "Terverifikasi",
             });
+            */
+            await updateInnovator(id, { status: "Terverifikasi" });
             setInnovatorData((prev) => (prev ? { ...prev, status: "Terverifikasi" } : null));
         } catch (error) {
-            console.error("Error verifying innovator:", error);
+            console.error("Error verifying innovator via API:", error);
             setError("Error verifying innovator.");
         }
         setLoading(false);
@@ -88,18 +86,21 @@ const DetailInnovator: React.FC = () => {
                 setLoading(false);
                 return;
             }
+            /*
             const docRef = doc(firestore, "innovators", id);
             await updateDoc(docRef, {
                 status: "Ditolak",
                 catatanAdmin: modalInput,
             });
+            */
+            await updateInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
             setInnovatorData((prev) => (prev ? {
                 ...prev,
                 status: "Ditolak",
                 catatanAdmin: modalInput,
             } : null));
         } catch (error) {
-            console.error("Error rejecting innovator:", error);
+            console.error("Error rejecting innovator via API:", error);
             setError("Error rejecting innovator.");
         }
         setLoading(false);
@@ -109,13 +110,21 @@ const DetailInnovator: React.FC = () => {
     useEffect(() => {
         const fetchUser = async () => {
             if (userLogin?.uid) {
+                try {
+                /*
                 const userRef = doc(firestore, "users", userLogin.uid);
                 const userDoc = await getDoc(userRef);
-                if (userDoc.exists()) {
-                    setAdmin(userDoc.data().role === "admin");
-                    if (id === userLogin.uid) {
-                        setOwner(true);
+                */
+                    const res: any = await getUserById(userLogin.uid);
+                    const userData = res.data;
+                    if (userData) {
+                        setAdmin(userData.role === "admin");
+                        if (id === userLogin.uid) {
+                            setOwner(true);
+                        }
                     }
+                } catch (err) {
+                    console.error("Error fetching user via API:", err);
                 }
             }
         };
@@ -131,16 +140,21 @@ const DetailInnovator: React.FC = () => {
 
         const fetchInnovatorData = async () => {
             try {
+                /*
                 const innovatorRef = doc(firestore, "innovators", id);
                 const innovatorDoc = await getDoc(innovatorRef);
-                if (innovatorDoc.exists()) {
-                    setInnovatorData(innovatorDoc.data());
+                ... Firestore Logic ...
+                */
+                const res: any = await getInnovatorById(id);
+                const data = res.data;
+                if (data) {
+                    setInnovatorData(data);
                 } else {
-                    console.log("Innovator not found");
+                    console.log("Innovator not found via API");
                     setError("Innovator not found.");
                 }
             } catch (error) {
-                console.error("Error fetching innovator data:", error);
+                console.error("Error fetching innovator data from API:", error);
                 setError("Error fetching innovator data.");
             } finally {
                 setLoading(false);
@@ -153,16 +167,17 @@ const DetailInnovator: React.FC = () => {
     useEffect(() => {
         const fetchInnovations = async () => {
             try {
+                /*
                 const innovationsRef = collection(firestore, "innovations");
                 const q = query(innovationsRef, where("innovatorId", "==", id));
                 const innovationsDocs = await getDocs(q);
-                const innovationsData = innovationsDocs.docs.map((doc) => ({
-                    id: doc.id,
-                    ...doc.data(),
-                }));
+                ... Firestore Logic ...
+                */
+                const res: any = await getInnovation({ innovatorId: id });
+                const innovationsData = res.innovations || [];
                 setInnovations(innovationsData);
             } catch (error) {
-                console.error("Error fetching innovations data:", error);
+                console.error("Error fetching innovations data from API:", error);
                 setError("Error fetching innovations data.");
             }
         };
@@ -211,7 +226,7 @@ const DetailInnovator: React.FC = () => {
             <TopBar title="Profil Inovator" onBack={() => router.back()} />
             <Flex position="relative">
                 <Background src={innovatorData.header} alt="header" />
-                <Logo src={innovatorData.logo} alt="logo" mx={16} my={-40} />
+                <Logo src={innovatorData.logo} alt="logo" />
                 <Box
                     position="absolute"
                     top="130%"

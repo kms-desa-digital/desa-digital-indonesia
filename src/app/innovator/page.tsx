@@ -14,19 +14,29 @@ import CardInnovator from "Components/card/innovator";
 import { paths } from "Consts/path";
 import { Box, Select } from "@chakra-ui/react";
 import SearchBarInnov from "Components/innovator/hero/SearchBarInnov";
-import { collection, DocumentData, getDocs } from "firebase/firestore";
-import { firestore } from "src/firebase/clientApp";
 import { useEffect, useState } from "react";
 import Container from "Components/container";
 import { useTranslations } from "next-intl";
+import { getInnovators } from "Services/innovatorServices";
+
+type InnovatorData = {
+    id: string;
+    namaInovator: string;
+    kategori: string;
+    logo: string;
+    header: string;
+    deskripsi: string;
+    jumlahInovasi: number;
+    jumlahDesaDampingan: number;
+    status: string;
+};
 
 export default function InnovatorPage() {
     const t = useTranslations("Innovator");
     const router = useRouter();
-    const innovatorsRef = collection(firestore, "innovators");
-    const [innovators, setInnovators] = useState<DocumentData[]>([]);
+    const [innovators, setInnovators] = useState<InnovatorData[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>("");
-    const [innovatorsShowed, setInnovatorsShowed] = useState<DocumentData[]>([]);
+    const [innovatorsShowed, setInnovatorsShowed] = useState<InnovatorData[]>([]);
     const [categoryFilter, setCategoryFilter] = useState<string>("Semua Kategori");
 
     const categories = [
@@ -44,13 +54,14 @@ export default function InnovatorPage() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const snapShot = await getDocs(innovatorsRef);
-            const innovatorsData = snapShot.docs.map((doc) => ({
-                id: doc.id, // Tambahkan ID dokumen
-                ...doc.data(),
-            })); // Pastikan semua data tersimpan
-            setInnovators(innovatorsData);
-            setInnovatorsShowed(innovatorsData);
+            try {
+                const res: any = await getInnovators();
+                const innovatorsData = res.data || [];
+                setInnovators(innovatorsData);
+                setInnovatorsShowed(innovatorsData);
+            } catch (error) {
+                console.error("Error fetching innovators from MongoDB API:", error);
+            }
         };
         fetchData();
     }, []);

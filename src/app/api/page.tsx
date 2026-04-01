@@ -165,6 +165,35 @@ const ENDPOINTS: Record<string, Endpoint[]> = {
       body: { messages: [{ role: "user", content: "string" }] },
     },
   ],
+  Innovators: [
+    {
+      method: "GET",
+      url: "/api/innovators",
+      desc: "Mengambil daftar inovator.",
+      params: ["status"],
+    },
+    {
+      method: "POST",
+      url: "/api/innovators",
+      desc: "Membuat profil inovator baru.",
+      body: { userId: "string", namaInovator: "string", kategori: "string" },
+    },
+    {
+      method: "GET",
+      url: "/api/innovators/[id]",
+      desc: "Detail profil satu inovator (by _id atau userId).",
+    },
+    {
+      method: "PUT",
+      url: "/api/innovators/[id]",
+      desc: "Mengupdate profil inovator.",
+    },
+    {
+      method: "DELETE",
+      url: "/api/innovators/[id]",
+      desc: "Menghapus profil inovator.",
+    },
+  ],
 };
 
 const MethodBadge = ({ method }: { method: string }) => {

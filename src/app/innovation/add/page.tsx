@@ -32,8 +32,10 @@ import TopBar from "Components/topBar";
 //     where,
 //     query
 // } from "firebase/firestore";
-import { getDoc, doc, updateDoc, increment } from "firebase/firestore"; // Masih dipakai untuk temp vendor check kl perlu
-import { addInnovation, updateInnovation } from "Services/innovationServices";
+// import { addDoc, collection, doc, getDoc, increment, serverTimestamp, updateDoc, getDocs, where, query } from "firebase/firestore";
+// import { getDoc, doc, updateDoc, increment } from "firebase/firestore"; 
+import { addInnovation, updateInnovation, getInnovationById } from "Services/innovationServices";
+import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
 import {
     deleteObject,
     getDownloadURL,
@@ -328,24 +330,28 @@ const AddInnovation: React.FC = () => {
         }
 
         const userId = user.uid;
+        /*
         const innovatorDocRef = doc(firestore, "innovators", userId);
         const innovatorDocSnap = await getDoc(innovatorDocRef);
-
-        if (!innovatorDocSnap.exists()) {
-            console.error("Innovator document not found");
-            setError("Gagal menambahkan inovasi");
+        ... Firestore Logic ...
+        */
+        let innovatorData: any = {};
+        try {
+            const res: any = await getInnovatorById(userId);
+            innovatorData = res.data;
+        } catch (err) {
+            console.error("Innovator data not found via API", err);
+            setError("Gagal mengambil data inovator");
             setLoading(false);
-            toast({
-                title: "Innovator document not found",
-                status: "error",
-                duration: 3000,
-                isClosable: true,
-                position: "top",
-            });
             return;
         }
 
-        const innovatorData = innovatorDocSnap.data();
+        if (!innovatorData) {
+            console.error("Innovator data not found");
+            setError("Gagal menambahkan inovasi");
+            setLoading(false);
+            return;
+        }
 
         const finalRequirements = [...requirements];
         if (
@@ -441,71 +447,76 @@ const AddInnovation: React.FC = () => {
         if (!innovationId) return;
 
         const fetchInnovationData = async () => {
-            const docRef = doc(firestore, "innovations", innovationId);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setTextInputsValue({
-                    name: data.namaInovasi || "",
-                    year: data.tahunDibuat || "",
-                    description: data.deskripsi || "",
-                    villages: data.inputDesaMenerapkan || "",
-                    priceMin: data.hargaMinimal || "",
-                    priceMax: data.hargaMaksimal || "",
-                    otherBusinessModel: data.otherBusinessModel || "",
-                });
-                setSelectedStatus(data.statusInovasi || "");
-                setSelectedCategory({
-                    value: data.kategori || "",
-                    label: data.kategori || "",
-                });
-                const otherModel = data.modelBisnis?.find(
-                    (model: string) => !predefinedModels.includes(model)
-                );
+            try {
+                /*
+                const docRef = doc(firestore, "innovations", innovationId);
+                const docSnap = await getDoc(docRef);
+                ... Firestore Logic ...
+                */
+                const res: any = await getInnovationById(innovationId);
+                const data = res.innovation;
 
-                if (otherModel) {
-                    setOtherBusinessModel(otherModel);
-                    setSelectedModels([
-                        ...data.modelBisnis.filter((model: string) => model !== otherModel),
-                        "Lain-lain",
-                    ]);
-                } else {
-                    setSelectedModels(data.modelBisnis || []);
-                }
-                const mappedManfaat =
-                    data.manfaat?.map((item: { judul: string; deskripsi: string }) => ({
-                        benefit: item.judul || "",
-                        description: item.deskripsi || "",
-                    })) || [];
-
-                setBenefit(mappedManfaat);
-                setRequirements(data.infrastruktur || []);
-                setSelectedFiles(data.images || []);
-
-                if (data.status === "Menunggu") {
-                    setIsEditable(false);
-                    setStatus("Menunggu");
-                    setAlertStatus("info");
-                    setAlertMessage(
-                        `Inovasi sudah didaftakan. Menunggu verifikasi admin.`
-                    );
-                } else if (data.status === "Ditolak") {
-                    setIsEditable(true);
-                    setStatus("Ditolak");
-                    setAlertStatus("error");
-                    setAlertMessage(
-                        `Pengajuan ditolak dengan catatan: ${data.catatanAdmin || ""}`
-                    );
-                } else if (data.status === "Terverifikasi") {
-                    const innovatorDocRef = doc(
-                        firestore,
-                        "innovators",
-                        user?.uid as string
-                    );
-                    await updateDoc(innovatorDocRef, {
-                        jumlahInovasi: increment(1),
+                if (data) {
+                    setTextInputsValue({
+                        name: data.namaInovasi || "",
+                        year: data.tahunDibuat || "",
+                        description: data.deskripsi || "",
+                        villages: data.inputDesaMenerapkan || "",
+                        priceMin: data.hargaMinimal || "",
+                        priceMax: data.hargaMaksimal || "",
+                        otherBusinessModel: data.otherBusinessModel || "",
                     });
+                    setSelectedStatus(data.statusInovasi || "");
+                    setSelectedCategory({
+                        value: data.kategori || "",
+                        label: data.kategori || "",
+                    });
+                    const otherModel = (data.modelBisnis || []).find(
+                        (model: string) => !predefinedModels.includes(model)
+                    );
+
+                    if (otherModel) {
+                        setOtherBusinessModel(otherModel);
+                        setSelectedModels([
+                            ...data.modelBisnis.filter((model: string) => model !== otherModel),
+                            "Lain-lain",
+                        ]);
+                    } else {
+                        setSelectedModels(data.modelBisnis || []);
+                    }
+                    const mappedManfaat =
+                        (data.manfaat || []).map((item: { judul: string; deskripsi: string }) => ({
+                            benefit: item.judul || "",
+                            description: item.deskripsi || "",
+                        })) || [];
+
+                    setBenefit(mappedManfaat);
+                    setRequirements(data.infrastruktur || []);
+                    setSelectedFiles(data.images || []);
+
+                    if (data.status === "Menunggu") {
+                        setIsEditable(false);
+                        setStatus("Menunggu");
+                        setAlertStatus("info");
+                        setAlertMessage(
+                            `Inovasi sudah didaftakan. Menunggu verifikasi admin.`
+                        );
+                    } else if (data.status === "Ditolak") {
+                        setIsEditable(true);
+                        setStatus("Ditolak");
+                        setAlertStatus("error");
+                        setAlertMessage(
+                            `Pengajuan ditolak dengan catatan: ${data.catatanAdmin || ""}`
+                        );
+                    } else if (data.status === "Terverifikasi") {
+                        // Backend usually handles this, but if we need to track locally:
+                        if (user?.uid) {
+                             // await updateInnovator(user.uid, { jumlahInovasi: ... });
+                        }
+                    }
                 }
+            } catch (err) {
+                console.error("Error fetching innovation data from API:", err);
             }
         };
         fetchInnovationData();

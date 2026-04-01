@@ -45,11 +45,6 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
 export async function PUT(request: NextRequest, { params }: { params: Params }) {
   try {
     const { id } = await params
-
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ message: 'ID tidak valid' }, { status: 400 })
-    }
-
     const body = await request.json()
 
     // Field yang TIDAK boleh diubah oleh user (dikelola admin)
@@ -60,9 +55,14 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     body.editedAt = new Date()
 
     const db = await connectToDatabase()
+    
+    // Cari berdasarkan ObjectId (jika valid) atau string ID (jika hasil migrasi Firestore)
+    const query: any = ObjectId.isValid(id) 
+      ? { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
+      : { _id: id };
 
     // Cek apakah inovasi ada
-    const existing = await db.collection('innovations').findOne({ _id: new ObjectId(id) })
+    const existing = await db.collection('innovations').findOne(query)
     if (!existing) {
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
     }
@@ -74,7 +74,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     }
 
     const result = await db.collection('innovations').updateOne(
-      { _id: new ObjectId(id) },
+      { _id: existing._id }, // Gunakan _id yang ditemukan (baik ObjectId maupun string)
       { $set: body }
     )
 
@@ -100,12 +100,14 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
   try {
     const { id } = await params
 
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ message: 'ID tidak valid' }, { status: 400 })
-    }
-
     const db = await connectToDatabase()
-    const result = await db.collection('innovations').deleteOne({ _id: new ObjectId(id) })
+    
+    // Cari berdasarkan ObjectId (jika valid) atau string ID (jika hasil migrasi Firestore)
+    const query: any = ObjectId.isValid(id) 
+      ? { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
+      : { _id: id };
+
+    const result = await db.collection('innovations').deleteOne(query)
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })

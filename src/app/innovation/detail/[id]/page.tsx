@@ -14,26 +14,7 @@ import {
     Text,
     useDisclosure,
 } from "@chakra-ui/react";
-
-import StatusCard from "Components/card/status/StatusCard";
-import RejectionModal from "Components/confirmModal/RejectionModal";
-import ActionDrawer from "Components/drawer/ActionDrawer";
-import TopBar from "Components/topBar";
-import { paths } from "Consts/path";
-import {
-    collection,
-    deleteField,
-    doc,
-    DocumentData,
-    documentId,
-    getDoc,
-    getDocs,
-    increment,
-    query,
-    updateDoc,
-    where,
-} from "firebase/firestore";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { FaCircle } from "react-icons/fa";
 import { useParams, useRouter } from "next/navigation";
@@ -41,10 +22,20 @@ import Slider from "react-slick";
 import { toast } from "react-toastify";
 import "slick-carousel/slick/slick-theme.css";
 import "slick-carousel/slick/slick.css";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 import { useUser } from "src/contexts/UserContext";
-import { auth, firestore } from "src/firebase/clientApp";
-// import { getDocumentById } from "src/firebase/inovationTable";
-import { getInnovationById, getAppliedVillages } from "Services/innovationServices";
+
+import StatusCard from "Components/card/status/StatusCard";
+import RejectionModal from "Components/confirmModal/RejectionModal";
+import ActionDrawer from "Components/drawer/ActionDrawer";
+import TopBar from "Components/topBar";
+import { paths } from "Consts/path";
+// import { collection, deleteField, doc, DocumentData, documentId, getDoc, getDocs, increment, query, updateDoc, where } from "firebase/firestore";
+import { auth } from "src/firebase/clientApp";
+import { getInnovationById, getAppliedVillages, updateInnovation } from "Services/innovationServices";
+import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
+import { getUserById } from "Services/userServices";
 import {
     ActionContainer,
     BenefitContainer,
@@ -86,10 +77,13 @@ function DetailInnovation() {
     useEffect(() => {
         const fetchUser = async () => {
             if (user?.uid) {
-                const userRef = doc(firestore, "users", user.uid);
-                const userDoc = await getDoc(userRef);
-                if (userDoc.exists()) {
-                    setAdmin(userDoc.data().role === "admin");
+                try {
+                    const res: any = await getUserById(user.uid);
+                    if (res.data) {
+                        setAdmin(res.data.role === "admin");
+                    }
+                } catch (err) {
+                    console.error("Error fetching user role from API:", err);
                 }
             }
         };
@@ -98,36 +92,48 @@ function DetailInnovation() {
 
     useEffect(() => {
         if (id) {
+            setLoading(true);
             getInnovationById(id)
                 .then((res: any) => {
-                    setData(res.innovation || {});
+                    const innovationData = res.innovation || res.data || res;
+                    if (innovationData) {
+                        setData(innovationData);
+                    }
                 })
                 .catch((error) => {
                     console.error("Error fetching innovation details:", error);
+                    setError("Gagal memuat detail inovasi");
+                })
+                .finally(() => {
+                    setLoading(false);
                 });
         }
     }, [id]);
 
     useEffect(() => {
-        if (data.innovatorId) {
-            // Using Firebase for innovator details until /api/innovators exists
+        const innovatorId = data.innovatorId || data.userId; // Coba fallback ke userId
+        if (innovatorId) {
             const fetchInnovator = async () => {
-                const docRef = doc(firestore, "innovators", data.innovatorId);
-                const snap = await getDoc(docRef);
-                if (snap.exists()) {
-                    setDatainnovator(snap.data());
+                try {
+                    const res: any = await getInnovatorById(innovatorId);
+                    const invData = res.innovator || res.data || res;
+                    if (invData) {
+                        setDatainnovator(invData);
+                    }
+                } catch (err) {
+                    console.error("Error fetching innovator from API:", err);
                 }
             }
             fetchInnovator();
         }
-    }, [data.innovatorId]);
+    }, [data.innovatorId, data.userId]);
 
     useEffect(() => {
         const fetchVillages = async () => {
             if (!id) return;
             try {
                 const res: any = await getAppliedVillages(id);
-                setVillage(res.villages || []);
+                setVillage(res.villages || res.data || []);
             } catch (error) {
                 console.error("Error fetching related villages:", error);
             }
@@ -167,18 +173,22 @@ function DetailInnovation() {
                 setLoading(false);
                 return;
             }
-            const innovationRef = doc(firestore, "innovations", id);
-            await updateDoc(innovationRef, {
+            // Update innovation status via API
+            await updateInnovation(id, {
                 status: "Terverifikasi",
-                catatanAdmin: deleteField(),
+                catatanAdmin: ""
             });
             setData({ ...data, status: "Terverifikasi" });
-            const innovatorRef = doc(firestore, "innovators", data.innovatorId);
-            await updateDoc(innovatorRef, {
-                jumlahInovasi: increment(1),
-            });
+
+            // Update innovator's innovation count via API (usually backend handles this, but for parity:)
+            if (data.innovatorId) {
+                const currentCount = innovatorData.jumlahInovasi || 0;
+                await updateInnovator(data.innovatorId, {
+                    jumlahInovasi: currentCount + 1
+                });
+            }
         } catch (error) {
-            console.error("Error verifying innovation:", error);
+            console.error("Error verifying innovation via API:", error);
             setError("Error verifying innovation");
         }
         setLoading(false);
@@ -193,8 +203,7 @@ function DetailInnovation() {
                 setLoading(false);
                 return;
             }
-            const innovationRef = doc(firestore, "innovations", id);
-            await updateDoc(innovationRef, {
+            await updateInnovation(id, {
                 status: "Ditolak",
                 catatanAdmin: modalInput,
             });
@@ -204,7 +213,7 @@ function DetailInnovation() {
                 catatanAdmin: modalInput,
             }));
         } catch (error) {
-            console.error("Error rejecting innovation:", error);
+            console.error("Error rejecting innovation via API:", error);
             setError("Error rejecting innovation");
         }
         setLoading(false);
@@ -252,6 +261,23 @@ function DetailInnovation() {
             ? words.slice(0, wordLimit).join(" ")
             : text;
     };
+
+    if (loading) {
+        return (
+            <Box>
+                <TopBar title="Detail Inovasi" onBack={() => router.back()} />
+                <ContentContainer>
+                    <Skeleton height="200px" borderRadius="12px" />
+                    <Box mt="20px">
+                        <Skeleton height="30px" width="70%" />
+                    </Box>
+                    <Box mt="10px">
+                        <Skeleton count={3} />
+                    </Box>
+                </ContentContainer>
+            </Box>
+        );
+    }
 
     return (
         <Box>

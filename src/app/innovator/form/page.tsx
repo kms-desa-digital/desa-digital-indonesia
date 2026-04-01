@@ -14,13 +14,7 @@ import { NavbarButton } from "../../village/profile/[id]/_styles";
 import Container from "Components/container";
 import FormSection from "Components/form/FormSection";
 import TopBar from "Components/topBar";
-import {
-    doc,
-    getDoc,
-    serverTimestamp,
-    setDoc,
-    updateDoc,
-} from "firebase/firestore";
+import { getInnovatorById, createInnovator, updateInnovator } from "Services/innovatorServices";
 import {
     deleteObject,
     getDownloadURL,
@@ -219,109 +213,87 @@ const InnovatorForm: React.FC = () => {
                 textInputsValue;
 
             const userId = user.uid;
-            const docRef = doc(firestore, "innovators", userId);
-            const docSnap = await getDoc(docRef);
-            const existingData = docSnap.data();
+            let innovatorData: any = null;
+            try {
+                const res: any = await getInnovatorById(userId);
+                innovatorData = res.data;
+            } catch (err) {
+                console.log("No existing innovator profile found for user:", userId);
+            }
 
             if (status === "Ditolak") {
-                if (selectedLogo && selectedLogo !== existingData?.logo) {
-                    if (existingData?.logo) {
-                        const existingLogoRef = ref(storage, existingData.logo);
-                        await deleteObject(existingLogoRef);
-                        console.log("Existing logo deleted");
-                    }
+                let logoUrl = innovatorData?.logo;
+                let headerUrl = innovatorData?.header;
 
+                if (selectedLogo && selectedLogo !== innovatorData?.logo) {
+                    if (innovatorData?.logo && innovatorData.logo.startsWith("http")) {
+                        // Optional: Delete from storage if you want
+                    }
                     const logoRef = ref(storage, `innovators/${userId}/logo`);
-                    await uploadString(logoRef, selectedLogo, "data_url").then(
-                        async () => {
-                            const downloadURL = await getDownloadURL(logoRef);
-                            await updateDoc(docRef, {
-                                logo: downloadURL,
-                            });
-                            console.log("Logo update at: ", downloadURL);
-                        }
-                    );
+                    await uploadString(logoRef, selectedLogo, "data_url");
+                    logoUrl = await getDownloadURL(logoRef);
+                    console.log("Logo updated: ", logoUrl);
                 }
 
-                if (selectedHeader && selectedHeader !== existingData?.header) {
-                    if (existingData?.header) {
-                        const existingHeaderRef = ref(storage, existingData.header);
-                        await deleteObject(existingHeaderRef);
-                        console.log("Existing header deleted");
-                    }
-
+                if (selectedHeader && selectedHeader !== innovatorData?.header) {
                     const headerRef = ref(storage, `innovators/${userId}/header`);
-                    await uploadString(headerRef, selectedHeader, "data_url").then(
-                        async () => {
-                            const downloadURL = await getDownloadURL(headerRef);
-                            await updateDoc(docRef, {
-                                header: downloadURL,
-                            });
-                            console.log("Header update at: ", downloadURL);
-                        }
-                    );
+                    await uploadString(headerRef, selectedHeader, "data_url");
+                    headerUrl = await getDownloadURL(headerRef);
+                    console.log("Header updated: ", headerUrl);
                 }
 
-                await updateDoc(docRef, {
+                const updatePayload = {
                     namaInovator: name,
                     deskripsi: description,
                     kategori: selectedCategory?.label,
-                    instagram: instagram,
-                    website: website,
-                    whatsapp: whatsapp,
-                    editedAt: serverTimestamp(),
-                    status: "Menunggu",
-                });
-                console.log("Document updated with ID: ", userId);
-                setStatus("Menunggu");
-                setAlertStatus("info");
-            } else {
-                await setDoc(docRef, {
-                    namaInovator: name,
-                    id: userId,
-                    deskripsi: description,
-                    kategori: selectedCategory?.label,
-                    editedAt: serverTimestamp(),
-                    createdAt: serverTimestamp(),
-                    jumlahInovasi: 0,
-                    jumlahDesaDampingan: 0,
                     instagram,
                     website,
                     whatsapp,
-                    catatanAdmin: "",
+                    logo: logoUrl,
+                    header: headerUrl,
                     status: "Menunggu",
-                });
-                console.log("Document written with ID: ", userId);
+                };
+
+                await updateInnovator(userId, updatePayload);
+                console.log("Innovator updated via API: ", userId);
+                setStatus("Menunggu");
+                setAlertStatus("info");
+            } else {
+                // Add new/Set
+                let logoUrl = null;
+                let headerUrl = null;
+
                 if (selectedLogo) {
                     const logoRef = ref(storage, `innovators/${userId}/logo`);
-                    await uploadString(logoRef, selectedLogo, "data_url").then(
-                        async () => {
-                            const downloadURL = await getDownloadURL(logoRef);
-                            await updateDoc(doc(firestore, "innovators", userId), {
-                                logo: downloadURL,
-                            });
-                            console.log("Logo upload at", downloadURL);
-                        }
-                    );
+                    await uploadString(logoRef, selectedLogo, "data_url");
+                    logoUrl = await getDownloadURL(logoRef);
                 } else {
                     setError("Logo harus diisi");
                     setLoading(false);
                     return;
                 }
 
-                // Upload header if provided
                 if (selectedHeader) {
                     const headerRef = ref(storage, `innovators/${userId}/header`);
-                    await uploadString(headerRef, selectedHeader, "data_url").then(
-                        async () => {
-                            const downloadURL = await getDownloadURL(headerRef);
-                            await updateDoc(doc(firestore, "innovators", userId), {
-                                header: downloadURL,
-                            });
-                            console.log("Header upload at", downloadURL);
-                        }
-                    );
+                    await uploadString(headerRef, selectedHeader, "data_url");
+                    headerUrl = await getDownloadURL(headerRef);
                 }
+
+                const createPayload = {
+                    userId,
+                    namaInovator: name,
+                    deskripsi: description,
+                    kategori: selectedCategory?.label,
+                    instagram,
+                    website,
+                    whatsapp,
+                    logo: logoUrl,
+                    header: headerUrl,
+                    status: "Menunggu",
+                };
+
+                await createInnovator(createPayload);
+                console.log("Innovator created via API: ", userId);
                 setStatus("Menunggu");
                 setAlertStatus("info");
             }
@@ -354,40 +326,43 @@ const InnovatorForm: React.FC = () => {
         const fetchData = async () => {
             const userId = user?.uid;
             if (userId) {
-                const docRef = doc(firestore, "innovators", userId);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    setTextInputsValue({
-                        name: data.namaInovator || "",
-                        description: data.deskripsi || "",
-                        instagram: data.instagram || "",
-                        website: data.website || "",
-                        whatsapp: data.whatsapp || "",
-                    });
-                    setSelectedCategory({
-                        label: data.kategori,
-                        value: data.kategori.toLowerCase().replace(/\s+/g, "-"),
-                    });
-                    setSelectedLogo(data?.logo || "");
-                    setSelectedHeader(data?.header || "");
-                    setStatus(data.status);
+                try {
+                    const res: any = await getInnovatorById(userId);
+                    const data = res.data;
+                    if (data) {
+                        setTextInputsValue({
+                            name: data.namaInovator || "",
+                            description: data.deskripsi || "",
+                            instagram: data.instagram || "",
+                            website: data.website || "",
+                            whatsapp: data.whatsapp || "",
+                        });
+                        setSelectedCategory({
+                            label: data.kategori,
+                            value: data.kategori ? data.kategori.toLowerCase().replace(/\s+/g, "-") : "",
+                        });
+                        setSelectedLogo(data?.logo || "");
+                        setSelectedHeader(data?.header || "");
+                        setStatus(data.status);
 
-                    if (data.status === "Menunggu") {
-                        setAlertStatus("info");
-                        setIsEditable(false);
-                        setStatus("Menunggu");
-                        setAlertMessage(
-                            `Profil sudah didaftarkan. Menunggu verifikasi admin.`
-                        );
-                    } else if (data.status === "Ditolak") {
-                        setAlertStatus("error");
-                        setIsEditable(true);
-                        setStatus("Ditolak");
-                        setAlertMessage(
-                            `Profil ditolak dengan catatan: ${data.catatanAdmin || ""}`
-                        );
+                        if (data.status === "Menunggu") {
+                            setAlertStatus("info");
+                            setIsEditable(false);
+                            setStatus("Menunggu");
+                            setAlertMessage(
+                                `Profil sudah didaftarkan. Menunggu verifikasi admin.`
+                            );
+                        } else if (data.status === "Ditolak") {
+                            setAlertStatus("error");
+                            setIsEditable(true);
+                            setStatus("Ditolak");
+                            setAlertMessage(
+                                `Profil ditolak dengan catatan: ${data.catatanAdmin || ""}`
+                            );
+                        }
                     }
+                } catch (err) {
+                    console.error("Error fetching data from API:", err);
                 }
             }
         };
@@ -397,12 +372,15 @@ const InnovatorForm: React.FC = () => {
     useEffect(() => {
         const checkIfOwner = async () => {
             if (user?.uid) {
-                const docRef = doc(firestore, "innovators", user.uid);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setOwner(true);
-                    setStatus("Terverifikasi"); // Set status for owner
-                } else {
+                try {
+                    const res: any = await getInnovatorById(user.uid);
+                    if (res.data) {
+                        setOwner(true);
+                        // setStatus(res.data.status); 
+                    } else {
+                        setOwner(false);
+                    }
+                } catch (err) {
                     setOwner(false);
                 }
             }

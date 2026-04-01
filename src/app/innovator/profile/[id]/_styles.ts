@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { marginStyle } from "Consts/sizing";
+import { marginStyle, MarginProps } from "Consts/sizing";
 
 export const ContentContainer = styled.div`
   display: flex;
@@ -64,7 +64,7 @@ export const TagContainer = styled.div`
   margin-left: 16px;
 `;
 
-export const Label = styled.p`
+export const Label = styled.p<MarginProps>`
   font-style: normal;
   padding: 4px 8px;
   background: #E5E7EB;
@@ -104,7 +104,7 @@ export const ActionContainer = styled.div`
   box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.06), 0px 1px 3px 0px rgba(0, 0, 0, 0.10);
 `;
 
-export const Icon = styled.img`
+export const Icon = styled.img<MarginProps>`
   cursor: pointer;
   position: flex;
   justify-content: space-between;
@@ -161,7 +161,7 @@ export const Background = styled.img`
   object-fit: cover;
 `;
 
-export const Logo = styled.img`
+export const Logo = styled.img<MarginProps>`
   width: 80px;
   height: 80px;
   ${marginStyle}

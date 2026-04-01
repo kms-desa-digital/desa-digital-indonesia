@@ -9,7 +9,7 @@ import { doc } from "firebase/firestore";
 import React, { useRef, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
-import { firestore } from "src/firebase/clientApp";
+import { auth, firestore } from "src/firebase/clientApp";
 
 const MakeAds: React.FC = () => {
     const router = useRouter();
