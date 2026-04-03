@@ -120,8 +120,6 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
 
     return (
         <Flex direction="column" height="100%">
-            
-            {/* HEADER INTERAKTIF (Tanpa Icon Robot) */}
             <HStack
                 p={4}
                 bg="green.500"
