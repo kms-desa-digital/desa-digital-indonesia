@@ -5,95 +5,115 @@
 import { searchAllSources } from "@/lib/ai/rag-utils";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+function buildStructuredCards(dbResults: any[], responseText: string, userMessage: string): any[] {
+  const seen = new Set<string>();
+  const responseLower = responseText.toLowerCase();
+  const queryLower = userMessage.toLowerCase();
+
+  return dbResults
+    .filter((item: any) => typeof item?.source_id === "string" && item.source_id.trim().length > 0)
+    .filter((item: any) => {
+      const key = `${item?.source_collection || "unknown"}:${item.source_id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map((item: any) => {
+      const collection = item?.source_collection;
+      const sourceId = encodeURIComponent(item.source_id);
+      
+      let title = "";
+      let subtitle = "";
+      let kind = "";
+      let href = "";
+
+      if (collection === "innovations") {
+        title = item?.metadata?.namaInovasi || item?.metadata?.label || "Inovasi";
+        subtitle = item?.metadata?.inovator_nama 
+          ? (Array.isArray(item.metadata.inovator_nama) ? item.metadata.inovator_nama.join(", ") : item.metadata.inovator_nama) 
+          : "Inovator tidak diketahui";
+        kind = "innovation";
+        href = `/innovation/detail/${sourceId}`;
+      } else if (collection === "villages") {
+        title = item?.metadata?.namaDesa || item?.metadata?.label || "Desa";
+        subtitle = "Profil Desa";
+        kind = "village";
+        href = `/village/detail/${sourceId}`;
+      } else if (collection === "innovators") {
+        title = item?.metadata?.namaInovator || item?.metadata?.label || "Inovator";
+        subtitle = "Profil Inovator";
+        kind = "innovator";
+        href = `/innovator/detail/${sourceId}`;
+      } else {
+        return null;
+      }
+
+      const labelLower = title.toLowerCase();
+      const labelWithoutPrefix = labelLower.replace(/^(desa|inovasi|inovator)\s+/i, '').trim();
+
+      const isMentioned = 
+        responseLower.includes(labelLower) || 
+        responseLower.includes(labelWithoutPrefix) ||
+        queryLower.includes(labelLower) || 
+        queryLower.includes(labelWithoutPrefix);
+
+      if (isMentioned) {
+        return { title, subtitle, kind, href, sourceId };
+      }
+
+      return null;
+    })
+    .filter((item: any) => item !== null)
+    .slice(0, 5); 
+}
+
 export async function POST(req: Request) {
   try {
-    // Ambil dan validasi request body
     const body = await req.json();
     const messages = Array.isArray(body?.messages) ? body.messages : [];
-    const lastUserMessage =
-      messages[messages.length - 1]?.content?.trim() || "";
+    const lastUserMessage = messages[messages.length - 1]?.content?.trim() || "";
 
-    // Validasi pesan kosong
     if (!lastUserMessage) {
-      return new Response("Pesan kosong", { status: 400 });
+      return Response.json({ text: "Pesan kosong", linkCards: [], suggestions: [] }, { status: 400 });
     }
 
-    // Retrieval (RAG)
-    // Search paralel ke dua sumber: dokumen & database
     let { docResults, dbResults } = await searchAllSources(lastUserMessage);
 
-    // Fallback: jika tidak ada hasil, gunakan seluruh history chat sebagai query
-    if (
-      docResults.length === 0 &&
-      dbResults.length === 0 &&
-      messages.length > 1
-    ) {
+    if (docResults.length === 0 && dbResults.length === 0 && messages.length > 1) {
       const historyText = messages.map((m: any) => m.content).join(" ");
       const fallback = await searchAllSources(historyText);
-
       docResults = fallback.docResults;
       dbResults = fallback.dbResults;
     }
 
-    // Jika tetap tidak ada hasil, langsung balikan response default
     if (docResults.length === 0 && dbResults.length === 0) {
-      return new Response(
-        "Maaf, informasi tersebut tidak ditemukan di basis data kami.",
-        {
-          status: 200,
-          headers: { "Content-Type": "text/plain" },
-        }
-      );
+      return Response.json({
+        text: "Maaf, informasi tersebut tidak ditemukan di basis data kami.",
+        linkCards: [],
+        suggestions: ["Cari inovasi lain", "Tampilkan daftar desa"]
+      });
     }
 
-    // Build Context untuk LLM
     let context = "";
 
-    // Context dari dokumen (PDF / inovasi)
     if (docResults.length > 0) {
-      context += "=== Data dari Dokumen ===\n\n";
-
+      context += "--- Data dari Dokumen ---\n\n";
       docResults.forEach((doc: any) => {
         const meta = doc.metadata || {};
-
-        // Jika tipe inovasi (structured data)
         if (meta.type === "inovasi") {
-          // Format keunggulan (bisa array atau string)
           const rawKeunggulan = meta.keunggulan_inovasi;
-          let keunggulan = "-";
-
-          if (Array.isArray(rawKeunggulan)) {
-            keunggulan = rawKeunggulan
-              .map((k: string) => `- ${k}`)
-              .join("\n");
-          } else if (rawKeunggulan) {
-            keunggulan = rawKeunggulan;
-          }
-
-          // Format nama inovator (bisa array atau string)
+          let keunggulan = Array.isArray(rawKeunggulan) ? rawKeunggulan.map((k: string) => `- ${k}`).join("\n") : (rawKeunggulan || "-");
           const rawNama = meta.inovator_nama;
-          let inovator = "-";
+          let inovator = Array.isArray(rawNama) ? rawNama.join(", ") : (rawNama || "-");
 
-          if (Array.isArray(rawNama)) {
-            inovator = rawNama.join(", ");
-          } else if (rawNama) {
-            inovator = rawNama;
-          }
-
-          // Susun context untuk data inovasi
           context += `---
           Bidang Kategori: ${meta.kategori || "-"}
           Judul: ${meta.judul || "-"}
           Deskripsi: ${meta.deskripsi || "-"}
-          Perspektif: ${meta.perspektif || "-"}
-          Keunggulan Inovasi: 
-          ${keunggulan}
-          Potensi Aplikasi: ${meta.potensi_aplikasi || "-"}
+          Keunggulan Inovasi: \n${keunggulan}
           Inovator: ${inovator}
-          Status Paten: ${meta.inovator_status_paten || "-"}
           -----------------------------------\n\n`;
         } else {
-          // Format dokumen umum (per halaman PDF)
           context += `---
           Sumber: ${doc.source || "-"} (Halaman ${meta.page || "?"})
           ${doc.content || ""}
@@ -102,78 +122,89 @@ export async function POST(req: Request) {
       });
     }
 
-    // Context dari database (MongoDB embeddings)
     if (dbResults.length > 0) {
-      context += "=== Data dari Database ===\n\n";
-
+      context += "--- Data dari Database ---\n\n";
       dbResults.forEach((doc: any) => {
-        const meta = doc.metadata || {};
-
-        context += `---
-        Sumber: ${doc.source_collection || "-"}
-        ${doc.content || ""}
-        -----------------------------------\n\n`;
+        context += `---\nSumber: ${doc.source_collection || "-"}\n${doc.content || ""}\n-----------------------------------\n\n`;
       });
     }
 
-    // Debug log untuk melihat context yang dikirim ke LLM
-    console.log(`\n=== Context Pertanyaan: "${lastUserMessage}" ===\n`);
-    console.log(context);
-    console.log(`\n================================================\n`);
+    const recentMessages = messages.slice(-6); 
+    const conversationHistory = recentMessages
+      .map((m: any) => `${m.role === 'user' ? 'Pengguna' : 'Asisten'}: ${m.content}`)
+      .join('\n');
 
-    // Prompt ke LLM
+    // PERUBAHAN PROMPT: Menambahkan instruksi pembuatan saran pertanyaan (Suggestions)
     const prompt = `
       Anda adalah Asisten Virtual Knowledge Management System Desa Digital.
-      Jawab pertanyaan hanya berdasarkan data berikut.
-      Jika informasi tidak tersedia dalam data, jawab:
-      "Maaf, informasi tersebut tidak ditemukan."
+      
+      Aturan Penting:
+      1. Jika pengguna HANYA menyapa (misal: "halo"), jawab sapaan tersebut dengan ramah TANPA merangkum data referensi di bawah.
+      2. Jika pengguna mengajukan pertanyaan, jawab HANYA berdasarkan "Data Referensi" di bawah ini.
+      3. Jika pengguna menggunakan kata ganti (misal: "desa saya", "inovasi tersebut"), lihat "Riwayat Percakapan" untuk mengetahui apa yang sedang dibahas.
+      4. Gunakan format Markdown rapi (bullet, bold).
+      5. Gunakan blockquote (>) untuk menyoroti kesimpulan utama atau tips penting.
+      6. Jangan menyisipkan tautan link secara manual di dalam jawaban.
+      7. Jawaban ringkas: 1 paragraf pembuka + 3-5 poin inti maksimal.
+      8. WAJIB: Di baris paling akhir dari jawaban Anda, buatlah 2-3 rekomendasi pertanyaan lanjutan singkat yang relevan untuk pengguna. Format persis seperti ini:
+      SUGGESTIONS: ["pertanyaan 1", "pertanyaan 2", "pertanyaan 3"]
 
-      === ATURAN FORMAT JAWABAN ===
-      - Gunakan format Markdown yang rapi.
-      - Gunakan bullet points (-) untuk daftar informasi.
-      - Gunakan tebal (bold) untuk istilah atau poin penting.
-      - Gunakan tabel jika membandingkan beberapa data.
-      - Pastikan jawaban terstruktur dan mudah dibaca.
-      - Jangan mengulang-ulang informasi.
-
+      --- Riwayat Percakapan Terakhir ---
+      ${conversationHistory}
+      -----------------------------------
+      
+      --- Data Referensi dari Sistem ---
       ${context}
+      ----------------------------------
 
-      Pertanyaan:
+      Pertanyaan Pengguna Saat Ini:
       ${lastUserMessage}
 
-      Jawaban:
+      Jawaban Asisten:
     `;
 
-    // Generate Jawaban (LLM)
-    const genAI = new GoogleGenerativeAI(
-      process.env.GOOGLE_GENERATIVE_AI_API_KEY || ""
-    );
-
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
     const model = genAI.getGenerativeModel({
       model: "gemma-3-27b-it",
-      generationConfig: {
-        temperature: 0.0, // sedikit lebih variatif tapi tetap fokus
-        maxOutputTokens: 500, // batas lebih panjang untuk format rapi
-      },
+      generationConfig: { temperature: 0.0, maxOutputTokens: 500 },
     });
 
-    // Generate response dari model
     const result = await model.generateContent(prompt);
-    const geminiResponseText = result.response.text();
+    let geminiResponseText = result.response.text();
+    let linkCards: any[] = [];
+    let suggestions: string[] = [];
 
-    // Return hasil ke client
-    return new Response(geminiResponseText, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-      },
+    // Generate suggestions dari respon Gemini (jika ada)
+    const suggestionRegex = /SUGGESTIONS:\s*(\[[\s\S]*?\])/;
+    const match = geminiResponseText.match(suggestionRegex);
+    if (match) {
+      try {
+        suggestions = JSON.parse(match[1]);
+        // Hapus teks SUGGESTIONS: dari jawaban yang akan dibaca user
+        geminiResponseText = geminiResponseText.replace(suggestionRegex, '').trim();
+      } catch (e) {
+        console.error("Gagal parse suggestions", e);
+      }
+    }
+
+    if (dbResults.length > 0) {
+      linkCards = buildStructuredCards(dbResults, geminiResponseText, lastUserMessage);
+    }
+
+    // Kembalikan JSON dengan tambahan property suggestions
+    return Response.json({
+      text: geminiResponseText,
+      linkCards: linkCards,
+      suggestions: suggestions
     });
+
   } catch (error) {
-    // Handle error global
     console.error("Chatbot API Error:", error);
-    return new Response("Terjadi kesalahan pada server", {
-      status: 500,
-    });
+    return Response.json({
+      text: "Terjadi kesalahan pada server",
+      linkCards: [],
+      suggestions: []
+    }, { status: 500 });
   }
 }
 

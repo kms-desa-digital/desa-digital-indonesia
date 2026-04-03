@@ -2,17 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 
+// Definisikan tipe untuk params sebagai Promise (aturan baru Next.js App Router)
+type RouteParams = {
+  params: Promise<{ id: string }>
+}
+
 // =========================================================
 // GET /api/innovators/[id]
 // Detail satu inovator, id bisa berupa _id (ObjectId) atau userId (string)
 // =========================================================
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const db = await connectToDatabase()
-    const id = params.id
+    
+    // AWAIT params sebelum diekstrak id-nya
+    const resolvedParams = await params
+    const id = resolvedParams.id
 
-    // Coba cari by _id
-    let query: any = { _id: new ObjectId(id) }
+    // Jangan lakukan new ObjectId di luar try-catch
+    let query: any;
     try {
         query = { _id: new ObjectId(id) }
     } catch (e) {
@@ -41,13 +49,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 // PUT /api/innovators/[id]
 // Mengupdate profil inovator
 // =========================================================
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const db = await connectToDatabase()
-    const id = params.id
+    
+    // AWAIT params
+    const resolvedParams = await params
+    const id = resolvedParams.id
+    
     const body = await request.json()
 
-    let query: any = { _id: new ObjectId(id) }
+    // Aman di dalam try-catch
+    let query: any;
     try {
         query = { _id: new ObjectId(id) }
     } catch (e) {
@@ -74,12 +87,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 // DELETE /api/innovators/[id]
 // Menghapus profil inovator
 // =========================================================
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const db = await connectToDatabase()
-    const id = params.id
+    
+    // AWAIT params
+    const resolvedParams = await params
+    const id = resolvedParams.id
 
-    let query: any = { _id: new ObjectId(id) }
+    // Aman di dalam try-catch
+    let query: any;
     try {
         query = { _id: new ObjectId(id) }
     } catch (e) {

@@ -11,13 +11,15 @@ type Params = Promise<{ id: string }>
 export async function GET(_request: NextRequest, { params }: { params: Params }) {
   try {
     const { id } = await params
-
     const db = await connectToDatabase()
     
-    // Cari berdasarkan ObjectId (jika valid) atau string ID (jika hasil migrasi Firestore)
-    const query: any = ObjectId.isValid(id) 
-      ? { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
-      : { _id: id };
+    // Gunakan try-catch alih-alih ObjectId.isValid
+    let query: any;
+    try {
+      query = { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
+    } catch (e) {
+      query = { _id: id }
+    }
 
     const doc = await db.collection('innovations').findOne(query)
 
@@ -40,7 +42,7 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
 // Edit inovasi berdasarkan id
 // Body: field apa saja yang ingin diupdate (partial update)
 // Catatan: field `status` (verifikasi admin) tidak bisa diubah
-//          oleh user melalui endpoint ini — gunakan admin endpoint
+//         oleh user melalui endpoint ini — gunakan admin endpoint
 // =========================================================
 export async function PUT(request: NextRequest, { params }: { params: Params }) {
   try {
@@ -56,10 +58,13 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     const db = await connectToDatabase()
     
-    // Cari berdasarkan ObjectId (jika valid) atau string ID (jika hasil migrasi Firestore)
-    const query: any = ObjectId.isValid(id) 
-      ? { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
-      : { _id: id };
+    // Gunakan try-catch
+    let query: any;
+    try {
+      query = { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
+    } catch (e) {
+      query = { _id: id }
+    }
 
     // Cek apakah inovasi ada
     const existing = await db.collection('innovations').findOne(query)
@@ -99,13 +104,15 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 export async function DELETE(_request: NextRequest, { params }: { params: Params }) {
   try {
     const { id } = await params
-
     const db = await connectToDatabase()
     
-    // Cari berdasarkan ObjectId (jika valid) atau string ID (jika hasil migrasi Firestore)
-    const query: any = ObjectId.isValid(id) 
-      ? { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
-      : { _id: id };
+    // Gunakan try-catch
+    let query: any;
+    try {
+      query = { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
+    } catch (e) {
+      query = { _id: id }
+    }
 
     const result = await db.collection('innovations').deleteOne(query)
 

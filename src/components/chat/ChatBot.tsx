@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Box, IconButton } from '@chakra-ui/react';
-import { MessageCircle, X } from 'lucide-react';
+import { Bot, X } from 'lucide-react'; // Mengubah MessageCircle menjadi Bot
 import ChatWindow from './ChatWindow';
 import { useTranslations } from 'next-intl';
+
+const CHAT_HISTORY_KEY = 'desa-digital-chat-history';
 
 const Chatbot = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +16,36 @@ const Chatbot = () => {
 
     useEffect(() => {
         setMounted(true);
+
+        try {
+            const storedMessages = window.localStorage.getItem(CHAT_HISTORY_KEY);
+            if (storedMessages) {
+                setMessages(JSON.parse(storedMessages));
+            }
+        } catch (error) {
+            console.error('Failed to load chat history:', error);
+        }
     }, []);
+
+    useEffect(() => {
+        if (!mounted) return;
+
+        try {
+            window.localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+        } catch (error) {
+            console.error('Failed to save chat history:', error);
+        }
+    }, [messages, mounted]);
+
+    const clearHistory = () => {
+        setMessages([]);
+
+        try {
+            window.localStorage.removeItem(CHAT_HISTORY_KEY);
+        } catch (error) {
+            console.error('Failed to clear chat history:', error);
+        }
+    };
 
     const toggleChat = () => {
         setIsOpen(!isOpen);
@@ -42,13 +73,15 @@ const Chatbot = () => {
                         onClose={toggleChat} 
                         messages={messages}
                         setMessages={setMessages}
+                        onClearHistory={clearHistory}
                     />
                 </Box>
             )}
 
             <IconButton
                 aria-label={t('ariaOpen')}
-                icon={isOpen ? <X size={24} /> : <MessageCircle size={24} />}
+                // Menggunakan ikon Bot saat tertutup, dan X saat terbuka
+                icon={isOpen ? <X size={24} /> : <Bot size={24} />} 
                 position="fixed"
                 bottom="80px"
                 right={{ base: '20px', md: 'calc(50% - 160px)' }}

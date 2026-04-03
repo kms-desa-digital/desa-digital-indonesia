@@ -7,7 +7,7 @@ import { connectToDatabase } from "@/lib/db/mongodb";
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434";
 const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "embeddinggemma:latest";
 
-const EMBEDDING_TIMEOUT_MS = 60000;
+const EMBEDDING_TIMEOUT_MS = 30000;
 
 // fungsi untuk ubah teks jadi embedding vector dari Ollama
 export async function generateEmbeddings(
