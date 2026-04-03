@@ -134,7 +134,7 @@ export async function POST(req: Request) {
       .map((m: any) => `${m.role === 'user' ? 'Pengguna' : 'Asisten'}: ${m.content}`)
       .join('\n');
 
-    // PERUBAHAN PROMPT: Menambahkan instruksi pembuatan saran pertanyaan (Suggestions)
+    // Prompt llm dengan tambahan aturan ketat dan instruksi untuk menghasilkan suggestions
     const prompt = `
       Anda adalah Asisten Virtual Knowledge Management System Desa Digital.
       
