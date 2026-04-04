@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { ObjectId } from 'mongodb'
+
+type Params = Promise<{ id: string }>
+
+// GET /api/innovator/detail/:id
+// Ambil detail profil inovator berdasarkan id.
+export async function GET(_request: NextRequest, { params }: { params: Params }) {
+  try {
+    const { id } = await params
+
+    if (!id) {
+      return NextResponse.json({ message: 'Innovator ID is required' }, { status: 400 })
+    }
+
+    const db = await connectToDatabase()
+    const query: any = ObjectId.isValid(id)
+      ? { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
+      : { _id: id }
+
+    const innovator = await db.collection('innovators').findOne(query)
+
+    if (!innovator) {
+      return NextResponse.json({ message: 'Innovator tidak ditemukan' }, { status: 404 })
+    }
+
+    return NextResponse.json(
+      { innovator: { ...innovator, id: innovator._id.toString(), _id: innovator._id.toString() } },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error('Error fetching innovator detail:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}
