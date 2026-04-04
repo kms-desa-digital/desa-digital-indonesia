@@ -110,6 +110,7 @@
         "welcome": "Hello! I am the Digital Village virtual assistant. How can I help you?",
         "error": "Sorry, an error occurred while contacting the service. Please try again later.",
         "ariaOpen": "Open chat",
+        "ariaClearHistory": "Clear chat history",
         "ariaClose": "Close chat",
         "ariaSend": "Send message"
     }

@@ -7,6 +7,7 @@ import { paths } from "Consts/path";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import EnlargedImage from "src/components/village/Image";
+import Skeleton from "react-loading-skeleton";
 
 
 import {
@@ -69,7 +70,7 @@ export default function DetailVillagePage() {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [admin, setAdmin] = useState(false);
     const [owner, setOwner] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState(""); // Catatan admin
     const [isExpanded, setIsExpanded] = useState(false);
@@ -181,6 +182,7 @@ export default function DetailVillagePage() {
     useEffect(() => {
         const fetchVillageData = async () => {
             if (id) {
+                setLoading(true);
                 try {
                     /*
                     const docRef = doc(firestore, "villages", id);
@@ -213,14 +215,42 @@ export default function DetailVillagePage() {
                     setInnovations(resInv.innovations || resInv.data || []);
                 } catch (error) {
                     console.error("Error fetching village data from API:", error);
+                } finally {
+                    setLoading(false);
                 }
             } else {
                 console.error("Village ID is undefined");
+                setLoading(false);
             }
         };
 
         fetchVillageData();
     }, [id]);
+
+    if (loading) {
+        return (
+            <Box paddingBottom={16}>
+                <TopBar title="Detail Desa" onBack={() => router.back()} />
+                <Box px={4} pt={4}>
+                    <Skeleton height={180} borderRadius={16} />
+                    <Skeleton circle height={72} width={72} style={{ marginTop: -36, marginLeft: 16, position: 'relative' }} />
+                    <Box mt={8}>
+                        <Skeleton height={28} width="55%" />
+                        <Skeleton height={16} width="40%" style={{ marginTop: 10 }} />
+                        <Skeleton count={3} style={{ marginTop: 12 }} />
+                    </Box>
+                    <Box mt={6}>
+                        <Skeleton height={18} width="35%" />
+                        <Skeleton count={2} style={{ marginTop: 12 }} />
+                    </Box>
+                    <Box mt={6}>
+                        <Skeleton height={18} width="35%" />
+                        <Skeleton count={4} style={{ marginTop: 12 }} />
+                    </Box>
+                </Box>
+            </Box>
+        );
+    }
 
     return (
         <Box paddingBottom={16}>

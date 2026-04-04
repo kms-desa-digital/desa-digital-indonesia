@@ -68,7 +68,7 @@ function DetailInnovation() {
     const [admin, setAdmin] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     const villageSafe = Array.isArray(village) ? village : [];

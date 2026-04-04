@@ -110,6 +110,7 @@
         "welcome": "Halo! Saya asisten virtual Desa Digital. Ada yang bisa saya bantu?",
         "error": "Maaf, terjadi kesalahan saat menghubungi layanan. Silakan coba lagi nanti.",
         "ariaOpen": "Buka chat",
+        "ariaClearHistory": "Hapus riwayat chat",
         "ariaClose": "Tutup chat",
         "ariaSend": "Kirim pesan"
     }

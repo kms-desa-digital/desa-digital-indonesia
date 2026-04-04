@@ -13,10 +13,13 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     const { id } = await params
     const db = await connectToDatabase()
 
-    // Cari berdasarkan _id (ObjectId) atau userId (string)
-    const query: any = ObjectId.isValid(id)
-      ? { $or: [{ _id: new ObjectId(id) }, { userId: id }] }
-      : { userId: id }
+    // Mengecek ObjectId
+    let query: any;
+    try {
+      query = { $or: [{ _id: new ObjectId(id) }, { userId: id }] }
+    } catch (e) {
+      query = { userId: id }
+    }
 
     const village = await db.collection('villages').findOne(query)
 
@@ -24,14 +27,9 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
     }
 
-    return new NextResponse(
-      JSON.stringify({ 
-        village: { ...village, id: village._id.toString(), _id: village._id.toString() } 
-      }, null, 2),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
+    return NextResponse.json(
+      { village: { ...village, id: village._id.toString(), _id: village._id.toString() } },
+      { status: 200 }
     )
 
   } catch (error) {
@@ -58,9 +56,12 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     const db = await connectToDatabase()
     
-    const query: any = ObjectId.isValid(id)
-      ? { $or: [{ _id: new ObjectId(id) }, { userId: id }] }
-      : { userId: id }
+    let query: any;
+    try {
+      query = { $or: [{ _id: new ObjectId(id) }, { userId: id }] }
+    } catch (e) {
+      query = { userId: id }
+    }
 
     const result = await db.collection('villages').updateOne(
       query,
@@ -71,13 +72,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
     }
 
-    return new NextResponse(
-      JSON.stringify({ message: 'Profil desa berhasil diperbarui' }, null, 2),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
+    return NextResponse.json({ message: 'Profil desa berhasil diperbarui' }, { status: 200 })
 
   } catch (error) {
     console.error('Error updating village profile:', error)
@@ -94,9 +89,12 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
     const { id } = await params
     const db = await connectToDatabase()
 
-    const query: any = ObjectId.isValid(id)
-      ? { $or: [{ _id: new ObjectId(id) }, { userId: id }] }
-      : { userId: id }
+    let query: any;
+    try {
+      query = { $or: [{ _id: new ObjectId(id) }, { userId: id }] }
+    } catch (e) {
+      query = { userId: id }
+    }
 
     const result = await db.collection('villages').deleteOne(query)
 
@@ -104,13 +102,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
     }
 
-    return new NextResponse(
-      JSON.stringify({ message: 'Profil desa berhasil dihapus' }, null, 2),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
+    return NextResponse.json({ message: 'Profil desa berhasil dihapus' }, { status: 200 })
 
   } catch (error) {
     console.error('Error deleting village profile:', error)
