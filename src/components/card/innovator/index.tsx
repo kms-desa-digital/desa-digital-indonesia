@@ -8,6 +8,7 @@ import {
   ContBadge,
 } from "./_cardInnovatorStyle";
 
+import React from "react";
 
 import { Flex } from "@chakra-ui/react";
 
@@ -21,6 +22,7 @@ type CardInnovatorProps = {
   jumlahInovasi: number
   onClick?: () => void;
   ranking?: number;
+  highlightQuery?: string;
 };
 
 function CardInnovator(props: CardInnovatorProps) {
@@ -31,8 +33,42 @@ function CardInnovator(props: CardInnovatorProps) {
     onClick,
     jumlahDesaDampingan,
     jumlahInovasi,
-    ranking
+    ranking,
+    highlightQuery,
   } = props;
+
+  const renderHighlightedText = (value?: string) => {
+    if (!value) {
+      return value;
+    }
+
+    const query = highlightQuery?.trim();
+
+    if (!query) {
+      return value;
+    }
+
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matches = value.split(new RegExp(`(${escapedQuery})`, "ig"));
+
+    return matches.map((part, index) =>
+      part.toLowerCase() === query.toLowerCase() ? (
+        <mark
+          key={`${part}-${index}`}
+          style={{
+            backgroundColor: "#bbf7d0",
+            color: "inherit",
+            borderRadius: "4px",
+            padding: "0 2px",
+          }}
+        >
+          {part}
+        </mark>
+      ) : (
+        <React.Fragment key={`${part}-${index}`}>{part}</React.Fragment>
+      )
+    );
+  };
 
   return (
     <Container onClick={onClick}>
@@ -44,7 +80,7 @@ function CardInnovator(props: CardInnovatorProps) {
           {ranking == 2 && <img src="/icons/badge-2.svg" alt="badge" />}
           {ranking == 3 && <img src="/icons/badge-3.svg" alt="badge" />}
         </ContBadge>
-        <Title>{namaInovator}</Title>
+        <Title>{renderHighlightedText(namaInovator)}</Title>
         <Flex direction="column" marginTop="auto">
           <Description>{jumlahDesaDampingan} Desa Dampingan</Description>
           <Description>{jumlahInovasi} Inovasi</Description>

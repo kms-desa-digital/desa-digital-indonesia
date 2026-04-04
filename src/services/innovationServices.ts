@@ -2,11 +2,12 @@ import api from "./api";
 
 export const addInnovation = async (body: any): Promise<any> =>
   await api.post("/innovations", body);
-export const getInnovation = async (params: { category?: string; status?: string; innovatorId?: string } = {}): Promise<any> => {
+export const getInnovation = async (params: { category?: string; status?: string; innovatorId?: string; search?: string } = {}): Promise<any> => {
   const query = new URLSearchParams();
   if (params.category) query.append("category", params.category);
   if (params.status) query.append("status", params.status);
   if (params.innovatorId) query.append("innovatorId", params.innovatorId);
+  if (params.search) query.append("search", params.search);
   return await api.get(`/innovations?${query.toString()}`);
 };
 export const getInnovationById = async (id: string | undefined) =>
