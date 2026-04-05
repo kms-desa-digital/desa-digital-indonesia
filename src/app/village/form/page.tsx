@@ -983,7 +983,6 @@ const AddVillage: React.FC = () => {
                                     width="100%"
                                     isLoading={loading}
                                     loadingText="Submitting"
-                                    marginTop="24px"
                                 >
                                     Daftarkan Profil
                                 </Button>

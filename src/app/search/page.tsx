@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-// import { firestore } from "src/firebase/clientApp";
-// import { collection, getDocs } from "firebase/firestore";
 import { getInnovation } from "Services/innovationServices";
 import CardInnovation from "Components/card/innovation";
 import { paths } from "Consts/path";
@@ -37,32 +35,47 @@ function SearchPage() {
     const [role] = useState("user");
     const key = searchParams.toString(); // Use search params as key to re-render if needed
 
+    const sortByRelevance = (items: InovationData[], keyword: string) => {
+        const normalizedKeyword = keyword.toLowerCase().trim();
+
+        const scoreItem = (item: InovationData) => {
+            const fields = [
+                item.namaInovasi,
+                item.innovatorName,
+                item.namaInnovator,
+                item.kategori,
+                item.deskripsi,
+            ]
+                .filter(Boolean)
+                .map((field) => String(field).toLowerCase());
+
+            const title = fields[0] || "";
+            const exactTitle = title === normalizedKeyword;
+            const titleStartsWith = title.startsWith(normalizedKeyword);
+            const fieldContains = fields.some((field) => field.includes(normalizedKeyword));
+
+            if (exactTitle) return 0;
+            if (titleStartsWith) return 1;
+            if (fieldContains) return 2;
+            return 3;
+        };
+
+        return [...items].sort((a, b) => scoreItem(a) - scoreItem(b));
+    };
+
     // Debounced fetch and filter function
     const fetchData = debounce(async (keyword: string) => {
         setLoading(true);
         setResults([]);
 
         try {
-            /*
-            const collectionRef = collection(firestore, "innovations");
-            const snapshot = await getDocs(collectionRef);
-            ... Firestore Logic ...
-            */
-            const res: any = await getInnovation();
-            const innovations = res.innovations || [];
+            const res: any = await getInnovation({
+                search: keyword || undefined,
+                status: "Terverifikasi",
+            });
+            const innovations = sortByRelevance(res.innovations || [], keyword);
 
-            const filtered = innovations
-                .filter((item: any) => {
-                    const namaInovasi = (item.namaInovasi || "").toLowerCase().trim();
-                    const isVerified = item.status === "Terverifikasi";
-
-                    if (!isVerified) return false;
-                    if (!namaInovasi) return false;
-                    return keyword ? namaInovasi.includes(keyword) : isVerified;
-                })
-                .sort((a: any, b: any) => (a.namaInovasi || "").localeCompare(b.namaInovasi || ""));
-
-            setResults(filtered);
+            setResults(innovations);
         } catch (error) {
             console.error("Error fetching data via API:", error);
         }
@@ -150,6 +163,7 @@ function SearchPage() {
                                 tahunDibuat={item.tahunDibuat}
                                 innovatorLogo={item.innovatorLogo}
                                 innovatorName={item.innovatorName}
+                                highlightQuery={searchValue}
                                 onClick={() => handleCardClick(item.id)}
                             />
                         ))}

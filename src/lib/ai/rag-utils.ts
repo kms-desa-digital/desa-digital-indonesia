@@ -79,8 +79,8 @@ export async function searchDocEmbeddings(query: string) {
           index: "vector_index",
           path: "embedding_vector",
           queryVector: queryVector,
-          numCandidates: 5,
-          limit: 3,
+          numCandidates: 10,
+          limit: 5,
         },
       },
       {
@@ -136,8 +136,8 @@ export async function searchDatabaseEmbeddings(query: string) {
           index: "vector_index_db",
           path: "embedding_vector",
           queryVector: queryVector,
-          numCandidates: 5,
-          limit: 3,
+          numCandidates: 10,
+          limit: 5,
         },
       },
       {

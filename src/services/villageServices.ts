@@ -1,7 +1,18 @@
 import api from "./api";
 
-export const getVillages = async (status?: string) => {
-  const params = status ? { status } : {};
+type VillageFilters = {
+  status?: string;
+  search?: string;
+  provinsi?: string;
+  kabupatenKota?: string;
+};
+
+export const getVillages = async (filters?: string | VillageFilters) => {
+  const params: VillageFilters =
+    typeof filters === "string"
+      ? { status: filters }
+      : filters || {};
+
   return api.get("/villages", { params });
 };
 

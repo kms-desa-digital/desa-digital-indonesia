@@ -1,17 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { paths } from "Consts/path";
-// import { User } from "firebase/auth";
 import { Button, Input, InputGroup, InputRightElement } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Background, Container, Description, Title } from "./_styles";
-// import { auth, firestore } from "src/firebase/clientApp";
-// import { FIREBASE_ERRORS } from "src/firebase/errors";
 import { Text } from "@chakra-ui/react";
 import { FaEyeSlash, FaEye } from "react-icons/fa";
-// import { addDoc, collection } from "firebase/firestore";
-// import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
+import { confirmPasswordReset, verifyPasswordResetCode } from "firebase/auth";
+import { auth } from "src/firebase/clientApp";
 
 const NewPassword: React.FC = () => {
     const [NewPasswordForm, setNewPasswordForm] = useState({
@@ -20,13 +17,35 @@ const NewPassword: React.FC = () => {
     const [confirmPassword, setConfirmPassword] = useState(""); // State untuk konfirmasi kata sandi
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    // const [createUserWithEmailAndPassword, userCred, loading, userError] =
-    //     useCreateUserWithEmailAndPassword(auth);
+    const [accountEmail, setAccountEmail] = useState("");
+    const [oobCodeValid, setOobCodeValid] = useState(false);
 
     const [show, setShow] = useState(false);
     const onShowPassword = () => setShow(!show);
     const router = useRouter();
     const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const oobCode = searchParams.get("oobCode");
+
+        if (!oobCode) {
+            setError("Link reset password tidak valid atau tidak lengkap");
+            return;
+        }
+
+        const validateCode = async () => {
+            try {
+                const email = await verifyPasswordResetCode(auth, oobCode);
+                setAccountEmail(email);
+                setOobCodeValid(true);
+            } catch (validationError) {
+                console.error("Invalid reset code:", validationError);
+                setError("Link reset password tidak valid atau sudah expired");
+            }
+        };
+
+        validateCode();
+    }, [searchParams]);
 
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
@@ -40,36 +59,22 @@ const NewPassword: React.FC = () => {
             return setError("Kata sandi minimal 6 karakter");
         }
 
+        if (!oobCodeValid) {
+            return setError("Link reset password belum siap digunakan");
+        }
+
         setLoading(true);
         try {
-            const token = searchParams.get("token");
-            const email = searchParams.get("email");
+            const oobCode = searchParams.get("oobCode");
 
-            if (!token || !email) {
+            if (!oobCode) {
                 setError("Link reset password tidak valid atau tidak lengkap");
                 return;
             }
 
-            const res = await fetch("/api/auth/forgot-password", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email,
-                    newPassword: NewPasswordForm.password,
-                    token,
-                }),
-            });
-            const data = await res.json();
-
-            if (!res.ok) {
-                setError(data.message || "Gagal mereset password");
-                return;
-            }
+            await confirmPasswordReset(auth, oobCode, NewPasswordForm.password);
 
             router.push(paths.LOGIN_PAGE);
-
-            // === Firebase auth (di-comment, diganti API MongoDB+JWT) ===
-            // createUserWithEmailAndPassword(auth.currentUser?.email || "", NewPasswordForm.password);
         } catch (error) {
             console.error("Error during password reset:", error);
             setError("Terjadi kesalahan, coba lagi");
@@ -114,6 +119,11 @@ const NewPassword: React.FC = () => {
                 <Description>
                     Silahkan masukkan kata sandi baru
                 </Description>
+                {accountEmail && (
+                    <Text fontSize="10pt" mt="8px" color="gray.600">
+                        Akun: {accountEmail}
+                    </Text>
+                )}
 
                 <form onSubmit={onSubmit}>
                     <Text fontSize="10pt" mt="12px">

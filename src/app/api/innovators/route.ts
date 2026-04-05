@@ -10,10 +10,19 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+    const search = searchParams.get('search')
+    const kategori = searchParams.get('kategori')
 
     const db = await connectToDatabase()
     const filter: any = {}
+
     if (status) filter.status = status
+    if (kategori) filter.kategori = kategori
+
+    if (search && search.trim()) {
+      const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.namaInovator = { $regex: escapedSearch, $options: 'i' }
+    }
 
     const innovators = await db
       .collection('innovators')

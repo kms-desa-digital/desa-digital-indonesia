@@ -10,10 +10,53 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
+    const search = searchParams.get('search')
+    const provinsi = searchParams.get('provinsi')
+    const kabupatenKota = searchParams.get('kabupatenKota')
 
     const db = await connectToDatabase()
-    const filter: any = {}
-    if (status) filter.status = status
+    const andConditions: any[] = []
+
+    const escapeRegex = (value: string) =>
+      value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    if (status) {
+      andConditions.push({ status })
+    }
+
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(escapeRegex(search.trim()), 'i')
+      andConditions.push({
+        $or: [
+          { namaDesa: { $regex: searchRegex } },
+          { desa: { $regex: searchRegex } },
+          { "lokasi.desaKelurahan.label": { $regex: searchRegex } },
+        ],
+      })
+    }
+
+    if (provinsi && provinsi.trim()) {
+      const provinsiRegex = new RegExp(`^${escapeRegex(provinsi.trim())}$`, 'i')
+      andConditions.push({
+        $or: [
+          { provinsi: { $regex: provinsiRegex } },
+          { "lokasi.provinsi.label": { $regex: provinsiRegex } },
+        ],
+      })
+    }
+
+    if (kabupatenKota && kabupatenKota.trim()) {
+      const kabupatenRegex = new RegExp(`^${escapeRegex(kabupatenKota.trim())}$`, 'i')
+      andConditions.push({
+        $or: [
+          { kabupatenKota: { $regex: kabupatenRegex } },
+          { kabupaten: { $regex: kabupatenRegex } },
+          { "lokasi.kabupatenKota.label": { $regex: kabupatenRegex } },
+        ],
+      })
+    }
+
+    const filter: any = andConditions.length ? { $and: andConditions } : {}
 
     const villages = await db.collection('villages')
       .find(filter)

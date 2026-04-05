@@ -23,19 +23,53 @@ type CardInnovationProps = {
   innovatorLogo?: string | React.ReactNode;
   innovatorName?: string | React.ReactNode;
   onClick?: () => void;
+  highlightQuery?: string;
 };
 
 function CardInnovation(props: CardInnovationProps) {
-  const { images, namaInovasi, kategori, deskripsi, tahunDibuat, innovatorLogo, innovatorName, onClick } = props;
+  const { images, namaInovasi, kategori, deskripsi, tahunDibuat, innovatorLogo, innovatorName, onClick, highlightQuery } = props;
+
+  const renderHighlightedText = (value?: string | React.ReactNode) => {
+    if (typeof value !== "string") {
+      return value;
+    }
+
+    const query = highlightQuery?.trim();
+
+    if (!query) {
+      return value;
+    }
+
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matches = value.split(new RegExp(`(${escapedQuery})`, "ig"));
+
+    return matches.map((part, index) =>
+      part.toLowerCase() === query.toLowerCase() ? (
+        <mark
+          key={`${part}-${index}`}
+          style={{
+            backgroundColor: "#bbf7d0",
+            color: "inherit",
+            borderRadius: "4px",
+            padding: "0 2px",
+          }}
+        >
+          {part}
+        </mark>
+      ) : (
+        <React.Fragment key={`${part}-${index}`}>{part}</React.Fragment>
+      )
+    );
+  };
 
   return (
     <Container onClick={onClick}>
       <Background src={images ? images[0] : "/images/default-header.svg"} alt={namaInovasi} />
       <Content>
         <div>
-          <Title>{namaInovasi}</Title>
+          <Title>{renderHighlightedText(namaInovasi)}</Title>
           <Category>{kategori}</Category>
-          <Description>{deskripsi}</Description>
+          <Description>{renderHighlightedText(deskripsi)}</Description>
         </div>
         <div>
           <CompanyContainer>
@@ -45,7 +79,7 @@ function CardInnovation(props: CardInnovationProps) {
               <>{innovatorLogo}</>
             )}
             {typeof innovatorName === "string" ? (
-              <InnovatorName>{innovatorName}</InnovatorName>
+              <InnovatorName>{renderHighlightedText(innovatorName)}</InnovatorName>
             ) : (
               <div>{innovatorName}</div>
             )}

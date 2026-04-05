@@ -66,13 +66,13 @@ const ENDPOINTS: Record<string, Endpoint[]> = {
     {
       method: "POST",
       url: "/api/auth/email-reset",
-      desc: "Meminta link reset password.",
+      desc: "Membuat link reset password Firebase (custom) dan mengirim email reset.",
       body: { email: "string" },
     },
     {
       method: "POST",
       url: "/api/auth/forgot-password",
-      desc: "Mereset password dengan token.",
+      desc: "Deprecated: reset password lama tidak digunakan lagi. Gunakan Firebase Auth.",
       body: { email: "string", newPassword: "string", token: "string" },
     },
   ],

@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { firestore } from "@/firebase/clientApp";
-import { collection, getDocs } from "firebase/firestore";
+import { useRouter, useSearchParams } from "next/navigation";
+import { debounce } from "lodash";
+import { Box, Flex, Heading, Text } from "@chakra-ui/react";
 import CardInnovation from "Components/card/innovation";
-import { paths } from "Consts/path";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
-import { Box, Heading, Text, Flex } from "@chakra-ui/react";
 import SearchBarLink from "./SearchBarLink";
-import { debounce } from "lodash";
+import { getInnovation } from "Services/innovationServices";
+import { paths } from "Consts/path";
 
 interface InovationData {
   id: string;
@@ -24,84 +23,70 @@ interface InovationData {
   [key: string]: any;
 }
 
-
 function SearchPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialSearchTerm = searchParams.get("q")?.toLowerCase().trim() || "";
   const [results, setResults] = useState<InovationData[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchValue, setSearchValue] = useState(initialSearchTerm);
-  const [role] = useState("user"); // Set default role or fetch from authentication
-  const router = useRouter();
 
-  // Debounced fetch and filter function
+  const sortByRelevance = (items: InovationData[], keyword: string) => {
+    const normalizedKeyword = keyword.toLowerCase().trim();
+
+    const scoreItem = (item: InovationData) => {
+      const fields = [
+        item.namaInovasi,
+        item.innovatorName,
+        item.kategori,
+        item.deskripsi,
+      ]
+        .filter(Boolean)
+        .map((field) => String(field).toLowerCase());
+
+      const title = fields[0] || "";
+      const exactTitle = title === normalizedKeyword;
+      const titleStartsWith = title.startsWith(normalizedKeyword);
+      const fieldContains = fields.some((field) => field.includes(normalizedKeyword));
+
+      if (exactTitle) return 0;
+      if (titleStartsWith) return 1;
+      if (fieldContains) return 2;
+      return 3;
+    };
+
+    return [...items].sort((a, b) => scoreItem(a) - scoreItem(b));
+  };
+
   const fetchData = debounce(async (keyword: string) => {
     setLoading(true);
     setResults([]);
 
     try {
-      const collectionRef = collection(firestore, "innovations");
-      const snapshot = await getDocs(collectionRef);
-
-      console.log("Search keyword:", keyword);
-      console.log("Fetched documents:", snapshot.docs.length);
-
-      const filtered = snapshot.docs
-        .map((doc) => ({ id: doc.id, ...doc.data() } as InovationData))
-        .filter((item) => {
-          const namaInovasi = (item.namaInovasi || "").toLowerCase().trim();
-          const isVerified = item.status === "Terverifikasi";
-          console.log(
-            `Item: ${namaInovasi}, Status: ${item.status || "missing"}, Matches: ${namaInovasi.includes(keyword)}, Verified: ${isVerified}`
-          );
-          if (!isVerified) return false;
-          if (!namaInovasi) return false;
-          return keyword ? namaInovasi.includes(keyword) : isVerified;
-        })
-        .sort((a, b) => (a.namaInovasi || "").localeCompare(b.namaInovasi || ""));
-
-      console.log(
-        "Filtered and sorted results:",
-        filtered.map((item) => ({ id: item.id, namaInovasi: item.namaInovasi, status: item.status }))
-      );
-      setResults(filtered);
+      const res: any = await getInnovation({
+        search: keyword || undefined,
+        status: "Terverifikasi",
+      });
+      const innovations = sortByRelevance(res.innovations || [], keyword);
+      setResults(innovations);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching data via API:", error);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }, 300);
 
-  // Run debounced fetch when searchValue changes
   useEffect(() => {
     fetchData(searchValue.toLowerCase().trim());
     return () => fetchData.cancel();
   }, [searchValue]);
 
-  // Reset scroll position on mount
   useEffect(() => {
     window.scrollTo(0, 0);
-  }
-    , []);
+  }, []);
 
   const handleCardClick = (id: string) => {
-    // destinasi ke halaman detail inovasi namun pastikan dulu usernya sebagai inovator atau bukan kalau inovator dia punya akses edit kalau bukan inovator dia tidak punya akses edit
-    const destination = paths.INNOVATION_DETAIL.replace(":id", id);
-    // logic user role
-    if (role === "innovator") {
-      // check if the user is the owner of the innovation
-      const isOwner = results.some((item) => item.id === id && item.status === "Terverifikasi");
-      if (isOwner) {
-        router.push(destination);
-      } else {
-        router.push(destination);
-      }
-    }
-    // if the user is not an innovator, just navigate to the detail page
-    else {
-      router.push(destination);
-    }
-    router.push(destination);
+    router.push(paths.INNOVATION_DETAIL.replace(":id", id));
   };
 
   const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -113,11 +98,8 @@ function SearchPage() {
 
   return (
     <Container page>
-      <TopBar
-        title="Hasil Pencarian"
-        onBack={() => router.push(paths.LANDING_PAGE)}
-      />
-      <Box px={5} py={8} >
+      <TopBar title="Hasil Pencarian" onBack={() => router.push(paths.LANDING_PAGE)} />
+      <Box px={5} py={8}>
         <SearchBarLink
           key={searchParams.toString()}
           placeholderText="Cari Inovasi di sini..."
@@ -130,7 +112,7 @@ function SearchPage() {
 
         <Flex align="center" mb={2} mt={6}>
           <Heading fontSize="15px" fontWeight="800" color="gray.700">
-            Hasil Pencarian: "{searchValue || 'Semua Inovasi'}"
+            Hasil Pencarian: &quot;{searchValue || 'Semua Inovasi'}&quot;
           </Heading>
         </Flex>
 
@@ -145,11 +127,7 @@ function SearchPage() {
         ) : (
           <Box
             display="grid"
-            gridTemplateColumns={{
-              base: "1fr",
-              sm: "repeat(2, 1fr)",
-              md: "repeat(2, 1fr)",
-            }}
+            gridTemplateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", md: "repeat(2, 1fr)" }}
             gap={4}
             mt={3}
           >
@@ -163,6 +141,7 @@ function SearchPage() {
                 tahunDibuat={item.tahunDibuat}
                 innovatorLogo={item.innovatorLogo}
                 innovatorName={item.innovatorName}
+                highlightQuery={searchValue}
                 onClick={() => handleCardClick(item.id)}
               />
             ))}

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Box, IconButton } from '@chakra-ui/react';
-import { Bot, X } from 'lucide-react'; // Mengubah MessageCircle menjadi Bot
+import { Bot, X } from 'lucide-react';
 import ChatWindow from './ChatWindow';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 
 const CHAT_HISTORY_KEY = 'desa-digital-chat-history';
 
@@ -13,6 +14,16 @@ const Chatbot = () => {
     const [mounted, setMounted] = useState(false);
     const [messages, setMessages] = useState<any[]>([]);
     const t = useTranslations('Chatbot');
+    const pathname = usePathname();
+
+    const hiddenRoutes = [
+        '/auth/login',
+        '/auth/register',
+        '/auth/reset-password',
+        '/auth/email-reset',
+    ];
+
+    const shouldHideChatbot = hiddenRoutes.some((route) => pathname?.startsWith(route));
 
     useEffect(() => {
         setMounted(true);
@@ -37,6 +48,26 @@ const Chatbot = () => {
         }
     }, [messages, mounted]);
 
+    // setTimeout untuk dispatch event
+    useEffect(() => {
+        if (!mounted) return;
+        if (!shouldHideChatbot) return;
+
+        if (isOpen) {
+            setIsOpen(false);
+        }
+
+        const timer = setTimeout(() => {
+            window.dispatchEvent(
+                new CustomEvent('chatbot:stateChanged', {
+                    detail: { isOpen: false },
+                })
+            );
+        }, 0);
+
+        return () => clearTimeout(timer);
+    }, [isOpen, mounted, shouldHideChatbot]);
+
     const clearHistory = () => {
         setMessages([]);
 
@@ -47,18 +78,33 @@ const Chatbot = () => {
         }
     };
 
+    // dispatch event dari updater setIsOpen
     const toggleChat = () => {
-        setIsOpen(!isOpen);
+        setIsOpen((current) => {
+            const nextOpen = !current;
+            
+            // Tunda pengiriman event agar React selesai merender komponen ini dulu
+            setTimeout(() => {
+                window.dispatchEvent(
+                    new CustomEvent("chatbot:stateChanged", {
+                        detail: { isOpen: nextOpen },
+                    })
+                );
+            }, 0);
+            
+            return nextOpen;
+        });
     };
 
     if (!mounted) return null;
+    if (shouldHideChatbot) return null;
 
     return (
         <>
             {isOpen && (
                 <Box
                     position="fixed"
-                    bottom="145px"
+                    bottom="133px"
                     right={{ base: '15px', md: 'calc(50% - 157.5px)' }}
                     width={{ base: 'calc(100vw - 30px)', md: '315px' }}
                     maxWidth="315px"
@@ -80,10 +126,9 @@ const Chatbot = () => {
 
             <IconButton
                 aria-label={t('ariaOpen')}
-                // Menggunakan ikon Bot saat tertutup, dan X saat terbuka
                 icon={isOpen ? <X size={24} /> : <Bot size={24} />} 
                 position="fixed"
-                bottom="80px"
+                bottom="68px"
                 right={{ base: '20px', md: 'calc(50% - 160px)' }}
                 width="56px"
                 height="56px"

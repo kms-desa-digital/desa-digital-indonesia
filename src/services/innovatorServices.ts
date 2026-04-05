@@ -1,7 +1,13 @@
 import api from "./api";
 
-export const getInnovators = async () => {
-  return api.get("/innovators");
+type InnovatorFilters = {
+  status?: string;
+  search?: string;
+  kategori?: string;
+};
+
+export const getInnovators = async (filters?: InnovatorFilters) => {
+  return api.get("/innovators", { params: filters || {} });
 };
 
 export const getInnovatorById = async (id: string) => {

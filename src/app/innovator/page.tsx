@@ -34,8 +34,8 @@ type InnovatorData = {
 export default function InnovatorPage() {
     const t = useTranslations("Innovator");
     const router = useRouter();
-    const [innovators, setInnovators] = useState<InnovatorData[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>("");
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
     const [innovatorsShowed, setInnovatorsShowed] = useState<InnovatorData[]>([]);
     const [categoryFilter, setCategoryFilter] = useState<string>("Semua Kategori");
 
@@ -53,27 +53,28 @@ export default function InnovatorPage() {
     ];
 
     useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    useEffect(() => {
         const fetchData = async () => {
             try {
-                const res: any = await getInnovators();
+                const res: any = await getInnovators({
+                    search: debouncedSearchQuery || undefined,
+                    kategori: categoryFilter === "Semua Kategori" ? undefined : categoryFilter,
+                });
                 const innovatorsData = res.data || [];
-                setInnovators(innovatorsData);
                 setInnovatorsShowed(innovatorsData);
             } catch (error) {
                 console.error("Error fetching innovators from MongoDB API:", error);
             }
         };
         fetchData();
-    }, []);
-
-    function filterSearch(searchKey: string, categoryKey: string) {
-        const filteredInnovators = innovators.filter((item: any) => {
-            const isNameMatch = item.namaInovator?.toLowerCase().includes(searchKey.trim().toLowerCase());
-            const isCategoryMatch = categoryKey === "Semua Kategori" || item.kategori === categoryKey;
-            return isNameMatch && isCategoryMatch;
-        });
-        setInnovatorsShowed(filteredInnovators);
-    }
+    }, [debouncedSearchQuery, categoryFilter]);
 
     const currentCategoryLabel = categories.find(c => c.value === categoryFilter)?.label || categoryFilter;
 
@@ -100,7 +101,6 @@ export default function InnovatorPage() {
                             value={categoryFilter}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
                                 setCategoryFilter(e.target.value);
-                                filterSearch(searchQuery, e.target.value);
                             }}
                         >
                             {categories.map((category) => (
@@ -114,7 +114,6 @@ export default function InnovatorPage() {
                             value={searchQuery}
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 setSearchQuery(e.target.value);
-                                filterSearch(e.target.value, categoryFilter);
                             }}
                         />
                     </Column>
@@ -129,6 +128,7 @@ export default function InnovatorPage() {
                         <CardInnovator
                             key={item.id}
                             {...item}
+                            highlightQuery={searchQuery}
                             onClick={() =>
                                 // navigate(generatePath(paths.INNOVATOR_PROFILE_PAGE, { id: item.id }))
                                 router.push(`/innovator/profile/${item.id}`)

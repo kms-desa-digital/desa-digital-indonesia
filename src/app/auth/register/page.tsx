@@ -9,14 +9,13 @@ import {
     Box,
 } from "@chakra-ui/react";
 import { paths } from "Consts/path";
-// import { User } from "firebase/auth";
-// import { doc, setDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import React, { useState } from "react";
-// import { useCreateUserWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import icons
 import { useRouter } from "next/navigation";
-// import { FIREBASE_ERRORS } from "src/firebase/errors";
-// import { auth, firestore } from "src/firebase/clientApp";
+import { FIREBASE_ERRORS } from "src/firebase/errors";
+import { auth, firestore } from "src/firebase/clientApp";
 import {
     Action,
     ActionContainer,
@@ -42,9 +41,6 @@ const Register: React.FC = () => {
 
     const router = useRouter();
 
-    // const [createUserWithEmailAndPassword, userCred, loading, userError] =
-    //     useCreateUserWithEmailAndPassword(auth);
-
     const onShowPassword = () => setShow(!show);
 
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -60,29 +56,25 @@ const Register: React.FC = () => {
 
         setLoading(true);
         try {
-            const res = await fetch("/api/auth/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: regisForm.email,
-                    password: regisForm.password,
-                    role: regisForm.role,
-                }),
-            });
-            const data = await res.json();
+            const userCredential = await createUserWithEmailAndPassword(
+                auth,
+                regisForm.email,
+                regisForm.password
+            );
 
-            if (!res.ok) {
-                setError(data.message || "Registrasi gagal");
-                return;
-            }
+            await setDoc(doc(firestore, "users", userCredential.user.uid), {
+                id: userCredential.user.uid,
+                email: regisForm.email,
+                role: regisForm.role,
+            });
 
             router.push(paths.LOGIN_PAGE);
-
-            // === Firebase auth (di-comment, diganti API MongoDB+JWT) ===
-            // createUserWithEmailAndPassword(regisForm.email, regisForm.password);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error during registration:", error);
-            setError("Terjadi kesalahan, coba lagi");
+            setError(
+                FIREBASE_ERRORS[error?.message as keyof typeof FIREBASE_ERRORS] ||
+                    "Terjadi kesalahan, coba lagi"
+            );
         } finally {
             setLoading(false);
         }
@@ -107,28 +99,6 @@ const Register: React.FC = () => {
             return "Kata sandi dan konfirmasi kata sandi tidak cocok";
         return "";
     };
-
-    // === Firebase: createUserDocument (di-comment, diganti API MongoDB) ===
-    // const createUserDocument = async (user: User) => {
-    //     try {
-    //         const userData = {
-    //             id: user.uid,
-    //             email: user.email,
-    //             role: regisForm.role,
-    //         };
-    //         const userDocRef = doc(firestore, "users", user.uid);
-    //         await setDoc(userDocRef, userData);
-    //         console.log("User document created", userData);
-    //     } catch (error) {
-    //         console.error("Error creating user document", error);
-    //     }
-    // };
-    // useEffect(() => {
-    //     if (userCred) {
-    //         createUserDocument(userCred.user);
-    //         router.push(paths.LOGIN_PAGE);
-    //     }
-    // }, [userCred]);
 
     return (
         <Box>

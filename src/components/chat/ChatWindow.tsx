@@ -53,11 +53,12 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
         }
     };
 
-    const handleStarterClick = (promptText: string) => {
+    const handleSuggestionClick = (promptText: string) => {
         setInput(promptText);
-        setTimeout(() => {
-            submitMessage(promptText);
-        }, 50);
+        if (textareaRef.current) {
+            textareaRef.current.focus(); // Arahkan kursor langsung ke text area
+            setTimeout(() => handleInputResize(), 10);
+        }
     };
 
     const submitMessage = async (messageText: string) => {
@@ -106,6 +107,7 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                     id: assistantMessageId,
                     role: 'assistant',
                     content: "Maaf, terjadi kesalahan saat menghubungi server.",
+                    error: true
                 }
             ]);
         } finally {
@@ -165,7 +167,7 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                 </HStack>
             </HStack>
 
-            {/* AREA PESAN */}
+            {/* Area Pesan */}
             <VStack
                 flex={1}
                 overflowY="auto"
@@ -204,7 +206,7 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                                 <Box
                                     key={index}
                                     as="button"
-                                    onClick={() => handleStarterClick(promptText)}
+                                    onClick={() => handleSuggestionClick(promptText)}
                                     textAlign="left"
                                     bg="white"
                                     p={3.5}
@@ -225,12 +227,12 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                     </Box>
                 )}
 
-                {/* Mengoper fungsi submitMessage agar suggestion bisa diklik */}
                 {messages.map((m: any) => (
                     <ChatMessage 
                         key={m.id} 
                         message={m} 
-                        onSuggestionClick={(text) => submitMessage(text)} 
+                        onSuggestionClick={handleSuggestionClick} 
+                        onRetry={() => submitMessage(messages[messages.length-1].content)}
                     />
                 ))}
 
@@ -244,7 +246,7 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                 <div ref={messagesEndRef} />
             </VStack>
 
-            {/* INPUT AREA */}
+            {/* Input Area */}
             <Box p={3} bg="white" borderTop="1px" borderColor="gray.100" boxShadow="0 -4px 10px rgba(0,0,0,0.02)">
                 <form onSubmit={handleSubmit}>
                     <HStack align="flex-end" spacing={2} bg="gray.100" borderRadius="24px" p={1.5} pr={2}>
@@ -278,17 +280,17 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                             aria-label={t('ariaSend')}
                             icon={<Send size={18} />}
                             borderRadius="full"
-                            bg="green.500"
+                            bg={input.trim() ? "green.500" : "gray.300"} 
                             color="white"
                             minW="36px"
                             h="36px"
                             mb={0.5}
-                            boxShadow="0 4px 10px rgba(34,197,94,0.3)"
-                            _hover={{
+                            boxShadow={input.trim() ? "0 4px 10px rgba(34,197,94,0.3)" : "none"}
+                            _hover={input.trim() ? {
                                 bg: 'green.600',
                                 transform: 'scale(1.05)'
-                            }}
-                            _active={{ bg: 'green.700' }}
+                            } : {}}
+                            _active={input.trim() ? { bg: 'green.700' } : {}}
                             isDisabled={!input.trim() || isLoading}
                         />
                     </HStack>

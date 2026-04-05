@@ -1,10 +1,6 @@
 import {
-  collection,
   doc,
   getDoc,
-  getDocs,
-  query,
-  where
 } from "firebase/firestore";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -47,52 +43,26 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
       setError(null);
 
-      // 1. Prioritas: Cek JWT Token (MongoDB)
-      const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
-      
-      if (token) {
-        try {
-          const res = await fetch("/api/auth/me", {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const data = await res.json();
-            setUid(data.user.uid);
-            setRole(data.user.role);
-            setInnovatorVerified(data.user.isInnovatorVerified);
-            setVillageVerified(data.user.isVillageVerified);
-            setInnovationVerified(data.user.isInnovationVerified);
-            setLoading(false);
-            return; // Berhasil load via JWT
-          } else if (res.status === 401) {
-             localStorage.removeItem("token");
-          }
-        } catch (err) {
-          console.error("JWT verification failed:", err);
-        }
-      }
-
-      // 2. Fallback: Firebase Auth (Lama)
       try {
         if (!authUser && !loadingAuth) {
           setUid(null);
           setRole(null);
           setInnovatorVerified(false);
           setVillageVerified(false);
+          setInnovationVerified(false);
         } else if (authUser) {
           setUid(authUser.uid);
-          // Fetch role dari koleksi "users"
+
           const userSnap = await getDoc(doc(firestore, "users", authUser.uid));
           const userData = userSnap.exists() ? userSnap.data() : {};
           setRole((userData as any).role || null);
 
-          // Cek status inovator
           const innovSnap = await getDoc(doc(firestore, "innovators", authUser.uid));
           setInnovatorVerified(innovSnap.exists() && (innovSnap.data() as any).status === "Terverifikasi");
 
-          // Cek status desa
           const villageSnap = await getDoc(doc(firestore, "villages", authUser.uid));
           setVillageVerified(villageSnap.exists() && (villageSnap.data() as any).status === "Terverifikasi");
+          setInnovationVerified(false);
         }
       } catch (err: any) {
         console.error("Error loading firebase user context:", err);

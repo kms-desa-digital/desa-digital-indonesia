@@ -8,6 +8,7 @@ import { ObjectId } from 'mongodb'
 //   ?category=<nama_kategori>  → filter by kategori
 //   ?status=<Terverifikasi|Menunggu|Ditolak>  → filter by status
 //   ?innovatorId=<id>  → filter by innovator
+//   ?search=<keyword> → filter by nama inovasi / deskripsi / nama innovator
 // =========================================================
 export async function GET(request: NextRequest) {
   try {
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
     const category    = searchParams.get('category')
     const status      = searchParams.get('status')
     const innovatorId = searchParams.get('innovatorId')
+    const search      = searchParams.get('search')
 
     const db = await connectToDatabase()
     const filter: Record<string, any> = {}
@@ -22,6 +24,15 @@ export async function GET(request: NextRequest) {
     if (category)    filter.kategori    = category
     if (status)      filter.status      = status
     if (innovatorId) filter.innovatorId = innovatorId
+
+    if (search && search.trim()) {
+      const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      filter.$or = [
+        { namaInovasi: { $regex: escapedSearch, $options: 'i' } },
+        { deskripsi: { $regex: escapedSearch, $options: 'i' } },
+        { namaInnovator: { $regex: escapedSearch, $options: 'i' } },
+      ]
+    }
 
     const innovations = await db
       .collection('innovations')
