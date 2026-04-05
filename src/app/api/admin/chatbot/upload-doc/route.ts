@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
     const collection = db.collection("doc_embeddings");
 
     const results = [];
+    const documentsToInsert = []; // Array penampung untuk insertMany
     const sourceName = customSource || file.name;
 
     // Proses per halaman
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
       // Generate embedding
       const vector = await generateEmbeddings(content);
 
-      const newNode = {
+      documentsToInsert.push({
         source: sourceName,
         content: content,
         embedding_vector: vector,
@@ -75,10 +76,14 @@ export async function POST(req: NextRequest) {
           total_pages: pageTexts.length,
         },
         createdAt: new Date(),
-      };
+      });
 
-      await collection.insertOne(newNode);
       results.push({ page: i + 1, success: true });
+    }
+
+    // Simpan ke database sekaligus menggunakan insertMany (lebih cepat & efisien)
+    if (documentsToInsert.length > 0) {
+      await collection.insertMany(documentsToInsert);
     }
 
     return NextResponse.json({
@@ -95,10 +100,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-// Support body size up to 10MB
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

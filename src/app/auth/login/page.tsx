@@ -9,13 +9,13 @@ import {
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
-// import { doc, getDoc } from "firebase/firestore";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import React, { useState } from "react";
-// import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-// import { FIREBASE_ERRORS } from "src/firebase/errors";
-// import { auth, firestore } from "src/firebase/clientApp";
+import { FIREBASE_ERRORS } from "src/firebase/errors";
+import { auth, firestore } from "src/firebase/clientApp";
 import {
     Action,
     ActionContainer,
@@ -34,8 +34,6 @@ const Login: React.FC = () => {
     });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    // const [signInWithEmailAndPassword, user, loading, userError] =
-    //     useSignInWithEmailAndPassword(auth);
     const [show, setShow] = useState(false);
     const router = useRouter();
     const onShowPassword = () => setShow(!show);
@@ -56,33 +54,28 @@ const Login: React.FC = () => {
 
         setLoading(true);
         try {
-            const res = await fetch("/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: loginForm.email,
-                    password: loginForm.password,
-                }),
-            });
-            const data = await res.json();
+            const userCredential = await signInWithEmailAndPassword(
+                auth,
+                loginForm.email,
+                loginForm.password
+            );
 
-            if (!res.ok) {
-                setError(data.message || "Login gagal");
-                setLoading(false);
+            const userRef = doc(firestore, "users", userCredential.user.uid);
+            const userDoc = await getDoc(userRef);
+
+            if (!userDoc.exists()) {
+                setError("Data pengguna tidak ditemukan");
                 return;
             }
 
-            // Simpan token JWT ke localStorage
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("userRole", data.role);
+            const userData = userDoc.data();
+            const userRole = (userData?.role || "").toLowerCase();
 
-            // Dispatch custom event untuk notify listeners tentang perubahan token
+            localStorage.removeItem("token");
+            localStorage.setItem("userRole", userRole);
             window.dispatchEvent(new Event("auth:tokenChanged"));
-
-            // Refresh halaman agar state token ter-update sebelum navigate
             router.refresh();
 
-            const userRole = data.role;
             if (userRole === "admin") {
                 router.push(paths.ADMIN_PAGE);
             } else if (userRole === "ministry") {
@@ -100,28 +93,12 @@ const Login: React.FC = () => {
                 draggable: true,
                 progress: undefined,
             });
-
-            // === Firebase auth (di-comment, diganti API MongoDB+JWT) ===
-            // await signInWithEmailAndPassword(loginForm.email, loginForm.password);
-            // if (auth.currentUser) {
-            //     const userRef = doc(firestore, "users", auth.currentUser.uid);
-            //     const userDoc = await getDoc(userRef);
-            //     console.log("user snap", userDoc.data());
-            //     if (userDoc.exists()) {
-            //         const userRole = userDoc.data()?.role;
-            //         if (userRole === "admin") {
-            //             router.push(paths.ADMIN_PAGE);
-            //         } else if (userRole === "ministry") {
-            //             router.push(paths.DASHBOARD_MINISTRY_HOME);
-            //         } else {
-            //             router.push(paths.LANDING_PAGE);
-            //         }
-            //         toast.success("Berhasil Masuk", { ... });
-            //     }
-            // }
-        } catch (error) {
+        } catch (error: any) {
             console.log("Error during login:", error);
-            setError("Terjadi kesalahan, coba lagi");
+            setError(
+                FIREBASE_ERRORS[error?.message as keyof typeof FIREBASE_ERRORS] ||
+                    "Terjadi kesalahan, coba lagi"
+            );
         } finally {
             setLoading(false);
         }
@@ -160,7 +137,6 @@ const Login: React.FC = () => {
                                 required
                                 placeholder="Kata sandi"
                                 fontSize="10pt"
-                                mb="10px"
                             />
                             <InputRightElement onClick={onShowPassword} cursor="pointer" height="100%">
                                 {show ? <FaEyeSlash /> : <FaEye />}

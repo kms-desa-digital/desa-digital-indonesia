@@ -187,6 +187,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
 
   const handleLogout = async () => {
     try {
+      sessionStorage.setItem("postLogoutRedirect", "landing");
       setTokenAndRole(null, null);
       window.dispatchEvent(new Event("auth:tokenChanged"));
       await signOut(auth);
@@ -203,7 +204,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
 
   return (
     <Flex justify="center" align="center" height="56px">
-      <Menu>
+      <Menu placement="bottom-end">
         <Button
           padding={1}
           as={IconButton}
@@ -235,27 +236,21 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
           height="40px"
         />
 
-        <MenuList>
+        <MenuList maxW="calc(100vw - 24px)" minW="190px">
           {user || token ? (
             <>
-              <MenuItem onClick={handleProfileClick}>
-                {profileExists ? "Profile" : "Isi Profile"}
-              </MenuItem>
+              {(userRole?.toLowerCase() === "village" ||
+                userRole?.toLowerCase() === "innovator" ||
+                tokenRole?.toLowerCase() === "village" ||
+                tokenRole?.toLowerCase() === "innovator" ||
+                contextRole?.toLowerCase() === "village" ||
+                contextRole?.toLowerCase() === "innovator") && (
+                  <MenuItem onClick={handleProfileClick}>
+                    {profileExists ? "Profile" : "Isi Profile"}
+                  </MenuItem>
+                )}
 
-              <MenuItem
-                onClick={() => {
-                  const currentRole = (userRole || tokenRole || contextRole)?.toLowerCase();
-                  if (currentRole === "innovator") {
-                    router.push(paths.REPORT_INNOVATOR);
-                  } else if (currentRole === "village") {
-                    router.push(paths.REPORT_VILLAGE);
-                  } else if (currentRole === "admin") {
-                    router.push(paths.REPORT_ADMIN);
-                  }
-                }}
-              >
-                Report
-              </MenuItem>
+              {/** Report disembunyikan sementara untuk semua role */}
 
               {(userRole?.toLowerCase() === "admin" ||
                 tokenRole?.toLowerCase() === "admin" ||

@@ -511,7 +511,7 @@ const AddInnovation: React.FC = () => {
                     } else if (data.status === "Terverifikasi") {
                         // Backend usually handles this, but if we need to track locally:
                         if (user?.uid) {
-                             // await updateInnovator(user.uid, { jumlahInovasi: ... });
+                            // await updateInnovator(user.uid, { jumlahInovasi: ... });
                         }
                     }
                 }

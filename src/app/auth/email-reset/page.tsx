@@ -1,14 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input, Button, Text, Flex, Box, Link } from "@chakra-ui/react";
+import { Input, Button, Text, Flex, Box } from "@chakra-ui/react";
 import { Background, Container, Title, Description } from "./_styles";
 import { useRouter } from "next/navigation";
-// import { auth } from "src/firebase/clientApp";
-// import {
-//     useAuthState,
-//     useSendPasswordResetEmail,
-// } from "react-firebase-hooks/auth";
 import TopBar from "Components/topBar";
 
 
@@ -18,7 +13,6 @@ const EmailReset: React.FC = () => {
     const [email, setEmail] = useState("");
     const [sending, setSending] = useState(false);
     const [error, setError] = useState("");
-    const [resetLink, setResetLink] = useState("");
     // const [sendPasswordResetEmail, sending, error] =
     //     useSendPasswordResetEmail(auth);
     const [success, setSuccess] = useState(false);
@@ -27,7 +21,6 @@ const EmailReset: React.FC = () => {
         event.preventDefault();
         setSending(true);
         setError("");
-        setResetLink("");
         try {
             const res = await fetch("/api/auth/email-reset", {
                 method: "POST",
@@ -38,17 +31,11 @@ const EmailReset: React.FC = () => {
 
             if (!res.ok) {
                 setError(data.message || "Gagal mengirim email reset");
-                setSending(false);
                 return;
             }
 
             setSuccess(true);
-            setResetLink(data.resetLink || "");
-            console.log("Email berhasil dikirim", email);
-
-            // === Firebase auth (di-comment, diganti API MongoDB) ===
-            // await sendPasswordResetEmail(email);
-            // setSuccess(true);
+            console.log("Password reset email sent", email);
         } catch (error) {
             console.error(error);
             setError("Terjadi kesalahan, coba lagi");
@@ -77,7 +64,7 @@ const EmailReset: React.FC = () => {
                     {success ? (
                         <>
                             <Text textAlign="start" color="green" fontSize="10pt" mt="4px">
-                                Link reset password berhasil dibuat.
+                                Link reset password telah dikirim ke email Anda.
                             </Text>
                         </>
                     ) : (

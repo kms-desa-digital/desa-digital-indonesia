@@ -1,16 +1,16 @@
 "use client";
 
-import { Button, Menu, MenuButton, MenuList, MenuItem, Text, Flex } from "@chakra-ui/react";
-import { ChevronDownIcon } from "@chakra-ui/icons";
+import { Button, Menu, MenuButton, MenuList, MenuItem, Text, Flex, Box } from "@chakra-ui/react";
 import { useLanguage } from "src/contexts/LanguageContext";
 import Image from "next/image";
+import { Globe } from "lucide-react";
 
 export default function LanguageSwitcher() {
     const { locale, setLocale } = useLanguage();
 
     const languages = [
-        { code: "id", label: "ID", flag: "https://flagcdn.com/w20/id.png" },
-        { code: "en", label: "EN", flag: "https://flagcdn.com/w20/gb.png" },
+        { code: "id", label: "ID", flag: "https://flagcdn.com/w40/id.png" },
+        { code: "en", label: "EN", flag: "https://flagcdn.com/w40/gb.png" },
     ];
 
     const currentLang = languages.find((lang) => lang.code === locale) || languages[0];
@@ -19,33 +19,38 @@ export default function LanguageSwitcher() {
         <Menu>
             <MenuButton
                 as={Button}
-                rightIcon={<ChevronDownIcon color="white" boxSize={3} />}
                 variant="ghost"
-                size="xs"
-                height="32px"
-                pl={1}
-                pr={0}
-                _hover={{ bg: "transparent" }}
+                size="sm"
+                px={1}
+                _hover={{ bg: "transparent", opacity: 0.8 }}
                 _active={{ bg: "transparent" }}
             >
-                <Flex align="center">
-                    <Text color="white" fontWeight="700" fontSize="14px">
-                        {currentLang.label}
-                    </Text>
-                </Flex>
+                <Globe color="white" size={18} />
             </MenuButton>
-            <MenuList minW="60px" bg="white" borderColor="gray.200" zIndex={1000}>
+            <MenuList minW="64px" bg="white" borderColor="gray.200" zIndex={1000} p={1}>
                 {languages.map((lang) => (
                     <MenuItem
                         key={lang.code}
                         onClick={() => setLocale(lang.code as "id" | "en")}
-                        display="flex"
-                        alignItems="center"
                         _hover={{ bg: "gray.100" }}
+                        borderRadius="4px"
+                        py={1.5}
+                        px={2}
                     >
-                        <Text color="black" fontSize="12px">
-                            {lang.label === "ID" ? "Indonesia" : "English"}
-                        </Text>
+                        <Flex align="center" gap={2}>
+                            <Box borderRadius="1px" overflow="hidden" width="16px" height="11px">
+                                <Image
+                                    src={lang.flag}
+                                    alt={lang.label}
+                                    width={16}
+                                    height={11}
+                                    style={{ objectFit: "cover" }}
+                                />
+                            </Box>
+                            <Text color="black" fontSize="12px" fontWeight="600">
+                                {lang.label}
+                            </Text>
+                        </Flex>
                     </MenuItem>
                 ))}
             </MenuList>

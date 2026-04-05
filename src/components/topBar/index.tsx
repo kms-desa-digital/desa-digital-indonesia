@@ -1,17 +1,16 @@
 import { ArrowBackIcon } from "@chakra-ui/icons";
 import { Box, Button, Flex, IconButton, Text } from "@chakra-ui/react";
-import faq from "@public/icons/faq.svg";
+import { HelpCircle } from "lucide-react";
 import { paths } from "Consts/path";
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { usePathname, useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { toast } from "react-toastify";
 import { useUser } from "src/contexts/UserContext";
 import { useAuthToken } from "Hooks/useAuthToken";
 import { auth, firestore } from "../../firebase/clientApp";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import UserMenu from "./RightContent/UserMenu";
 import { FaCheck } from "react-icons/fa";
 import { useTranslations } from "next-intl";
@@ -20,7 +19,7 @@ type TopBarProps = {
   title: string | undefined;
   onBack?: () => void;
   onFilterClick?: () => void;
-  rightElement?: React.ReactNode; // ← Tambahkan prop baru
+  rightElement?: React.ReactNode;
 };
 
 function TopBar(props: TopBarProps) {
@@ -47,7 +46,6 @@ function TopBar(props: TopBarProps) {
     "/dashboard"
   ];
 
-  // Cek apakah pathname saat ini ada di allowedPaths (hanya exact match)
   const isUserMenuVisible = allowedPaths.includes(pathname);
   const isClaimButtonVisible =
     pathname.includes("/innovation/detail/") && id;
@@ -149,7 +147,6 @@ function TopBar(props: TopBarProps) {
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-          progress: undefined,
         }
       );
     } else {
@@ -187,9 +184,8 @@ function TopBar(props: TopBarProps) {
           fontWeight="700"
           color="white"
           ml={onBack ? "8px" : "0"}
-          isTruncated
           flex={1}
-          mr={2}
+          mr={1}
         >
           {title}
         </Text>
@@ -207,7 +203,6 @@ function TopBar(props: TopBarProps) {
               bg={bg}
               color={color}
               leftIcon={leftIcon}
-              // isDisabled={isDisabled}
               onClick={handleClick}
             >
               {label}
@@ -219,31 +214,30 @@ function TopBar(props: TopBarProps) {
             (user || isAuthenticated ? (
               <UserMenu user={user} />
             ) : (
-              <Flex align="center" gap="1px">
-                <Button
-                  as={IconButton}
-                  icon={(
-                    <Image
-                      src={faq}
-                      alt="faq"
-                      width={20}
-                      height={20}
-                      style={{ width: '20px', height: '20px' }}
-                    />
-                  )}
+              <Flex align="center" gap={2}>
+                <IconButton
+                  aria-label="FAQ"
+                  icon={<HelpCircle size={18} />}
+                  variant="ghost"
                   color="white"
-                  cursor="pointer"
-                  padding={2}
+                  minW="auto"
+                  _hover={{ bg: "transparent", opacity: 0.8 }}
                   onClick={() => router.push(paths.BANTUAN_FAQ_PAGE)}
                 />
+
+                <Box height="16px" width="1px" bg="white" opacity={0.3} />
+
                 <Button
                   as={Link}
                   href={paths.LOGIN_PAGE}
-                  fontSize="14px"
-                  fontWeight="700"
-                  color="#FFEB84"
-                  cursor="pointer"
-                  variant="link"
+                  bg="white"
+                  color="#347357"
+                  borderRadius="full"
+                  px={3}
+                  height="34px"
+                  fontSize="12px"
+                  fontWeight="600"
+                  _hover={{ bg: "gray.100" }}
                 >
                   {t("login")}
                 </Button>

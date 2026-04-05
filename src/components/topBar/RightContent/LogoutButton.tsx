@@ -10,6 +10,7 @@ const LogoutButton = () => {
 
   const handleLogout = async () => {
     try {
+      sessionStorage.setItem("postLogoutRedirect", "landing");
       await signOut(auth);
       router.push("/");
       toast.success("Berhasil Logout", {

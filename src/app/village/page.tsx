@@ -4,10 +4,7 @@ import { Box } from "@chakra-ui/react";
 import CardVillage from "Components/card/village";
 import { paths } from "Consts/path";
 import React, { useEffect, useState } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
-import { useQuery } from "react-query";
 import { useRouter } from "next/navigation";
-import { auth } from "src/firebase/clientApp";
 // import { auth, firestore } from "src/firebase/clientApp";
 import {
     CardContent,
@@ -40,8 +37,6 @@ interface Location {
 const Village: React.FC = () => {
     const t = useTranslations("Village");
     const router = useRouter();
-    const [user] = useAuthState(auth);
-    const [userRole, setUserRole] = useState<string | null>(null);
 
     /* 
     useEffect(() => {
@@ -65,9 +60,18 @@ const Village: React.FC = () => {
     const [selectedProvince, setSelectedProvince] = useState<string>("");
     const [selectedRegency, setSelectedRegency] = useState<string>("");
     const [searchTerm, setSearchTerm] = useState<string>("");
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
 
     // const villagesRef = collection(firestore, "villages");
     const [villages, setVillages] = useState<any[]>([]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     const parseLocation = (name: string) => {
         const match = name.match(/^(KABUPATEN|KOTA|KAB\.?)\s+(.*)/i);
@@ -134,10 +138,6 @@ const Village: React.FC = () => {
         }
     };
 
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value);
-    };
-
     const [isFetched, setIsFetched] = useState(false);
 
     useEffect(() => {
@@ -157,7 +157,12 @@ const Village: React.FC = () => {
                 .filter((item) => item.status === 'Terverifikasi');
             */
             try {
-                const response: any = await getVillages("Terverifikasi");
+                const response: any = await getVillages({
+                    status: "Terverifikasi",
+                    search: debouncedSearchTerm || undefined,
+                    provinsi: selectedProvince || undefined,
+                    kabupatenKota: selectedRegency || undefined,
+                });
                 const fetchedVillages = response.villages || response.data || [];
                 const villagesData = fetchedVillages.map((item: any) => ({
                     ...item,
@@ -172,48 +177,7 @@ const Village: React.FC = () => {
             }
         };
         fetchData();
-    }, []);
-
-    const filteredVillages = villages.filter((item: any) => {
-        const matchProvince =
-            selectedProvince === "" || item.provinsi === selectedProvince;
-
-        // Parse Selected Filter (e.g., "BEKASI (KABUPATEN)")
-        let matchRegency = true;
-        if (selectedRegency !== "") {
-            // Selected format is "CORE (TYPE)"
-            const selectedMatch = selectedRegency.match(/(.*)\s\((.*)\)/);
-            if (selectedMatch) {
-                const selectedCore = selectedMatch[1].toUpperCase();
-                const selectedType = selectedMatch[2].toUpperCase(); // KABUPATEN or KOTA
-
-                // Parse Item Data (e.g., "KABUPATEN BEKASI" or "BEKASI")
-                const itemParsed = parseLocation(item.kabupatenKota);
-
-                const coreMatch = itemParsed.coreName === selectedCore;
-
-                // If item has a specific type (KOTA/KAB), it must match selected type.
-                // If item has NO type (just "BEKASI"), we allow it to match (Ambiguous/Legacy data case).
-                let typeMatch = true;
-                if (itemParsed.type) {
-                    // Normalize item type (KAB/KABUPATEN -> KABUPATEN)
-                    const normItemType = itemParsed.type.includes('KOTA') ? 'KOTA' : 'KABUPATEN';
-                    typeMatch = normItemType === selectedType;
-                }
-
-                matchRegency = coreMatch && typeMatch;
-            } else {
-                // Fallback if format is unexpected or manual entry
-                const cleanItemRegency = item.kabupatenKota.replace(/^(KABUPATEN|KOTA|KAB\.?)\s+/i, "").trim();
-                matchRegency = item.kabupatenKota === selectedRegency || cleanItemRegency.toLowerCase() === selectedRegency.toLowerCase();
-            }
-        }
-
-        const matchSearch =
-            searchTerm === "" ||
-            item.namaDesa.toLowerCase().includes(searchTerm.toLowerCase());
-        return matchProvince && matchRegency && matchSearch;
-    });
+    }, [debouncedSearchTerm, selectedProvince, selectedRegency]);
 
     return (
         <Container px={0} pb={70}>
@@ -254,8 +218,8 @@ const Village: React.FC = () => {
                     </Texthighlight>
                 </Text>
                 <GridContainer>
-                    {isFetched && filteredVillages &&
-                        filteredVillages.map((item: any, idx: number) => (
+                    {isFetched && villages &&
+                        villages.map((item: any, idx: number) => (
                             <CardVillage
                                 key={idx}
                                 provinsi={item.provinsi}
@@ -265,6 +229,7 @@ const Village: React.FC = () => {
                                 header={item.header || defaultHeader}
                                 id={item.userId}
                                 isHome={false}
+                                highlightQuery={searchTerm}
                                 onClick={() => {
                                     router.push(`/village/detail/${item.userId || item.id}`);
                                 }}

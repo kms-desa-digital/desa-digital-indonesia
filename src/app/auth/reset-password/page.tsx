@@ -9,21 +9,20 @@ import { paths } from "Consts/path";
 const ResetPassword: React.FC = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const token = searchParams.get("token");
-    const email = searchParams.get("email");
+    const oobCode = searchParams.get("oobCode");
 
     useEffect(() => {
-        if (token && email) {
-            router.replace(`${paths.NEW_PASSWORD_PAGE}?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`);
+        if (oobCode) {
+            router.replace(`${paths.NEW_PASSWORD_PAGE}?oobCode=${encodeURIComponent(oobCode)}`);
         }
-    }, [email, router, token]);
+    }, [oobCode, router]);
 
     return (
         <Background>
             <Container>
                 <Title>Lupa Kata Sandi</Title>
                 <Description>
-                    Halaman ini sekarang memakai link reset berbasis token dari email. Jika Anda membuka link lama, sistem akan mengarahkan ke form kata sandi baru.
+                    Halaman ini memakai link reset dari Firebase. Jika Anda membuka link lama, sistem akan mengarahkan ke form kata sandi baru.
                 </Description>
 
                 <Text textAlign="center" fontSize="10pt" mt="12px">

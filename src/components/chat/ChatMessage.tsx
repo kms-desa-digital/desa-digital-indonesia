@@ -1,7 +1,7 @@
 "use client";
 
-import { Box, HStack, Avatar, Text, VStack, Flex } from '@chakra-ui/react';
-import { Bot, User as UserIcon, Lightbulb, MapPinned, ChevronRight } from 'lucide-react';
+import { Box, HStack, Avatar, Text, VStack, Flex, Button } from '@chakra-ui/react';
+import { Bot, User as UserIcon, Lightbulb, MapPinned, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useEffect, useState } from 'react';
 import { Global } from '@emotion/react';
@@ -13,6 +13,7 @@ interface ChatMessageProps {
         content: string;
         role: 'user' | 'assistant' | string;
         createdAt?: Date;
+        error?: boolean; 
         extra?: {
             linkCards?: Array<{
                 sourceId: string;
@@ -26,9 +27,10 @@ interface ChatMessageProps {
     };
     isLoading?: boolean;
     onSuggestionClick?: (text: string) => void;
+    onRetry?: () => void; 
 }
 
-const ChatMessage = ({ message, isLoading = false, onSuggestionClick }: ChatMessageProps) => {
+const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }: ChatMessageProps) => {
     const isUser = message.role === 'user';
     const [formattedTime, setFormattedTime] = useState<string>('');
     const linkCards = message.extra?.linkCards ?? [];
@@ -63,16 +65,16 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick }: ChatMess
                 {!isUser && (
                     <Avatar
                         size="sm"
-                        bg="green.500"
-                        icon={<Bot size={16} color="white" />}
+                        bg={message.error ? "red.500" : "green.500"} // Ubah merah jika error
+                        icon={message.error ? <AlertCircle size={16} color="white" /> : <Bot size={16} color="white" />}
                         boxShadow="sm"
                     />
                 )}
 
                 <Box
                     maxW={isUser ? { base: '88%', md: '82%' } : { base: 'calc(100% - 46px)', md: '86%' }}
-                    bg={isUser ? 'green.500' : 'white'}
-                    color={isUser ? 'white' : 'gray.800'}
+                    bg={message.error ? 'red.50' : (isUser ? 'green.500' : 'white')} // Latar merah muda jika error
+                    color={message.error ? 'red.800' : (isUser ? 'white' : 'gray.800')}
                     px={4}
                     py={3}
                     borderRadius="20px"
@@ -80,7 +82,7 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick }: ChatMess
                     borderBottomRightRadius={isUser ? '4px' : '20px'}
                     boxShadow={isUser ? '0 2px 6px rgba(34,197,94,0.2)' : '0 4px 14px rgba(0,0,0,0.04)'}
                     border={isUser ? 'none' : '1px solid'}
-                    borderColor="gray.100"
+                    borderColor={message.error ? 'red.200' : 'gray.100'}
                     wordBreak="break-word"
                     overflowWrap="anywhere"
                 >
@@ -91,9 +93,26 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick }: ChatMess
                                 <Box w="6px" h="6px" bg="gray.400" borderRadius="full" animation="bounce 1.2s infinite ease-in-out 0.2s" />
                                 <Box w="6px" h="6px" bg="gray.400" borderRadius="full" animation="bounce 1.2s infinite ease-in-out 0.4s" />
                             </HStack>
+                        ) : message.error ? (
+                            /* Tampilan jika terjadi error */
+                            <VStack align="start" spacing={2}>
+                                <Text fontWeight="600">{message.content}</Text>
+                                <Button 
+                                    leftIcon={<RefreshCw size={12} />} 
+                                    size="xs" 
+                                    colorScheme="red" 
+                                    variant="ghost" 
+                                    onClick={onRetry}
+                                    height="24px"
+                                >
+                                    Coba kirim ulang
+                                </Button>
+                            </VStack>
                         ) : (
+                            /* Format Markdown */
                             <Box
                                 sx={{
+                                    '& mark': { bg: 'yellow.200', color: 'orange.900', px: '3px', py: '1px', borderRadius: '4px', fontWeight: '600' }, // Highlight Kuning
                                     '& p': { marginBottom: '0.6rem', lineHeight: '1.5', color: isUser ? 'whiteAlpha.900' : 'gray.700' },
                                     '& p:last-child': { marginBottom: 0 },
                                     '& strong': { fontWeight: '700', color: isUser ? 'white' : 'gray.900' },
@@ -120,6 +139,7 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick }: ChatMess
                         )}
                     </Box>
 
+                    {/* Render Link Cards */}
                     {hasCards && (
                         <Box mt={4} pt={3} borderTop="1px dashed" borderColor="gray.200">
                             <VStack spacing={2.5} align="stretch">
@@ -156,6 +176,7 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick }: ChatMess
                         </Box>
                     )}
 
+                    {/* Waktu Chat */}
                     {formattedTime && (
                         <Text fontSize="9px" fontWeight="600" color={isUser ? 'whiteAlpha.700' : 'gray.400'} mt={2} textAlign={isUser ? 'right' : 'left'} letterSpacing="0.5px">
                             {formattedTime}
@@ -172,12 +193,12 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick }: ChatMess
                 )}
             </HStack>
 
-            {/* AREA SUGGESTIONS CHIPS (Pertanyaan Lanjutan) */}
+            {/* Pertanyaan Lanjutan */}
             {hasSuggestions && (
                 <Flex 
                     flexWrap="wrap" 
                     gap={2} 
-                    pl={12} // Sejajar dengan kotak teks, melewati avatar
+                    pl={12} 
                     pr={4}
                     mt={1}
                 >
