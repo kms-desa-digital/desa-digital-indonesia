@@ -7,21 +7,21 @@ type InnovatorFilters = {
 };
 
 export const getInnovators = async (filters?: InnovatorFilters) => {
-  return api.get("/innovators", { params: filters || {} });
+  return api.get("/innovator", { params: filters || {} });
 };
 
 export const getInnovatorById = async (id: string) => {
-  return api.get(`/innovators/${id}`);
+  return api.get(`/innovator/detail/${id}`); // Assumes it uses detail endpoint now
 };
 
 export const createInnovator = async (data: any) => {
-  return api.post("/innovators", data);
+  return api.post("/innovator", data);
 };
 
 export const updateInnovator = async (id: string, data: any) => {
-  return api.put(`/innovators/${id}`, data);
+  return api.put(`/innovator/edit`, data); // Note: update API endpoints if it expects ID in URL
 };
 
 export const deleteInnovator = async (id: string) => {
-  return api.delete(`/innovators/${id}`);
+  return api.delete(`/innovator/${id}`);
 };

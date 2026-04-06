@@ -6,7 +6,7 @@ import axios, { AxiosError, AxiosResponse } from "axios";
  */
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 10 * 1000, // 10 seconds
+  timeout: 60 * 1000, // 60 seconds (increased for dev server cold starts)
   headers: {
     "Content-Type": "application/json",
   },

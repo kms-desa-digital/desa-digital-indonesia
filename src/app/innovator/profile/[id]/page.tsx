@@ -155,11 +155,11 @@ const ProfileInnovator: React.FC = () => {
                 ... Firestore Logic ...
                 */
                 const res: any = await getInnovatorById(id);
-                const data = res.data;
+                const data = res?.innovator || res?.data;
                 if (data) {
                     setInnovatorData(data);
                     if (userLogin?.uid) {
-                        setOwner(data.id === userLogin.uid);
+                        setOwner(data.id === userLogin.uid || data.userId === userLogin.uid);
                     }
                 } else {
                     console.log("Innovator not found via API");
@@ -208,8 +208,12 @@ const ProfileInnovator: React.FC = () => {
         return <Loading />;
     }
 
+    if (error) {
+        return <div style={{ textAlign: "center", marginTop: "40px" }}>Error: {error}</div>;
+    }
+
     if (!innovatorData) {
-        return <div>No data available</div>;
+        return <div style={{ textAlign: "center", marginTop: "40px" }}>Tidak ada data yang tersedia.</div>;
     }
 
     const truncateText = (text: string, wordLimit: number) => {
@@ -379,7 +383,7 @@ const ProfileInnovator: React.FC = () => {
                             color="#347357"
                             cursor="pointer"
                             textDecoration="underline"
-                        // onClick={() => navigate(`/innovator/${innovatorId}/all-innovations`)}
+                            onClick={() => router.push(`/innovator/products/${id}`)}
                         >
                             Lihat Semua
                         </Text>
