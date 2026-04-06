@@ -40,10 +40,13 @@
       ],
       "Hooks/*": [
         "./src/hooks/*"
+      ],
+      "src/*": [
+        "./src/*"
       ]
     },
-    "ignoreDeprecations": "6.0",
-    "baseUrl": "."
+
+
   },
   "include": [
     "next-env.d.ts",

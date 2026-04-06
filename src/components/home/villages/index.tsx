@@ -13,6 +13,7 @@ const Village: React.FC = () => {
   const t = useTranslations("Home");
   const router = useRouter();
   const [villages, setVillages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,6 +38,8 @@ const Village: React.FC = () => {
         setVillages(sortedVillages);
       } catch (error) {
         console.error("Error fetching Top Villages from API:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -47,25 +50,33 @@ const Village: React.FC = () => {
       <Title>{t("featuredVillages")}</Title>
       <CardContainer>
         <Horizontal>
-          {villages.map((item: any, idx: number) => (
-            <Link
-              href={paths.DETAIL_VILLAGE_PAGE.replace(':id', item.id)}
-              key={item.id || idx}
-              style={{ textDecoration: 'none', width: '38%', flexShrink: 0, display: 'block' }}
-            >
-              <CardVillage
-                isHome={false}
-                namaDesa={item.namaDesa}
-                logo={item.logo || "/images/default-logo.svg"}
-                header={item.header || "/images/default-header.svg"}
-                kabupatenKota={item.kabupatenKota}
-                provinsi={item.provinsi}
-                jumlahInovasiDiterapkan={item.jumlahInovasiDiterapkan}
-                ranking={idx + 1}
-                id={item.id}
-              />
-            </Link>
-          ))}
+          {loading ? (
+             [1, 2, 3].map((i) => (
+              <Box key={i} width="38%" flexShrink={0}>
+                <Box height="150px" bg="gray.100" borderRadius="12px" />
+              </Box>
+            ))
+          ) : (
+            villages.map((item: any, idx: number) => (
+              <Link
+                href={paths.DETAIL_VILLAGE_PAGE.replace(':id', item.id)}
+                key={item.id || idx}
+                style={{ textDecoration: 'none', width: '38%', flexShrink: 0, display: 'block' }}
+              >
+                <CardVillage
+                  isHome={false}
+                  namaDesa={item.namaDesa}
+                  logo={item.logo || "/images/default-logo.svg"}
+                  header={item.header || "/images/default-header.svg"}
+                  kabupatenKota={item.kabupatenKota}
+                  provinsi={item.provinsi}
+                  jumlahInovasiDiterapkan={item.jumlahInovasiDiterapkan}
+                  ranking={idx + 1}
+                  id={item.id}
+                />
+              </Link>
+            ))
+          )}
         </Horizontal>
       </CardContainer>
     </Box>

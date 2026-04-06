@@ -6,20 +6,13 @@ import { connectToDatabase } from "@/lib/db/mongodb";
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434";
 const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "embeddinggemma:latest";
-
 const EMBEDDING_TIMEOUT_MS = 30000;
 
-// fungsi untuk ubah teks jadi embedding vector dari Ollama
-export async function generateEmbeddings(
-  text: string
-): Promise<number[]> {
+// Fungsi untuk generate embedding 
+export async function generateEmbeddings(text: string): Promise<number[]> {
   try {
-    // timeout supaya request tidak menggantung
     const controller = new AbortController();
-    const timeout = setTimeout(
-      () => controller.abort(),
-      EMBEDDING_TIMEOUT_MS
-    );
+    const timeout = setTimeout(() => controller.abort(), EMBEDDING_TIMEOUT_MS);
 
     const response = await fetch(`${OLLAMA_BASE_URL}/api/embed`, {
       method: "POST",
@@ -33,26 +26,17 @@ export async function generateEmbeddings(
 
     clearTimeout(timeout);
 
-    // handle kalau response gagal
     if (!response.ok) {
       const errorDetail = await response.text();
-      throw new Error(
-        `Ollama Error (HTTP ${response.status}): ${errorDetail}`
-      );
+      throw new Error(`Ollama Error (HTTP ${response.status}): ${errorDetail}`);
     }
 
     const data = await response.json();
 
-    // ambil vector pertama dari hasil embedding
-    const vector = Array.isArray(data?.embeddings)
-      ? data.embeddings[0]
-      : null;
+    const vector = Array.isArray(data?.embeddings) ? data.embeddings[0] : null;
 
-    // validasi vector
     if (!Array.isArray(vector) || vector.length === 0) {
-      throw new Error(
-        "Ollama Error: embedding kosong atau tidak valid"
-      );
+      throw new Error("Ollama Error: embedding kosong atau tidak valid");
     }
 
     return vector;
@@ -62,7 +46,65 @@ export async function generateEmbeddings(
   }
 }
 
-// cari dokumen dari collection doc_embeddings
+// Intent Detection untuk query pengguna, agar bisa prioritaskan pencarian di collection yang relevan
+export type QueryIntent = {
+  isVillage: boolean;
+  isInnovation: boolean;
+  isInnovator: boolean;
+  primary: "village" | "innovation" | "innovator" | "general";
+};
+
+export function detectQueryIntent(query: string): QueryIntent {
+  const q = query.toLowerCase();
+
+  const villageKeywords = [
+    "desa", "village", "kelurahan", "kampung",
+    "wilayah", "lokasi desa", "profil desa",
+    "potensi desa", "mana yang menerapkan",
+    "desa mana", "desa apa", "desa yang",
+    "sudah menerapkan", "sudah menggunakan",
+    "menerapkan inovasi", "menggunakan inovasi",
+  ];
+
+  const innovationKeywords = [
+    "inovasi", "innovation", "teknologi", "solusi",
+    "aplikasi", "sistem", "platform", "produk",
+    "alat", "tools", "fitur", "cara kerja",
+    "harga", "biaya", "manfaat inovasi",
+    "kategori inovasi", "rekomendasi inovasi",
+  ];
+
+  const innovatorKeywords = [
+    "inovator", "innovator", "pembuat", "pengembang",
+    "siapa yang membuat", "siapa yang mengembangkan",
+    "perusahaan", "lembaga", "organisasi",
+    "kontak inovator", "profil inovator",
+    "ingin menjadi inovator", "daftar inovator",
+  ];
+
+  const isVillage = villageKeywords.some((k) => q.includes(k));
+  const isInnovation = innovationKeywords.some((k) => q.includes(k));
+  const isInnovator = innovatorKeywords.some((k) => q.includes(k));
+
+  let primary: QueryIntent["primary"] = "general";
+
+  if (isVillage && isInnovation) {
+    primary = "innovation"; // Prioritaskan inovasi jika keduanya ada (misal: inovasi di desa)
+  } else if (isVillage) {
+    primary = "village";
+  } else if (isInnovator) {
+    primary = "innovator";
+  } else if (isInnovation) {
+    primary = "innovation";
+  }
+
+  console.log(`\nIntent Detected: primary=${primary.toUpperCase()}`);
+  console.log(`  isVillage=${isVillage} | isInnovation=${isInnovation} | isInnovator=${isInnovator}`);
+
+  return { isVillage, isInnovation, isInnovator, primary };
+}
+
+// Search doc_embeddings 
 export async function searchDocEmbeddings(query: string) {
   if (!query) return null;
 
@@ -70,7 +112,6 @@ export async function searchDocEmbeddings(query: string) {
     const db = await connectToDatabase();
     const collection = db.collection("doc_embeddings");
 
-    // ubah query jadi vector
     const queryVector = await generateEmbeddings(query);
 
     const cursor = collection.aggregate([
@@ -79,8 +120,8 @@ export async function searchDocEmbeddings(query: string) {
           index: "vector_index",
           path: "embedding_vector",
           queryVector: queryVector,
-          numCandidates: 10,
-          limit: 5,
+          numCandidates: 100,
+          limit: 20,
         },
       },
       {
@@ -93,35 +134,29 @@ export async function searchDocEmbeddings(query: string) {
 
     const results = await cursor.toArray();
 
-    // filter berdasarkan threshold
-    const validResults = results.filter(
-      (res) => res.score > 0.6
-    );
+    const validResults = results.filter((res) => res.score > 0.6);
 
     if (validResults.length > 0) {
-      console.log(
-        `\nPencarian berhasil (${validResults.length} data)`
-      );
-
+      console.log(`\nPencarian doc berhasil (${validResults.length} data)`);
       validResults.forEach((doc, i) => {
-        console.log(
-          `${i + 1}. ${doc.judul} (score: ${doc.score.toFixed(3)})`
-        );
+        console.log(`  ${i + 1}. ${doc.judul ?? doc.content?.slice(0, 50)} (score: ${doc.score.toFixed(3)})`);
       });
-
       return validResults;
     }
 
-    console.log("Tidak ada hasil yang cukup relevan");
+    console.log("Tidak ada hasil doc yang cukup relevan");
     return null;
   } catch (error) {
-    console.error("Error saat pencarian:", error);
+    console.error("Error saat pencarian doc_embeddings:", error);
     return null;
   }
 }
 
-// cari data dari collection db_embeddings
-export async function searchDatabaseEmbeddings(query: string) {
+// Search database embeddings 
+export async function searchDatabaseEmbeddings(
+  query: string,
+  intent?: QueryIntent
+) {
   if (!query) return [];
 
   try {
@@ -130,14 +165,42 @@ export async function searchDatabaseEmbeddings(query: string) {
 
     const queryVector = await generateEmbeddings(query);
 
-    const cursor = collection.aggregate([
+    // Tentukan collection mana yang di-search berdasarkan intent
+    let collectionFilter: string[] = [];
+
+    if (intent) {
+      if (intent.isVillage && intent.isInnovation) {
+        // Query campuran → search desa dan inovasi sekaligus
+        collectionFilter = ["villages", "innovations"];
+      } else if (intent.primary === "village") {
+        collectionFilter = ["villages"];
+      } else if (intent.primary === "innovation") {
+        collectionFilter = ["innovations"];
+      } else if (intent.primary === "innovator") {
+        collectionFilter = ["innovators"];
+      } else {
+        // general search semua collection
+        collectionFilter = ["innovations", "villages", "innovators", "claimInnovations"];
+      }
+    } else {
+      // Tidak ada intent search semua
+      collectionFilter = ["innovations", "villages", "innovators", "claimInnovations"];
+    }
+
+    console.log(`\nCollection filter: [${collectionFilter.join(", ")}]`);
+
+    // Pipeline dengan pre-filter by source_collection
+    const pipeline: any[] = [
       {
         $vectorSearch: {
           index: "vector_index_db",
           path: "embedding_vector",
           queryVector: queryVector,
-          numCandidates: 10,
-          limit: 5,
+          numCandidates: 100,
+          limit: 20,
+          filter: {
+            source_collection: { $in: collectionFilter },
+          },
         },
       },
       {
@@ -146,11 +209,10 @@ export async function searchDatabaseEmbeddings(query: string) {
           score: { $meta: "vectorSearchScore" },
         },
       },
-    ]);
+    ];
 
-    const results = await cursor.toArray();
+    const results = await collection.aggregate(pipeline).toArray();
 
-    // filter hasil yang cukup relevan
     return results.filter((res) => res.score > 0.6);
   } catch (error) {
     console.error("Error saat pencarian db_embeddings:", error);
@@ -158,51 +220,44 @@ export async function searchDatabaseEmbeddings(query: string) {
   }
 }
 
-// fungsi utama: search ke dua collection sekaligus
+// Search kedua sumber sekaligus dengan prioritas berdasarkan intent
 export async function searchAllSources(query: string) {
-  if (!query) return { docResults: [], dbResults: [] };
+  if (!query) return { docResults: [], dbResults: [], intent: null };
 
   try {
-    // jalankan paralel biar lebih cepat
+    // Deteksi intent terlebih dahulu
+    const intent = detectQueryIntent(query);
+
+    // Jalankan paralel
     const [docResults, dbResults] = await Promise.all([
       searchDocEmbeddings(query).then((res: any) => res ?? []),
-      searchDatabaseEmbeddings(query),
+      searchDatabaseEmbeddings(query, intent),
     ]);
 
-    console.log(
-      `\nSearch Results: doc=${docResults.length}, db=${dbResults.length}`
-    );
+    console.log(`\nSearch Results: doc=${docResults.length}, db=${dbResults.length}`);
 
-    // tampilkan hasil dari doc_embeddings
     if (docResults.length > 0) {
       console.log("--- Hasil dari doc_embeddings ---");
-
       docResults.forEach((doc: any, i: number) => {
         console.log(
-          `  ${i + 1}. ${
-            doc.judul ?? doc.content?.slice(0, 50)
-          } (score: ${doc.score?.toFixed(3)})`
+          `  ${i + 1}. ${doc.judul ?? doc.content?.slice(0, 50)} (score: ${doc.score?.toFixed(3)})`
         );
       });
     }
 
-    // tampilkan hasil dari db_embeddings
     if (dbResults.length > 0) {
       console.log("--- Hasil dari db_embeddings ---");
-
       dbResults.forEach((doc: any, i: number) => {
         console.log(
-          `  ${i + 1}. [${doc.source_collection}] ${
-            doc.metadata?.label ?? "?"
-          } (score: ${doc.score?.toFixed(3)})`
+          `  ${i + 1}. [${doc.source_collection}] ${doc.metadata?.label ?? "?"} (score: ${doc.score?.toFixed(3)})`
         );
       });
     }
 
-    return { docResults, dbResults };
+    return { docResults, dbResults, intent };
   } catch (error) {
     console.error("Error searchAllSources:", error);
-    return { docResults: [], dbResults: [] };
+    return { docResults: [], dbResults: [], intent: null };
   }
 }
 

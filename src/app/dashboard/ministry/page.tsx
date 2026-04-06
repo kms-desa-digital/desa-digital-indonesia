@@ -1,18 +1,20 @@
 "use client";
 
-import { Box, Grid } from "@chakra-ui/react";
+import dynamic from "next/dynamic";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
 import Header from "src/components/dashboard/ministry/header";
 import { useRouter } from "next/navigation";
-import InfoCards from "src/components/dashboard/ministry/infoCards";
-import PieChartInnovation from "src/components/dashboard/ministry/categoryInnovation";
-import PieChartInnovator from "src/components/dashboard/ministry/categoryInnovator";
-import PieChartVillage from "src/components/dashboard/ministry/categoryVillage";
-import BarChartMinistry from "src/components/dashboard/ministry/barChart";
-import MapVillages from "src/components/dashboard/ministry/mapVillages";
 import LogoutButton from "Components/topBar/RightContent/LogoutButton";
 import { getAuth } from "firebase/auth";
+
+// Dynamic import untuk komponen yang pakai window/browser API
+const InfoCards = dynamic(() => import("src/components/dashboard/ministry/infoCards"), { ssr: false });
+const PieChartInnovation = dynamic(() => import("src/components/dashboard/ministry/categoryInnovation"), { ssr: false });
+const PieChartInnovator = dynamic(() => import("src/components/dashboard/ministry/categoryInnovator"), { ssr: false });
+const PieChartVillage = dynamic(() => import("src/components/dashboard/ministry/categoryVillage"), { ssr: false });
+const BarChartMinistry = dynamic(() => import("src/components/dashboard/ministry/barChart"), { ssr: false });
+const MapVillages = dynamic(() => import("src/components/dashboard/ministry/mapVillages"), { ssr: false });
 
 const DashboardMinistry = () => {
     const router = useRouter();
@@ -27,12 +29,12 @@ const DashboardMinistry = () => {
                 rightElement={<LogoutButton />}
             />
             <Header description="KMS Desa Digital" text="Indonesia" />
-            <InfoCards></InfoCards>
-            <PieChartVillage></PieChartVillage>
-            <PieChartInnovation></PieChartInnovation>
-            <PieChartInnovator></PieChartInnovator>
-            <MapVillages></MapVillages>
-            <BarChartMinistry></BarChartMinistry>
+            <InfoCards />
+            <PieChartVillage />
+            <PieChartInnovation />
+            <PieChartInnovator />
+            <MapVillages />
+            <BarChartMinistry />
         </Container>
     );
 };

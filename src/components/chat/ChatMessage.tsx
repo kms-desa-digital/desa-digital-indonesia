@@ -86,7 +86,7 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
                     wordBreak="break-word"
                     overflowWrap="anywhere"
                 >
-                    <Box fontSize={{ base: '13.5px', md: '14px' }}>
+                    <Box fontSize={{ base: '12px', md: '12.5px' }}>
                         {isLoading ? (
                             <HStack spacing={1.5} py={2}>
                                 <Box w="6px" h="6px" bg="gray.400" borderRadius="full" animation="bounce 1.2s infinite ease-in-out" />
@@ -163,8 +163,8 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
                                                 {card.kind === 'innovation' ? <Lightbulb size={20} strokeWidth={2.5} /> : <MapPinned size={20} strokeWidth={2.5} />}
                                             </Flex>
                                             <VStack align="start" spacing={0} flex={1} minW={0}>
-                                                <Text fontSize="13.5px" fontWeight="700" color="blue.700" noOfLines={1} lineHeight="short">{card.title}</Text>
-                                                <Text fontSize="12px" fontWeight="600" color="purple.600" noOfLines={1} opacity={0.9} mt={0.5}>{card.subtitle}</Text>
+                                                <Text fontSize="12px" fontWeight="700" color="blue.700" noOfLines={1} lineHeight="short">{card.title}</Text>
+                                                <Text fontSize="11px" fontWeight="600" color="purple.600" noOfLines={1} opacity={0.9} mt={0.5}>{card.subtitle}</Text>
                                             </VStack>
                                         </HStack>
                                         <Flex position="absolute" right={2} top="50%" transform="translateY(-50%)" color="gray.400">
@@ -178,7 +178,7 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
 
                     {/* Waktu Chat */}
                     {formattedTime && (
-                        <Text fontSize="9px" fontWeight="600" color={isUser ? 'whiteAlpha.700' : 'gray.400'} mt={2} textAlign={isUser ? 'right' : 'left'} letterSpacing="0.5px">
+                        <Text fontSize="8px" fontWeight="600" color={isUser ? 'whiteAlpha.700' : 'gray.400'} mt={2} textAlign={isUser ? 'right' : 'left'} letterSpacing="0.5px">
                             {formattedTime}
                         </Text>
                     )}
@@ -214,7 +214,7 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
                             px={3.5}
                             py={1.5}
                             borderRadius="full"
-                            fontSize="11.5px"
+                            fontSize="10.5px"
                             fontWeight="600"
                             boxShadow="sm"
                             transition="all 0.2s"

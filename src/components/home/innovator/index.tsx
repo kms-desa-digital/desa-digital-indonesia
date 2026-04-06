@@ -33,25 +33,30 @@ function Innovator() {
   const t = useTranslations("Home");
   const router = useRouter();
   const [innovators, setInnovators] = useState<DocumentData[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchInnovators = async () => {
-      const innovatorsRef = collection(firestore, "innovators");
+      try {
+        const innovatorsRef = collection(firestore, "innovators");
+        const q = query(
+          innovatorsRef,
+          orderBy("jumlahDesaDampingan", "desc"),
+          limit(5)
+        );
 
-      const q = query(
-        innovatorsRef,
-        // where("status", "==", "Terverifikasi"), 
-        orderBy("jumlahDesaDampingan", "desc"),
-        limit(5) // Ambil hanya 5 data teratas
-      );
+        const innovatorsSnapshot = await getDocs(q);
+        const innovatorsData = innovatorsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
 
-      const innovatorsSnapshot = await getDocs(q);
-      const innovatorsData = innovatorsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      setInnovators(innovatorsData);
+        setInnovators(innovatorsData);
+      } catch (error) {
+        console.error("Error fetching innovators:", error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchInnovators();
   }, []); // Hapus dependency agar hanya jalan sekali
@@ -62,23 +67,31 @@ function Innovator() {
       <Title>{t("featuredInnovators")}</Title>
       <CardContainer>
         <Horizontal>
-          {innovators.map((item: any, idx) => (
-            <Link
-              href={paths.INNOVATOR_PROFILE_PAGE.replace(':id', item.id)}
-              key={item.id}
-              style={{ textDecoration: 'none', width: '38%', flexShrink: 0, display: 'block' }}
-            >
-              <CardInnovator
-                id={item.id}
-                header={item.header || "/images/default-header.svg"}
-                logo={item.logo || "/images/default-logo.svg"}
-                namaInovator={item.namaInovator}
-                jumlahDesaDampingan={item.jumlahDesaDampingan}
-                jumlahInovasi={item.jumlahInovasi}
-                ranking={idx + 1}
-              />
-            </Link>
-          ))}
+          {loading ? (
+            [1, 2, 3].map((i) => (
+              <Box key={i} width="38%" flexShrink={0}>
+                <Box height="150px" bg="gray.100" borderRadius="12px" />
+              </Box>
+            ))
+          ) : (
+            innovators.map((item: any, idx) => (
+              <Link
+                href={paths.INNOVATOR_PROFILE_PAGE.replace(':id', item.id)}
+                key={item.id}
+                style={{ textDecoration: 'none', width: '38%', flexShrink: 0, display: 'block' }}
+              >
+                <CardInnovator
+                  id={item.id}
+                  header={item.header || "/images/default-header.svg"}
+                  logo={item.logo || "/images/default-logo.svg"}
+                  namaInovator={item.namaInovator}
+                  jumlahDesaDampingan={item.jumlahDesaDampingan}
+                  jumlahInovasi={item.jumlahInovasi}
+                  ranking={idx + 1}
+                />
+              </Link>
+            ))
+          )}
         </Horizontal>
       </CardContainer>
     </Box>

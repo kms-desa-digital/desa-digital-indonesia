@@ -13,6 +13,7 @@ import {
 import { X, Send, Trash2, Bot } from 'lucide-react';
 import ChatMessage from './ChatMessage';
 import { useTranslations } from 'next-intl';
+import { useAuthToken } from '@/hooks/useAuthToken';
 
 interface ChatWindowProps {
     onClose: () => void;
@@ -24,6 +25,15 @@ interface ChatWindowProps {
 const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWindowProps) => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const { role: tokenRole } = useAuthToken();
+
+    const getRoleFromCookie = () => {
+        if (typeof document === 'undefined') return null;
+        const cookieMatch = document.cookie.match(/(?:^|;\s*)userRole=([^;]+)/);
+        return cookieMatch ? decodeURIComponent(cookieMatch[1]) : null;
+    };
+
+    const userRole = (tokenRole || 'guest').toLowerCase();
     
     const t = useTranslations('Chatbot');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -79,7 +89,10 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: [...messages, userMessage] }),
+                body: JSON.stringify({ 
+                    messages: [...messages, userMessage],
+                    role: userRole
+                 }),
             });
 
             if (!response.ok) throw new Error('API request failed');
@@ -132,12 +145,12 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                 zIndex={10}
             >
                 <VStack align="start" spacing={0} pl={1}>
-                    <Text fontWeight="bold" fontSize="md" lineHeight="1.2">
+                    <Text fontWeight="bold" fontSize="sm" lineHeight="1.2">
                         {t('title') || "Asisten Desa"}
                     </Text>
                     <HStack spacing={1.5}>
                         <Box w="6px" h="6px" bg="green.200" borderRadius="full" animation="pulseDot 2s infinite" />
-                        <Text fontSize="11px" opacity={0.9} fontWeight="medium">
+                        <Text fontSize="10px" opacity={0.9} fontWeight="medium">
                             {t('online') || "Online"}
                         </Text>
                     </HStack>
@@ -190,14 +203,14 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                                 <Bot size={32} color="#16a34a" />
                             </Flex>
                         </Flex>
-                        <Text fontSize="15px" fontWeight="700" color="gray.800" mb={1.5}>
+                        <Text fontSize="13px" fontWeight="700" color="gray.800" mb={1.5}>
                             Halo! Ada yang bisa saya bantu?
                         </Text>
                         <Text fontSize="12px" color="gray.500" mb={6} px={4} lineHeight="1.5">
                             Pilih pertanyaan di bawah atau ketik langsung kebutuhan informasi Anda.
                         </Text>
                         
-                        <VStack spacing={2.5} align="stretch">
+                        <VStack spacing={1.5} align="stretch">
                             {[
                                 "Apa potensi utama Desa Petir?",
                                 "Rekomendasi inovasi perikanan",
@@ -209,11 +222,11 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                                     onClick={() => handleSuggestionClick(promptText)}
                                     textAlign="left"
                                     bg="white"
-                                    p={3.5}
-                                    borderRadius="14px"
+                                    p={2.5}
+                                    borderRadius="12px"
                                     border="1px solid"
                                     borderColor="gray.200"
-                                    fontSize="13px"
+                                    fontSize="12px"
                                     fontWeight="500"
                                     color="green.700"
                                     boxShadow="sm"
@@ -232,7 +245,10 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                         key={m.id} 
                         message={m} 
                         onSuggestionClick={handleSuggestionClick} 
-                        onRetry={() => submitMessage(messages[messages.length-1].content)}
+                        onRetry={() => {
+                            const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+                            if (lastUserMsg) submitMessage(lastUserMsg.content);
+                            }}
                     />
                 ))}
 
@@ -263,7 +279,7 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                             border="none"
                             px={3}
                             py={2.5}
-                            fontSize="14px"
+                            fontSize="12.5px"
                             minH="40px"
                             maxH="120px"
                             rows={1}

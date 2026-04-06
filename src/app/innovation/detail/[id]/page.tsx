@@ -240,7 +240,24 @@ function DetailInnovation() {
         }
     };
 
-    const year = new Date(data.tahunDibuat).getFullYear();
+    if (loading) {
+        return (
+            <Box>
+                <TopBar title="Detail Inovasi" onBack={() => router.back()} />
+                <ContentContainer>
+                    <Skeleton height="200px" borderRadius="12px" />
+                    <Box mt="20px">
+                        <Skeleton height="30px" width="70%" />
+                    </Box>
+                    <Box mt="10px">
+                        <Skeleton count={3} />
+                    </Box>
+                </ContentContainer>
+            </Box>
+        );
+    }
+
+    const year = data.tahunDibuat ? new Date(data.tahunDibuat).getFullYear() : "N/A";
 
     const settings = {
         dots: true,
@@ -262,22 +279,6 @@ function DetailInnovation() {
             : text;
     };
 
-    if (loading) {
-        return (
-            <Box>
-                <TopBar title="Detail Inovasi" onBack={() => router.back()} />
-                <ContentContainer>
-                    <Skeleton height="200px" borderRadius="12px" />
-                    <Box mt="20px">
-                        <Skeleton height="30px" width="70%" />
-                    </Box>
-                    <Box mt="10px">
-                        <Skeleton count={3} />
-                    </Box>
-                </ContentContainer>
-            </Box>
-        );
-    }
 
     return (
         <Box>

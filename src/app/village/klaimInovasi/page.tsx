@@ -9,7 +9,7 @@ import {
     useDisclosure,
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar";
-import React, { useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import ConfModal from "src/components/confirmModal/confModal";
 import SecConfModal from "src/components/confirmModal/secConfModal";
@@ -40,7 +40,7 @@ import { auth } from "src/firebase/clientApp";
 import { useUser } from "src/contexts/UserContext";
 import RecommendationDrawer from "Components/drawer/RecommendationDrawer";
 
-const KlaimInovasi: React.FC = () => {
+const KlaimInovasiContent: React.FC = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [user] = useAuthState(auth);
@@ -55,7 +55,7 @@ const KlaimInovasi: React.FC = () => {
     const selectedVidRef = useRef<HTMLInputElement>(null);
     const selectedDocRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
-    const [fetchLoading, setFetchLoading] = useState(false);
+    const [fetchLoading, setFetchLoading] = useState(true);
     const [error, setError] = useState("");
     const [isAdmin, setIsAdmin] = useState(false);
     const modalBody1 = "Apakah Anda yakin ingin mengajukan klaim?";
@@ -77,11 +77,11 @@ const KlaimInovasi: React.FC = () => {
     const inovasiId = searchParams.get("inovasiId");
 
     const { role } = useUser();
+    
     useEffect(() => {
-        if (role === "admin") {
-            setIsAdmin(true);
-        } else {
-            setIsAdmin(false);
+        if (role) {
+            setIsAdmin(role === "admin");
+            setFetchLoading(false);
         }
     }, [role]);
 
@@ -475,4 +475,12 @@ const KlaimInovasi: React.FC = () => {
         </Box>
     );
 };
+const KlaimInovasi: React.FC = () => {
+    return (
+        <Suspense fallback={<Loading />}>
+            <KlaimInovasiContent />
+        </Suspense>
+    );
+};
+
 export default KlaimInovasi;
