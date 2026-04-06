@@ -16,7 +16,10 @@ export async function generateEmbeddings(text: string): Promise<number[]> {
     const timeout = setTimeout(() => controller.abort(), 30000);
     const response = await fetch(`${OLLAMA_BASE_URL}/api/embed`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Bypass-Tunnel-Reminder": "true" 
+      },
       body: JSON.stringify({ model: OLLAMA_EMBED_MODEL, input: text }),
       signal: controller.signal,
     });
