@@ -21,6 +21,7 @@ import SearchBarVil from "Components/village/SearchBarVil";
 import Container from "Components/container";
 import Recommendation from "Components/village/Recommendation";
 import { useTranslations } from "next-intl";
+import Loading from "Components/loading";
 
 const defaultHeader = "/images/default-header.svg";
 const defaultLogo = "/images/default-logo.svg";
@@ -179,6 +180,10 @@ const Village: React.FC = () => {
         fetchData();
     }, [debouncedSearchTerm, selectedProvince, selectedRegency]);
 
+    if (!isFetched) {
+        return <Loading />;
+    }
+
     return (
         <Container px={0} pb={70}>
             <Hero />
@@ -218,7 +223,7 @@ const Village: React.FC = () => {
                     </Texthighlight>
                 </Text>
                 <GridContainer>
-                    {isFetched && villages &&
+                    {villages.length > 0 ? (
                         villages.map((item: any, idx: number) => (
                             <CardVillage
                                 key={idx}
@@ -234,7 +239,12 @@ const Village: React.FC = () => {
                                     router.push(`/village/detail/${item.userId || item.id}`);
                                 }}
                             />
-                        ))}
+                        ))
+                    ) : (
+                        <Box gridColumn="1 / -1" textAlign="center" py={10}>
+                            <Text color="gray.500">Tidak ada desa yang ditemukan</Text>
+                        </Box>
+                    )}
                 </GridContainer>
             </Containers>
         </Container>

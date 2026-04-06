@@ -7,7 +7,7 @@ import { paths } from "Consts/path";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import EnlargedImage from "src/components/village/Image";
-import Skeleton from "react-loading-skeleton";
+import Loading from "Components/loading";
 
 
 import {
@@ -228,28 +228,7 @@ export default function DetailVillagePage() {
     }, [id]);
 
     if (loading) {
-        return (
-            <Box paddingBottom={16}>
-                <TopBar title="Detail Desa" onBack={() => router.back()} />
-                <Box px={4} pt={4}>
-                    <Skeleton height={180} borderRadius={16} />
-                    <Skeleton circle height={72} width={72} style={{ marginTop: -36, marginLeft: 16, position: 'relative' }} />
-                    <Box mt={8}>
-                        <Skeleton height={28} width="55%" />
-                        <Skeleton height={16} width="40%" style={{ marginTop: 10 }} />
-                        <Skeleton count={3} style={{ marginTop: 12 }} />
-                    </Box>
-                    <Box mt={6}>
-                        <Skeleton height={18} width="35%" />
-                        <Skeleton count={2} style={{ marginTop: 12 }} />
-                    </Box>
-                    <Box mt={6}>
-                        <Skeleton height={18} width="35%" />
-                        <Skeleton count={4} style={{ marginTop: 12 }} />
-                    </Box>
-                </Box>
-            </Box>
-        );
+        return <Loading />;
     }
 
     return (
