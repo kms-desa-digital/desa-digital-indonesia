@@ -64,11 +64,12 @@ export default function InnovatorPage() {
         const fetchData = async () => {
             try {
                 const res: any = await getInnovators({
+                    status: "Terverifikasi",
                     search: debouncedSearchQuery || undefined,
                     kategori: categoryFilter === "Semua Kategori" ? undefined : categoryFilter,
                 });
-                const innovatorsData = res.data || [];
-                setInnovatorsShowed(innovatorsData);
+                const innovatorsData = res?.data || res?.innovators || [];
+                setInnovatorsShowed(Array.isArray(innovatorsData) ? innovatorsData : []);
             } catch (error) {
                 console.error("Error fetching innovators from MongoDB API:", error);
             }

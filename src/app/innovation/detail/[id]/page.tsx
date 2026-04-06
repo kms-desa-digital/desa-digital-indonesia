@@ -280,6 +280,19 @@ function DetailInnovation() {
     };
 
 
+    if (error || !data || !data.namaInovasi) {
+        return (
+            <Box>
+                <TopBar title="Detail Inovasi" onBack={() => router.back()} />
+                <ContentContainer>
+                    <Box mt="40px" textAlign="center">
+                        <Text fontSize="16px" color="gray.500">Inovasi tidak ditemukan di database</Text>
+                    </Box>
+                </ContentContainer>
+            </Box>
+        );
+    }
+
     return (
         <Box>
             <TopBar title="Detail Inovasi" onBack={() => router.back()} />

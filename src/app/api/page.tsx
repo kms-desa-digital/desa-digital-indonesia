@@ -156,6 +156,11 @@ const ENDPOINTS: Record<string, Endpoint[]> = {
       url: "/api/villages/[id]/innovations",
       desc: "Inovasi yang sudah diterapkan di desa ini.",
     },
+    {
+      method: "GET",
+      url: "/api/villages/dashboard",
+      desc: "Mengambil data statistik untuk dashboard akun desa.",
+    },
   ],
   Chat: [
     {
@@ -165,33 +170,75 @@ const ENDPOINTS: Record<string, Endpoint[]> = {
       body: { messages: [{ role: "user", content: "string" }] },
     },
   ],
-  Innovators: [
+  Admin: [
     {
       method: "GET",
-      url: "/api/innovators",
+      url: "/api/admin/dashboard",
+      desc: "Mengambil data statistik komprehensif untuk dashboard admin.",
+    },
+    {
+      method: "POST",
+      url: "/api/admin/verify/village/[id]",
+      desc: "Memverifikasi atau menolak profil desa.",
+      body: { status: "Terverifikasi | Ditolak", catatanAdmin: "string?" },
+    },
+    {
+      method: "POST",
+      url: "/api/admin/verify/innovator/[id]",
+      desc: "Memverifikasi atau menolak profil inovator.",
+      body: { status: "Terverifikasi | Ditolak", catatanAdmin: "string?" },
+    },
+  ],
+  Ministry: [
+    {
+      method: "GET",
+      url: "/api/ministry/dashboard",
+      desc: "Mengambil data rekapitulasi statistik untuk dashboard kementerian.",
+    },
+  ],
+  Innovator: [
+    {
+      method: "GET",
+      url: "/api/innovator",
       desc: "Mengambil daftar inovator.",
       params: ["status"],
     },
     {
-      method: "POST",
-      url: "/api/innovators",
-      desc: "Membuat profil inovator baru.",
-      body: { userId: "string", namaInovator: "string", kategori: "string" },
+      method: "GET",
+      url: "/api/innovator/dashboard",
+      desc: "Mengambil data statistik dan performa untuk dashboard inovator.",
     },
     {
       method: "GET",
-      url: "/api/innovators/[id]",
-      desc: "Detail profil satu inovator (by _id atau userId).",
+      url: "/api/innovator/profile",
+      desc: "Mengambil profil detail milik inovator yang sedang login.",
+    },
+    {
+      method: "POST",
+      url: "/api/innovator/profile/[id]",
+      desc: "Membuat atau mengupdate profil inovator. Field wajib: namaInovator, deskripsi, kategori, whatsapp.",
+      body: {
+        namaInovator: "string",
+        deskripsi: "string",
+        kategori: "string",
+        whatsapp: "string",
+        instagram: "string?",
+        website: "string?",
+        logo: "string?",
+        status: "string?"
+      },
+    },
+    {
+      method: "GET",
+      url: "/api/innovator/detail",
+      desc: "Melihat detail spesifik data inovator secara terperinci.",
+      params: ["id"],
     },
     {
       method: "PUT",
-      url: "/api/innovators/[id]",
-      desc: "Mengupdate profil inovator.",
-    },
-    {
-      method: "DELETE",
-      url: "/api/innovators/[id]",
-      desc: "Menghapus profil inovator.",
+      url: "/api/innovator/edit",
+      desc: "Melakukan update terhadap data profil inovator.",
+      body: { namaInovator: "string", kategori: "string", etc: "..." },
     },
   ],
 };
@@ -297,7 +344,7 @@ export default function ApiDocumentation() {
         </Accordion>
 
         <Divider />
-        
+
         <Box textAlign="center" py={4}>
           <Text fontSize="xs" color="gray.400">
             Desa Digital v3 &copy; 2026
