@@ -18,7 +18,8 @@ export async function generateEmbeddings(text: string): Promise<number[]> {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        "Bypass-Tunnel-Reminder": "true" 
+        "Bypass-Tunnel-Reminder": "true",
+        "ngrok-skip-browser-warning": "true"
       },
       body: JSON.stringify({ model: OLLAMA_EMBED_MODEL, input: text }),
       signal: controller.signal,
