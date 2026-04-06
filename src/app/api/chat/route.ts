@@ -202,7 +202,7 @@ export async function POST(req: Request) {
 
     if (docResults.length > 0) {
       context += "--- Data dari Dokumen ---\n\n";
-      docResults.forEach((doc: any) => {
+      docResults.slice(0, 5).forEach((doc: any) => {
         const meta = doc.metadata || {};
         if (meta.type === "inovasi") {
           const rawKeunggulan = meta.keunggulan_inovasi;
@@ -228,7 +228,7 @@ export async function POST(req: Request) {
 
     if (dbResults.length > 0) {
       context += "--- Data dari Database ---\n\n";
-      dbResults.forEach((doc: any) => {
+      dbResults.slice(0, 5).forEach((doc: any) => {
         context += `---\nSumber: ${doc.source_collection || "-"}\n${doc.content || ""}\n-----------------------------------\n\n`;
       });
     }
@@ -282,7 +282,7 @@ export async function POST(req: Request) {
       6. FORMAT: Gunakan format Markdown rapi (bullet, **bold** untuk nama desa/inovasi).
       7. KESIMPULAN: WAJIB gunakan satu blockquote (>) di bagian akhir jawaban untuk memberikan kesimpulan, *insight*, atau saran langkah selanjutnya.
       8. TAUTAN: Jangan menyisipkan tautan (link) secara manual di dalam jawaban.
-      9. STRUKTUR: Jawaban harus ringkas. Maksimal 1 paragraf pembuka singkat + 3-5 poin inti.
+      9. STRUKTUR: Jawaban harus SANGAT RINGKAS. Sebutkan MAKSIMAL 5 desa/inovasi paling relevan saja. DILARANG KERAS menyebutkan lebih dari 5 entitas. Gunakan gaya bahasa to-the-point.
       10. WAJIB: Di baris paling akhir dari jawaban Anda, buatlah 2-3 rekomendasi pertanyaan lanjutan singkat yang relevan. Format persis seperti ini:
       SUGGESTIONS: ["pertanyaan 1", "pertanyaan 2", "pertanyaan 3"]
 
