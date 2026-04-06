@@ -4,42 +4,47 @@
 
 import { connectToDatabase } from "@/lib/db/mongodb";
 
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434";
-const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "embeddinggemma:latest";
-const EMBEDDING_TIMEOUT_MS = 30000;
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// Konfigurasi Google AI 
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
+const EMBEDDING_MODEL_GOOGLE = "text-embedding-004";
 
 // Fungsi untuk generate embedding 
 export async function generateEmbeddings(text: string): Promise<number[]> {
   try {
+    // --- Ollama Implementation ---
+    /*
+    const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434";
+    const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "embeddinggemma:latest";
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), EMBEDDING_TIMEOUT_MS);
-
+    const timeout = setTimeout(() => controller.abort(), 30000);
     const response = await fetch(`${OLLAMA_BASE_URL}/api/embed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: OLLAMA_EMBED_MODEL,
-        input: text,
-      }),
+      body: JSON.stringify({ model: OLLAMA_EMBED_MODEL, input: text }),
       signal: controller.signal,
     });
-
     clearTimeout(timeout);
-
-    if (!response.ok) {
-      const errorDetail = await response.text();
-      throw new Error(`Ollama Error (HTTP ${response.status}): ${errorDetail}`);
-    }
-
+    if (!response.ok) throw new Error(`Ollama Error: ${response.status}`);
     const data = await response.json();
+    const vector = data.embeddings?.[0];
+    if (!vector) throw new Error("Ollama Error: Empty embedding");
+    return vector;
+    */
+    // -----------------------------------------
 
-    const vector = Array.isArray(data?.embeddings) ? data.embeddings[0] : null;
+    // --- Google Gemini Implementation ---
+    const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL_GOOGLE });
+    const result = await model.embedContent(text);
+    const vector = result.embedding.values;
 
     if (!Array.isArray(vector) || vector.length === 0) {
-      throw new Error("Ollama Error: embedding kosong atau tidak valid");
+      throw new Error("Google AI Error: embedding kosong");
     }
 
     return vector;
+    // ------------------------------------
   } catch (error) {
     console.error("Error generate embedding:", error);
     throw error;
