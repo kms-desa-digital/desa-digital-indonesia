@@ -1,6 +1,6 @@
 // ==================================================================
 // Ingest data dari collection MongoDB Atlas ke db_embeddings
-// Collections: innovations, villages, innovators
+// Collections: innovations, villages, innovators, claimInnovations
 // ==================================================================
 
 import dotenv from "dotenv";
@@ -11,7 +11,7 @@ dotenv.config({ path: ".env.local" });
 const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434";;
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434";
 
 // batasi jumlah proses paralel
 const MAX_CONCURRENT = 3;
@@ -96,6 +96,12 @@ function buildVillageText(doc: any): string {
     const potensi = Array.isArray(doc.potensiDesa)
         ? doc.potensiDesa.join(", ")
         : doc.potensiDesa ?? "";
+    const inovasiDiterapkan = Array.isArray(doc.inovasiDiterapkan)
+        ? doc.inovasiDiterapkan.join(", ")
+        : doc.inovasiDiterapkan ?? "";
+    const inovatorDamping = Array.isArray(doc.inovatorDamping)
+        ? doc.inovatorDamping.join(", ")
+        : doc.inovatorDamping ?? "";
 
     return `
     Desa: ${doc.namaDesa ?? ""}.
@@ -140,6 +146,17 @@ function buildInnovatorText(doc: any): string {
         .trim();
 }
 
+// builder text untuk data klaim inovasi
+function buildClaimText(doc: any): string {
+    return `
+    Klaim Inovasi: ${doc.namaDesa ?? "Sebuah desa"} telah mengajukan klaim untuk menerapkan inovasi bernama ${doc.namaInovasi ?? ""}.
+    Status Klaim saat ini: ${doc.status ?? ""}.
+    Catatan Admin: ${doc.catatanAdmin ?? "Tidak ada catatan"}.
+  `
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 // konfigurasi collection yang akan diproses
 interface CollectionConfig {
     name: string;
@@ -162,6 +179,11 @@ const COLLECTIONS_TO_INGEST: CollectionConfig[] = [
         name: "innovators",
         buildText: buildInnovatorText,
         labelField: "namaInovator",
+    },
+    {
+        name: "claimInnovations",
+        buildText: buildClaimText,
+        labelField: "namaInovasi", 
     },
 ];
 
@@ -256,7 +278,7 @@ async function runIngestion() {
                     `[${config.name}] ${index + 1}/${sourceData.length} - ${label}`
                 );
 
-                // simpan ke buffer
+                // simpan ke buffer beserta metadatanya
                 docsBuffer.push({
                     source_collection: config.name,
                     source_id: record._id.toString(),
@@ -288,6 +310,8 @@ async function runIngestion() {
                             idm: record.idm,
                             status: record.status,
                             kategori: record.kategori,
+                            inovasiDiterapkan: record.inovasiDiterapkan,
+                            inovatorDamping: record.inovatorDamping,
                         }),
 
                         ...(config.name === "innovators" && {
@@ -296,6 +320,16 @@ async function runIngestion() {
                             deskripsi: record.deskripsi,
                             status: record.status,
                             instagram: record.instagram,
+                        }),
+
+                        ...(config.name === "claimInnovations" && {
+                            namaDesa: record.namaDesa,
+                            namaInovasi: record.namaInovasi,
+                            status: record.status,
+                            desaId: record.desaId,
+                            inovasiId: record.inovasiId,
+                            inovatorId: record.inovatorId,
+                            catatanAdmin: record.catatanAdmin,
                         }),
                     },
                     createdAt: new Date(),

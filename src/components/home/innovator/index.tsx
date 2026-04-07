@@ -26,6 +26,7 @@ function Innovator() {
   const t = useTranslations("Home");
   const router = useRouter();
   const [innovators, setInnovators] = useState<InnovatorData[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchInnovators = async () => {
@@ -41,6 +42,8 @@ function Innovator() {
         setInnovators(innovatorsData);
       } catch (error) {
         console.error("Error fetching innovators from MongoDB API:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchInnovators();
@@ -51,23 +54,31 @@ function Innovator() {
       <Title>{t("featuredInnovators")}</Title>
       <CardContainer>
         <Horizontal>
-          {innovators.map((item: any, idx) => (
-            <Link
-              href={paths.INNOVATOR_PROFILE_PAGE.replace(':id', item.id)}
-              key={item.id}
-              style={{ textDecoration: 'none', width: '38%', flexShrink: 0, display: 'block' }}
-            >
-              <CardInnovator
-                id={item.id}
-                header={item.header || "/images/default-header.svg"}
-                logo={item.logo || "/images/default-logo.svg"}
-                namaInovator={item.namaInovator}
-                jumlahDesaDampingan={item.jumlahDesaDampingan}
-                jumlahInovasi={item.jumlahInovasi}
-                ranking={idx + 1}
-              />
-            </Link>
-          ))}
+          {loading ? (
+            [1, 2, 3].map((i) => (
+              <Box key={i} width="38%" flexShrink={0}>
+                <Box height="150px" bg="gray.100" borderRadius="12px" />
+              </Box>
+            ))
+          ) : (
+            innovators.map((item: any, idx) => (
+              <Link
+                href={paths.INNOVATOR_PROFILE_PAGE.replace(':id', item.id)}
+                key={item.id}
+                style={{ textDecoration: 'none', width: '38%', flexShrink: 0, display: 'block' }}
+              >
+                <CardInnovator
+                  id={item.id}
+                  header={item.header || "/images/default-header.svg"}
+                  logo={item.logo || "/images/default-logo.svg"}
+                  namaInovator={item.namaInovator}
+                  jumlahDesaDampingan={item.jumlahDesaDampingan}
+                  jumlahInovasi={item.jumlahInovasi}
+                  ranking={idx + 1}
+                />
+              </Link>
+            ))
+          )}
         </Horizontal>
       </CardContainer>
     </Box>

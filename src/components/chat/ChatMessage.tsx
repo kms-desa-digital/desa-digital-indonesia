@@ -1,11 +1,19 @@
 "use client";
 
 import { Box, HStack, Avatar, Text, VStack, Flex, Button } from '@chakra-ui/react';
-import { Bot, User as UserIcon, Lightbulb, MapPinned, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
+import { Bot, User as UserIcon, Lightbulb, MapPinned, UserCheck, ChevronRight, AlertCircle, RefreshCw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useEffect, useState } from 'react';
 import { Global } from '@emotion/react';
 import remarkGfm from 'remark-gfm';
+
+interface LinkCard {
+    sourceId: string;
+    kind: 'innovation' | 'village' | 'innovator';
+    title: string;
+    subtitle: string;
+    href: string;
+}
 
 interface ChatMessageProps {
     message: {
@@ -13,21 +21,33 @@ interface ChatMessageProps {
         content: string;
         role: 'user' | 'assistant' | string;
         createdAt?: Date;
-        error?: boolean; 
+        error?: boolean;
+        // FIX: Tambah retryContent untuk menyimpan teks asli yang akan di-retry
+        retryContent?: string;
         extra?: {
-            linkCards?: Array<{
-                sourceId: string;
-                kind: 'innovation' | 'village' | 'innovator';
-                title: string;
-                subtitle: string;
-                href: string;
-            }>;
+            linkCards?: LinkCard[];
             suggestions?: string[];
         };
     };
     isLoading?: boolean;
     onSuggestionClick?: (text: string) => void;
-    onRetry?: () => void; 
+    onRetry?: () => void;
+}
+
+// FIX: Pindahkan icon resolver ke fungsi tersendiri agar mudah di-extend
+// Sebelumnya kind === 'innovator' tidak di-handle, fallback ke MapPinned yang tidak relevan
+function getCardIcon(kind: LinkCard['kind']) {
+    switch (kind) {
+        case 'innovation':
+            return <Lightbulb size={20} strokeWidth={2.5} />;
+        case 'village':
+            return <MapPinned size={20} strokeWidth={2.5} />;
+        case 'innovator':
+            // FIX: Gunakan ikon yang relevan untuk inovator
+            return <UserCheck size={20} strokeWidth={2.5} />;
+        default:
+            return <Lightbulb size={20} strokeWidth={2.5} />;
+    }
 }
 
 const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }: ChatMessageProps) => {
@@ -35,7 +55,7 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
     const [formattedTime, setFormattedTime] = useState<string>('');
     const linkCards = message.extra?.linkCards ?? [];
     const suggestions = message.extra?.suggestions ?? [];
-    
+
     const hasCards = !isUser && !isLoading && linkCards.length > 0;
     const hasSuggestions = !isUser && !isLoading && suggestions.length > 0;
 
@@ -65,28 +85,37 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
                 {!isUser && (
                     <Avatar
                         size="sm"
-                        bg={message.error ? "red.500" : "green.500"} // Ubah merah jika error
-                        icon={message.error ? <AlertCircle size={16} color="white" /> : <Bot size={16} color="white" />}
+                        bg={message.error ? "red.500" : "green.500"}
+                        icon={message.error
+                            ? <AlertCircle size={16} color="white" />
+                            : <Bot size={16} color="white" />
+                        }
                         boxShadow="sm"
                     />
                 )}
 
                 <Box
-                    maxW={isUser ? { base: '88%', md: '82%' } : { base: 'calc(100% - 46px)', md: '86%' }}
-                    bg={message.error ? 'red.50' : (isUser ? 'green.500' : 'white')} // Latar merah muda jika error
+                    maxW={isUser
+                        ? { base: '88%', md: '82%' }
+                        : { base: 'calc(100% - 46px)', md: '86%' }
+                    }
+                    bg={message.error ? 'red.50' : (isUser ? 'green.500' : 'white')}
                     color={message.error ? 'red.800' : (isUser ? 'white' : 'gray.800')}
                     px={4}
                     py={3}
                     borderRadius="20px"
                     borderBottomLeftRadius={isUser ? '20px' : '4px'}
                     borderBottomRightRadius={isUser ? '4px' : '20px'}
-                    boxShadow={isUser ? '0 2px 6px rgba(34,197,94,0.2)' : '0 4px 14px rgba(0,0,0,0.04)'}
+                    boxShadow={isUser
+                        ? '0 2px 6px rgba(34,197,94,0.2)'
+                        : '0 4px 14px rgba(0,0,0,0.04)'
+                    }
                     border={isUser ? 'none' : '1px solid'}
                     borderColor={message.error ? 'red.200' : 'gray.100'}
                     wordBreak="break-word"
                     overflowWrap="anywhere"
                 >
-                    <Box fontSize={{ base: '13.5px', md: '14px' }}>
+                    <Box fontSize={{ base: '12px', md: '12.5px' }}>
                         {isLoading ? (
                             <HStack spacing={1.5} py={2}>
                                 <Box w="6px" h="6px" bg="gray.400" borderRadius="full" animation="bounce 1.2s infinite ease-in-out" />
@@ -94,25 +123,26 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
                                 <Box w="6px" h="6px" bg="gray.400" borderRadius="full" animation="bounce 1.2s infinite ease-in-out 0.4s" />
                             </HStack>
                         ) : message.error ? (
-                            /* Tampilan jika terjadi error */
                             <VStack align="start" spacing={2}>
                                 <Text fontWeight="600">{message.content}</Text>
-                                <Button 
-                                    leftIcon={<RefreshCw size={12} />} 
-                                    size="xs" 
-                                    colorScheme="red" 
-                                    variant="ghost" 
-                                    onClick={onRetry}
-                                    height="24px"
-                                >
-                                    Coba kirim ulang
-                                </Button>
+                                {/* FIX: Tombol retry hanya muncul jika ada retryContent */}
+                                {onRetry && message.retryContent && (
+                                    <Button
+                                        leftIcon={<RefreshCw size={12} />}
+                                        size="xs"
+                                        colorScheme="red"
+                                        variant="ghost"
+                                        onClick={onRetry}
+                                        height="24px"
+                                    >
+                                        Coba kirim ulang
+                                    </Button>
+                                )}
                             </VStack>
                         ) : (
-                            /* Format Markdown */
                             <Box
                                 sx={{
-                                    '& mark': { bg: 'yellow.200', color: 'orange.900', px: '3px', py: '1px', borderRadius: '4px', fontWeight: '600' }, // Highlight Kuning
+                                    '& mark': { bg: 'yellow.200', color: 'orange.900', px: '3px', py: '1px', borderRadius: '4px', fontWeight: '600' },
                                     '& p': { marginBottom: '0.6rem', lineHeight: '1.5', color: isUser ? 'whiteAlpha.900' : 'gray.700' },
                                     '& p:last-child': { marginBottom: 0 },
                                     '& strong': { fontWeight: '700', color: isUser ? 'white' : 'gray.900' },
@@ -139,7 +169,7 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
                         )}
                     </Box>
 
-                    {/* Render Link Cards */}
+                    {/* Link Cards */}
                     {hasCards && (
                         <Box mt={4} pt={3} borderTop="1px dashed" borderColor="gray.200">
                             <VStack spacing={2.5} align="stretch">
@@ -156,15 +186,33 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
                                         p={3}
                                         transition="all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
                                         position="relative"
-                                        _hover={{ borderColor: 'green.300', boxShadow: '0 4px 12px rgba(34,197,94,0.1)', transform: 'translateY(-1px)' }}
+                                        _hover={{
+                                            borderColor: 'green.300',
+                                            boxShadow: '0 4px 12px rgba(34,197,94,0.1)',
+                                            transform: 'translateY(-1px)',
+                                        }}
                                     >
                                         <HStack align="center" spacing={3} pr={5}>
-                                            <Flex w="40px" h="40px" borderRadius="10px" bg="green.50" color="green.600" align="center" justify="center" flexShrink={0}>
-                                                {card.kind === 'innovation' ? <Lightbulb size={20} strokeWidth={2.5} /> : <MapPinned size={20} strokeWidth={2.5} />}
+                                            <Flex
+                                                w="40px"
+                                                h="40px"
+                                                borderRadius="10px"
+                                                bg="green.50"
+                                                color="green.600"
+                                                align="center"
+                                                justify="center"
+                                                flexShrink={0}
+                                            >
+                                                {/* FIX: Gunakan getCardIcon() yang handle semua kind */}
+                                                {getCardIcon(card.kind)}
                                             </Flex>
                                             <VStack align="start" spacing={0} flex={1} minW={0}>
-                                                <Text fontSize="13.5px" fontWeight="700" color="blue.700" noOfLines={1} lineHeight="short">{card.title}</Text>
-                                                <Text fontSize="12px" fontWeight="600" color="purple.600" noOfLines={1} opacity={0.9} mt={0.5}>{card.subtitle}</Text>
+                                                <Text fontSize="12px" fontWeight="700" color="blue.700" noOfLines={1} lineHeight="short">
+                                                    {card.title}
+                                                </Text>
+                                                <Text fontSize="11px" fontWeight="600" color="purple.600" noOfLines={1} opacity={0.9} mt={0.5}>
+                                                    {card.subtitle}
+                                                </Text>
                                             </VStack>
                                         </HStack>
                                         <Flex position="absolute" right={2} top="50%" transform="translateY(-50%)" color="gray.400">
@@ -178,7 +226,14 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
 
                     {/* Waktu Chat */}
                     {formattedTime && (
-                        <Text fontSize="9px" fontWeight="600" color={isUser ? 'whiteAlpha.700' : 'gray.400'} mt={2} textAlign={isUser ? 'right' : 'left'} letterSpacing="0.5px">
+                        <Text
+                            fontSize="8px"
+                            fontWeight="600"
+                            color={isUser ? 'whiteAlpha.700' : 'gray.400'}
+                            mt={0}
+                            textAlign={isUser ? 'right' : 'left'}
+                            letterSpacing="0.5px"
+                        >
                             {formattedTime}
                         </Text>
                     )}
@@ -195,15 +250,9 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
 
             {/* Pertanyaan Lanjutan */}
             {hasSuggestions && (
-                <Flex 
-                    flexWrap="wrap" 
-                    gap={2} 
-                    pl={12} 
-                    pr={4}
-                    mt={1}
-                >
+                <Flex flexWrap="wrap" gap={2} pl={12} pr={4} mt={1}>
                     {suggestions.map((sug, idx) => (
-                        <Box 
+                        <Box
                             key={idx}
                             as="button"
                             onClick={() => onSuggestionClick && onSuggestionClick(sug)}
@@ -214,15 +263,15 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
                             px={3.5}
                             py={1.5}
                             borderRadius="full"
-                            fontSize="11.5px"
+                            fontSize="10.5px"
                             fontWeight="600"
                             boxShadow="sm"
                             transition="all 0.2s"
-                            _hover={{ 
-                                bg: 'green.50', 
-                                transform: 'translateY(-1px)', 
+                            _hover={{
+                                bg: 'green.50',
+                                transform: 'translateY(-1px)',
                                 borderColor: 'green.400',
-                                boxShadow: 'md'
+                                boxShadow: 'md',
                             }}
                         >
                             {sug}

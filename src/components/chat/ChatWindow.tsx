@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import {
     VStack,
     HStack,
@@ -13,6 +13,7 @@ import {
 import { X, Send, Trash2, Bot } from 'lucide-react';
 import ChatMessage from './ChatMessage';
 import { useTranslations } from 'next-intl';
+import { useAuthToken } from '@/hooks/useAuthToken';
 
 interface ChatWindowProps {
     onClose: () => void;
@@ -24,7 +25,12 @@ interface ChatWindowProps {
 const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWindowProps) => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    
+    const { role: tokenRole } = useAuthToken();
+
+    // FIX: Hapus getRoleFromCookie — fungsi ini tidak pernah dipakai (dead code).
+    // Role sudah diambil dari useAuthToken di bawah.
+    const userRole = (tokenRole || 'guest').toLowerCase();
+
     const t = useTranslations('Chatbot');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -56,15 +62,25 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
     const handleSuggestionClick = (promptText: string) => {
         setInput(promptText);
         if (textareaRef.current) {
-            textareaRef.current.focus(); // Arahkan kursor langsung ke text area
+            textareaRef.current.focus();
             setTimeout(() => handleInputResize(), 10);
         }
     };
 
-    const submitMessage = async (messageText: string) => {
+    // FIX: Gunakan useCallback agar submitMessage stabil sebagai dependency
+    const submitMessage = useCallback(async (messageText: string) => {
         if (!messageText.trim() || isLoading) return;
 
-        const userMessage = { id: Date.now().toString(), role: 'user', content: messageText };
+        const userMessage = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: messageText,
+        };
+
+        // FIX: Simpan snapshot messages sebelum update state untuk dipakai di fetch,
+        // karena state React bersifat async dan `messages` di closure bisa stale
+        const messagesSnapshot = [...messages, userMessage];
+
         setMessages(prev => [...prev, userMessage]);
         setInput('');
         setIsLoading(true);
@@ -79,10 +95,22 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ messages: [...messages, userMessage] }),
+                body: JSON.stringify({
+                    // FIX: Gunakan snapshot yang sudah pasti berisi pesan user terbaru
+                    messages: messagesSnapshot,
+                    role: userRole,
+                }),
             });
 
-            if (!response.ok) throw new Error('API request failed');
+            // FIX: Bedakan error berdasarkan status HTTP untuk pesan yang lebih informatif
+            if (!response.ok) {
+                const isServerError = response.status >= 500;
+                throw new Error(
+                    isServerError
+                        ? 'server_error'
+                        : 'client_error'
+                );
+            }
 
             const data = await response.json();
 
@@ -92,33 +120,51 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                     id: assistantMessageId,
                     role: 'assistant',
                     content: data.text,
-                    extra: { 
+                    extra: {
                         linkCards: data.linkCards || [],
-                        suggestions: data.suggestions || []
-                    }
-                }
+                        suggestions: data.suggestions || [],
+                    },
+                },
             ]);
-            
-        } catch (error) {
+        } catch (error: any) {
             console.error('Chat error:', error);
+
+            // FIX: Pesan error yang lebih spesifik berdasarkan jenis error
+            const errorContent =
+                error?.message === 'server_error'
+                    ? 'Server sedang bermasalah. Silakan coba beberapa saat lagi.'
+                    : error?.message === 'client_error'
+                    ? 'Permintaan tidak valid. Coba refresh halaman.'
+                    : 'Koneksi terputus. Periksa jaringan Anda dan coba lagi.';
+
             setMessages(prev => [
                 ...prev,
                 {
                     id: assistantMessageId,
                     role: 'assistant',
-                    content: "Maaf, terjadi kesalahan saat menghubungi server.",
-                    error: true
-                }
+                    content: errorContent,
+                    error: true,
+                    // FIX: Simpan teks asli pesan user untuk keperluan retry
+                    retryContent: messageText,
+                },
             ]);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [isLoading, messages, userRole, setMessages]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         submitMessage(input);
     };
+
+    // FIX: Retry menggunakan retryContent dari pesan error, bukan mencari
+    // pesan user terakhir dari seluruh array (yang bisa menunjuk pesan yang salah)
+    const handleRetry = useCallback((retryContent?: string) => {
+        if (retryContent) {
+            submitMessage(retryContent);
+        }
+    }, [submitMessage]);
 
     return (
         <Flex direction="column" height="100%">
@@ -132,12 +178,12 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                 zIndex={10}
             >
                 <VStack align="start" spacing={0} pl={1}>
-                    <Text fontWeight="bold" fontSize="md" lineHeight="1.2">
+                    <Text fontWeight="bold" fontSize="sm" lineHeight="1.2">
                         {t('title') || "Asisten Desa"}
                     </Text>
                     <HStack spacing={1.5}>
                         <Box w="6px" h="6px" bg="green.200" borderRadius="full" animation="pulseDot 2s infinite" />
-                        <Text fontSize="11px" opacity={0.9} fontWeight="medium">
+                        <Text fontSize="10px" opacity={0.9} fontWeight="medium">
                             {t('online') || "Online"}
                         </Text>
                     </HStack>
@@ -154,7 +200,6 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                         onClick={onClearHistory}
                         isDisabled={messages.length === 0}
                     />
-
                     <IconButton
                         aria-label={t('ariaClose')}
                         icon={<X size={20} />}
@@ -179,8 +224,8 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                     '&::-webkit-scrollbar': { width: '4px' },
                     '&::-webkit-scrollbar-thumb': {
                         background: '#cbd5e1',
-                        borderRadius: '4px'
-                    }
+                        borderRadius: '4px',
+                    },
                 }}
             >
                 {messages.length === 0 && (
@@ -190,14 +235,14 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                                 <Bot size={32} color="#16a34a" />
                             </Flex>
                         </Flex>
-                        <Text fontSize="15px" fontWeight="700" color="gray.800" mb={1.5}>
+                        <Text fontSize="13px" fontWeight="700" color="gray.800" mb={1.5}>
                             Halo! Ada yang bisa saya bantu?
                         </Text>
                         <Text fontSize="12px" color="gray.500" mb={6} px={4} lineHeight="1.5">
                             Pilih pertanyaan di bawah atau ketik langsung kebutuhan informasi Anda.
                         </Text>
-                        
-                        <VStack spacing={2.5} align="stretch">
+
+                        <VStack spacing={1.5} align="stretch">
                             {[
                                 "Apa potensi utama Desa Petir?",
                                 "Rekomendasi inovasi perikanan",
@@ -209,11 +254,11 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                                     onClick={() => handleSuggestionClick(promptText)}
                                     textAlign="left"
                                     bg="white"
-                                    p={3.5}
-                                    borderRadius="14px"
+                                    p={2.5}
+                                    borderRadius="12px"
                                     border="1px solid"
                                     borderColor="gray.200"
-                                    fontSize="13px"
+                                    fontSize="12px"
                                     fontWeight="500"
                                     color="green.700"
                                     boxShadow="sm"
@@ -228,11 +273,12 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                 )}
 
                 {messages.map((m: any) => (
-                    <ChatMessage 
-                        key={m.id} 
-                        message={m} 
-                        onSuggestionClick={handleSuggestionClick} 
-                        onRetry={() => submitMessage(messages[messages.length-1].content)}
+                    <ChatMessage
+                        key={m.id}
+                        message={m}
+                        onSuggestionClick={handleSuggestionClick}
+                        // FIX: Kirim retryContent dari pesan error ke handler retry
+                        onRetry={() => handleRetry(m.retryContent)}
                     />
                 ))}
 
@@ -247,9 +293,9 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
             </VStack>
 
             {/* Input Area */}
-            <Box p={3} bg="white" borderTop="1px" borderColor="gray.100" boxShadow="0 -4px 10px rgba(0,0,0,0.02)">
+            <Box px={3} pt={2} pb={3} bg="white" borderTop="1px" borderBottomRadius="20px" borderColor="gray.100" boxShadow="0 -4px 10px rgba(0,0,0,0.02)">
                 <form onSubmit={handleSubmit}>
-                    <HStack align="flex-end" spacing={2} bg="gray.100" borderRadius="24px" p={1.5} pr={2}>
+                    <HStack align="flex-end" spacing={2} bg="gray.100" borderRadius="24px" p={1.5} pr={1.5}>
                         <Textarea
                             ref={textareaRef}
                             placeholder={t('placeholder') || "Ketik pertanyaan Anda..."}
@@ -262,34 +308,28 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                             bg="transparent"
                             border="none"
                             px={3}
-                            py={2.5}
-                            fontSize="14px"
-                            minH="40px"
+                            py={2}
+                            fontSize="12.5px"
+                            minH="36px"
                             maxH="120px"
                             rows={1}
                             resize="none"
                             _focus={{ boxShadow: 'none' }}
                             _placeholder={{ color: 'gray.500' }}
-                            css={{
-                                '&::-webkit-scrollbar': { width: '0px' },
-                            }}
+                            css={{ '&::-webkit-scrollbar': { width: '0px' } }}
                         />
-
                         <IconButton
                             type="submit"
                             aria-label={t('ariaSend')}
-                            icon={<Send size={18} />}
+                            icon={<Send size={16} />}
                             borderRadius="full"
-                            bg={input.trim() ? "green.500" : "gray.300"} 
+                            bg={input.trim() ? "green.500" : "gray.300"}
                             color="white"
-                            minW="36px"
-                            h="36px"
-                            mb={0.5}
+                            minW="32px"
+                            h="32px"
+                            mb="2px"
                             boxShadow={input.trim() ? "0 4px 10px rgba(34,197,94,0.3)" : "none"}
-                            _hover={input.trim() ? {
-                                bg: 'green.600',
-                                transform: 'scale(1.05)'
-                            } : {}}
+                            _hover={input.trim() ? { bg: 'green.600', transform: 'scale(1.05)' } : {}}
                             _active={input.trim() ? { bg: 'green.700' } : {}}
                             isDisabled={!input.trim() || isLoading}
                         />

@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getInnovation } from "Services/innovationServices";
 import CardInnovation from "Components/card/innovation";
-import { paths } from "Consts/path";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
 import { Box, Heading, Text, Flex } from "@chakra-ui/react";
@@ -25,7 +24,8 @@ interface InovationData {
     [key: string]: any;
 }
 
-function SearchPage() {
+// Pisahkan logic ke komponen terpisah
+const SearchContent = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialSearchTerm = searchParams.get("q")?.toLowerCase().trim() || "";
@@ -33,75 +33,46 @@ function SearchPage() {
     const [loading, setLoading] = useState(false);
     const [searchValue, setSearchValue] = useState(initialSearchTerm);
     const [role] = useState("user");
-    const key = searchParams.toString(); // Use search params as key to re-render if needed
+    const key = searchParams.toString();
 
     const sortByRelevance = (items: InovationData[], keyword: string) => {
         const normalizedKeyword = keyword.toLowerCase().trim();
-
         const scoreItem = (item: InovationData) => {
-            const fields = [
-                item.namaInovasi,
-                item.innovatorName,
-                item.namaInnovator,
-                item.kategori,
-                item.deskripsi,
-            ]
+            const fields = [item.namaInovasi, item.innovatorName, item.namaInnovator, item.kategori, item.deskripsi]
                 .filter(Boolean)
                 .map((field) => String(field).toLowerCase());
-
             const title = fields[0] || "";
-            const exactTitle = title === normalizedKeyword;
-            const titleStartsWith = title.startsWith(normalizedKeyword);
-            const fieldContains = fields.some((field) => field.includes(normalizedKeyword));
-
-            if (exactTitle) return 0;
-            if (titleStartsWith) return 1;
-            if (fieldContains) return 2;
+            if (title === normalizedKeyword) return 0;
+            if (title.startsWith(normalizedKeyword)) return 1;
+            if (fields.some((f) => f.includes(normalizedKeyword))) return 2;
             return 3;
         };
-
         return [...items].sort((a, b) => scoreItem(a) - scoreItem(b));
     };
 
-    // Debounced fetch and filter function
     const fetchData = debounce(async (keyword: string) => {
         setLoading(true);
         setResults([]);
-
         try {
-            const res: any = await getInnovation({
-                search: keyword || undefined,
-                status: "Terverifikasi",
-            });
-            const innovations = sortByRelevance(res.innovations || [], keyword);
-
-            setResults(innovations);
+            const res: any = await getInnovation({ search: keyword || undefined, status: "Terverifikasi" });
+            setResults(sortByRelevance(res.innovations || [], keyword));
         } catch (error) {
             console.error("Error fetching data via API:", error);
         }
-
         setLoading(false);
     }, 300);
 
-    // Run debounced fetch when searchValue changes
     useEffect(() => {
         fetchData(searchValue.toLowerCase().trim());
         return () => fetchData.cancel();
     }, [searchValue]);
 
-    // Reset scroll position on mount
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
 
     const handleCardClick = (id: string) => {
-        const destination = `/innovation/detail/${id}`; // paths.INNOVATION_DETAIL replacement
-        // logic user role
-        if (role === "innovator") {
-            router.push(destination);
-        } else {
-            router.push(destination);
-        }
+        router.push(`/innovation/detail/${id}`);
     };
 
     const handleSearchSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -113,11 +84,8 @@ function SearchPage() {
 
     return (
         <Container page>
-            <TopBar
-                title="Hasil Pencarian"
-                onBack={() => router.push("/")}
-            />
-            <Box px={5} py={8} >
+            <TopBar title="Hasil Pencarian" onBack={() => router.push("/")} />
+            <Box px={5} py={8}>
                 <SearchBarLink
                     key={key}
                     placeholderText="Cari Inovasi di sini..."
@@ -127,29 +95,19 @@ function SearchPage() {
                     width="100%"
                     maxW="100%"
                 />
-
                 <Flex align="center" mb={2} mt={6}>
                     <Heading fontSize="15px" fontWeight="800" color="gray.700">
                         Hasil Pencarian: "{searchValue || 'Semua Inovasi'}"
                     </Heading>
                 </Flex>
-
                 {loading ? (
-                    <Text color="gray.500" fontSize="12px">
-                        Sedang mencari...
-                    </Text>
+                    <Text color="gray.500" fontSize="12px">Sedang mencari...</Text>
                 ) : results.length === 0 ? (
-                    <Text fontSize="12px" color="gray.500">
-                        Tidak ada inovasi yang ditemukan.
-                    </Text>
+                    <Text fontSize="12px" color="gray.500">Tidak ada inovasi yang ditemukan.</Text>
                 ) : (
                     <Box
                         display="grid"
-                        gridTemplateColumns={{
-                            base: "1fr",
-                            sm: "repeat(2, 1fr)",
-                            md: "repeat(2, 1fr)",
-                        }}
+                        gridTemplateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", md: "repeat(2, 1fr)" }}
                         gap={4}
                         mt={3}
                     >
@@ -171,6 +129,15 @@ function SearchPage() {
                 )}
             </Box>
         </Container>
+    );
+};
+
+// Komponen utama dengan Suspense
+function SearchPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <SearchContent />
+        </Suspense>
     );
 }
 
