@@ -146,7 +146,7 @@ const DetailInnovator: React.FC = () => {
                 ... Firestore Logic ...
                 */
                 const res: any = await getInnovatorById(id);
-                const data = res.data;
+                const data = res?.innovator || res?.data;
                 if (data) {
                     setInnovatorData(data);
                 } else {

@@ -1,0 +1,48 @@
+{
+  "_id": "TD9oZIYC0glzE8vruzxd",
+  "statusInovasi": "Masih diproduksi",
+  "namaInovasi": "eFisheryKu",
+  "kategori": "Pemasaran Agri-Food dan E-Commerce",
+  "inputDesaMenerapkan": "Desa Losarang, dan lain-lain",
+  "deskripsi": "eFisheryKu adalah aplikasi koperasi digital yang memfasilitasi pembudidaya ikan dalam mengakses keuangan, membeli pakan, dan menjual hasil panen",
+  "hargaMinimal": "",
+  "hargaMaksimal": "",
+  "manfaat": [
+    {
+      "judul": "Penjualan ikan",
+      "deskripsi": "Menyediakan platform untuk menjual hasil panen ikan secara online. Memungkinkan pembudidaya menjual ikan dengan sistem lelang."
+    },
+    {
+      "judul": "Pembelian pakan",
+      "deskripsi": "Menyediakan akses ke berbagai jenis pakan ikan berkualitas dengan harga yang stabil, dan dengan sistem bayar nanti"
+    },
+    {
+      "judul": "Pencatatan budidaya",
+      "deskripsi": "Memungkinkan pembudidaya untuk mencatat setiap transaksi pengeluaran dalam kegiatan budidaya. "
+    }
+  ],
+  "infrastruktur": [
+    "Mempunyai jaringan internet",
+    "Mempunyai smartphone"
+  ],
+  "modelBisnis": [
+    "Menciptakan Pasar"
+  ],
+  "innovatorId": "ZbG6dq2VTcQ4h8EOOK7zIpsps7w1",
+  "namaInnovator": "eFishery",
+  "innovatorImgURL": "https://firebasestorage.googleapis.com/v0/b/desa-digital-prod.firebasestorage.app/o/innovators%2FZbG6dq2VTcQ4h8EOOK7zIpsps7w1%2Flogo?alt=media&token=507ac0d3-8ff9-4270-bbfb-a27900916466",
+  "createdAt": "2025-06-24T14:21:25.123Z",
+  "editedAt": {
+    "_seconds": 1750774885,
+    "_nanoseconds": 123000000
+  },
+  "images": [
+    "https://firebasestorage.googleapis.com/v0/b/desa-digital-prod.firebasestorage.app/o/innovations%2Fimages%2Fimage_1750774884088_0?alt=media&token=cca55978-337c-4729-8b2c-985f02bfc9e7"
+  ],
+  "status": "Terverifikasi",
+  "tahunDibuat": "2015",
+  "desaId": [
+    "Pn7EZ5jeu8d2BNA7eOVyltwEOQk1"
+  ],
+  "jumlahKlaim": 2
+}

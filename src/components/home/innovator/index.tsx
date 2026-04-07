@@ -1,21 +1,14 @@
+"use client";
+
 import { Box } from "@chakra-ui/react";
 import CardInnovator from "Components/card/innovator";
 import { paths } from "Consts/path";
-import {
-  DocumentData,
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  where,
-} from "firebase/firestore";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { firestore } from "@/firebase/clientApp";
 import { CardContainer, Horizontal, Title } from "./_innovatorStyle";
 import { useTranslations } from "next-intl";
+import { getInnovators } from "Services/innovatorServices";
 
 
 interface InnovatorData {
@@ -25,38 +18,34 @@ interface InnovatorData {
   jumlahInovasi: number;
   header?: string;
   logo?: string;
-  status?: boolean;
+  status?: string;
 }
 
 
 function Innovator() {
   const t = useTranslations("Home");
   const router = useRouter();
-  const [innovators, setInnovators] = useState<DocumentData[]>([]);
+  const [innovators, setInnovators] = useState<InnovatorData[]>([]);
 
   useEffect(() => {
     const fetchInnovators = async () => {
-      const innovatorsRef = collection(firestore, "innovators");
+      try {
+        const res: any = await getInnovators({
+          status: "Terverifikasi",
+        });
+        const fetchedData = res?.data || res?.innovators || [];
+        const innovatorsData: InnovatorData[] = (Array.isArray(fetchedData) ? fetchedData : [])
+          .sort((a: any, b: any) => (b.jumlahDesaDampingan || 0) - (a.jumlahDesaDampingan || 0))
+          .slice(0, 5);
 
-      const q = query(
-        innovatorsRef,
-        // where("status", "==", "Terverifikasi"), 
-        orderBy("jumlahDesaDampingan", "desc"),
-        limit(5) // Ambil hanya 5 data teratas
-      );
-
-      const innovatorsSnapshot = await getDocs(q);
-      const innovatorsData = innovatorsSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      setInnovators(innovatorsData);
+        setInnovators(innovatorsData);
+      } catch (error) {
+        console.error("Error fetching innovators from MongoDB API:", error);
+      }
     };
     fetchInnovators();
-  }, []); // Hapus dependency agar hanya jalan sekali
+  }, []);
 
-  console.log("Innovators:", innovators);
   return (
     <Box padding="0 14px">
       <Title>{t("featuredInnovators")}</Title>
@@ -86,4 +75,3 @@ function Innovator() {
 }
 
 export default Innovator;
-
