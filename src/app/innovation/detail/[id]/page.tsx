@@ -564,7 +564,7 @@ function DetailInnovation() {
                         <ActionContainer
                             key={index}
                             onClick={() =>
-                                router.push(`/village/profile/${desa.userId}`)
+                                router.push(`/village/profile/${desa.id || desa.userId}`)
                             }
                             style={{ cursor: "pointer" }}
                         >
