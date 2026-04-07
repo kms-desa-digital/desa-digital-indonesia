@@ -25,3 +25,7 @@ export const updateInnovator = async (id: string, data: any) => {
 export const deleteInnovator = async (id: string) => {
   return api.delete(`/innovator/${id}`);
 };
+
+export const getAssistedVillages = async (id: string) => {
+  return api.get(`/innovator/${id}/villages`);
+};

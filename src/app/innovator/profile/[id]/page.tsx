@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar/index";
 import { paths } from "Consts/path";
-import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
+import { getInnovatorById, updateInnovator, getAssistedVillages } from "Services/innovatorServices";
 import { getInnovation } from "Services/innovationServices";
 import React, { useEffect, useState } from "react";
 
@@ -74,6 +74,7 @@ const ProfileInnovator: React.FC = () => {
     const [innovatorData, setInnovatorData] = useState<InnovatorData | null>(null);
     const [innovations, setInnovations] = useState<any[]>([]);
     const [villages, setVillages] = useState<any[]>([]); // Add state for villages
+    const [totalVillagesCount, setTotalVillagesCount] = useState<number>(0);
     const [owner, setOwner] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -166,9 +167,14 @@ const ProfileInnovator: React.FC = () => {
                     setError("Innovator not found.");
                 }
 
-                // Villages lookup - backend should ideally provide this or we filter locally
-                // For now, I'll filter innovations which has villages mapping if available
-                setVillages([]); // Placeholder for villages via API
+                // Villages lookup via backend
+                try {
+                    const villageRes: any = await getAssistedVillages(id);
+                    setVillages(villageRes?.villages || villageRes?.data || []);
+                    setTotalVillagesCount(villageRes?.totalCount || villageRes?.villages?.length || 0);
+                } catch (err) {
+                    console.error("Error fetching villages:", err);
+                }
             } catch (error) {
                 console.error("Error fetching innovator data from API:", error);
                 setError("Error fetching innovator data.");
@@ -266,7 +272,7 @@ const ProfileInnovator: React.FC = () => {
                         <Icon as={LuDot} color="#4B5563" />
                         <Icon as={TbPlant2} color="#4B5563" />
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
-                            {innovatorData.jumlahDesaDampingan} Desa Dampingan
+                            {totalVillagesCount > 0 ? totalVillagesCount : innovatorData.jumlahDesaDampingan} Desa Dampingan
                         </Text>
                     </Flex>
                 </Stack>
@@ -411,61 +417,69 @@ const ProfileInnovator: React.FC = () => {
                             color="#347357"
                             cursor="pointer"
                             textDecoration="underline"
-                        // onClick={() => navigate(`/innovator/${innovatorId}/all-innovations`)}
+                            onClick={() => router.push(`/innovator/villages/${id}`)}
                         >
                             Lihat Semua
                         </Text>
                     </Flex>
                     {villages.length > 0 ? (
-                        villages.map((village) => (
-                            <Box
-                                mt={2}
-                                key={village.id}
-                                borderWidth="1px"
-                                borderRadius="lg"
-                                overflow="hidden"
-                                p={2}
-                                mb={16}
-                                cursor="pointer"
-                                backgroundColor="white"
-                                borderColor="gray.200"
-                                onClick={() =>
-                                    router.push(`/village/profile/${village.id}`)
-                                }
-                            >
-                                <Flex alignItems="center" mb={3}>
-                                    <Image
-                                        src={village.logo}
-                                        alt={`${village.namaDesa} Logo`}
-                                        boxSize="40px"
-                                        borderRadius="full"
-                                        mr={4}
-                                    />
-                                    <Text fontSize="12px" fontWeight="600">
-                                        {village.namaDesa}
-                                    </Text>
-                                    <ChevronRightIcon color="gray.500" ml="auto" />
-                                </Flex>
-                                {/* Menambahkan Border Pembatas Di Atas "Inovasi Diterapkan" */}
-                                <Box borderTop="1px" borderColor="gray.300" pt={3} mt={3} />
-                                <Text fontSize="12px" fontWeight="400" mb={2} color="#9CA3AF">
-                                    Inovasi diterapkan
-                                </Text>
-                                <Flex direction="row" gap={2} flexWrap="wrap">
-                                    {Array.isArray(village.inovasiDiterapkan) &&
-                                        village.inovasiDiterapkan.map((inovasi: any, index: number) => (
-                                            <Tag
-                                                key={index}
-                                                size="sm"
-                                                variant="solid"
-                                                borderRadius="full"
-                                                backgroundColor="#E5E7EB"
-                                            >
-                                                <TagLabel color="#374151">{inovasi}</TagLabel>
-                                            </Tag>
-                                        ))}
-                                </Flex>
-                            </Box>
+                        villages.slice(0, 3).map((village) => (
+                             <Box
+                                 mt={2}
+                                 key={village.id}
+                                 borderWidth="1px"
+                                 borderRadius="xl"
+                                 p={4}
+                                 mb={4}
+                                 cursor="pointer"
+                                 backgroundColor="white"
+                                 borderColor="gray.200"
+                                 shadow="xs"
+                                 _hover={{ shadow: 'sm', borderColor: '#347357' }}
+                                 onClick={() =>
+                                     router.push(`/village/profile/${village.id}`)
+                                 }
+                             >
+                                 <Flex alignItems="center">
+                                     <Image
+                                         src={village.logo || "/images/default-logo.svg"}
+                                         alt={`${village.namaDesa} Logo`}
+                                         boxSize="40px"
+                                         borderRadius="full"
+                                         mr={4}
+                                     />
+                                     <Text fontSize="13px" fontWeight="700" color="#1F2937">
+                                         {village.namaDesa}
+                                     </Text>
+                                     <ChevronRightIcon color="gray.400" ml="auto" />
+                                 </Flex>
+                                 <Box borderTop="1px" borderColor="gray.200" pt={3} mt={3}>
+                                     <Text fontSize="11px" fontWeight="400" mb={2} color="#9CA3AF">
+                                         Inovasi diterapkan
+                                     </Text>
+                                     <Flex direction="row" gap={2} flexWrap="wrap">
+                                         {Array.isArray(village.inovasiDiterapkan) && village.inovasiDiterapkan.length > 0 ? (
+                                             village.inovasiDiterapkan.map((inovasi: any, index: number) => (
+                                                 <Box
+                                                     key={index}
+                                                     px={2}
+                                                     py={0.5}
+                                                     fontSize="10px"
+                                                     fontWeight="500"
+                                                     borderRadius="full"
+                                                     backgroundColor="#F3F4F6"
+                                                     color="#4B5563"
+                                                     border="1px solid #E5E7EB"
+                                                 >
+                                                     {inovasi}
+                                                 </Box>
+                                             ))
+                                         ) : (
+                                             <Text fontSize="10px" color="#D1D5DB">Belum ada inovasi spesifik</Text>
+                                         )}
+                                     </Flex>
+                                 </Box>
+                             </Box>
                         ))
                     ) : (
                         <Text fontSize="12px" color="#9CA3AF" textAlign="left" mt={2}>
