@@ -148,6 +148,10 @@ const DetailInnovator: React.FC = () => {
                 const res: any = await getInnovatorById(id);
                 const data = res?.innovator || res?.data;
                 if (data) {
+                    if (data.userId === userLogin?.uid) {
+                        router.push("/innovator/profile/" + id);
+                        return;
+                    }
                     setInnovatorData(data);
                 } else {
                     console.log("Innovator not found via API");
@@ -173,7 +177,7 @@ const DetailInnovator: React.FC = () => {
                 const innovationsDocs = await getDocs(q);
                 ... Firestore Logic ...
                 */
-                const res: any = await getInnovation({ innovatorId: id });
+                const res: any = await getInnovation({ innovatorId: id, status: "Terverifikasi" });
                 const innovationsData = res.innovations || [];
                 setInnovations(innovationsData);
             } catch (error) {

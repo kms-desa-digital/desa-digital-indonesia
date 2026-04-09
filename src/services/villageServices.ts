@@ -54,6 +54,8 @@ export const updateClaim = async (id: string, data: any) => {
   return api.put(`/villages/claim/${id}`, data);
 };
 
-export const getVillageInnovations = async (id: string) => {
-  return api.get(`/villages/${id}/innovations`);
+export const getVillageInnovations = async (id: string, status?: string) => {
+  const params: any = {};
+  if (status) params.status = status;
+  return api.get(`/villages/${id}/innovations`, { params });
 };

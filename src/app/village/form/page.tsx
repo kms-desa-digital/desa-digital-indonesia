@@ -468,14 +468,9 @@ const AddVillage: React.FC = () => {
                 setError("User is not logged in.");
                 return;
             }
-            /*
-            const docRef = doc(firestore, "villages", user.uid);
-            const docSnap = await getDoc(docRef);
-            ... Firestore Logic ...
-            */
             try {
                 const response: any = await getVillageById(user.uid);
-                const data = response.data;
+                const data = response.village || response.data || response;
                 if (data) {
                     // Set nilai form dengan data yang diambil dari API
                     setTextInputValue({
@@ -521,7 +516,7 @@ const AddVillage: React.FC = () => {
                         setIsEditable(false);
                         setStatus("Menunggu");
                         setAlertStatus("info");
-                        setAlertMessage(`Profil sudah didaftakan. Menunggu verifikasi admin.`);
+                        setAlertMessage(`Profil sudah didaftarkan. Menunggu verifikasi admin.`);
                     } else if (data.status === "Ditolak") {
                         setIsEditable(true);
                         setStatus("Ditolak");
@@ -535,7 +530,40 @@ const AddVillage: React.FC = () => {
         };
 
         fetchData();
-    }, [user]);
+
+        // Polling for real time updates
+        const intervalId = setInterval(async () => {
+            const userId = user?.uid;
+            if (!userId) return;
+            try {
+                const res: any = await getVillageById(userId);
+                const data = res.village || res.data || res;
+                if (data) {
+                    setStatus((prevStatus) => {
+                        if (prevStatus !== data.status) {
+                            if (data.status === "Menunggu") {
+                                setAlertStatus("info");
+                                setIsEditable(false);
+                                setAlertMessage(`Profil sudah didaftarkan. Menunggu verifikasi admin.`);
+                            } else if (data.status === "Ditolak") {
+                                setAlertStatus("error");
+                                setIsEditable(true);
+                                setAlertMessage(`Pengajuan ditolak dengan catatan: ${data.catatanAdmin || ""}`);
+                            } else if (data.status === "Terverifikasi") {
+                                router.push(`/village/profile/${userId}`);
+                            }
+                            return data.status;
+                        }
+                        return prevStatus;
+                    });
+                }
+            } catch (err) {
+                console.error("Polling error: ", err);
+            }
+        }, 3000);
+
+        return () => clearInterval(intervalId);
+    }, [user, router]);
 
     return (
         <>
@@ -647,7 +675,7 @@ const AddVillage: React.FC = () => {
 
                             <Box>
                                 <Text fontWeight="400" fontSize="14px">
-                                    Foto Desa <span style={{ color: "red" }}>*</span>
+                                    Foto Inovasi di Desa <span style={{ color: "red" }}>*</span>
                                 </Text>
                                 <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
                                     Maks 5 foto. format: png, jpg.
@@ -664,9 +692,9 @@ const AddVillage: React.FC = () => {
 
                             <FormSection
                                 isTextArea
-                                title="Deskripsi Desa"
+                                title="Tentang Inovasi di Desa"
                                 name="description"
-                                placeholder="Deskripsi singkat tentang inovator"
+                                placeholder="Masukkan deskripsi inovasi yang ada di desa"
                                 value={textInputValue.description}
                                 onChange={onTextChange}
                                 wordCount={currentWordCount(textInputValue.description)}
@@ -690,9 +718,12 @@ const AddVillage: React.FC = () => {
                                     disabled={!isEditable || isFormLocked}
                                 />
                             </Box>
+                            <Text fontWeight="700" fontSize="16px">
+                                Karakteristik Desa
+                            </Text>
                             <FormSection
                                 isTextArea
-                                title="Geografis Desa"
+                                title="Geografis"
                                 name="geografis"
                                 placeholder="Jelaskan kondisi geografis desa"
                                 value={textInputValue.geografis}
@@ -700,11 +731,79 @@ const AddVillage: React.FC = () => {
                                 disabled={!isEditable || isFormLocked}
                                 isRequired
                             />
+                            <Box>
+                                <Text fontWeight="400" fontSize="14px" mb="1">
+                                    Perkembangan Teknologi Digital <span style={{ color: "red" }}>*</span>
+                                </Text>
+                                <MultiSellect
+                                    options={[
+                                        { value: "Seluruhnya berkembang dengan baik", label: "Seluruhnya berkembang dengan baik" },
+                                        { value: "Lebih dari 50% sudah dikembangkan", label: "Lebih dari 50% sudah dikembangkan" },
+                                        { value: "Kurang dari 50% sudah dikembangkan", label: "Kurang dari 50% sudah dikembangkan" },
+                                        { value: "Baru dimulai", label: "Baru dimulai" },
+                                        { value: "Belum siap", label: "Belum siap" },
+                                    ]}
+                                    value={
+                                        dropdownValue.teknologi
+                                            ? [
+                                                {
+                                                    value: dropdownValue.teknologi,
+                                                    label: dropdownValue.teknologi,
+                                                },
+                                            ]
+                                            : []
+                                    }
+                                    onChange={(selected) =>
+                                        setDropdownValue({
+                                            ...dropdownValue,
+                                            teknologi: selected?.[0]?.value || null,
+                                        })
+                                    }
+                                    placeholder="Pilih"
+                                    disabled={!isEditable || isFormLocked}
+                                    isMulti={false}
+                                />
+                            </Box>
+
+                            <Box>
+                                <Text fontWeight="400" fontSize="14px" mb="1">
+                                    Kemampuan Teknologi <span style={{ color: "red" }}>*</span>
+                                </Text>
+                                <MultiSellect
+                                    options={[
+                                        { value: "Kemampuan masyarakat sangat baik", label: "Kemampuan masyarakat sangat baik" },
+                                        { value: "Kemampuan masyarakat cukup baik", label: "Kemampuan masyarakat cukup baik" },
+                                        { value: "Hanya beberapa masyarakat yang cukup baik", label: "Hanya beberapa masyarakat yang cukup baik" },
+                                        { value: "Kemampuan masyarakat terbatas", label: "Kemampuan masyarakat terbatas" },
+                                        { value: "Masyarakat belum mampu memakai teknologi digital", label: "Masyarakat belum mampu memakai teknologi digital" },
+                                    ]}
+                                    value={
+                                        dropdownValue.kemampuan
+                                            ? [
+                                                {
+                                                    value: dropdownValue.kemampuan,
+                                                    label: dropdownValue.kemampuan,
+                                                },
+                                            ]
+                                            : []
+                                    }
+                                    onChange={(selected) =>
+                                        setDropdownValue({
+                                            ...dropdownValue,
+                                            kemampuan: selected?.[0]?.value || null,
+                                        })
+                                    }
+                                    placeholder="Pilih"
+                                    disabled={!isEditable || isFormLocked}
+                                    isMulti={false}
+                                />
+                            </Box>
+
                             <FormSection
                                 isTextArea
-                                title="Sosial Budaya"
+                                title="Sosial dan Budaya"
                                 name="sosial"
-                                placeholder="Jelaskan keadaan sosial budaya di desa"
+                                placeholder="Deskripsi sosial dan budaya desa"
                                 value={textInputValue.sosial}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
@@ -714,7 +813,7 @@ const AddVillage: React.FC = () => {
                                 isTextArea
                                 title="Sumber Daya Alam"
                                 name="resource"
-                                placeholder="Jelaskan sumber daya alam"
+                                placeholder="Deskripsi sumber daya alam desa"
                                 value={textInputValue.resource}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
@@ -722,18 +821,9 @@ const AddVillage: React.FC = () => {
                             />
 
                             <Text fontWeight="700" fontSize="16px">
-                                Infrastruktur Digital
+                                Infrastruktur
                             </Text>
-                            <FormSection
-                                isTextArea
-                                title="Akses Internet dan Infrastruktur TI"
-                                name="infrastruktur"
-                                placeholder="Bagaimana kondisi jaringan internet dan perangkat teknologi informasi (komputer, server, dll.) yang tersedia?"
-                                value={textInputValue.infrastruktur}
-                                onChange={onTextChange}
-                                disabled={!isEditable || isFormLocked}
-                                isRequired
-                            />
+
 
                             <Box>
                                 <Text fontWeight="400" fontSize="14px" mb="1">
@@ -741,11 +831,11 @@ const AddVillage: React.FC = () => {
                                 </Text>
                                 <MultiSellect
                                     options={[
-                                        { value: "Sangat Baik", label: "Sangat Baik" },
-                                        { value: "Baik", label: "Baik" },
-                                        { value: "Cukupan", label: "Cukupan" },
-                                        { value: "Buruk", label: "Buruk" },
-                                        { value: "Sangat Buruk", label: "Sangat Buruk" },
+                                        { value: "Seluruh jalan beraspal", label: "Seluruh jalan beraspal" },
+                                        { value: "Lebih dari 50% beraspal", label: "Lebih dari 50% beraspal" },
+                                        { value: "Kurang dari 50% beraspal", label: "Kurang dari 50% beraspal" },
+                                        { value: "Beraspal namun rusak", label: "Beraspal namun rusak" },
+                                        { value: "Masih tanah dan bebatuan", label: "Masih tanah dan bebatuan" },
                                     ]}
                                     value={
                                         dropdownValue.kondisijalan
@@ -763,7 +853,7 @@ const AddVillage: React.FC = () => {
                                             kondisijalan: selected?.[0]?.value || null,
                                         })
                                     }
-                                    placeholder="Pilih Kondisi Jalan"
+                                    placeholder="Pilih"
                                     disabled={!isEditable || isFormLocked}
                                     isMulti={false}
                                 />
@@ -775,11 +865,29 @@ const AddVillage: React.FC = () => {
                                 </Text>
                                 <MultiSellect
                                     options={[
-                                        { value: "4G/LTE", label: "4G/LTE" },
-                                        { value: "3G", label: "3G" },
                                         {
-                                            value: "Tidak Ada Jaringan",
-                                            label: "Tidak Ada Jaringan",
+                                            value: "Jaringan internet baik di seluruh tempat",
+                                            label: "Jaringan internet baik di seluruh tempat"
+                                        },
+                                        {
+                                            value: "Jaringan internet baik di beberapa tempat",
+                                            label: "Jaringan internet baik di beberapa tempat"
+                                        },
+                                        {
+                                            value: "Jaringan internet lemah",
+                                            label: "Jaringan internet lemah"
+                                        },
+                                        {
+                                            value: "Ada sinyal, namun tidak ada jaringan internet",
+                                            label: "Ada sinyal, namun tidak ada jaringan internet"
+                                        },
+                                        {
+                                            value: "Sinyal lemah, namun ada internet (wifi)",
+                                            label: "Sinyal lemah, namun ada internet (wifi)"
+                                        },
+                                        {
+                                            value: "Sinyal lemah / tidak ada, dan tidak ada internet",
+                                            label: "Sinyal lemah / tidak ada, dan tidak ada internet",
                                         },
                                     ]}
                                     value={
@@ -798,7 +906,7 @@ const AddVillage: React.FC = () => {
                                             jaringan: selected?.[0]?.value || null,
                                         })
                                     }
-                                    placeholder="Pilih Jaringan Internet"
+                                    placeholder="Pilih"
                                     disabled={!isEditable || isFormLocked}
                                     isMulti={false}
                                 />
@@ -810,15 +918,11 @@ const AddVillage: React.FC = () => {
                                 </Text>
                                 <MultiSellect
                                     options={[
-                                        { value: "Stabil 24 Jam", label: "Stabil 24 Jam" },
-                                        {
-                                            value: "Kadang Mati Lampu",
-                                            label: "Kadang Mati Lampu",
-                                        },
-                                        {
-                                            value: "Tidak Ada Listrik",
-                                            label: "Tidak Ada Listrik",
-                                        },
+                                        { value: "Listrik tersedia di seluruh tempat", label: "Listrik tersedia di seluruh tempat" },
+                                        { value: "Listrik tersedia di beberapa tempat", label: "Listrik tersedia di beberapa tempat" },
+                                        { value: "Listrik 24 jam hanya di beberapa tempat", label: "Listrik 24 jam hanya di beberapa tempat" },
+                                        { value: "Listrik tersedia, namun waktu terbatas", label: "Listrik tersedia, namun waktu terbatas" },
+                                        { value: "Listrik tidak tersedia", label: "Listrik tidak tersedia" },
                                     ]}
                                     value={
                                         dropdownValue.listrik
@@ -836,116 +940,25 @@ const AddVillage: React.FC = () => {
                                             listrik: selected?.[0]?.value || null,
                                         })
                                     }
-                                    placeholder="Pilih Ketersediaan Listrik"
+                                    placeholder="Pilih"
                                     disabled={!isEditable || isFormLocked}
                                     isMulti={false}
                                 />
                             </Box>
 
-                            <Text fontWeight="700" fontSize="16px">
-                                Kesiapan Digital Masyarakat
-                            </Text>
                             <FormSection
                                 isTextArea
-                                title="Tingkat Literasi Digital"
-                                name="kesiapan"
-                                placeholder="Seberapa familiar masyarakat dengan penggunaan internet, media sosial, dan aplikasi digital lainnya?"
-                                value={textInputValue.kesiapan}
-                                onChange={onTextChange}
-                                disabled={!isEditable || isFormLocked}
-                                isRequired
-                            />
-
-                            <Box>
-                                <Text fontWeight="400" fontSize="14px" mb="1">
-                                    Penggunaan Teknologi <span style={{ color: "red" }}>*</span>
-                                </Text>
-                                <MultiSellect
-                                    options={[
-                                        { value: "Tinggi", label: "Tinggi" },
-                                        { value: "Sedang", label: "Sedang" },
-                                        { value: "Rendah", label: "Rendah" },
-                                    ]}
-                                    value={
-                                        dropdownValue.teknologi
-                                            ? [
-                                                {
-                                                    value: dropdownValue.teknologi,
-                                                    label: dropdownValue.teknologi,
-                                                },
-                                            ]
-                                            : []
-                                    }
-                                    onChange={(selected) =>
-                                        setDropdownValue({
-                                            ...dropdownValue,
-                                            teknologi: selected?.[0]?.value || null,
-                                        })
-                                    }
-                                    placeholder="Pilih Penggunaan Teknologi"
-                                    disabled={!isEditable || isFormLocked}
-                                    isMulti={false}
-                                />
-                            </Box>
-
-                            <Box>
-                                <Text fontWeight="400" fontSize="14px" mb="1">
-                                    Kemampuan Menggunakan Komputer/HP <span style={{ color: "red" }}>*</span>
-                                </Text>
-                                <MultiSellect
-                                    options={[
-                                        { value: "Mahir", label: "Mahir" },
-                                        { value: "Cukup", label: "Cukup" },
-                                        { value: "Kurang", label: "Kurang" },
-                                    ]}
-                                    value={
-                                        dropdownValue.kemampuan
-                                            ? [
-                                                {
-                                                    value: dropdownValue.kemampuan,
-                                                    label: dropdownValue.kemampuan,
-                                                },
-                                            ]
-                                            : []
-                                    }
-                                    onChange={(selected) =>
-                                        setDropdownValue({
-                                            ...dropdownValue,
-                                            kemampuan: selected?.[0]?.value || null,
-                                        })
-                                    }
-                                    placeholder="Pilih Kemampuan"
-                                    disabled={!isEditable || isFormLocked}
-                                    isMulti={false}
-                                />
-                            </Box>
-
-                            <Text fontWeight="700" fontSize="16px">
-                                Kesiapan Pemerintah Desa
-                            </Text>
-                            <FormSection
-                                isTextArea
-                                title="Kesiapan Teknologi Pemerintah"
-                                name="teknologi"
-                                placeholder="Apakah perangkat desa sudah menggunakan komputer? Apakah sistem administrasi sudah terdigitalisasi?"
-                                value={textInputValue.teknologi}
-                                onChange={onTextChange}
-                                disabled={!isEditable || isFormLocked}
-                                isRequired
-                            />
-                            <FormSection
-                                isTextArea
-                                title="Komitmen Pemantapan Pelayanan"
-                                name="pelayanan"
-                                placeholder="Adakah kebijakan atau program desa yang mendukung penerapan digitalisasi?"
-                                value={textInputValue.pelayanan}
+                                title="Lain-lain"
+                                name="infrastruktur"
+                                placeholder="Masukkan hal-lain terkait infrastruktur"
+                                value={textInputValue.infrastruktur}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
                                 isRequired
                             />
 
                             <Text fontWeight="700" fontSize="16px">
-                                Kontak Dan Media Sosial
+                                Kontak Desa
                             </Text>
                             <FormSection
                                 title="Nomor Whatsapp"
