@@ -154,36 +154,73 @@ export default function ProfileVillage() {
     useEffect(() => {
         const fetchVillageData = async () => {
             if (id) {
-                /*
-                const docRef = doc(firestore, "villages", id);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    setVillage(docSnap.data());
-                    if (docSnap.data()?.userId === userLogin?.uid) {
-                        setOwner(true);
-                    }
-                }
-                */
                 try {
                     const response: any = await getVillageById(id);
                     const data = response.village || response.data;
-                    setVillage(data);
-                    if (data?.userId === userLogin?.uid) {
-                        setOwner(true);
+                    
+                    if (data) {
+                        setVillage(data);
+                        const uid = userLogin?.uid;
+                        const isOwner = data?.userId === uid || id === uid;
+                        if (uid) {
+                            setOwner(isOwner);
+                        }
+                        
+                        // Redirect Owner if status is Ditolak
+                        if (isOwner && data.status === "Ditolak") {
+                            router.push(paths.VILLAGE_FORM || "/village/form");
+                            return;
+                        }
+                    } else {
+                         // No data returned
+                         if (userLogin?.uid === id) {
+                             router.push(paths.VILLAGE_FORM || "/village/form");
+                             return;
+                         }
                     }
                 } catch (error) {
                     console.error("Error fetching village data:", error);
+                    if (userLogin?.uid === id) {
+                        router.push(paths.VILLAGE_FORM || "/village/form");
+                        return;
+                    }
                 }
             }
         };
         fetchVillageData();
-    }, [id, userLogin]);
+        
+        // Polling for real-time status updates
+        const intervalId = setInterval(async () => {
+            if (!id) return;
+            try {
+                const response: any = await getVillageById(id);
+                const data = response.village || response.data;
+                if (data) {
+                    setVillage((prev: any) => {
+                        if (prev && prev.status !== data.status) {
+                            const uid = userLogin?.uid;
+                            const isOwner = data?.userId === uid || id === uid;
+                            if (isOwner && data.status === "Ditolak") {
+                                router.push(paths.VILLAGE_FORM || "/village/form");
+                            }
+                            return { ...prev, ...data };
+                        }
+                        return prev || data;
+                    });
+                }
+            } catch (err) {
+                console.error("Polling error:", err);
+            }
+        }, 3000);
+
+        return () => clearInterval(intervalId);
+    }, [id, userLogin, router]);
 
     useEffect(() => {
         const fetchVillageInnovationsData = async () => {
             if (!id) return;
             try {
-                const response: any = await getVillageInnovations(id);
+                const response: any = await getVillageInnovations(id, "Terverifikasi");
                 setInnovations(response.innovations || []);
             } catch (error) {
                 console.error("Error fetching village innovations:", error);
@@ -519,8 +556,13 @@ export default function ProfileVillage() {
                     </NavbarButton>
                 )
             ) : (
+                owner && village?.status === "Menunggu" ? (
+                    <StatusCard
+                        status={village?.status}
+                        message={village?.catatanAdmin}
+                    />
+                ) : (
                 <NavbarButton>
-
                     <Button
                         width="100%"
                         onClick={() => {
@@ -534,6 +576,7 @@ export default function ProfileVillage() {
                         {owner ? "Edit Profile" : " "}
                     </Button>
                 </NavbarButton>
+                )
             )}
             <RejectionModal
                 isOpen={openModal}

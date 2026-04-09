@@ -24,8 +24,7 @@ import TopBar from "Components/topBar";
 import Container from "Components/container";
 import { auth } from "src/firebase/clientApp";
 import { useAuthState } from "react-firebase-hooks/auth";
-// import { auth, firestore } from "src/firebase/clientApp";
-import { getClaims } from "Services/villageServices";
+import { getInnovation } from "Services/innovationServices";
 import CardNotification from "Components/card/notification/CardNotification";
 import Right from "@public/icons/arrow-right.svg";
 import Left from "@public/icons/arrow-left.svg";
@@ -43,7 +42,7 @@ const SkeletonCard = () => (
     </Box>
 );
 
-const PengajuanKlaim: React.FC = () => {
+const PengajuanInovasi: React.FC = () => {
     const params = useParams();
     const id = params.id as string;
     const router = useRouter();
@@ -66,22 +65,23 @@ const PengajuanKlaim: React.FC = () => {
         const skipValue = (page - 1) * itemsPerPage;
 
         try {
-            const response: any = await getClaims(
-              id, 
-              selectedFilter && selectedFilter !== "Semua" ? selectedFilter : undefined,
-              itemsPerPage,
-              skipValue,
-              searchTerm || undefined
-            );
+            const response: any = await getInnovation({
+                innovatorId: id,
+                status: selectedFilter && selectedFilter !== "Semua" ? selectedFilter : undefined,
+                search: searchTerm || undefined,
+            });
             
-            const claimsData = response.claims || response.data?.claims || [];
-            const pagination = response.pagination || response.data?.pagination || {};
-
-            setData(claimsData);
-            setFilteredData(claimsData);
-            setHasMore(pagination.hasMore || false);
+            const innovationsData = response.innovations || response.data?.innovations || [];
+            
+            // Apply pagination on client since API might not support limit/skip specifically, although if it does, it's better
+            // Depending on the API implementation, we might need to slice
+            const slicedData = innovationsData.slice(skipValue, skipValue + itemsPerPage);
+            
+            setData(innovationsData); // Store all data if API returns all
+            setFilteredData(slicedData);
+            setHasMore(innovationsData.length > skipValue + itemsPerPage);
         } catch (err) {
-            console.error("Error fetching claims from API:", err);
+            console.error("Error fetching innovations from API:", err);
             setData([]);
             setFilteredData([]);
         } finally {
@@ -94,9 +94,7 @@ const PengajuanKlaim: React.FC = () => {
             setCurrentPage(1);
             fetchData(1);
         }
-    }, [id, selectedFilter, searchTerm]); // Tambah searchTerm ke dependency
-
-// Client side UI filtering removed in favor of server side search/filter
+    }, [id, selectedFilter, searchTerm]);
 
     const handleNextPage = async () => {
         if (hasMore) {
@@ -129,47 +127,15 @@ const PengajuanKlaim: React.FC = () => {
 
     return (
         <Container page>
-            <TopBar title="Pengajuan Klaim" onBack={() => router.back()} />
+            <TopBar title="Verifikasi Tambah Inovasi" onBack={() => router.back()} />
             <Stack padding="0 16px" gap={4} mt={6}>
-                <Flex
-                    flexDirection="column"
-                    mb={2}
-                    mt={3}
-                    backgroundColor="#DCFCE7"
-                    alignItems="center"
-                    ml="-16px" // Netralisir padding dari Stack
-                    mr="-16px">
-                    <Text
-                        fontSize={12}
-                        mb={2}
-                        mt={3}
-                        textAlign={"center"}
-                        color={"#347357"}>
-                        Inovasi belum terdaftar pada sistem ?
-                    </Text>
-                    <Button
-                        mb={2}
-                        fontSize={12}
-                        backgroundColor="#FFFFFF"
-                        color="#347357"
-                        width="90%"
-                        borderRadius={6}
-                        border="1px solid #347357"
-                        _hover={{
-                            backgroundColor: "#347357",
-                            color: "#FFFFFF"
-                        }}
-                        onClick={() => router.push("/village/klaimInovasi/manual")}>
-                        Klaim manual di sini
-                    </Button>
-                </Flex>
                 <Flex gap={2} mb={2}>
                     <InputGroup flex={1}>
                         <InputLeftElement pointerEvents="none">
                             <SearchIcon color="gray.400" />
                         </InputLeftElement>
                         <Input
-                            placeholder="Cari pengajuan di sini"
+                            placeholder="Cari inovasi di sini"
                             size="md"
                             borderRadius="full"
                             value={searchTerm}
@@ -213,7 +179,7 @@ const PengajuanKlaim: React.FC = () => {
                 </Flex>
 
                 {loading
-                    ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
+                    ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
                     : filteredData.map((item, idx) => (
                         <CardNotification
                             key={idx}
@@ -222,7 +188,7 @@ const PengajuanKlaim: React.FC = () => {
                             date={formatTimestamp(item.createdAt)}
                             description={item.deskripsi || "Tidak ada deskripsi"}
                             onClick={() =>
-                                router.push(`/village/klaimInovasi/detail/${item.id}`)
+                                router.push(`/innovation/detail/${item.id}`)
                             }
                         />
                     ))}
@@ -262,4 +228,4 @@ const PengajuanKlaim: React.FC = () => {
     );
 };
 
-export default PengajuanKlaim;
+export default PengajuanInovasi;

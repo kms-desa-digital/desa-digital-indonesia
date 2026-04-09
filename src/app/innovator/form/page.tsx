@@ -216,7 +216,7 @@ const InnovatorForm: React.FC = () => {
             let innovatorData: any = null;
             try {
                 const res: any = await getInnovatorById(userId);
-                innovatorData = res.data;
+                innovatorData = res?.innovator || res?.data || res;
             } catch (err) {
                 console.log("No existing innovator profile found for user:", userId);
             }
@@ -328,7 +328,7 @@ const InnovatorForm: React.FC = () => {
             if (userId) {
                 try {
                     const res: any = await getInnovatorById(userId);
-                    const data = res.data;
+                    const data = res?.innovator || res?.data || res;
                     if (data) {
                         setTextInputsValue({
                             name: data.namaInovator || "",
@@ -367,7 +367,40 @@ const InnovatorForm: React.FC = () => {
             }
         };
         fetchData();
-    }, [user]);
+        
+        // Polling for real time updates
+        const intervalId = setInterval(async () => {
+            const userId = user?.uid;
+             if (!userId) return;
+             try {
+                 const res: any = await getInnovatorById(userId);
+                 const data = res?.innovator || res?.data || res;
+                 if (data) {
+                     setStatus((prevStatus) => {
+                         if (prevStatus !== data.status) {
+                             if (data.status === "Menunggu") {
+                                 setAlertStatus("info");
+                                 setIsEditable(false);
+                                 setAlertMessage(`Profil sudah didaftarkan. Menunggu verifikasi admin.`);
+                             } else if (data.status === "Ditolak") {
+                                 setAlertStatus("error");
+                                 setIsEditable(true);
+                                 setAlertMessage(`Profil ditolak dengan catatan: ${data.catatanAdmin || ""}`);
+                             } else if (data.status === "Terverifikasi") {
+                                 router.push(`/innovator/profile/${userId}`);
+                             }
+                             return data.status;
+                         }
+                         return prevStatus;
+                     });
+                 }
+             } catch (err) {
+                 console.error("Polling error: ", err);
+             }
+        }, 3000);
+        
+        return () => clearInterval(intervalId);
+    }, [user, router]);
 
     useEffect(() => {
         const checkIfOwner = async () => {

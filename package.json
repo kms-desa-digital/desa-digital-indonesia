@@ -79,6 +79,7 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/file-saver": "^2.0.7",
+    "@types/jest": "^30.0.0",
     "@types/json-server": "^0.14.4",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/leaflet": "^1.9.16",
@@ -94,6 +95,9 @@
     "concurrently": "^8.1.0",
     "eslint": "^8",
     "eslint-config-next": "15.1.6",
+    "jest": "^30.3.0",
+    "node-mocks-http": "^1.17.2",
+    "ts-jest": "^29.4.9",
     "tsx": "^4.21.0",
     "typescript": "^5"
   }

@@ -150,21 +150,31 @@ const ProfileInnovator: React.FC = () => {
 
         const fetchInnovatorData = async () => {
             try {
-                /*
-                const innovatorRef = doc(firestore, "innovators", id);
-                const innovatorDoc = await getDoc(innovatorRef);
-                ... Firestore Logic ...
-                */
                 const res: any = await getInnovatorById(id);
                 const data = res?.innovator || res?.data;
                 if (data) {
                     setInnovatorData(data);
-                    if (userLogin?.uid) {
-                        setOwner(data.id === userLogin.uid || data.userId === userLogin.uid);
+                    
+                    const uid = userLogin?.uid;
+                    const isOwner = data.id === uid || data.userId === uid || id === uid;
+                    
+                    if (uid) {
+                        setOwner(isOwner);
+                    }
+                    
+                    // Redirect Owner if status is Ditolak
+                    if (isOwner && data.status === "Ditolak") {
+                        router.push(paths.INNOVATOR_FORM);
+                        return;
                     }
                 } else {
                     console.log("Innovator not found via API");
-                    setError("Innovator not found.");
+                    if (userLogin?.uid === id) {
+                         router.push(paths.INNOVATOR_FORM);
+                         return;
+                    } else {
+                         setError("Innovator not found.");
+                    }
                 }
 
                 // Villages lookup via backend
@@ -177,6 +187,10 @@ const ProfileInnovator: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Error fetching innovator data from API:", error);
+                if (userLogin?.uid === id) {
+                    router.push(paths.INNOVATOR_FORM);
+                    return;
+                }
                 setError("Error fetching innovator data.");
             } finally {
                 setLoading(false);
@@ -184,7 +198,35 @@ const ProfileInnovator: React.FC = () => {
         };
 
         fetchInnovatorData();
-    }, [id, userLogin?.uid]);
+        
+        // Polling for real-time status updates
+        const intervalId = setInterval(async () => {
+            if (!id) return;
+            try {
+                const res: any = await getInnovatorById(id);
+                const data = res?.innovator || res?.data;
+                if (data) {
+                    setInnovatorData((prev) => {
+                        // Prevent unnecessary re-renders if nothing changed much
+                        if (prev && prev.status !== data.status) {
+                            // If owner and status changes to Ditolak, redirect to form
+                            const uid = userLogin?.uid;
+                            const isOwner = data.id === uid || data.userId === uid || id === uid;
+                            if (isOwner && data.status === "Ditolak") {
+                                router.push(paths.INNOVATOR_FORM);
+                            }
+                            return { ...prev, ...data };
+                        }
+                        return prev || data;
+                    });
+                }
+            } catch (err) {
+                console.error("Polling error:", err);
+            }
+        }, 3000);
+
+        return () => clearInterval(intervalId);
+    }, [id, userLogin?.uid, router]);
 
     // Fetch innovations data
     useEffect(() => {
@@ -196,7 +238,7 @@ const ProfileInnovator: React.FC = () => {
                 const innovationsDocs = await getDocs(q);
                 ... Firestore Logic ...
                 */
-                const res: any = await getInnovation({ innovatorId: id });
+                const res: any = await getInnovation({ innovatorId: id, status: "Terverifikasi" });
                 const innovationsData = res.innovations || [];
                 setInnovations(innovationsData);
             } catch (error) {
@@ -250,7 +292,7 @@ const ProfileInnovator: React.FC = () => {
                         {owner && (
                             <Button
                                 leftIcon={<Image src="/icons/send.svg" alt="send" />}
-                                onClick={() => router.push(paths.PENGAJUAN_INOVASI_PAGE)} // Ensure this path is valid or updated
+                                onClick={() => router.push("/innovator/pengajuan/" + id)} // Updated to point to new pengajuan inovasi page
                                 fontSize="12px"
                                 fontWeight="500"
                                 height="29px"
@@ -504,6 +546,14 @@ const ProfileInnovator: React.FC = () => {
                         </NavbarButton>
                     )
                 ) : (
+                    // Also check if owner and waiting, show status instead of button maybe? But owner waiting is shown on form.
+                    // Wait, if owner and status is Menunggu, it shouldn't show Edit Profile.
+                    owner && innovatorData.status === "Menunggu" ? (
+                        <StatusCard
+                            status={innovatorData.status}
+                            message={innovatorData.catatanAdmin}
+                        />
+                    ) : (
                     <NavbarButton>
                         <Button
                             width="100%"
@@ -518,6 +568,7 @@ const ProfileInnovator: React.FC = () => {
                             {owner ? "Edit Profile" : "Kontak"}
                         </Button>
                     </NavbarButton>
+                    )
                 )}
             </div>
             <RejectionModal

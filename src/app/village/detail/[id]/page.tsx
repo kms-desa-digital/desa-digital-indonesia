@@ -206,12 +206,16 @@ export default function DetailVillagePage() {
                     const res: any = await getVillageById(id);
                     const villageData = res.village || res.data;
                     if (villageData) {
+                        if (villageData.userId === userLogin?.uid) {
+                            router.push("/village/profile/" + id);
+                            return;
+                        }
                         setVillage(villageData);
                     } else {
                         console.error("No such village found via API!");
                     }
 
-                    const resInv: any = await getVillageInnovations(id);
+                    const resInv: any = await getVillageInnovations(id, "Terverifikasi");
                     setInnovations(resInv.innovations || resInv.data || []);
                 } catch (error) {
                     console.error("Error fetching village data from API:", error);
