@@ -11,13 +11,13 @@ import {
     Column
 } from "./_styles";
 import CardInnovator from "Components/card/innovator";
-import { paths } from "Consts/path";
-import { Box, Select } from "@chakra-ui/react";
+import { Select } from "@chakra-ui/react";
 import SearchBarInnov from "Components/innovator/hero/SearchBarInnov";
 import { useEffect, useState } from "react";
 import Container from "Components/container";
 import { useTranslations } from "next-intl";
 import { getInnovators } from "Services/innovatorServices";
+import Loading from "Components/loading";
 
 type InnovatorData = {
     id: string;
@@ -38,6 +38,7 @@ export default function InnovatorPage() {
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
     const [innovatorsShowed, setInnovatorsShowed] = useState<InnovatorData[]>([]);
     const [categoryFilter, setCategoryFilter] = useState<string>("Semua Kategori");
+    const [isFetched, setIsFetched] = useState(false);
 
     const categories = [
         { label: t("allCategory"), value: "Semua Kategori" },
@@ -72,10 +73,16 @@ export default function InnovatorPage() {
                 setInnovatorsShowed(Array.isArray(innovatorsData) ? innovatorsData : []);
             } catch (error) {
                 console.error("Error fetching innovators from MongoDB API:", error);
+            } finally {
+                setIsFetched(true);
             }
         };
         fetchData();
     }, [debouncedSearchQuery, categoryFilter]);
+
+    if (!isFetched) {
+        return <Loading />;
+    }
 
     const currentCategoryLabel = categories.find(c => c.value === categoryFilter)?.label || categoryFilter;
 
