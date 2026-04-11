@@ -6,6 +6,7 @@ import {
     Collapse,
     Flex,
     Text,
+    Stack,
     useDisclosure,
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar";
@@ -66,6 +67,7 @@ const KlaimInovasiDetail: React.FC = () => {
     const selectedFileRef = useRef<HTMLInputElement>(null);
     const selectedVidRef = useRef<HTMLInputElement>(null);
     const selectedDocRef = useRef<HTMLInputElement>(null);
+    const logoFileRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
     const [fetchLoading, setFetchLoading] = useState(false);
     const [error, setError] = useState("");
@@ -307,6 +309,8 @@ const KlaimInovasiDetail: React.FC = () => {
                                     <ImageUpload
                                         selectedFile={logoFiles}
                                         setSelectedFile={setLogoFiles}
+                                        selectFileRef={logoFileRef}
+                                        onSelectImage={() => {}}
                                         maxFiles={1}
                                         disabled={true}
                                     />
@@ -367,6 +371,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                     selectFileRef={selectedFileRef}
                                     onSelectImage={onSelectImage}
                                     maxFiles={2}
+                                    disabled={true}
                                 />
                             </Flex>
                         </Field>
@@ -386,6 +391,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                 setSelectedVid={setSelectedVid}
                                 selectVidRef={selectedVidRef}
                                 onSelectVid={onSelectVid}
+                                disabled={true}
                             />
                         </Field>
                     </Collapse>
@@ -404,6 +410,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                 setSelectedDoc={setSelectedDoc}
                                 selectDocRef={selectedDocRef}
                                 onSelectDoc={onSelectDoc} // Ensure this matches the updated DocUploadProps
+                                disabled={true}
                             />
                         </Field>
                     </Collapse>

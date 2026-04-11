@@ -591,7 +591,7 @@ const AddInnovation: React.FC = () => {
                     id="innovationForm">
                     <Flex direction="column" marginTop="24px">
                         <Stack spacing={3} width="100%">
-                             <Alert
+                            <Alert
                                 status={alertStatus}
                                 fontSize={12}
                                 borderRadius={4}
@@ -873,7 +873,7 @@ const AddInnovation: React.FC = () => {
                                 </Flex>
                             ))}
 
-                             <Button
+                            <Button
                                 mt={-3}
                                 variant="outline"
                                 leftIcon={<AddIcon />}
@@ -932,7 +932,7 @@ const AddInnovation: React.FC = () => {
                                     </Flex>
                                 ))}
 
-                                 <Flex direction="column" mt={2}>
+                                <Flex direction="column" mt={2}>
                                     <Input
                                         name="newRequirement"
                                         fontSize="14px"
@@ -994,7 +994,7 @@ const AddInnovation: React.FC = () => {
                                     // Handled by form onSubmit
                                 } else {
                                     e.preventDefault();
-                                    setAlertMessage("Harap isi semua data yang bertanda merah (*) terlebih dahulu.");
+                                    setAlertMessage("Harap isi semua data yang wajib terlebih dahulu.");
                                     setAlertStatus("error");
                                     window.scrollTo({ top: 0, behavior: "smooth" });
                                     toast({
