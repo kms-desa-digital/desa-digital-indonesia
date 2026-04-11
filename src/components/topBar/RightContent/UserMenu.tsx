@@ -31,6 +31,8 @@ import { toast } from "react-toastify";
 import { auth, firestore } from "../../../firebase/clientApp";
 import { useUser } from "../../../contexts/UserContext";
 import { useAuthToken } from "../../../hooks/useAuthToken";
+import { getVillageById } from "Services/villageServices";
+import { getInnovatorById } from "Services/innovatorServices";
 
 type UserMenuProps = {
   user?: User | null;
@@ -54,68 +56,44 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
     setUserRole(role);
   }, [tokenRole, contextRole]);
 
-  // Ambil role dari Firestore + cek profile berdasarkan role
+  // Cek profile berdasarkan role dari MongoDB
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const db = getFirestore();
-
-        const usersRef = collection(db, "users");
-        const userQuery = query(usersRef, where("id", "==", user.uid));
-
-        onSnapshot(userQuery, (snapshot) => {
-          if (!snapshot.empty) {
-            const userData = snapshot.docs[0].data();
-            setUserRole(userData.role);
-
-            if (userData.role === "village") {
-              const villagesRef = collection(db, "villages");
-              const villageQuery = query(
-                villagesRef,
-                where("id", "==", user.uid)
-              );
-
-              onSnapshot(villageQuery, (villageSnapshot) => {
-                setProfileExists(!villageSnapshot.empty);
-
-                if (!villageSnapshot.empty) {
-                  const data = villageSnapshot.docs[0].data();
-                  setStatus(data?.status);
-                }
-              });
-
-            } else if (userData.role === "innovator") {
-              const innovatorsRef = collection(db, "innovators");
-              const innovatorQuery = query(
-                innovatorsRef,
-                where("id", "==", user.uid)
-              );
-
-              onSnapshot(innovatorQuery, (innovatorSnapshot) => {
-                setProfileExists(!innovatorSnapshot.empty);
-
-                if (!innovatorSnapshot.empty) {
-                  const data = innovatorSnapshot.docs[0].data();
-                  setStatus(data?.status);
-                }
-              });
-
+    const fetchProfileStatus = async () => {
+      const user = auth.currentUser;
+      const role = tokenRole || contextRole;
+      if (user && role) {
+        if (role === "village") {
+          try {
+            const res: any = await getVillageById(user.uid);
+            const data = res.village || res.data || res;
+            if (data && (data._id || data.id)) {
+              setProfileExists(true);
+              setStatus(data.status);
             } else {
               setProfileExists(false);
             }
-          } else {
-            setUserRole(null);
+          } catch (err) {
             setProfileExists(false);
           }
-        });
-      } else {
-        setUserRole(null);
-        setProfileExists(false);
+        } else if (role === "innovator") {
+          try {
+            const res: any = await getInnovatorById(user.uid);
+            const data = res.innovator || res.data || res;
+            if (data && (data._id || data.id)) {
+              setProfileExists(true);
+              setStatus(data.status);
+            } else {
+              setProfileExists(false);
+            }
+          } catch (err) {
+            setProfileExists(false);
+          }
+        }
       }
-    });
+    };
 
-    return () => unsubscribe();
-  }, []);
+    fetchProfileStatus();
+  }, [tokenRole, contextRole]);
 
   /*
   useEffect(() => {
@@ -165,21 +143,33 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
   }, [user]);
   */
 
-  const handleProfileClick = () => {
+  const handleProfileClick = async () => {
+    const user = auth.currentUser;
     if (!user) return;
+    const role = userRole || tokenRole || contextRole;
 
-    if (userRole === "village") {
-      if (status === "Terverifikasi") {
-        const path = paths.VILLAGE_PROFILE_PAGE.replace(":id", user.uid);
-        router.push(path);
-      } else {
+    if (role === "village") {
+      try {
+        const res: any = await getVillageById(user.uid);
+        const data = res.village || res.data;
+        if (data && data.status) {
+          router.push(paths.VILLAGE_PROFILE_PAGE.replace(":id", user.uid));
+        } else {
+          router.push(paths.VILLAGE_FORM);
+        }
+      } catch (err) {
         router.push(paths.VILLAGE_FORM);
       }
-    } else if (userRole === "innovator") {
-      if (status === "Terverifikasi") {
-        const path = paths.INNOVATOR_PROFILE_PAGE.replace(":id", user.uid);
-        router.push(path);
-      } else {
+    } else if (role === "innovator") {
+      try {
+        const res: any = await getInnovatorById(user.uid);
+        const data = res.innovator || res.data;
+        if (data && data.status) {
+          router.push(paths.INNOVATOR_PROFILE_PAGE.replace(":id", user.uid));
+        } else {
+          router.push(paths.INNOVATOR_FORM);
+        }
+      } catch (err) {
         router.push(paths.INNOVATOR_FORM);
       }
     }

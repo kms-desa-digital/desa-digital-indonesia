@@ -499,7 +499,7 @@ export default function ProfileVillage() {
                         >
                             <SubText>Inovasi yang Diterapkan</SubText>
                             <Text
-                                onClick={() => router.push("/target-page")} // Ganti "/target-page" dengan rute yang sesuai
+                                onClick={() => router.push(`/village/pengajuan/${id}`)}
                                 cursor="pointer"
                                 color="var(--Primary, #347357)"
                                 fontSize="12px"
@@ -507,8 +507,7 @@ export default function ProfileVillage() {
                                 textDecorationLine="underline"
                                 paddingBottom="12px"
                             >
-                                {" "}
-                                Lihat Semua{" "}
+                                Lihat Semua
                             </Text>
                         </Flex>
                         <CardContainer>
@@ -537,6 +536,7 @@ export default function ProfileVillage() {
                                 )}
                             </Horizontal>
                         </CardContainer>
+                        <Box height="100px" />
                     </div>
                 </ContentContainer>
             </div>

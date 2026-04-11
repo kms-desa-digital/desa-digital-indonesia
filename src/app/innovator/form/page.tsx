@@ -386,9 +386,12 @@ const InnovatorForm: React.FC = () => {
                                  setAlertStatus("error");
                                  setIsEditable(true);
                                  setAlertMessage(`Profil ditolak dengan catatan: ${data.catatanAdmin || ""}`);
-                             } else if (data.status === "Terverifikasi") {
+                             }
+                             /*
+                             else if (data.status === "Terverifikasi") {
                                  router.push(`/innovator/profile/${userId}`);
                              }
+                             */
                              return data.status;
                          }
                          return prevStatus;
@@ -627,16 +630,7 @@ const InnovatorForm: React.FC = () => {
                                 }
                             }}
                         >
-                            {user?.uid ? (
-                                // Jika status sudah "Ditolak" dan pengguna adalah owner
-                                status === "Ditolak"
-                                    ? "Kirim Ulang"
-                                    : owner
-                                        ? "Update Inovator" // Jika owner, tombol berubah jadi "Update Inovator"
-                                        : "Daftarkan Akun" // Jika bukan owner, tetap "Daftarkan Akun"
-                            ) : (
-                                "Daftarkan Akun" // Jika tidak ada user yang terautentikasi, tetap "Daftarkan Akun"
-                            )}
+                            {status === "Ditolak" || status === "Terverifikasi" || owner ? "Edit Profile" : "Daftarkan Akun"}
                         </Button>
                     </NavbarButton>
                     <ConfModal
