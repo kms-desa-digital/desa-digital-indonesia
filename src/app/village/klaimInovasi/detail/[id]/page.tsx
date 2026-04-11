@@ -177,10 +177,10 @@ const KlaimInovasiDetail: React.FC = () => {
                         
                         // Extract evidence files correctly from object if available
                         const files = data.buktiFiles || {};
-                        setSelectedCheckboxes(data.buktiJenis || []);
-                        setSelectedFiles(files.foto || data.images || []);
-                        setSelectedVid(files.video?.[0] || data.video || "");
-                        setSelectedDoc(files.dokumen || data.dokumen || []);
+                        setSelectedCheckboxes(data.buktiJenis || data.jenisDokumen || []);
+                        setSelectedFiles(files.foto || data.images || data.buktiFoto || []);
+                        setSelectedVid(files.video?.[0] || data.video || data.selectedVid || "");
+                        setSelectedDoc(files.dokumen || data.dokumen || data.selectedDoc || []);
 
                         if (!data.inovasiId) {
                             setTextInputsValue({

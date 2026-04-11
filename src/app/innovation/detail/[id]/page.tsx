@@ -153,7 +153,7 @@ function DetailInnovation() {
                     const found = claims.find((c: any) => c.inovasiId === id);
                     if (found) {
                         setIsClaimed(true);
-                        setClaimId(found.id);
+                        setClaimId(found.id || found._id);
                     }
                 } catch (err) {
                     console.error("Error checking claim status:", err);

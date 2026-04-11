@@ -4,7 +4,7 @@ import { marginStyle, MarginProps } from "Consts/sizing";
 export const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   padding: 0 16px;
   height: 100%;
   width: 100%;
@@ -47,7 +47,7 @@ export const Image = styled.div`
 export const Title = styled.p`
   font-size: 18px;
   font-weight: 700;
-  margin-top: 40px;
+  margin-top: 24px;
   position: relative;
   color: #1F2937;
 `;

@@ -612,7 +612,7 @@ const InnovatorForm: React.FC = () => {
             )}
             {status === "Menunggu" ? (
                 <StatusCard status={status} />
-            ) : status !== "" && (
+            ) : (
                 <>
                     <NavbarButton style={{ zIndex: 999 }}>
                         <Button
@@ -656,7 +656,7 @@ const InnovatorForm: React.FC = () => {
                     />
                 </>
             )}
-            <Box height="100px" />
+            <Box height="60px" />
         </>
     );
 };

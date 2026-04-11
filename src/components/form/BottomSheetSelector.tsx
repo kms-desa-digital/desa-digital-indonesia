@@ -84,7 +84,7 @@ const BottomSheetSelector: React.FC<BottomSheetSelectorProps> = ({
 
             <Drawer isOpen={isOpen} placement="bottom" onClose={onClose}>
                 <DrawerOverlay />
-                <DrawerContent borderTopRadius="20px" maxHeight="80vh">
+                <DrawerContent borderTopRadius="20px" maxHeight="80vh" maxWidth="390px" mx="auto">
                     <DrawerHeader borderBottomWidth="0px" pt={4} px={4}>
                         <Flex justify="space-between" align="center">
                             <Text fontSize="16px" fontWeight="700">

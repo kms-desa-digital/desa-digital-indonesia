@@ -4,7 +4,7 @@ import { marginStyle, MarginProps } from "Consts/sizing";
 export const ContentContainer = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   margin: 16px;
   height: 100%;
 `;
