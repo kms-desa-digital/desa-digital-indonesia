@@ -3,7 +3,6 @@
 import { AddIcon } from "@chakra-ui/icons";
 import {
   Box,
-  Button,
   Flex,
   IconButton,
   Stack,
@@ -245,7 +244,9 @@ export default function Home() {
           p={1}
           borderRadius="8"
         >
-          <Button
+          <IconButton
+            icon={<AddIcon />}
+            aria-label="Tambah Inovasi"
             borderRadius="50%"
             width="60px"
             height="60px"
@@ -258,9 +259,7 @@ export default function Home() {
             bottom="128px"
             zIndex="1000"
             onClick={handleAddInnovationClick}
-          >
-            <IconButton icon={<AddIcon />} aria-label="Tambah Inovasi" />
-          </Button>
+          />
         </Tooltip>
       )}
     </Container>
