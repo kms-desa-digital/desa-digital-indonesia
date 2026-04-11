@@ -564,7 +564,7 @@ function DetailInnovation() {
                         <ActionContainer
                             key={index}
                             onClick={() =>
-                                router.push(`/village/profile/${desa.id || desa.userId}`)
+                                router.push(`/village/detail/${desa.id || desa.userId}`)
                             }
                             style={{ cursor: "pointer" }}
                         >
@@ -578,6 +578,7 @@ function DetailInnovation() {
                             <Text1>{desa.namaDesa}</Text1>
                         </ActionContainer>
                     ))}
+                    <Box height="100px" />
                 </Flex>
 
                 {owner && ( // Conditionally render the Edit button
@@ -652,6 +653,7 @@ function DetailInnovation() {
                         website: innovatorData?.website || "https://www.google.com/",
                     }}
                 />
+                <Box height="100px" />
             </ContentContainer>
         </Box>
     );

@@ -293,8 +293,19 @@ const AddInnovation: React.FC = () => {
     };
 
     const isFormValid = () => {
-        // Implement full validation logic here if needed
-        return true;
+        return (
+            textInputsValue.name.trim() !== "" &&
+            selectedCategory !== null &&
+            textInputsValue.year.trim() !== "" &&
+            textInputsValue.description.trim() !== "" &&
+            selectedModels.length > 0 &&
+            textInputsValue.villages.trim() !== "" &&
+            selectedFiles.length > 0 &&
+            benefit.length > 0 &&
+            benefit[0].benefit.trim() !== "" &&
+            benefit[0].description.trim() !== "" &&
+            requirements.length > 0
+        );
     };
 
 
@@ -580,11 +591,14 @@ const AddInnovation: React.FC = () => {
                     id="innovationForm">
                     <Flex direction="column" marginTop="24px">
                         <Stack spacing={3} width="100%">
-                            <Alert
+                             <Alert
                                 status={alertStatus}
                                 fontSize={12}
                                 borderRadius={4}
-                                padding="8px"
+                                padding="12px"
+                                width="100%"
+                                maxWidth="1000px"
+                                mx="auto"
                             >
                                 {alertMessage}
                             </Alert>
@@ -861,12 +875,24 @@ const AddInnovation: React.FC = () => {
                                 </Flex>
                             ))}
 
-                            <Button
+                             <Button
                                 mt={-3}
                                 variant="outline"
                                 leftIcon={<AddIcon />}
-                                disabled={!isEditable || isFormLocked}
+                                isDisabled={!isEditable || isFormLocked}
                                 onClick={() => {
+                                    const lastBenefit = benefit[benefit.length - 1];
+                                    if (lastBenefit.benefit.trim() === "" || lastBenefit.description.trim() === "") {
+                                        toast({
+                                            title: "Lengkapi manfaat!",
+                                            description: "Harap isi manfaat dan deskripsi sebelumnya terlebih dahulu.",
+                                            status: "warning",
+                                            duration: 3000,
+                                            position: "top",
+                                            isClosable: true,
+                                        });
+                                        return;
+                                    }
                                     setBenefit([...benefit, { benefit: "", description: "" }]);
                                 }}
                             >
@@ -908,13 +934,13 @@ const AddInnovation: React.FC = () => {
                                     </Flex>
                                 ))}
 
-                                <Flex direction="column" mt={2}>
+                                 <Flex direction="column" mt={2}>
                                     <Input
                                         name="newRequirement"
                                         fontSize="14px"
                                         placeholder="Masukkan persiapan infrastruktur"
                                         value={newRequirement}
-                                        disabled={!isEditable}
+                                        disabled={!isEditable || isFormLocked}
                                         onChange={(e) => setNewRequirement(e.target.value)}
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") {
@@ -925,14 +951,27 @@ const AddInnovation: React.FC = () => {
                                     />
                                     <Button
                                         variant="outline"
-                                        onClick={onAddRequirement}
+                                        onClick={() => {
+                                            if (newRequirement.trim() === "") {
+                                                toast({
+                                                    title: "Harap isi infrastruktur!",
+                                                    status: "warning",
+                                                    duration: 3000,
+                                                    position: "top",
+                                                    isClosable: true,
+                                                });
+                                                return;
+                                            }
+                                            onAddRequirement();
+                                        }}
                                         leftIcon={<AddIcon />}
-                                        disabled={!isEditable}
+                                        isDisabled={!isEditable || isFormLocked}
                                         mt={2}
                                     >
                                         Tambah Infrastruktur Lain
                                     </Button>
                                 </Flex>
+                                <Box height="100px" />
                             </Flex>
                         </Stack>
                     </Flex>
@@ -950,12 +989,16 @@ const AddInnovation: React.FC = () => {
                             type="submit"
                             form="innovationForm"
                             isLoading={loading}
+                            isDisabled={loading || isFormLocked || (status === "Menunggu" && !isEditable)}
                             width="100%"
                             onClick={(e) => {
                                 if (isFormValid()) {
-                                    // The form submit handler will be called
+                                    // Handled by form onSubmit
                                 } else {
                                     e.preventDefault();
+                                    setAlertMessage("Harap isi semua data yang bertanda merah (*) terlebih dahulu.");
+                                    setAlertStatus("error");
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
                                     toast({
                                         title: "Form belum lengkap!",
                                         description: "Harap isi semua field wajib.",

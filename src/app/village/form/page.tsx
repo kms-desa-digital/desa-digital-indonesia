@@ -154,9 +154,11 @@ const AddVillage: React.FC = () => {
             selectedRegency !== null &&
             selectedDistrict !== null &&
             selectedVillage !== null &&
-            selectedPotensi !== null &&
+            selectedPotensi.length > 0 &&
             selectedLogo.trim() !== "" &&
             selectedHeader.trim() !== "" &&
+            selectedFiles.length > 0 &&
+            textInputValue.description.trim() !== "" &&
             textInputValue.geografis.trim() !== "" &&
             textInputValue.sosial.trim() !== "" &&
             textInputValue.resource.trim() !== "" &&
@@ -438,7 +440,7 @@ const AddVillage: React.FC = () => {
             setStatus("Menunggu");
 
             toast({
-                title: "Profile berhasil dibuat",
+                title: "Profile berhasil disimpan",
                 status: "success",
                 duration: 5000,
                 isClosable: true,
@@ -588,7 +590,10 @@ const AddVillage: React.FC = () => {
                                 status={alertStatus}
                                 fontSize={12}
                                 borderRadius={4}
-                                padding="8px"
+                                padding="12px"
+                                width="100%"
+                                maxWidth="1000px"
+                                mx="auto"
                             >
                                 {alertMessage}
                             </Alert>
@@ -989,6 +994,7 @@ const AddVillage: React.FC = () => {
                                 disabled={!isEditable || isFormLocked}
                             />
                         </Stack>
+                        <Box height="100px" />
                     </Flex>
                     {status !== "Menunggu" && (
                         <>
@@ -998,7 +1004,25 @@ const AddVillage: React.FC = () => {
                                     form="VillageForm"
                                     width="100%"
                                     isLoading={loading}
-                                    loadingText="Submitting"
+                                    isDisabled={loading || isFormLocked || (status === "Menunggu" && !isEditable)}
+                                    onClick={(e) => {
+                                        if (isFormValid()) {
+                                            // Handled by form onSubmit
+                                        } else {
+                                            e.preventDefault();
+                                            setAlertMessage("Harap isi semua data yang bertanda merah (*) terlebih dahulu.");
+                                            setAlertStatus("error");
+                                            window.scrollTo({ top: 0, behavior: "smooth" });
+                                            toast({
+                                                title: "Form belum lengkap!",
+                                                description: "Harap isi semua field wajib.",
+                                                status: "error",
+                                                duration: 3000,
+                                                position: "top",
+                                                isClosable: true,
+                                            });
+                                        }
+                                    }}
                                 >
                                     {status === "Ditolak" || status === "Terverifikasi" ? "Edit Profile" : "Daftarkan Profil"}
                                 </Button>

@@ -570,6 +570,7 @@ export default function DetailVillagePage() {
                         setMessage={setModalInput}
                         loading={loading}
                     />
+                    <Box height="100px" />
                 </ContentContainer>
             </div>
             <ActionDrawer

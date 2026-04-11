@@ -32,11 +32,15 @@ const KlaimInovasiManualContent: React.FC = () => {
     const params = useParams();
     const id = params.id as string;
     const [claimData, setClaimData] = useState<any>(null);
-    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+    const [logoFiles, setLogoFiles] = useState<string[]>([]);
+    const [innovationFiles, setInnovationFiles] = useState<string[]>([]);
+    const [buktiFoto, setBuktiFoto] = useState<string[]>([]);
     const [selectedDoc, setSelectedDoc] = useState<string[]>([]);
     const [selectedVid, setSelectedVid] = useState<string>("");
     const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
-    const selectedFileRef = useRef<HTMLInputElement>(null);
+    const logoFileRef = useRef<HTMLInputElement>(null);
+    const innovationFileRef = useRef<HTMLInputElement>(null);
+    const buktiFotoRef = useRef<HTMLInputElement>(null);
     const selectedVidRef = useRef<HTMLInputElement>(null);
     const selectedDocRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
@@ -81,14 +85,20 @@ const KlaimInovasiManualContent: React.FC = () => {
         }
 
         let isValid = true;
-        if (selectedCheckboxes.includes("foto") && selectedFiles.length === 0) isValid = false;
+        if (selectedCheckboxes.includes("foto") && buktiFoto.length === 0) isValid = false;
         if (selectedCheckboxes.includes("video") && selectedVid === "") isValid = false;
         if (selectedCheckboxes.includes("dokumen") && selectedDoc.length === 0) isValid = false;
 
         if (!isValid) {
             toast.error("Mohon lengkapi semua bukti klaim yang dipilih (Foto, Video, atau Dokumen)", {
-                position: "top-center", autoClose: 2000, hideProgressBar: false,
-                closeOnClick: true, pauseOnHover: true, draggable: true, progress: undefined,
+                position: "top-center", autoClose: 2000,
+            });
+            return;
+        }
+
+        if (logoFiles.length === 0 || innovationFiles.length === 0 || textInputsValue.inovationName.trim() === "" || textInputsValue.inovatorName.trim() === "" || textInputsValue.description.trim() === "") {
+             toast.error("Mohon lengkapi seluruh informasi inovasi yang bertanda (*)", {
+                position: "top-center", autoClose: 2000,
             });
             return;
         }
@@ -97,7 +107,33 @@ const KlaimInovasiManualContent: React.FC = () => {
         setDisabled(true);
     };
 
-    const onSelectImage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onSelectLogo = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (files) {
+            const reader = new FileReader();
+            reader.onload = (readerEvent) => {
+                if (readerEvent.target?.result) {
+                    setLogoFiles([readerEvent.target.result as string]);
+                }
+            };
+            reader.readAsDataURL(files[0]);
+        }
+    };
+
+    const onSelectInnovationPhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (files) {
+            const reader = new FileReader();
+            reader.onload = (readerEvent) => {
+                if (readerEvent.target?.result) {
+                    setInnovationFiles([readerEvent.target.result as string]);
+                }
+            };
+            reader.readAsDataURL(files[0]);
+        }
+    };
+
+    const onSelectBuktiFoto = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files) {
             const imagesArray: string[] = [];
@@ -107,7 +143,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                     if (readerEvent.target?.result) {
                         imagesArray.push(readerEvent.target.result as string);
                         if (imagesArray.length === files.length) {
-                            setSelectedFiles((prev) => [...prev, ...imagesArray]);
+                            setBuktiFoto((prev) => [...prev, ...imagesArray].slice(0, 2));
                         }
                     }
                 };
@@ -167,11 +203,11 @@ const KlaimInovasiManualContent: React.FC = () => {
                 namaInovator: textInputsValue.inovatorName,
                 namaInovasi: textInputsValue.inovationName,
                 deskripsiInovasi: textInputsValue.description,
-                logoInovator: selectedFiles[0] || null,
-                fotoInovasi: selectedFiles[1] || null,
+                logoInovator: logoFiles[0] || null,
+                fotoInovasi: innovationFiles[0] || null,
                 buktiJenis: selectedCheckboxes,
                 buktiFiles: {
-                    foto: selectedCheckboxes.includes("foto") ? selectedFiles : [],
+                    foto: selectedCheckboxes.includes("foto") ? buktiFoto : [],
                     video: selectedCheckboxes.includes("video") ? [selectedVid] : [],
                     dokumen: selectedCheckboxes.includes("dokumen") ? selectedDoc : []
                 },
@@ -239,9 +275,11 @@ const KlaimInovasiManualContent: React.FC = () => {
                         setClaimData(claimData);
                         setEditable(claimData.status === undefined || claimData.status === "" || claimData.status === "Menunggu");
                         setSelectedCheckboxes(claimData.jenisDokumen || claimData.buktiJenis || []);
-                        setSelectedFiles(claimData.images || []);
-                        setSelectedVid(claimData.video || "");
-                        setSelectedDoc(claimData.dokumen || []);
+                        setLogoFiles(claimData.logoInovator ? [claimData.logoInovator] : []);
+                        setInnovationFiles(claimData.fotoInovasi ? [claimData.fotoInovasi] : []);
+                        setBuktiFoto((claimData.buktiFiles?.foto || claimData.images || []));
+                        setSelectedVid(claimData.buktiFiles?.video?.[0] || claimData.video || "");
+                        setSelectedDoc(claimData.buktiFiles?.dokumen || claimData.dokumen || []);
                         setTextInputsValue({
                             inovationName: claimData.namaInovasi || "",
                             inovatorName: claimData.namaInovator || "",
@@ -329,21 +367,23 @@ const KlaimInovasiManualContent: React.FC = () => {
                     </Flex>
                     <Field>
                         <Flex flexDirection="column" gap="2px">
-                            <Text1>Logo Inovator</Text1>
+                            <Text1>Logo Inovator <span style={{ color: "red" }}>*</span></Text1>
                             <Text2>Maks 1 foto. format: png, jpg</Text2>
                             <ImageUpload
-                                selectedFile={selectedFiles} setSelectedFile={setSelectedFiles}
-                                selectFileRef={selectedFileRef} onSelectImage={onSelectImage} maxFiles={1}
+                                selectedFile={logoFiles} setSelectedFile={setLogoFiles}
+                                selectFileRef={logoFileRef} onSelectImage={onSelectLogo} maxFiles={1}
+                                disabled={!editable || loading}
                             />
                         </Flex>
                     </Field>
                     <Field>
                         <Flex flexDirection="column" gap="2px">
-                            <Text1>Foto Inovasi</Text1>
+                            <Text1>Foto Inovasi <span style={{ color: "red" }}>*</span></Text1>
                             <Text2>Maks 1 foto. format: png, jpg</Text2>
                             <ImageUpload
-                                selectedFile={selectedFiles} setSelectedFile={setSelectedFiles}
-                                selectFileRef={selectedFileRef} onSelectImage={onSelectImage} maxFiles={1}
+                                selectedFile={innovationFiles} setSelectedFile={setInnovationFiles}
+                                selectFileRef={innovationFileRef} onSelectImage={onSelectInnovationPhoto} maxFiles={1}
+                                disabled={!editable || loading}
                             />
                         </Flex>
                     </Field>
@@ -377,8 +417,9 @@ const KlaimInovasiManualContent: React.FC = () => {
                                 <Text1>Foto Inovasi <span style={{ color: "red" }}>*</span></Text1>
                                 <Text2>Maks 2 foto. format: png, jpg</Text2>
                                 <ImageUpload
-                                    selectedFile={selectedFiles} setSelectedFile={setSelectedFiles}
-                                    selectFileRef={selectedFileRef} onSelectImage={onSelectImage} maxFiles={2}
+                                    selectedFile={buktiFoto} setSelectedFile={setBuktiFoto}
+                                    selectFileRef={buktiFotoRef} onSelectImage={onSelectBuktiFoto} maxFiles={2}
+                                    disabled={!editable || loading}
                                 />
                             </Flex>
                         </Field>
@@ -404,6 +445,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                             <DocUpload
                                 selectedDoc={selectedDoc} setSelectedDoc={setSelectedDoc}
                                 selectDocRef={selectedDocRef} onSelectDoc={onSelectDoc}
+                                disabled={!editable || loading}
                             />
                         </Field>
                     </Collapse>

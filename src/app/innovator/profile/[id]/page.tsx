@@ -529,6 +529,7 @@ const ProfileInnovator: React.FC = () => {
                         </Text>
                     )}
                 </Flex>
+                <Box height="100px" />
             </ContentContainer>
             <div>
                 {isAdmin ? (

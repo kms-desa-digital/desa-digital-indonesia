@@ -114,11 +114,11 @@ const InnovatorForm: React.FC = () => {
 
     const isFormValid = () => {
         return (
+            textInputsValue.name.trim() !== "" &&
             selectedCategory !== null &&
+            textInputsValue.description.trim() !== "" &&
             selectedLogo.trim() !== "" &&
             selectedHeader.trim() !== "" &&
-            textInputsValue.name.trim() !== "" &&
-            textInputsValue.description.trim() !== "" &&
             textInputsValue.whatsapp.trim() !== ""
         );
     };
@@ -298,9 +298,9 @@ const InnovatorForm: React.FC = () => {
                 setAlertStatus("info");
             }
             toast({
-                title: "Profile berhasil dibuat",
+                title: "Profile berhasil disimpan",
                 status: "success",
-                duration: 1000,
+                duration: 3000,
                 isClosable: true,
                 position: "top",
             });
@@ -477,8 +477,11 @@ const InnovatorForm: React.FC = () => {
                             status={alertStatus}
                             fontSize={12}
                             borderRadius={4}
-                            padding="8px"
+                            padding="12px"
                             mb={4}
+                            width="100%"
+                            maxWidth="1000px"
+                            mx="auto"
                         >
                             {alertMessage}
                         </Alert>
@@ -615,10 +618,14 @@ const InnovatorForm: React.FC = () => {
                             form="InnovatorForm"
                             width="100%"
                             isLoading={loading}
+                            isDisabled={loading || isFormLocked || (status === "Menunggu" && !isEditable)}
                             onClick={() => {
                                 if (isFormValid()) {
                                     setIsModal1Open(true);
                                 } else {
+                                    setAlertMessage("Harap isi semua data yang bertanda merah (*) terlebih dahulu.");
+                                    setAlertStatus("error");
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
                                     toast({
                                         title: "Form belum lengkap!",
                                         description: "Harap isi semua field wajib.",
@@ -630,7 +637,7 @@ const InnovatorForm: React.FC = () => {
                                 }
                             }}
                         >
-                            {status === "Ditolak" || status === "Terverifikasi" || owner ? "Edit Profile" : "Daftarkan Akun"}
+                            {status === "Ditolak" || status === "Terverifikasi" || owner ? "Edit Profile" : "Daftarkan Profil"}
                         </Button>
                     </NavbarButton>
                     <ConfModal
