@@ -147,7 +147,6 @@ const AddVillage: React.FC = () => {
             setConfirmedSubmit(false);
         }
     }, [confirmedSubmit]);
-
     const isFormValid = () => {
         return (
             textInputValue.name.trim() !== "" &&
@@ -158,7 +157,6 @@ const AddVillage: React.FC = () => {
             selectedPotensi.length > 0 &&
             selectedLogo.trim() !== "" &&
             selectedHeader.trim() !== "" &&
-            selectedFiles.length > 0 &&
             textInputValue.description.trim() !== "" &&
             textInputValue.geografis.trim() !== "" &&
             textInputValue.sosial.trim() !== "" &&
@@ -684,7 +682,7 @@ const AddVillage: React.FC = () => {
 
                             <Box>
                                 <Text fontWeight="400" fontSize="14px">
-                                    Foto Inovasi di Desa <span style={{ color: "red" }}>*</span>
+                                    Foto Inovasi di Desa
                                 </Text>
                                 <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
                                     Maks 5 foto. format: png, jpg.
@@ -963,7 +961,7 @@ const AddVillage: React.FC = () => {
                                 value={textInputValue.infrastruktur}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
-                                isRequired
+                                isRequired={false}
                             />
 
                             <Text fontWeight="700" fontSize="16px">
@@ -985,6 +983,7 @@ const AddVillage: React.FC = () => {
                                 value={textInputValue.instagram}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
+                                isRequired={false}
                             />
                             <FormSection
                                 title="Website Desa"
@@ -993,6 +992,7 @@ const AddVillage: React.FC = () => {
                                 value={textInputValue.website}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
+                                isRequired={false}
                             />
                         </Stack>
                         <Box height="100px" />
@@ -1011,7 +1011,7 @@ const AddVillage: React.FC = () => {
                                             // Handled by form onSubmit
                                         } else {
                                             e.preventDefault();
-                                            setAlertMessage("Harap isi semua data yang bertanda merah (*) terlebih dahulu.");
+                                            setAlertMessage("Harap isi semua data yang wajib terlebih dahulu.");
                                             setAlertStatus("error");
                                             window.scrollTo({ top: 0, behavior: "smooth" });
                                             toast({
