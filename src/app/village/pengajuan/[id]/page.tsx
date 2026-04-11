@@ -130,11 +130,11 @@ const PengajuanKlaim: React.FC = () => {
     return (
         <Container page>
             <TopBar title="Pengajuan Klaim" onBack={() => router.back()} />
-            <Stack padding="0 16px" gap={4} mt={6}>
+            <Stack padding="0 16px" gap={4} mt={4}>
                 <Flex
                     flexDirection="column"
                     mb={2}
-                    mt={3}
+                    mt={0}
                     backgroundColor="#DCFCE7"
                     alignItems="center"
                     ml="-16px" // Netralisir padding dari Stack
@@ -148,7 +148,7 @@ const PengajuanKlaim: React.FC = () => {
                         Inovasi belum terdaftar pada sistem ?
                     </Text>
                     <Button
-                        mb={2}
+                        mb={3}
                         fontSize={12}
                         backgroundColor="#FFFFFF"
                         color="#347357"
@@ -257,6 +257,7 @@ const PengajuanKlaim: React.FC = () => {
                     >
                     </Button>
                 </Flex>
+                <Box height="40px" />
             </Stack>
         </Container>
     );

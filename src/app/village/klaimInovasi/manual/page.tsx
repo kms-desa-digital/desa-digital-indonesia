@@ -407,6 +407,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                             />
                         </Field>
                     </Collapse>
+                    <Box height="100px" />
                 </Container>
                 <div>
                     {isAdmin ? (

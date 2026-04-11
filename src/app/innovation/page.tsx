@@ -48,10 +48,17 @@ function List(props: ListProps) {
 
     useEffect(() => {
         if (isFetched) {
-            const temp = [...(data?.slice(0, data?.length - 1) || [])];
-            setMenu(temp);
+            const categoriesData = data?.categories || data || [];
+            // Filter out "Semua Kategori Inovasi" (Lihat Semua) as requested
+            const filtered = Array.isArray(categoriesData)
+                ? categoriesData.filter((item: any) => 
+                    item.title !== "Semua Kategori Inovasi" && 
+                    item.title !== "Lihat Semua"
+                )
+                : [];
+            setMenu(filtered);
         }
-    }, [isFetched]);
+    }, [isFetched, data]);
 
     return (
         <>

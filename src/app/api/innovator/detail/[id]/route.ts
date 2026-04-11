@@ -19,7 +19,37 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
       ? { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
       : { _id: id }
 
-    const innovator = await db.collection('innovators').findOne(query)
+    const innovators = await db.collection('innovators').aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: 'innovations',
+          let: { innovator_id: { $toString: '$_id' }, user_id: '$userId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ['$innovatorId', '$$innovator_id'] },
+                    { $eq: ['$innovatorId', '$$user_id'] }
+                  ]
+                }
+              }
+            },
+            { $unwind: { path: '$desaId', preserveNullAndEmptyArrays: false } },
+            { $group: { _id: '$desaId' } }
+          ],
+          as: 'uniqueDesas'
+        }
+      },
+      {
+        $addFields: {
+          jumlahDesaDampingan: { $size: '$uniqueDesas' }
+        }
+      }
+    ]).toArray()
+
+    const innovator = innovators[0]
 
     if (!innovator) {
       return NextResponse.json({ message: 'Innovator tidak ditemukan' }, { status: 404 })

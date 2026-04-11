@@ -23,8 +23,37 @@ export async function GET(request: NextRequest) {
 
     const innovators = await db
       .collection('innovators')
-      .find(filter)
-      .sort({ createdAt: -1 })
+      .aggregate([
+        { $match: filter },
+        {
+          $lookup: {
+            from: 'innovations',
+            let: { innovator_id: { $toString: '$_id' }, user_id: '$userId' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $or: [
+                      { $eq: ['$innovatorId', '$$innovator_id'] },
+                      { $eq: ['$innovatorId', '$$user_id'] }
+                    ]
+                  }
+                }
+              },
+              { $unwind: { path: '$desaId', preserveNullAndEmptyArrays: false } },
+              { $group: { _id: '$desaId' } }
+            ],
+            as: 'uniqueDesas'
+          }
+        },
+        {
+          $addFields: {
+            // override the static field with the calculated one if innovations exist
+            jumlahDesaDampingan: { $size: '$uniqueDesas' }
+          }
+        },
+        { $sort: { createdAt: -1 } }
+      ])
       .toArray()
 
     const result = innovators.map((doc) => ({

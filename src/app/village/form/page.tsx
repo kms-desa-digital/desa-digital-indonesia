@@ -549,9 +549,12 @@ const AddVillage: React.FC = () => {
                                 setAlertStatus("error");
                                 setIsEditable(true);
                                 setAlertMessage(`Pengajuan ditolak dengan catatan: ${data.catatanAdmin || ""}`);
-                            } else if (data.status === "Terverifikasi") {
+                            }
+                            /*
+                            else if (data.status === "Terverifikasi") {
                                 router.push(`/village/profile/${userId}`);
                             }
+                            */
                             return data.status;
                         }
                         return prevStatus;
@@ -997,7 +1000,7 @@ const AddVillage: React.FC = () => {
                                     isLoading={loading}
                                     loadingText="Submitting"
                                 >
-                                    Daftarkan Profil
+                                    {status === "Ditolak" || status === "Terverifikasi" ? "Edit Profile" : "Daftarkan Profil"}
                                 </Button>
                             </NavbarButton>
                             <ConfModal
