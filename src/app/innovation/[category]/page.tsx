@@ -14,7 +14,8 @@ import {
 // import { DocumentData } from "firebase/firestore";
 import { getInnovationByCategory } from "Services/innovationServices";
 
-import { Image } from "@chakra-ui/react";
+import { Image, Input, InputGroup, InputLeftElement, Icon, Box } from "@chakra-ui/react";
+import { FiSearch } from "react-icons/fi";
 import { useTranslations } from "next-intl";
 
 export default function InnovationCategoryPage() {
@@ -43,6 +44,7 @@ export default function InnovationCategoryPage() {
 
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         setLoading(true);
@@ -68,26 +70,48 @@ export default function InnovationCategoryPage() {
                            <Skeleton key={i} height={150} borderRadius={8} style={{ marginBottom: 12 }} />
                        ))}
                    </DetailContainer>
-                ) : data.length === 0 ? (
-                    <p>{t("notFound")}</p>
                 ) : (
-                    <DetailContainer>
-                        {data.map((item, idx) => (
-                            <CardInnovation
-                                key={idx}
-                                {...item}
-                                innovatorLogo={
-                                    item.innovatorImgURL || (
-                                         <Image src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />
-                                    )
-                                }
-                                innovatorName={item.namaInnovator}
-                                onClick={() =>
-                                    router.push(`/innovation/detail/${item.id}`)
-                                }
-                            />
-                        ))}
-                    </DetailContainer>
+                    <>
+                        <Box px="4px" mb="16px" width="100%">
+                            <InputGroup>
+                                <InputLeftElement pointerEvents="none" height="40px">
+                                    <Icon as={FiSearch} color="gray.400" />
+                                </InputLeftElement>
+                                <Input
+                                    placeholder="Cari inovasi di sini..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    borderRadius="full"
+                                    fontSize="14px"
+                                    bg="white"
+                                    border="1px solid #E5E7EB"
+                                    height="40px"
+                                />
+                            </InputGroup>
+                        </Box>
+                        <DetailContainer>
+                            {data
+                                .filter((item) =>
+                                    item.namaInovasi.toLowerCase().includes(searchTerm.toLowerCase())
+                                )
+                                .map((item, idx) => (
+                                    <CardInnovation
+                                        key={idx}
+                                        {...item}
+                                        jumlahDesa={item.jumlahDesaDiterapkan || 0}
+                                        innovatorLogo={
+                                            item.innovatorImgURL || (
+                                                <Image src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />
+                                            )
+                                        }
+                                        innovatorName={item.namaInnovator}
+                                        onClick={() =>
+                                            router.push(`/innovation/detail/${item.id}`)
+                                        }
+                                    />
+                                ))}
+                        </DetailContainer>
+                    </>
                 )}
             </CategoryContainer>
         </Container>

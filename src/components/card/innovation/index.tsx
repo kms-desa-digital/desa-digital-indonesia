@@ -24,10 +24,11 @@ type CardInnovationProps = {
   innovatorName?: string | React.ReactNode;
   onClick?: () => void;
   highlightQuery?: string;
+  jumlahDesa?: number;
 };
 
 function CardInnovation(props: CardInnovationProps) {
-  const { images, namaInovasi, kategori, deskripsi, tahunDibuat, innovatorLogo, innovatorName, onClick, highlightQuery } = props;
+  const { images, namaInovasi, kategori, deskripsi, tahunDibuat, innovatorLogo, innovatorName, onClick, highlightQuery, jumlahDesa } = props;
 
   const renderHighlightedText = (value?: string | React.ReactNode) => {
     if (typeof value !== "string") {
@@ -84,7 +85,7 @@ function CardInnovation(props: CardInnovationProps) {
               <div>{innovatorName}</div>
             )}
           </CompanyContainer>
-          <Applied>Sejak {tahunDibuat || "-"}</Applied>
+          <Applied>Diterapkan {jumlahDesa || 0} desa</Applied>
         </div>
       </Content>
     </Container>

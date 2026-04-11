@@ -46,7 +46,7 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
-import Select from "react-select";
+import BottomSheetSelector from "Components/form/BottomSheetSelector";
 import ConfModal from "Components/confirmModal/confModal";
 import SecConfModal from "Components/confirmModal/secConfModal";
 import ImageUpload from "Components/form/ImageUpload";
@@ -641,16 +641,14 @@ const AddInnovation: React.FC = () => {
                             <Text fontWeight="400" fontSize="14px" mb="-2">
                                 Kategori Inovasi <span style={{ color: "red" }}>*</span>
                             </Text>
-                            <Select
-                                placeholder="Pilih kategori"
+                            <BottomSheetSelector
                                 options={categoryOptions}
-                                value={selectedCategory}
-                                isDisabled={!isEditable || isFormLocked}
-                                onChange={(selectedOption) =>
-                                    setSelectedCategory(selectedOption)
-                                }
-                                styles={customStyles}
-                                isClearable
+                                value={selectedCategory?.value}
+                                onChange={(value, label) => setSelectedCategory({ value, label })}
+                                placeholder="Pilih kategori"
+                                title="Pilih Kategori Inovasi"
+                                searchPlaceholder="Cari kategori inovasi di sini..."
+                                disabled={!isEditable || isFormLocked}
                             />
 
                             <Text fontWeight="400" fontSize="14px" mb="-2">

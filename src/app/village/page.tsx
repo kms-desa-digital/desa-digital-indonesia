@@ -15,10 +15,10 @@ import {
     Text,
     Texthighlight,
 } from "./_styles";
-import Dropdown from "Components/village/Filter";
 import Hero from "Components/village/hero";
 import SearchBarVil from "Components/village/SearchBarVil";
 import Container from "Components/container";
+import BottomSheetSelector from "Components/form/BottomSheetSelector";
 import Recommendation from "Components/village/Recommendation";
 import { useTranslations } from "next-intl";
 import Loading from "Components/loading";
@@ -192,18 +192,25 @@ const Village: React.FC = () => {
                     <Column1>
                         <Column2>
                             <Text>{t("selectProvince")}</Text>
-                            <Dropdown
+                            <BottomSheetSelector
+                                title="Pilih Provinsi"
                                 placeholder={t("selectProvince")}
-                                options={provinces}
-                                onChange={handleProvinceChange}
+                                options={provinces.map(p => ({ label: p.name, value: p.id }))}
+                                value={selectedProvince}
+                                onChange={(value, label) => handleProvinceChange({ label, value })}
+                                searchPlaceholder="Cari provinsi di sini..."
                             />
                         </Column2>
                         <Column2>
                             <Text>{t("selectRegency")}</Text>
-                            <Dropdown
+                            <BottomSheetSelector
+                                title="Pilih Kabupaten / Kota"
                                 placeholder={t("selectRegency")}
-                                options={regencies}
-                                onChange={handleRegencyChange}
+                                options={regencies.map(r => ({ label: r.name, value: r.id }))}
+                                value={selectedRegency}
+                                onChange={(value, label) => handleRegencyChange({ label, value })}
+                                searchPlaceholder="Cari kabupaten / kota di sini..."
+                                disabled={!selectedProvince}
                             />
                         </Column2>
                     </Column1>

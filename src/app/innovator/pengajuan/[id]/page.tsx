@@ -187,9 +187,13 @@ const PengajuanInovasi: React.FC = () => {
                             status={item.status || "Unknown"}
                             date={formatTimestamp(item.createdAt)}
                             description={item.deskripsi || "Tidak ada deskripsi"}
-                            onClick={() =>
-                                router.push(`/innovation/detail/${item.id}`)
-                            }
+                            onClick={() => {
+                                if (item.status === "Terverifikasi") {
+                                    router.push(`/innovation/detail/${item.id}`);
+                                } else {
+                                    router.push(`/innovation/edit/${item.id}`);
+                                }
+                            }}
                         />
                     ))}
 

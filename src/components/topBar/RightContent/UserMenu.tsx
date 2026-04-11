@@ -152,7 +152,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
       try {
         const res: any = await getVillageById(user.uid);
         const data = res.village || res.data;
-        if (data && data.status) {
+        if (data && data.status === "Terverifikasi") {
           router.push(paths.VILLAGE_PROFILE_PAGE.replace(":id", user.uid));
         } else {
           router.push(paths.VILLAGE_FORM);
@@ -164,7 +164,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
       try {
         const res: any = await getInnovatorById(user.uid);
         const data = res.innovator || res.data;
-        if (data && data.status) {
+        if (data && data.status === "Terverifikasi") {
           router.push(paths.INNOVATOR_PROFILE_PAGE.replace(":id", user.uid));
         } else {
           router.push(paths.INNOVATOR_FORM);
@@ -236,7 +236,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
                 contextRole?.toLowerCase() === "village" ||
                 contextRole?.toLowerCase() === "innovator") && (
                   <MenuItem onClick={handleProfileClick}>
-                    {profileExists ? "Profile" : "Isi Profile"}
+                    {status === "Terverifikasi" ? "Profile" : "Isi Profile"}
                   </MenuItem>
                 )}
 

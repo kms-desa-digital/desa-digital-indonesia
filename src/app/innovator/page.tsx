@@ -11,7 +11,7 @@ import {
     Column
 } from "./_styles";
 import CardInnovator from "Components/card/innovator";
-import { Select } from "@chakra-ui/react";
+import BottomSheetSelector from "Components/form/BottomSheetSelector";
 import SearchBarInnov from "Components/innovator/hero/SearchBarInnov";
 import { useEffect, useState } from "react";
 import Container from "Components/container";
@@ -93,30 +93,14 @@ export default function InnovatorPage() {
                 <CardContent>
                     <Column>
                         <Text>{t("selectInnovator")}</Text>
-                        <Select
-                            // placeholder="Pilih Kategori Inovator"
-                            name="category"
-                            fontSize="10pt"
-                            variant="outline"
-                            cursor="pointer"
-                            color={"gray.500"}
-                            _focus={{
-                                outline: "none",
-                                bg: "white",
-                                border: "1px solid",
-                                borderColor: "#E5E7EB"
-                            }}
+                        <BottomSheetSelector
+                            title="Pilih Kategori Inovator"
+                            placeholder="Pilih Kategori"
+                            options={categories}
                             value={categoryFilter}
-                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                setCategoryFilter(e.target.value);
-                            }}
-                        >
-                            {categories.map((category) => (
-                                <option key={category.value} value={category.value}>
-                                    {category.label}
-                                </option>
-                            ))}
-                        </Select>
+                            onChange={(value, label) => setCategoryFilter(value)}
+                            searchPlaceholder="Cari kategori inovator di sini..."
+                        />
                         <SearchBarInnov
                             placeholder={t("searchPlaceholder")}
                             value={searchQuery}

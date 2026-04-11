@@ -22,9 +22,9 @@ import {
     Stack,
     Text,
     Textarea,
-    Select as ChakraSelect,
     useToast,
 } from "@chakra-ui/react";
+import BottomSheetSelector from "Components/form/BottomSheetSelector";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
@@ -37,6 +37,7 @@ import { auth } from "src/firebase/clientApp";
 import { storage } from "src/firebase/clientApp";
 import { getInnovationById, updateInnovation, deleteInnovation } from "Services/innovationServices";
 import { NavbarButton } from "./_styles";
+import StatusCard from "Components/card/status/StatusCard";
 
 const categories = [
     "E-Government",
@@ -89,6 +90,8 @@ const EditInnovation: React.FC = () => {
     const [newRequirement, setNewRequirement] = useState("");
     const [selectedStatus, setSelectedStatus] = useState("");
     const [selectedModels, setSelectedModels] = useState<(string | number)[]>([]);
+    const [status, setStatus] = useState("");
+    const [catatanAdmin, setCatatanAdmin] = useState("");
     const [otherBusinessModel, setOtherBusinessModel] = useState("");
     const [benefit, setBenefit] = useState([{ benefit: "", description: "" }]);
     const [isOpen, setIsOpen] = useState(false);
@@ -147,6 +150,8 @@ const EditInnovation: React.FC = () => {
                     setBenefit(mappedManfaat);
                     setRequirements(data.infrastruktur || []);
                     setSelectedFiles(data.images || []);
+                    setStatus(data.status || "");
+                    setCatatanAdmin(data.catatanAdmin || "");
                 } else {
                     console.log("No such Innovation found via API!");
                 }
@@ -416,19 +421,15 @@ const EditInnovation: React.FC = () => {
                             <Text fontWeight="400" fontSize="14px">
                                 Kategori Inovasi <span style={{ color: "red" }}>*</span>
                             </Text>
-                            <ChakraSelect
-                                placeholder="Pilih kategori"
-                                name="category"
-                                fontSize="10pt"
+                            <BottomSheetSelector
+                                options={categories.map(cat => ({ label: cat, value: cat }))}
                                 value={category}
-                                onChange={onSelectCategory}
-                            >
-                                {categories.map((cat) => (
-                                    <option key={cat} value={cat}>
-                                        {cat}
-                                    </option>
-                                ))}
-                            </ChakraSelect>
+                                onChange={(value, label) => setCategory(value)}
+                                placeholder="Pilih kategori"
+                                title="Pilih Kategori Inovasi"
+                                searchPlaceholder="Cari kategori inovasi di sini..."
+                                disabled={loading || (status === "Menunggu")}
+                            />
                             <Text fontWeight="400" fontSize="14px">
                                 Tahun dibuat inovasi <span style={{ color: "red" }}>*</span>
                             </Text>
@@ -703,25 +704,73 @@ const EditInnovation: React.FC = () => {
                     {error}
                 </Text>
             )}
-            <NavbarButton>
-                <Button
-                    type="submit"
-                    form="UpdateInnovation"
-                    width="80%"
-                    isLoading={loading}>
-                    Update Inovasi
-                </Button>
-                <Button
-                    type="button"
-                    width="80%"
-                    bg="red.500"
-                    color="white"
-                    _hover={{ bg: "red.600" }}
-                    onClick={handleDeleteClick}
-                >
-                    Delete Inovasi
-                </Button>
-            </NavbarButton>
+            {status === "Menunggu" ? (
+                <StatusCard status={status} />
+            ) : status === "Ditolak" ? (
+                <>
+                    <StatusCard status={status} message={catatanAdmin} />
+                    <NavbarButton>
+                        <Button
+                            type="submit"
+                            form="UpdateInnovation"
+                            width="80%"
+                            isLoading={loading}>
+                            Update Inovasi
+                        </Button>
+                        <Button
+                            type="button"
+                            width="80%"
+                            bg="red.500"
+                            color="white"
+                            _hover={{ bg: "red.600" }}
+                            onClick={handleDeleteClick}
+                        >
+                            Delete Inovasi
+                        </Button>
+                    </NavbarButton>
+                </>
+            ) : status === "Terverifikasi" ? (
+                <NavbarButton>
+                    <Button
+                        type="submit"
+                        form="UpdateInnovation"
+                        width="80%"
+                        isLoading={loading}>
+                        Update Inovasi
+                    </Button>
+                    <Button
+                        type="button"
+                        width="80%"
+                        bg="red.500"
+                        color="white"
+                        _hover={{ bg: "red.600" }}
+                        onClick={handleDeleteClick}
+                    >
+                        Delete Inovasi
+                    </Button>
+                </NavbarButton>
+            ) : (
+                <NavbarButton>
+                    <Button
+                        type="submit"
+                        form="UpdateInnovation"
+                        width="80%"
+                        isLoading={loading}>
+                        Update Inovasi
+                    </Button>
+                    <Button
+                        type="button"
+                        width="80%"
+                        bg="red.500"
+                        color="white"
+                        _hover={{ bg: "red.600" }}
+                        onClick={handleDeleteClick}
+                    >
+                        Delete Inovasi
+                    </Button>
+                </NavbarButton>
+            )}
+            <Box height="100px" />
             <AlertDialog
                 isOpen={isOpen}
                 leastDestructiveRef={cancelRef}

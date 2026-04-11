@@ -11,6 +11,8 @@ import { getCategories } from "Services/categoryServices";
 import Loading from "Components/loading";
 import { Container as CategoryContainer } from "./_styles";
 import { useTranslations } from "next-intl";
+import { Input, InputGroup, InputLeftElement, Icon, Box } from "@chakra-ui/react";
+import { FiSearch } from "react-icons/fi";
 
 type ListProps = {
     data: any;
@@ -46,6 +48,8 @@ function List(props: ListProps) {
         }
     };
 
+    const [searchTerm, setSearchTerm] = useState("");
+
     useEffect(() => {
         if (isFetched) {
             const categoriesData = data?.categories || data || [];
@@ -60,15 +64,36 @@ function List(props: ListProps) {
         }
     }, [isFetched, data]);
 
+    const filteredMenu = menu.filter((item: any) =>
+        getTranslatedTitle(item.title).toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
         <>
-            {isLoading && <Loading />}
+            <Box px="16px" mb="24px">
+                <InputGroup>
+                    <InputLeftElement pointerEvents="none" height="40px">
+                        <Icon as={FiSearch} color="gray.400" />
+                    </InputLeftElement>
+                    <Input
+                        placeholder="Cari kategori inovasi di sini..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        borderRadius="full"
+                        fontSize="14px"
+                        bg="#F9FAFB"
+                        border="none"
+                        height="40px"
+                    />
+                </InputGroup>
+            </Box>
             {isFetched &&
-                menu.map((item: any, idx: number) => (
+                filteredMenu.map((item: any, idx: number) => (
                     <CardCategory
                         {...item}
                         title={getTranslatedTitle(item.title)}
                         key={idx}
+                        innovationCount={item.innovationCount}
                         onClick={() => handleClick(item.title)}
                     />
                 ))}

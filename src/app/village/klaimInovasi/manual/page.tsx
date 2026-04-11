@@ -12,7 +12,7 @@ import DocUpload from "src/components/form/DocUpload";
 import ImageUpload from "src/components/form/ImageUpload";
 import VidUpload from "src/components/form/VideoUpload";
 import { auth } from "src/firebase/clientApp";
-import { getVillageById, claimInnovation, updateVillage, getClaimById } from "Services/villageServices";
+import { getVillageById, claimInnovation, updateVillage, getClaimById, updateClaim } from "Services/villageServices";
 import {
     CheckboxGroup, Container, Field, JenisKlaim, Label, NavbarButton, Text1, Text2,
 } from "../_styles";
@@ -211,17 +211,20 @@ const KlaimInovasiManualContent: React.FC = () => {
                     video: selectedCheckboxes.includes("video") ? [selectedVid] : [],
                     dokumen: selectedCheckboxes.includes("dokumen") ? selectedDoc : []
                 },
-                isManual: true
+                isManual: true,
+                status: "Menunggu"
             };
 
-            const response: any = await claimInnovation(formData);
+            const response: any = id 
+                ? await updateClaim(id as string, formData)
+                : await claimInnovation(formData);
 
             setIsModal1Open(false);
-            toast.success("Klaim inovasi manual berhasil diajukan", {
+            toast.success(id ? "Klaim manual berhasil diperbarui" : "Klaim inovasi manual berhasil diajukan", {
                 position: "top-center", autoClose: 2000,
             });
 
-            const newClaimId = response.claimId || response.data?.claimId;
+            const newClaimId = id || response.claimId || response.data?.claimId;
             if (newClaimId) {
                 router.push(`/village/klaimInovasi/detail/${newClaimId}`);
             } else {
@@ -273,7 +276,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                     const claimData = response.data;
                     if (claimData) {
                         setClaimData(claimData);
-                        setEditable(claimData.status === undefined || claimData.status === "" || claimData.status === "Menunggu");
+                        setEditable(claimData.status === "Ditolak" || !claimData.status);
                         setSelectedCheckboxes(claimData.jenisDokumen || claimData.buktiJenis || []);
                         setLogoFiles(claimData.logoInovator ? [claimData.logoInovator] : []);
                         setInnovationFiles(claimData.fotoInovasi ? [claimData.fotoInovasi] : []);
@@ -342,6 +345,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                         name="inovatorName" fontSize="14px" placeholder="Nama Inovator"
                         _placeholder={{ color: "#9CA3AF" }} _focus={{ outline: "none", bg: "white", border: "none" }}
                         value={textInputsValue.inovatorName} onChange={onTextChange} required
+                        disabled={!editable || loading}
                     />
                     <Text fontWeight="400" fontSize="14px" mb="-2">
                         Nama Inovasi <span style={{ color: "red" }}>*</span>
@@ -350,6 +354,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                         name="inovationName" fontSize="14px" placeholder="Nama Inovasi"
                         _placeholder={{ color: "#9CA3AF" }} _focus={{ outline: "none", bg: "white", border: "none" }}
                         value={textInputsValue.inovationName} onChange={onTextChange} required
+                        disabled={!editable || loading}
                     />
                     <Text fontWeight="400" fontSize="14px" mb="-2">
                         Deskripsi Inovasi <span style={{ color: "red" }}>*</span>
@@ -360,6 +365,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                             placeholder="Masukkan deskripsi singkat tentang inovasi"
                             _placeholder={{ color: "#9CA3AF" }} _focus={{ outline: "none", bg: "white", border: "none" }}
                             height="100px" value={textInputsValue.description} onChange={onTextChange} required
+                            disabled={!editable || loading}
                         />
                         <Text fontWeight="400" fontStyle="normal" fontSize="10px" color="gray.500">
                             {getDescriptionWordCount()}/80 kata
@@ -398,6 +404,12 @@ const KlaimInovasiManualContent: React.FC = () => {
                         <Label>Jenis Dokumen Bukti Klaim <span style={{ color: "red" }}>*</span></Label>
                         <Text2>Dapat lebih dari 1</Text2>
                     </Flex>
+                    {claimData?.status === "Ditolak" && (
+                        <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
+                    )}
+                    {claimData?.status === "Menunggu" && (
+                        <StatusCard status={claimData.status} />
+                    )}
                     <CheckboxGroup>
                         {["foto", "video", "dokumen"].map((type) => (
                             <JenisKlaim key={type}>
@@ -433,6 +445,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                             <VidUpload
                                 selectedVid={selectedVid} setSelectedVid={setSelectedVid}
                                 selectVidRef={selectedVidRef} onSelectVid={onSelectVid}
+                                disabled={!editable || loading}
                             />
                         </Field>
                     </Collapse>
@@ -449,6 +462,11 @@ const KlaimInovasiManualContent: React.FC = () => {
                             />
                         </Field>
                     </Collapse>
+                    {!editable && claimData?.status === "Menunggu" && (
+                        <Box mt={4}>
+                             <StatusCard status="Menunggu" />
+                        </Box>
+                    )}
                     <Box height="100px" />
                 </Container>
                 <div>

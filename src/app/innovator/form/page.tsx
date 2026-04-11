@@ -24,12 +24,13 @@ import {
 import React, { useEffect, useRef, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
-import ReactSelect from "react-select";
 import HeaderUpload from "Components/form/HeaderUpload";
 import LogoUpload from "Components/form/LogoUpload";
+import BottomSheetSelector from "Components/form/BottomSheetSelector";
 import { auth, firestore, storage } from "src/firebase/clientApp";
 import ConfModal from "Components/confirmModal/confModal";
 import SecConfModal from "Components/confirmModal/secConfModal";
+import StatusCard from "Components/card/status/StatusCard";
 
 const categories = [
     "Agribisnis",
@@ -367,41 +368,41 @@ const InnovatorForm: React.FC = () => {
             }
         };
         fetchData();
-        
+
         // Polling for real time updates
         const intervalId = setInterval(async () => {
             const userId = user?.uid;
-             if (!userId) return;
-             try {
-                 const res: any = await getInnovatorById(userId);
-                 const data = res?.innovator || res?.data || res;
-                 if (data) {
-                     setStatus((prevStatus) => {
-                         if (prevStatus !== data.status) {
-                             if (data.status === "Menunggu") {
-                                 setAlertStatus("info");
-                                 setIsEditable(false);
-                                 setAlertMessage(`Profil sudah didaftarkan. Menunggu verifikasi admin.`);
-                             } else if (data.status === "Ditolak") {
-                                 setAlertStatus("error");
-                                 setIsEditable(true);
-                                 setAlertMessage(`Profil ditolak dengan catatan: ${data.catatanAdmin || ""}`);
-                             }
-                             /*
-                             else if (data.status === "Terverifikasi") {
-                                 router.push(`/innovator/profile/${userId}`);
-                             }
-                             */
-                             return data.status;
-                         }
-                         return prevStatus;
-                     });
-                 }
-             } catch (err) {
-                 console.error("Polling error: ", err);
-             }
+            if (!userId) return;
+            try {
+                const res: any = await getInnovatorById(userId);
+                const data = res?.innovator || res?.data || res;
+                if (data) {
+                    setStatus((prevStatus) => {
+                        if (prevStatus !== data.status) {
+                            if (data.status === "Menunggu") {
+                                setAlertStatus("info");
+                                setIsEditable(false);
+                                setAlertMessage(`Profil sudah didaftarkan. Menunggu verifikasi admin.`);
+                            } else if (data.status === "Ditolak") {
+                                setAlertStatus("error");
+                                setIsEditable(true);
+                                setAlertMessage(`Profil ditolak dengan catatan: ${data.catatanAdmin || ""}`);
+                            }
+                            /*
+                            else if (data.status === "Terverifikasi") {
+                                router.push(`/innovator/profile/${userId}`);
+                            }
+                            */
+                            return data.status;
+                        }
+                        return prevStatus;
+                    });
+                }
+            } catch (err) {
+                console.error("Polling error: ", err);
+            }
         }, 3000);
-        
+
         return () => clearInterval(intervalId);
     }, [user, router]);
 
@@ -501,15 +502,14 @@ const InnovatorForm: React.FC = () => {
                                 Kategori Inovator <span style={{ color: "red" }}>*</span>
                             </Text>
 
-                            <ReactSelect
-                                placeholder="Pilih kategori"
+                            <BottomSheetSelector
                                 options={categoryOptions}
-                                value={selectedCategory}
-                                onChange={handleCategoryChange}
-                                styles={customStyles}
-                                isClearable
-                                isSearchable
-                                isDisabled={!isEditable || isFormLocked}
+                                value={selectedCategory?.value}
+                                onChange={(value, label) => setSelectedCategory({ value, label })}
+                                placeholder="Pilih kategori"
+                                title="Pilih Kategori Inovator"
+                                searchPlaceholder="Cari kategori inovator di sini..."
+                                disabled={!isEditable || isFormLocked}
                             />
 
                             <FormSection
@@ -610,7 +610,9 @@ const InnovatorForm: React.FC = () => {
                     {error}
                 </Text>
             )}
-            {status !== "Menunggu" && (
+            {status === "Menunggu" ? (
+                <StatusCard status={status} />
+            ) : status !== "" && (
                 <>
                     <NavbarButton style={{ zIndex: 999 }}>
                         <Button
@@ -623,7 +625,7 @@ const InnovatorForm: React.FC = () => {
                                 if (isFormValid()) {
                                     setIsModal1Open(true);
                                 } else {
-                                    setAlertMessage("Harap isi semua data yang bertanda merah (*) terlebih dahulu.");
+                                    setAlertMessage("Harap isi semua data wajib terlebih dahulu.");
                                     setAlertStatus("error");
                                     window.scrollTo({ top: 0, behavior: "smooth" });
                                     toast({
@@ -654,6 +656,7 @@ const InnovatorForm: React.FC = () => {
                     />
                 </>
             )}
+            <Box height="100px" />
         </>
     );
 };

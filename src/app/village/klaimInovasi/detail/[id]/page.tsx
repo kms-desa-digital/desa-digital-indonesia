@@ -77,7 +77,15 @@ const KlaimInovasiDetail: React.FC = () => {
     const [modalInput, setModalInput] = useState("");
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [disabled, setDisabled] = useState(false);
-    // const [editable, setEditable] = useState(false);
+    const [editable, setEditable] = useState(false);
+    const [isManual, setIsManual] = useState(false);
+    const [textInputsValue, setTextInputsValue] = useState({
+        inovationName: "",
+        inovatorName: "",
+        description: "",
+    });
+    const [logoFiles, setLogoFiles] = useState<string[]>([]);
+    const [innovationFiles, setInnovationFiles] = useState<string[]>([]);
     const {
         isOpen: isRecOpen,
         onOpen: onRecOpen,
@@ -139,12 +147,13 @@ const KlaimInovasiDetail: React.FC = () => {
 
     useEffect(() => {
         // Jika salah satu modal terbuka, sembunyikan scrollbar
-        if (isModal1Open || isModal2Open) {
+        const isAnyModalOpen = isModal1Open || isModal2Open || openModal || isOpen;
+        if (isAnyModalOpen) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = ""; // Kembalikan scrollbar jika kedua modal tertutup
         }
-    }, [isModal1Open, isModal2Open]);
+    }, [isModal1Open, isModal2Open, openModal, isOpen]);
 
     useEffect(() => {
         if (id) {
@@ -161,6 +170,8 @@ const KlaimInovasiDetail: React.FC = () => {
                     if (data) {
                         console.log("Claim data from API:", JSON.stringify(data, null, 2));
                         setClaimData(data);
+                        setEditable(data.status === "Ditolak");
+                        setIsManual(!data.inovasiId);
                         
                         // Extract evidence files correctly from object if available
                         const files = data.buktiFiles || {};
@@ -168,6 +179,16 @@ const KlaimInovasiDetail: React.FC = () => {
                         setSelectedFiles(files.foto || data.images || []);
                         setSelectedVid(files.video?.[0] || data.video || "");
                         setSelectedDoc(files.dokumen || data.dokumen || []);
+
+                        if (!data.inovasiId) {
+                            setTextInputsValue({
+                                inovationName: data.namaInovasi || "",
+                                inovatorName: data.namaInovator || "",
+                                description: data.deskripsiInovasi || "",
+                            });
+                            setLogoFiles(data.logoInovator ? [data.logoInovator] : []);
+                            setInnovationFiles(data.fotoInovasi ? [data.fotoInovasi] : []);
+                        }
                     } else {
                         console.log("Claim not found via API");
                     }
@@ -262,6 +283,37 @@ const KlaimInovasiDetail: React.FC = () => {
                         </Label>
                         <Text2> Dapat lebih dari 1 </Text2>
                     </Flex>
+                    {isManual && (
+                        <Stack spacing={4} mb={4}>
+                            <Box>
+                                <Label>Informasi Inovasi (Manual)</Label>
+                                <Text2>Detail inovasi yang Anda ajukan secara manual</Text2>
+                            </Box>
+                            <Box>
+                                <Text fontWeight="400" fontSize="14px">Nama Inovator</Text>
+                                <Text fontSize="16px" fontWeight="600">{textInputsValue.inovatorName}</Text>
+                            </Box>
+                            <Box>
+                                <Text fontWeight="400" fontSize="14px">Nama Inovasi</Text>
+                                <Text fontSize="16px" fontWeight="600">{textInputsValue.inovationName}</Text>
+                            </Box>
+                            <Box>
+                                <Text fontWeight="400" fontSize="14px">Deskripsi</Text>
+                                <Text fontSize="14px">{textInputsValue.description}</Text>
+                            </Box>
+                            {logoFiles.length > 0 && (
+                                <Box>
+                                    <Text fontWeight="400" fontSize="14px">Logo Inovator</Text>
+                                    <ImageUpload
+                                        selectedFile={logoFiles}
+                                        setSelectedFile={setLogoFiles}
+                                        maxFiles={1}
+                                        disabled={true}
+                                    />
+                                </Box>
+                            )}
+                        </Stack>
+                    )}
                     <CheckboxGroup>
                         <JenisKlaim>
                             <input
@@ -383,21 +435,29 @@ const KlaimInovasiDetail: React.FC = () => {
                             </NavbarButton>
                         )
                     ) : (
-                        <NavbarButton>
-                            {/* <Button
-                width="100%"
-                isLoading={loading}
-                onClick={handleAjukanKlaim}
-                type="button"
-                disabled={disabled}
-              >
-                Ajukan Klaim
-              </Button> */}
+                        claimData?.status === "Ditolak" ? (
+                            <>
+                                <StatusCard
+                                    status={claimData.status}
+                                    message={claimData.catatanAdmin}
+                                />
+                                <NavbarButton>
+                                    <Button
+                                        width="100%"
+                                        isLoading={loading}
+                                        onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?id=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
+                                        type="button"
+                                    >
+                                        Edit & Ajukan Kembali
+                                    </Button>
+                                </NavbarButton>
+                            </>
+                        ) : (
                             <StatusCard
                                 status={claimData?.status}
                                 message={claimData?.catatanAdmin}
                             />
-                        </NavbarButton>
+                        )
                     )}
                     <ConfModal
                         isOpen={isModal1Open}

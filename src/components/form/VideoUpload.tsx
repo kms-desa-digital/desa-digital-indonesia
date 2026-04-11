@@ -11,14 +11,14 @@ type VidUploadProps = {
   setSelectedVid: (value: string) => void;
   selectVidRef: React.RefObject<HTMLInputElement | null>;
   onSelectVid?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  disable?: boolean;
+  disabled?: boolean;
 };
 
 const VidUpload: React.FC<VidUploadProps> = ({
   selectedVid,
   setSelectedVid,
   selectVidRef,
-  disable,
+  disabled,
 }) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -127,7 +127,7 @@ const VidUpload: React.FC<VidUploadProps> = ({
             variant="solid"
             size="md"
             onClick={handleDeleteVid}
-            isDisabled={disable}
+            isDisabled={disabled}
           >
             <DeleteIcon />
           </Button>

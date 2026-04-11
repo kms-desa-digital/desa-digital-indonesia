@@ -37,6 +37,7 @@ import {
     deleteObject
 } from "firebase/storage";
 import { storage } from "src/firebase/clientApp";
+import StatusCard from "Components/card/status/StatusCard";
 
 interface Option {
     value: string;
@@ -996,7 +997,7 @@ const AddVillage: React.FC = () => {
                         </Stack>
                         <Box height="100px" />
                     </Flex>
-                    {status !== "Menunggu" && (
+                    {status !== "Menunggu" ? (
                         <>
                             <NavbarButton style={{ zIndex: 999 }}>
                                 <Button
@@ -1040,6 +1041,8 @@ const AddVillage: React.FC = () => {
                                 modalBody2={modalBody2}
                             />
                         </>
+                    ) : (
+                        <StatusCard status={status} />
                     )}
                 </form>
             </Box>

@@ -36,6 +36,7 @@ import { auth } from "src/firebase/clientApp";
 import { getInnovationById, getAppliedVillages, updateInnovation } from "Services/innovationServices";
 import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
 import { getUserById } from "Services/userServices";
+import { getVillageById, getClaims, updateVillage } from "Services/villageServices";
 import {
     ActionContainer,
     BenefitContainer,
@@ -70,6 +71,8 @@ function DetailInnovation() {
     const [modalInput, setModalInput] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [isClaimed, setIsClaimed] = useState(false);
+    const [claimId, setClaimId] = useState("");
 
     const villageSafe = Array.isArray(village) ? village : [];
     const villageMap = new Map();
@@ -141,6 +144,25 @@ function DetailInnovation() {
         fetchVillages();
     }, [id]);
 
+    useEffect(() => {
+        const checkClaimStatus = async () => {
+            if (user?.uid && role === "village" && id) {
+                try {
+                    const res: any = await getClaims(user.uid, undefined, 100);
+                    const claims = res.claims || [];
+                    const found = claims.find((c: any) => c.inovasiId === id);
+                    if (found) {
+                        setIsClaimed(true);
+                        setClaimId(found.id);
+                    }
+                } catch (err) {
+                    console.error("Error checking claim status:", err);
+                }
+            }
+        };
+        checkClaimStatus();
+    }, [user, id, role]);
+
     /*
     useEffect(() => {
         const fetchData = async () => {
@@ -180,13 +202,31 @@ function DetailInnovation() {
             });
             setData({ ...data, status: "Terverifikasi" });
 
-            // Update innovator's innovation count via API (usually backend handles this, but for parity:)
+            // Update innovator's innovation count via API
             if (data.innovatorId) {
                 const currentCount = innovatorData.jumlahInovasi || 0;
                 await updateInnovator(data.innovatorId, {
                     jumlahInovasi: currentCount + 1
                 });
             }
+
+            // Update linked villages' innovation count
+            if (village && village.length > 0) {
+                for (const v of village) {
+                    try {
+                        const vRes: any = await getVillageById(v.id || v.userId);
+                        const vData = vRes.data || vRes.village;
+                        const newValue = (Number(vData?.jumlahInovasiDiterapkan) || 0) + 1;
+                        await updateVillage(v.id || v.userId, { 
+                            jumlahInovasiDiterapkan: newValue 
+                        });
+                    } catch (err) {
+                        console.error(`Error updating count for village ${v.id}:`, err);
+                    }
+                }
+            }
+
+            toast.success("Inovasi berhasil diverifikasi!");
         } catch (error) {
             console.error("Error verifying innovation via API:", error);
             setError("Error verifying innovation");
@@ -588,20 +628,34 @@ function DetailInnovation() {
                         left="50%"
                         transform="translateX(-50%)"
                         width="100%"
-                        maxWidth="360px"
+                        maxWidth="363px"
                         bg="white"
                         p="3.5"
+                        pb="20px"
+                        zIndex="999"
                         boxShadow="0px -6px 12px rgba(0, 0, 0, 0.1)"
                     >
-                        <Button
-                            width="100%"
-                            fontSize="16px"
-                            onClick={() =>
-                                router.push(`/innovation/edit/${data.id}`)
-                            }
-                        >
-                            Edit
-                        </Button>
+                        {data.status === "Menunggu" || data.status === "Ditolak" ? (
+                            <>
+                                <StatusCard message={data.catatanAdmin} status={data.status} />
+                                <Button
+                                    width="100%"
+                                    fontSize="16px"
+                                    onClick={() => router.push(`/innovation/edit/${data.id}`)}
+                                    mt={2}
+                                >
+                                    Edit Inovasi
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                width="100%"
+                                fontSize="16px"
+                                onClick={() => router.push(`/innovation/edit/${data.id}`)}
+                            >
+                                Edit Inovasi
+                            </Button>
+                        )}
                     </Box>
                 )}
                 {!owner && (
@@ -611,9 +665,11 @@ function DetailInnovation() {
                         left="50%"
                         transform="translateX(-50%)"
                         width="100%"
-                        maxWidth="360px"
+                        maxWidth="363px"
                         bg="white"
                         p="3.5"
+                        pb="20px"
+                        zIndex="999"
                         boxShadow="0px -6px 12px rgba(0, 0, 0, 0.1)"
                     >
                         {admin ? (
@@ -624,6 +680,15 @@ function DetailInnovation() {
                                     Verifikasi Permohonan Inovasi
                                 </Button>
                             )
+                        ) : role === "village" && isClaimed ? (
+                            <Button 
+                                width="100%" 
+                                fontSize="16px" 
+                                colorScheme="green"
+                                onClick={() => router.push(`/village/klaimInovasi/detail/${claimId}`)}
+                            >
+                                Sudah Klaim
+                            </Button>
                         ) : (
                             <Button width="100%" fontSize="16px" onClick={onOpen}>
                                 Ketahui lebih lanjut
