@@ -28,5 +28,25 @@ export const theme = extendTheme({
   },
   components: {
     Button,
+    Modal: {
+      baseStyle: {
+        dialog: {
+          maxWidth: "360px",
+          width: "90%",
+          mx: "auto",
+        },
+      },
+    },
+    Drawer: {
+      baseStyle: {
+        dialog: {
+          maxWidth: "360px",
+          width: "100%",
+          mx: "auto",
+          left: "0 !important",
+          right: "0 !important",
+        },
+      },
+    },
   }
 });

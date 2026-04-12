@@ -31,7 +31,7 @@ const ConfModal: React.FC<ClaimModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xs" isCentered>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent maxWidth="360px" width="90%" mx="auto">
         <ModalBody paddingTop={4}>
           <Flex direction={"column"} alignItems={"center"} fontSize="12px" textAlign={"center"}>
             <Image

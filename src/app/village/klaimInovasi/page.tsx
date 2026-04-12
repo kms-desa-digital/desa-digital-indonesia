@@ -224,9 +224,12 @@ const KlaimInovasiContent: React.FC = () => {
     const submitClaim = async () => {
         console.log("Submitting claim via API...");
         setLoading(true);
+        setDisabled(true); // Disable buttons immediately
+        
         if (!user?.uid || !inovasiId) {
             setError("User atau ID inovasi tidak ditemukan");
             setLoading(false);
+            setDisabled(false);
             return;
         }
         
@@ -254,27 +257,34 @@ const KlaimInovasiContent: React.FC = () => {
                     foto: selectedCheckboxes.includes("foto") ? selectedFiles : [],
                     video: selectedCheckboxes.includes("video") ? [selectedVid] : [],
                     dokumen: selectedCheckboxes.includes("dokumen") ? selectedDoc : []
-                }
+                },
+                status: "Menunggu"
             };
 
             const response: any = editId 
-                ? await updateClaim(editId, { ...formData, status: "Menunggu" })
+                ? await updateClaim(editId, formData)
                 : await claimInnovation(formData);
 
+            console.log("Response from server:", response);
+
             setIsModal1Open(false);
-            toast.success(editId ? "Klaim berhasil diperbarui" : "Klaim inovasi berhasil diajukan", { position: "top-center" });
+            toast.success(editId ? "Klaim berhasil diperbarui" : "Klaim inovasi berhasil diajukan", { 
+                position: "top-center",
+                onClose: () => {
+                   const newClaimId = editId || response.claimId || response.data?.claimId || (typeof response === 'string' ? response : "");
+                   if (newClaimId) {
+                       router.push(`/village/klaimInovasi/detail/${newClaimId}`);
+                   } else {
+                       router.push(`/village/pengajuan/${user.uid}`);
+                   }
+                }
+            });
             
-            // Access detail page for the claim if available from response
-            const newClaimId = editId || response.claimId || response.data?.claimId;
-            if (newClaimId) {
-              router.push(`/village/klaimInovasi/detail/${newClaimId}`);
-            } else {
-              router.push(`/village/pengajuan/${user.uid}`);
-            }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error submitting claim:", error);
-            setError("Gagal mengajukan klaim. Inovasi ini mungkin sudah diajukan sebelumnya.");
-            toast.error("Inovasi ini sudah dalam proses klaim");
+            const errMsg = error?.response?.data?.message || "Gagal mengajukan klaim. Inovasi ini mungkin sudah diajukan sebelumnya.";
+            setError(errMsg);
+            toast.error(errMsg);
             setDisabled(false);
         } finally {
             setLoading(false);

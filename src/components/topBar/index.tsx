@@ -33,7 +33,6 @@ function TopBar(props: TopBarProps) {
   const { isAuthenticated } = useAuthToken();
   const [village, setVillage] = useState(false);
   const { isVillageVerified } = useUser();
-  const [claimStatus, setClaimStatus] = useState("");
 
   const allowedPaths = [
     paths.LANDING_PAGE,
@@ -63,94 +62,31 @@ function TopBar(props: TopBarProps) {
     fecthVillage();
   }, [user]);
 
-  useEffect(() => {
-    if (user && id) {
-      const q = query(
-        collection(firestore, "claimInnovations"),
-        where("desaId", "==", user.uid),
-        where("inovasiId", "==", id)
-      );
-      getDocs(q).then((querySnapshot) => {
-        if (querySnapshot.empty) {
-          setClaimStatus("");
-        } else {
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            setClaimStatus(data.status);
-          });
-        }
-      }
-      );
-    }
-  }, [user, id]);
-
   const { label, bg, color, leftIcon, isDisabled, hover } = (() => {
-    switch (claimStatus) {
-      case "Terverifikasi":
-        return {
-          label: "Sudah Klaim",
-          bg: "#71A686",
-          color: "white",
-          leftIcon: <FaCheck />,
-          isDisabled: true,
-          hover: {
-            bg: "#5C8B6F",
-          },
-        };
-      case "Menunggu":
-        return {
-          label: "Proses Klaim",
-          bg: "#71A686",
-          color: "white",
-          leftIcon: undefined,
-          isDisabled: true,
-          hover: {
-            bg: "#5C8B6F",
-          },
-        };
-      case "Ditolak":
-        return {
-          label: "Ditolak",
-          bg: "red.500",
-          color: "white",
-          leftIcon: undefined,
-          isDisabled: false,
-          hover: {
-            bg: "red.400",
-          },
-        };
-      case "":
-      default:
-        return {
-          label: "Klaim Inovasi",
-          bg: "white",
-          color: "#347357",
-          hover: {
-            bg: "gray.200",
-          },
-          leftIcon: undefined,
-          isDisabled: false,
-        };
-    }
+    return {
+      label: "Klaim Inovasi",
+      bg: "white",
+      color: "#347357",
+      hover: {
+        bg: "gray.200",
+      },
+      leftIcon: undefined,
+      isDisabled: false,
+    };
   })();
-
 
   const handleClick = () => {
     if (isDisabled) return;
     if (!isVillageVerified) {
       toast.warning(
-        "Akun anda belum terdaftar atau terverifikaasi sebagai desa digital",
+        "Akun anda belum terdaftar atau terverifikasi sebagai desa digital",
         {
           position: "top-center",
           autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
         }
       );
     } else {
-      router.push(`/village/klaimInovasi?id=${id}`);
+      router.push(`/village/klaimInovasi?inovasiId=${id}`);
     }
   };
 
@@ -186,6 +122,7 @@ function TopBar(props: TopBarProps) {
           ml={onBack ? "8px" : "0"}
           flex={1}
           mr={1}
+          noOfLines={1}
         >
           {title}
         </Text>
@@ -193,7 +130,7 @@ function TopBar(props: TopBarProps) {
         <Flex align="center" gap={0}>
           {rightElement}
 
-          {isClaimButtonVisible && village && (
+          {!rightElement && isClaimButtonVisible && village && (
             <Button
               fontSize="12px"
               fontWeight="500"

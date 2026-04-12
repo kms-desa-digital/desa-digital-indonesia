@@ -304,7 +304,7 @@ const AddInnovation: React.FC = () => {
             benefit.length > 0 &&
             benefit[0].benefit.trim() !== "" &&
             benefit[0].description.trim() !== "" &&
-            requirements.length > 0
+            (requirements.length > 0 || newRequirement.trim() !== "")
         );
     };
 
@@ -405,7 +405,8 @@ const AddInnovation: React.FC = () => {
             } else {
                 // ADD BARU
                 const res = await addInnovation(innovationPayload);
-                newId = res.innovationId;
+                newId = res.innovationId || res.id || res._id;
+                if (!newId) throw new Error("Gagal mendapatkan ID inovasi baru");
                 setInnovationId(newId);
                 console.log("Inovasi ditambahkan (Mongo): ", newId);
             }
@@ -508,9 +509,9 @@ const AddInnovation: React.FC = () => {
                     if (data.status === "Menunggu") {
                         setIsEditable(false);
                         setStatus("Menunggu");
-                        setAlertStatus("info");
+                        setAlertStatus("warning");
                         setAlertMessage(
-                            `Inovasi sudah didaftakan. Menunggu verifikasi admin.`
+                            `Inovasi sudah didaftarkan. Menunggu verifikasi admin.`
                         );
                     } else if (data.status === "Ditolak") {
                         setIsEditable(true);
@@ -597,7 +598,7 @@ const AddInnovation: React.FC = () => {
                                 borderRadius={4}
                                 padding="12px"
                                 width="100%"
-                                maxWidth="1000px"
+                                maxWidth="360px"
                                 mx="auto"
                             >
                                 {alertMessage}
@@ -987,7 +988,7 @@ const AddInnovation: React.FC = () => {
                             type="submit"
                             form="innovationForm"
                             isLoading={loading}
-                            isDisabled={loading || isFormLocked || (status === "Menunggu" && !isEditable)}
+                            isDisabled={!isFormValid() || loading || isFormLocked || (status === "Menunggu" && !isEditable)}
                             width="100%"
                             onClick={(e) => {
                                 if (isFormValid()) {

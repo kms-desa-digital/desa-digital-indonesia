@@ -313,13 +313,13 @@ const AddVillage: React.FC = () => {
     }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const wordCount = value.split(/\s+/).filter((word) => word !== "").length;
         if (
-            textInputValue.name ||
-            textInputValue.whatsapp ||
-            textInputValue.instagram ||
-            textInputValue.website
+            name === "name" ||
+            name === "whatsapp" ||
+            name === "instagram" ||
+            name === "website"
         ) {
             setTextInputValue((prev: any) => ({ ...prev, [name]: value }));
-        } else if (textInputValue.description) {
+        } else if (name === "description") {
             if (wordCount <= 100) {
                 setTextInputValue((prev: any) => ({ ...prev, [name]: value }));
             }
@@ -429,7 +429,7 @@ const AddVillage: React.FC = () => {
                 images: imageUrls
             };
 
-            if (status === "Ditolak" || status === "Terverifikasi") {
+            if (status !== "") {
                 await updateVillage(userId, villagePayload);
                 console.log("Village updated via API (Storage URLs stored)");
             } else {
@@ -447,11 +447,11 @@ const AddVillage: React.FC = () => {
             });
         } catch (error) {
             console.error("Error adding document: ", error);
-            setLoading(false);
-            setError("Error adding document");
+            const errorMessage = (error as any)?.message || "Terjadi kesalahan saat menambahkan dokumen.";
+            setError(`Error: ${errorMessage}`);
             toast({
                 title: "Error",
-                description: "Terjadi kesalahan saat menambahkan dokumen.",
+                description: errorMessage,
                 status: "error",
                 duration: 5000,
                 isClosable: true,
@@ -516,7 +516,7 @@ const AddVillage: React.FC = () => {
                     if (data.status === "Menunggu") {
                         setIsEditable(false);
                         setStatus("Menunggu");
-                        setAlertStatus("info");
+                        setAlertStatus("warning");
                         setAlertMessage(`Profil sudah didaftarkan. Menunggu verifikasi admin.`);
                     } else if (data.status === "Ditolak") {
                         setIsEditable(true);
@@ -543,7 +543,7 @@ const AddVillage: React.FC = () => {
                     setStatus((prevStatus) => {
                         if (prevStatus !== data.status) {
                             if (data.status === "Menunggu") {
-                                setAlertStatus("info");
+                                setAlertStatus("warning");
                                 setIsEditable(false);
                                 setAlertMessage(`Profil sudah didaftarkan. Menunggu verifikasi admin.`);
                             } else if (data.status === "Ditolak") {
@@ -591,7 +591,7 @@ const AddVillage: React.FC = () => {
                                 borderRadius={4}
                                 padding="12px"
                                 width="100%"
-                                maxWidth="1000px"
+                                maxWidth="360px"
                                 mx="auto"
                             >
                                 {alertMessage}
@@ -1005,7 +1005,7 @@ const AddVillage: React.FC = () => {
                                     form="VillageForm"
                                     width="100%"
                                     isLoading={loading}
-                                    isDisabled={loading || isFormLocked || (status === "Menunggu" && !isEditable)}
+                                    isDisabled={!isFormValid() || loading || isFormLocked || (status === "Menunggu" && !isEditable)}
                                     onClick={(e) => {
                                         if (isFormValid()) {
                                             // Handled by form onSubmit

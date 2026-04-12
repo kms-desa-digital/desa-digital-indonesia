@@ -63,16 +63,16 @@ export default function InnovationCategoryPage() {
     return (
         <Container page>
             <TopBar title={getTranslatedCategory(category)} onBack={() => router.back()} />
-            <CategoryContainer>
+            <Box mt="12px" px="16px">
                 {loading ? (
                    <DetailContainer>
-                       {[1,2,3].map(i => (
+                       {[1,2,3,4].map(i => (
                            <Skeleton key={i} height={150} borderRadius={8} style={{ marginBottom: 12 }} />
                        ))}
                    </DetailContainer>
                 ) : (
                     <>
-                        <Box px="4px" mb="16px" width="100%">
+                        <Box mb="16px" position="sticky" top="56px" zIndex="10" bg="white" pb="8px" pt="4px">
                             <InputGroup>
                                 <InputLeftElement pointerEvents="none" height="40px">
                                     <Icon as={FiSearch} color="gray.400" />
@@ -83,7 +83,7 @@ export default function InnovationCategoryPage() {
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     borderRadius="full"
                                     fontSize="14px"
-                                    bg="white"
+                                    bg="#F9FAFB"
                                     border="1px solid #E5E7EB"
                                     height="40px"
                                 />
@@ -92,28 +92,29 @@ export default function InnovationCategoryPage() {
                         <DetailContainer>
                             {data
                                 .filter((item) =>
-                                    item.namaInovasi.toLowerCase().includes(searchTerm.toLowerCase())
+                                    item.namaInovasi?.toLowerCase().includes(searchTerm.toLowerCase())
                                 )
                                 .map((item, idx) => (
                                     <CardInnovation
                                         key={idx}
                                         {...item}
-                                        jumlahDesa={item.jumlahDesaDiterapkan || 0}
+                                        jumlahDesa={item.jumlahDesaDiterapkan || item.jumlahDesa || item.appliedVillages?.length || 0}
                                         innovatorLogo={
-                                            item.innovatorImgURL || (
+                                            item.innovatorImgURL || item.logoInovator || item.logo || (
                                                 <Image src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />
                                             )
                                         }
-                                        innovatorName={item.namaInnovator}
+                                        innovatorName={item.namaInnovator || item.namaInovator}
                                         onClick={() =>
-                                            router.push(`/innovation/detail/${item.id}`)
+                                            router.push(`/innovation/detail/${item.id || item._id}`)
                                         }
                                     />
                                 ))}
                         </DetailContainer>
+                        <Box height="40px" />
                     </>
                 )}
-            </CategoryContainer>
+            </Box>
         </Container>
     );
 }

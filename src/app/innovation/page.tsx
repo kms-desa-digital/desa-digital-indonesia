@@ -8,6 +8,7 @@ import CardCategory from "Components/card/category";
 import { useRouter } from "next/navigation";
 import { useQuery } from "react-query";
 import { getCategories } from "Services/categoryServices";
+import { getInnovation } from "Services/innovationServices";
 import Loading from "Components/loading";
 import { Container as CategoryContainer } from "./_styles";
 import { useTranslations } from "next-intl";
@@ -50,10 +51,12 @@ function List(props: ListProps) {
 
     const [searchTerm, setSearchTerm] = useState("");
 
+    const [counts, setCounts] = useState<Record<string, number>>({});
+    const { data: allInnovations } = useQuery("allInnovations", () => getInnovation({ status: "Terverifikasi" }));
+
     useEffect(() => {
         if (isFetched) {
             const categoriesData = data?.categories || data || [];
-            // Filter out "Semua Kategori Inovasi" (Lihat Semua) as requested
             const filtered = Array.isArray(categoriesData)
                 ? categoriesData.filter((item: any) => 
                     item.title !== "Semua Kategori Inovasi" && 
@@ -61,16 +64,35 @@ function List(props: ListProps) {
                 )
                 : [];
             setMenu(filtered);
+
+            // Calculate counts from allInnovations if available
+            const countMap: Record<string, number> = {};
+            
+            // Initial counts from categoriesData as fallback
+            filtered.forEach((cat: any) => {
+                countMap[cat.title] = cat.innovationCount || 0;
+            });
+
+            // If we have innovation data, use it for real counts
+            if (allInnovations?.innovations) {
+                const realInnovations = allInnovations.innovations;
+                filtered.forEach((cat: any) => {
+                    const realCount = realInnovations.filter((inv: any) => inv.kategori === cat.title || inv.category === cat.title).length;
+                    countMap[cat.title] = realCount;
+                });
+            }
+            
+            setCounts(countMap);
         }
-    }, [isFetched, data]);
+    }, [isFetched, data, allInnovations]);
 
     const filteredMenu = menu.filter((item: any) =>
         getTranslatedTitle(item.title).toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
-        <>
-            <Box px="16px" mb="24px">
+        <Box pt="10px">
+            <Box px="16px" mb="16px" position="sticky" top="56px" zIndex="10" bg="white" pb="8px">
                 <InputGroup>
                     <InputLeftElement pointerEvents="none" height="40px">
                         <Icon as={FiSearch} color="gray.400" />
@@ -82,22 +104,24 @@ function List(props: ListProps) {
                         borderRadius="full"
                         fontSize="14px"
                         bg="#F9FAFB"
-                        border="none"
+                        border="1px solid #E5E7EB"
                         height="40px"
                     />
                 </InputGroup>
             </Box>
-            {isFetched &&
-                filteredMenu.map((item: any, idx: number) => (
-                    <CardCategory
-                        {...item}
-                        title={getTranslatedTitle(item.title)}
-                        key={idx}
-                        innovationCount={item.innovationCount}
-                        onClick={() => handleClick(item.title)}
-                    />
-                ))}
-        </>
+            <Box px="16px" display="flex" flexDirection="column" gap="16px" pb="40px">
+                {isFetched &&
+                    filteredMenu.map((item: any, idx: number) => (
+                        <CardCategory
+                            {...item}
+                            title={getTranslatedTitle(item.title)}
+                            key={idx}
+                            innovationCount={counts[item.title]}
+                            onClick={() => handleClick(item.title)}
+                        />
+                    ))}
+            </Box>
+        </Box>
     );
 }
 
@@ -106,18 +130,12 @@ export default function InnovationPage() {
     const router = useRouter();
     const { data, isFetched, isLoading } = useQuery("category", getCategories);
 
-    const listProps = {
-        data,
-        isFetched,
-        isLoading,
-    };
+    if (isLoading) return <Loading />;
 
     return (
         <Container page>
             <TopBar title={t("title")} onBack={() => router.back()} />
-            <CategoryContainer>
-                <List {...listProps} />
-            </CategoryContainer>
+            <List data={data} isFetched={isFetched} isLoading={isLoading} />
         </Container>
     );
 }

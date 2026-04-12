@@ -175,21 +175,29 @@ const KlaimInovasiDetail: React.FC = () => {
                         setEditable(data.status === "Ditolak");
                         setIsManual(!data.inovasiId);
                         
-                        // Extract evidence files correctly from object if available
-                        const files = data.buktiFiles || {};
-                        setSelectedCheckboxes(data.buktiJenis || data.jenisDokumen || []);
-                        setSelectedFiles(files.foto || data.images || data.buktiFoto || []);
-                        setSelectedVid(files.video?.[0] || data.video || data.selectedVid || "");
-                        setSelectedDoc(files.dokumen || data.dokumen || data.selectedDoc || []);
+                        // Extract evidence files correctly from alternate naming conventions
+                        const checkboxes = data.buktiJenis || data.jenisDokumen || data.bukti_jenis || [];
+                        setSelectedCheckboxes(Array.isArray(checkboxes) ? checkboxes : []);
+                        
+                        // Handle multiple possible field names from legacy/new API
+                        const files = data.buktiFiles || data.bukti_files || {};
+                        const fotos = files.foto || data.images || data.buktiFoto || data.bukti_foto || data.foto || [];
+                        setSelectedFiles(Array.isArray(fotos) ? fotos : (fotos ? [fotos] : []));
+                        
+                        const videos = files.video || data.video || data.selectedVid || data.buktiVideo || data.bukti_video || "";
+                        setSelectedVid(Array.isArray(videos) ? (videos[0] || "") : videos);
+                        
+                        const docs = files.dokumen || data.dokumen || data.selectedDoc || data.buktiDokumen || data.bukti_dokumen || [];
+                        setSelectedDoc(Array.isArray(docs) ? docs : (docs ? [docs] : []));
 
                         if (!data.inovasiId) {
                             setTextInputsValue({
-                                inovationName: data.namaInovasi || "",
-                                inovatorName: data.namaInovator || "",
-                                description: data.deskripsiInovasi || "",
+                                inovationName: data.namaInovasi || data.nama_inovasi || "",
+                                inovatorName: data.namaInovator || data.nama_inovator || "",
+                                description: data.deskripsiInovasi || data.deskripsi || "",
                             });
-                            setLogoFiles(data.logoInovator ? [data.logoInovator] : []);
-                            setInnovationFiles(data.fotoInovasi ? [data.fotoInovasi] : []);
+                            setLogoFiles(data.logoInovator || data.logo_inovator ? [data.logoInovator || data.logo_inovator] : []);
+                            setInnovationFiles(data.fotoInovasi || data.foto_inovasi ? [data.fotoInovasi || data.foto_inovasi] : []);
                         }
                     } else {
                         console.log("Claim not found via API");
@@ -360,19 +368,20 @@ const KlaimInovasiDetail: React.FC = () => {
                     <Collapse in={selectedCheckboxes.includes("foto")} animateOpacity>
                         <Field>
                             <Flex flexDirection="column" gap="2px">
-                                <Text1>
-                                    Foto Inovasi
-                                    <span style={{ color: "red" }}>*</span>
-                                </Text1>
-                                <Text2> Maks 2 foto. format: png, jpg </Text2>
-                                <ImageUpload
-                                    selectedFile={selectedFiles}
-                                    setSelectedFile={setSelectedFiles}
-                                    selectFileRef={selectedFileRef}
-                                    onSelectImage={onSelectImage}
-                                    maxFiles={2}
-                                    disabled={true}
-                                />
+                                <Text1> Foto Inovasi </Text1>
+                                <Text2> Bukti foto yang diunggah </Text2>
+                                {selectedFiles.length > 0 ? (
+                                    <ImageUpload
+                                        selectedFile={selectedFiles}
+                                        setSelectedFile={setSelectedFiles}
+                                        selectFileRef={selectedFileRef}
+                                        onSelectImage={onSelectImage}
+                                        maxFiles={2}
+                                        disabled={true}
+                                    />
+                                ) : (
+                                    <Text fontSize="12px" color="gray.500" fontStyle="italic">Tidak ada foto</Text>
+                                )}
                             </Flex>
                         </Field>
                     </Collapse>
@@ -380,38 +389,40 @@ const KlaimInovasiDetail: React.FC = () => {
                     <Collapse in={selectedCheckboxes.includes("video")} animateOpacity>
                         <Field>
                             <Flex flexDirection="column" gap="2px">
-                                <Text1>
-                                    Video inovasi
-                                    <span style={{ color: "red" }}>*</span>
-                                </Text1>
-                                <Text2> Maks 100 mb. Format: mp4 </Text2>
+                                <Text1> Video Inovasi </Text1>
+                                <Text2> Bukti video yang diunggah </Text2>
+                                {selectedVid ? (
+                                    <Box mt={2} borderRadius="8px" overflow="hidden" border="1px solid #E5E7EB">
+                                        <video 
+                                            src={selectedVid} 
+                                            controls 
+                                            style={{ width: "100%", maxHeight: "200px" }}
+                                        />
+                                    </Box>
+                                ) : (
+                                    <Text fontSize="12px" color="gray.500" fontStyle="italic">Tidak ada video</Text>
+                                )}
                             </Flex>
-                            <VidUpload
-                                selectedVid={selectedVid}
-                                setSelectedVid={setSelectedVid}
-                                selectVidRef={selectedVidRef}
-                                onSelectVid={onSelectVid}
-                                disabled={true}
-                            />
                         </Field>
                     </Collapse>
 
                     <Collapse in={selectedCheckboxes.includes("dokumen")} animateOpacity>
                         <Field>
                             <Flex flexDirection="column" gap="2px">
-                                <Text1>
-                                    Dokumen Pendukung
-                                    <span style={{ color: "red" }}>*</span>
-                                </Text1>
-                                <Text2> Maks 3 file, 50 mb. Format: pdf, doc, docx </Text2>
+                                <Text1> Dokumen Pendukung </Text1>
+                                <Text2> Bukti dokumen yang diunggah </Text2>
+                                {selectedDoc.length > 0 ? (
+                                    <DocUpload
+                                        selectedDoc={selectedDoc}
+                                        setSelectedDoc={setSelectedDoc}
+                                        selectDocRef={selectedDocRef}
+                                        onSelectDoc={onSelectDoc}
+                                        disabled={true}
+                                    />
+                                ) : (
+                                    <Text fontSize="12px" color="gray.500" fontStyle="italic">Tidak ada dokumen</Text>
+                                )}
                             </Flex>
-                            <DocUpload
-                                selectedDoc={selectedDoc}
-                                setSelectedDoc={setSelectedDoc}
-                                selectDocRef={selectedDocRef}
-                                onSelectDoc={onSelectDoc} // Ensure this matches the updated DocUploadProps
-                                disabled={true}
-                            />
                         </Field>
                     </Collapse>
                     <RecommendationDrawer

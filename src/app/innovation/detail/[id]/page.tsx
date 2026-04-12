@@ -73,6 +73,7 @@ function DetailInnovation() {
     const [error, setError] = useState("");
     const [isClaimed, setIsClaimed] = useState(false);
     const [claimId, setClaimId] = useState("");
+    const [claimStatus, setClaimStatus] = useState("");
 
     const villageSafe = Array.isArray(village) ? village : [];
     const villageMap = new Map();
@@ -149,11 +150,16 @@ function DetailInnovation() {
             if (user?.uid && role === "village" && id) {
                 try {
                     const res: any = await getClaims(user.uid, undefined, 100);
-                    const claims = res.claims || [];
-                    const found = claims.find((c: any) => c.inovasiId === id);
+                    const claims = res.data || res.claims || res || [];
+                    const found = claims.find((c: any) => (c.inovasiId === id || c.innovationId === id));
                     if (found) {
                         setIsClaimed(true);
                         setClaimId(found.id || found._id);
+                        setClaimStatus(found.status);
+                    } else {
+                        setIsClaimed(false);
+                        setClaimId("");
+                        setClaimStatus("");
                     }
                 } catch (err) {
                     console.error("Error checking claim status:", err);
@@ -333,9 +339,54 @@ function DetailInnovation() {
         );
     }
 
+    const claimElement = (() => {
+        if (role !== "village" || !user?.uid) return null;
+
+        const handleClaimClick = () => {
+            if (!isVillageVerified) {
+                toast.warning("Akun anda belum terverifikasi sebagai desa", { position: "top-center" });
+                return;
+            }
+            if (claimStatus === "Terverifikasi" || claimStatus === "Menunggu") {
+                router.push(`/village/klaimInovasi/detail/${claimId}`);
+            } else if (claimStatus === "Ditolak") {
+                router.push(`/village/klaimInovasi?inovasiId=${id}&editId=${claimId}`);
+            } else {
+                router.push(`/village/klaimInovasi?inovasiId=${id}`);
+            }
+        };
+
+        const config = (() => {
+            switch (claimStatus) {
+                case "Terverifikasi":
+                    return { label: "Sudah Klaim", bg: "#71A686", color: "white" };
+                case "Menunggu":
+                    return { label: "Proses Klaim", bg: "orange.400", color: "white" };
+                case "Ditolak":
+                    return { label: "Ditolak", bg: "red.500", color: "white" };
+                default:
+                    return { label: "Klaim Inovasi", bg: "white", color: "#347357" };
+            }
+        })();
+
+        return (
+            <Button
+                fontSize="12px"
+                fontWeight="500"
+                height="32px"
+                bg={config.bg}
+                color={config.color}
+                onClick={handleClaimClick}
+                _hover={{ opacity: 0.8 }}
+            >
+                {config.label}
+            </Button>
+        );
+    })();
+
     return (
         <Box>
-            <TopBar title="Detail Inovasi" onBack={() => router.back()} />
+            <TopBar title="Detail Inovasi" onBack={() => router.back()} rightElement={claimElement} />
             {data.images && data.images.length > 1 ? (
                 <Slider {...settings}>
                     {data.images.map((image: string, index: number) => (
@@ -618,7 +669,7 @@ function DetailInnovation() {
                             <Text1>{desa.namaDesa}</Text1>
                         </ActionContainer>
                     ))}
-                    <Box height="100px" />
+                    <Box height="20px" />
                 </Flex>
 
                 {owner && ( // Conditionally render the Edit button
@@ -680,15 +731,6 @@ function DetailInnovation() {
                                     Verifikasi Permohonan Inovasi
                                 </Button>
                             )
-                        ) : role === "village" && isClaimed ? (
-                            <Button 
-                                width="100%" 
-                                fontSize="16px" 
-                                colorScheme="green"
-                                onClick={() => router.push(`/village/klaimInovasi/detail/${claimId}`)}
-                            >
-                                Sudah Klaim
-                            </Button>
                         ) : (
                             <Button width="100%" fontSize="16px" onClick={onOpen}>
                                 Ketahui lebih lanjut
@@ -718,7 +760,7 @@ function DetailInnovation() {
                         website: innovatorData?.website || "https://www.google.com/",
                     }}
                 />
-                <Box height="100px" />
+                <Box height="80px" />
             </ContentContainer>
         </Box>
     );

@@ -236,7 +236,7 @@ export default function DetailVillagePage() {
     }
 
     return (
-        <Box paddingBottom={16}>
+        <Box paddingBottom={0}>
             <TopBar title="Detail Desa" onBack={() => router.back()} />
             <div style={{ position: "relative", width: "100%" }}>
                 <Background src={village?.header || "/images/default-header.svg"} alt="background" />
@@ -570,7 +570,7 @@ export default function DetailVillagePage() {
                         setMessage={setModalInput}
                         loading={loading}
                     />
-                    <Box height="100px" />
+                    <Box height="80px" />
                 </ContentContainer>
             </div>
             <ActionDrawer

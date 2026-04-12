@@ -187,9 +187,12 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     const submitClaim = async () => {
         setLoading(true);
+        setDisabled(true); // Disable buttons immediately
+
         if (!user?.uid) {
             setError("User tidak ditemukan");
             setLoading(false);
+            setDisabled(false);
             return;
         }
 
@@ -221,19 +224,23 @@ const KlaimInovasiManualContent: React.FC = () => {
 
             setIsModal1Open(false);
             toast.success(id ? "Klaim manual berhasil diperbarui" : "Klaim inovasi manual berhasil diajukan", {
-                position: "top-center", autoClose: 2000,
+                position: "top-center", 
+                autoClose: 2000,
+                onClose: () => {
+                    const newClaimId = id || response.claimId || response.data?.claimId || (typeof response === 'string' ? response : "");
+                    if (newClaimId) {
+                        router.push(`/village/klaimInovasi/detail/${newClaimId}`);
+                    } else {
+                        router.push(`/village/pengajuan/${user?.uid}`);
+                    }
+                }
             });
-
-            const newClaimId = id || response.claimId || response.data?.claimId;
-            if (newClaimId) {
-                router.push(`/village/klaimInovasi/detail/${newClaimId}`);
-            } else {
-                router.push(`/village/pengajuan/${user?.uid}`);
-            }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error submitting manual claim:", error);
-            setError("Gagal mengajukan klaim manual.");
-            toast.error("Gagal mengajukan klaim");
+            const errMsg = error?.response?.data?.message || "Gagal mengajukan klaim manual.";
+            setError(errMsg);
+            toast.error(errMsg);
+            setDisabled(false);
         } finally {
             setLoading(false);
         }
