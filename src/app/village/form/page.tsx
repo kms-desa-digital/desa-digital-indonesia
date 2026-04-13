@@ -661,7 +661,7 @@ const AddVillage: React.FC = () => {
                                 <Text fontWeight="400" fontSize="14px">
                                     Logo Desa <span style={{ color: "red" }}>*</span>
                                 </Text>
-                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                <Text fontWeight="400" fontSize="10px" mb="2px" color="#9CA3AF">
                                     Maks 1 foto. format: png, jpg.
                                 </Text>
                                 <LogoUpload
@@ -677,7 +677,7 @@ const AddVillage: React.FC = () => {
                                 <Text fontWeight="400" fontSize="14px">
                                     Header Desa <span style={{ color: "red" }}>*</span>
                                 </Text>
-                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                <Text fontWeight="400" fontSize="10px" mb="2px" color="#9CA3AF">
                                     Maks 1 foto. format: png, jpg.
                                 </Text>
                                 <HeaderUpload
@@ -694,7 +694,7 @@ const AddVillage: React.FC = () => {
                                 <Text fontWeight="400" fontSize="14px">
                                     Foto Inovasi di Desa
                                 </Text>
-                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                <Text fontWeight="400" fontSize="10px" mb="2px" color="#9CA3AF">
                                     Maks 5 foto. format: png, jpg.
                                 </Text>
                                 <ImageUpload
@@ -758,7 +758,7 @@ const AddVillage: React.FC = () => {
                                 <Text fontWeight="400" fontSize="14px" mb="1">
                                     Perkembangan Teknologi Digital <span style={{ color: "red" }}>*</span>
                                 </Text>
-                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                <Text fontWeight="400" fontSize="10px" mb="2px" color="#9CA3AF">
                                     Cth teknologi digital: Laptop, smartphone, website, aplikasi internet
                                 </Text>
                                 <MultiSellect
@@ -795,7 +795,7 @@ const AddVillage: React.FC = () => {
                                 <Text fontWeight="400" fontSize="14px" mb="1">
                                     Kemampuan Penggunaan Teknologi Digital <span style={{ color: "red" }}>*</span>
                                 </Text>
-                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                <Text fontWeight="400" fontSize="10px" mb="2px" color="#9CA3AF">
                                     Cth teknologi digital: Laptop, smartphone, website, aplikasi internet
                                 </Text>
                                 <MultiSellect
