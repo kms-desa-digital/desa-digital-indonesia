@@ -727,6 +727,9 @@ const AddVillage: React.FC = () => {
                                 <Text fontWeight="400" fontSize="14px" mb="1">
                                     Potensi Desa <span style={{ color: "red" }}>*</span>
                                 </Text>
+                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                    Pilih opsi potensi desa atau tambahkan opsi lainnya
+                                </Text>
                                 <MultiSellect
                                     options={potensiDesa}
                                     value={selectedPotensi}
@@ -741,8 +744,11 @@ const AddVillage: React.FC = () => {
                             <FormSection
                                 isTextArea
                                 title="Geografis"
+                                description="Contoh: Dataran tinggi 1600 mdpl, Luas 100 ha"
                                 name="geografis"
                                 placeholder="Jelaskan kondisi geografis desa"
+                                wordCount={currentWordCount(textInputValue.geografis)}
+                                maxWords={30}
                                 value={textInputValue.geografis}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
@@ -751,6 +757,9 @@ const AddVillage: React.FC = () => {
                             <Box>
                                 <Text fontWeight="400" fontSize="14px" mb="1">
                                     Perkembangan Teknologi Digital <span style={{ color: "red" }}>*</span>
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                    Cth teknologi digital: Laptop, smartphone, website, aplikasi internet
                                 </Text>
                                 <MultiSellect
                                     options={[
@@ -784,7 +793,10 @@ const AddVillage: React.FC = () => {
 
                             <Box>
                                 <Text fontWeight="400" fontSize="14px" mb="1">
-                                    Kemampuan Teknologi <span style={{ color: "red" }}>*</span>
+                                    Kemampuan Penggunaan Teknologi Digital <span style={{ color: "red" }}>*</span>
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                    Cth teknologi digital: Laptop, smartphone, website, aplikasi internet
                                 </Text>
                                 <MultiSellect
                                     options={[
@@ -819,8 +831,11 @@ const AddVillage: React.FC = () => {
                             <FormSection
                                 isTextArea
                                 title="Sosial dan Budaya"
+                                description="Contoh: Mayoritas suku sunda, mata pencaharian petani, kuat bergotong royong, memegang kuat tradisi, terbuka"
                                 name="sosial"
                                 placeholder="Deskripsi sosial dan budaya desa"
+                                wordCount={currentWordCount(textInputValue.sosial)}
+                                maxWords={30}
                                 value={textInputValue.sosial}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
@@ -829,8 +844,11 @@ const AddVillage: React.FC = () => {
                             <FormSection
                                 isTextArea
                                 title="Sumber Daya Alam"
+                                description="Contoh: Pertanian pangan, perkebunan, bahan tembang, perikanan"
                                 name="resource"
                                 placeholder="Deskripsi sumber daya alam desa"
+                                wordCount={currentWordCount(textInputValue.resource)}
+                                maxWords={30}
                                 value={textInputValue.resource}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
@@ -968,6 +986,8 @@ const AddVillage: React.FC = () => {
                                 title="Lain-lain"
                                 name="infrastruktur"
                                 placeholder="Masukkan hal-lain terkait infrastruktur"
+                                wordCount={currentWordCount(textInputValue.infrastruktur)}
+                                maxWords={30}
                                 value={textInputValue.infrastruktur}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}

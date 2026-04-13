@@ -40,17 +40,23 @@ import { NavbarButton } from "./_styles";
 import StatusCard from "Components/card/status/StatusCard";
 import Loading from "Components/loading";
 
-const categories = [
-    "E-Government",
-    "E-Tourism",
-    "Layanan Keuangan",
-    "Layanan Sosial",
-    "Pemasaran Agri-Food dan E-Commerce",
-    "Pengembangan Masyarakat dan Ekonomi",
-    "Pengelolaan Sumber Daya",
-    "Pertanian Cerdas",
-    "Sistem Informasi",
-    "UMKM",
+const categoryOptions = [
+    { value: "E-Government", label: "E-Government" },
+    { value: "E-Tourism", label: "E-Tourism" },
+    { value: "Infrastruktur Lokal", label: "Infrastruktur Lokal" },
+    { value: "Layanan Keuangan", label: "Layanan Keuangan" },
+    { value: "Layanan Sosial", label: "Layanan Sosial" },
+    {
+        value: "Pemasaran Agri-Food dan E-Commerce",
+        label: "Pemasaran Agri-Food dan E-Commerce",
+    },
+    {
+        value: "Pengembangan Masyarakat dan Ekonomi",
+        label: "Pengembangan Masyarakat dan Ekonomi",
+    },
+    { value: "Pengelolaan Sumber Daya", label: "Pengelolaan Sumber Daya" },
+    { value: "Pertanian Cerdas", label: "Pertanian Cerdas" },
+    { value: "Sistem Informasi", label: "Sistem Informasi" },
 ];
 
 const predefinedModels = [
@@ -87,8 +93,7 @@ const EditInnovation: React.FC = () => {
         priceMax: "",
     });
     const [category, setCategory] = useState("");
-    const [requirements, setRequirements] = useState<string[]>([]);
-    const [newRequirement, setNewRequirement] = useState("");
+    const [requirements, setRequirements] = useState<string[]>([""]);
     const [selectedStatus, setSelectedStatus] = useState("");
     const [selectedModels, setSelectedModels] = useState<(string | number)[]>([]);
     const [status, setStatus] = useState("");
@@ -129,7 +134,7 @@ const EditInnovation: React.FC = () => {
                     });
                     setSelectedStatus(data.statusInovasi || "");
                     setCategory(data.kategori || "");
-                    
+
                     const otherModel = (data.modelBisnis || []).find(
                         (model: string) => !predefinedModels.includes(model)
                     );
@@ -150,7 +155,7 @@ const EditInnovation: React.FC = () => {
                         })) || [];
 
                     setBenefit(mappedManfaat);
-                    setRequirements(data.infrastruktur || []);
+                    setRequirements(data.infrastruktur && data.infrastruktur.length > 0 ? data.infrastruktur : [""]);
                     setSelectedFiles(data.images || []);
                     setStatus(data.status || "");
                     setCatatanAdmin(data.catatanAdmin || "");
@@ -237,23 +242,14 @@ const EditInnovation: React.FC = () => {
             .length;
     };
 
-    const finalRequirements = [...requirements];
-    if (
-        newRequirement.trim() !== "" &&
-        !finalRequirements.includes(newRequirement.trim())
-    ) {
-        finalRequirements.push(newRequirement.trim());
-    }
+
 
     const onSelectCategory = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setCategory(event.target.value);
     };
 
     const onAddRequirement = () => {
-        if (newRequirement.trim() !== "") {
-            setRequirements((prev) => [...prev, newRequirement]);
-            setNewRequirement("");
-        }
+        setRequirements((prev) => [...prev, ""]);
     };
 
     const uploadFiles = async (
@@ -305,8 +301,7 @@ const EditInnovation: React.FC = () => {
         return Promise.all(promises);
     };
 
-    const onUpdateInnovation = async (event: React.FormEvent) => {
-        event.preventDefault();
+    const onUpdateInnovation = async () => {
         setLoading(true);
         const { name, year, description, villages, priceMax, priceMin } = textInputsValue;
 
@@ -330,7 +325,7 @@ const EditInnovation: React.FC = () => {
                     judul: item.benefit,
                     deskripsi: item.description,
                 })),
-                infrastruktur: finalRequirements,
+                infrastruktur: requirements.filter(r => r.trim() !== ""),
                 images: selectedFiles,
                 status: "Menunggu", // Re-submit sets status back to Menunggu
             };
@@ -341,6 +336,7 @@ const EditInnovation: React.FC = () => {
                 updateBody.images = uploadedUrls;
             }
 
+            console.log("Updating innovation in API...", updateBody);
             await updateInnovation(id, updateBody);
             console.log("Innovation updated and re-submitted via API with ID: ", id);
 
@@ -375,9 +371,9 @@ const EditInnovation: React.FC = () => {
         } catch (error: any) {
             console.error("Error deleting innovation via API:", error);
             if (error.response?.data?.message === "ID tidak valid") {
-                 setError("ID tidak valid (Database mismatch)");
+                setError("ID tidak valid (Database mismatch)");
             } else {
-                 setError("Gagal menghapus inovasi");
+                setError("Gagal menghapus inovasi");
             }
             setLoading(false);
         }
@@ -448,7 +444,7 @@ const EditInnovation: React.FC = () => {
                                 Kategori Inovasi <span style={{ color: "red" }}>*</span>
                             </Text>
                             <BottomSheetSelector
-                                options={categories.map(cat => ({ label: cat, value: cat }))}
+                                options={categoryOptions}
                                 value={category}
                                 onChange={(value, label) => setCategory(value)}
                                 placeholder="Pilih kategori"
@@ -533,9 +529,14 @@ const EditInnovation: React.FC = () => {
                                     </Flex>
                                 )}
                             </Stack>
-                            <Text fontWeight="400" fontSize="14px" mb="-2">
-                                Desa yang menerapkan <span style={{ color: "red" }}>*</span>
-                            </Text>
+                            <div>
+                                <Text fontWeight="400" fontSize="14px">
+                                    Desa yang menerapkan <span style={{ color: "red" }}>*</span>
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" color="#9CA3AF">
+                                    Contoh: Desa A, Desa B, Desa C, dan 50 desa linnya
+                                </Text>
+                            </div>
                             <Flex direction="column" alignItems="flex-start">
                                 <Textarea
                                     name="villages"
@@ -552,9 +553,14 @@ const EditInnovation: React.FC = () => {
                                 </Text>
                             </Flex>
 
-                            <Text fontWeight="400" fontSize="14px" mb="-2">
-                                Kisaran harga
-                            </Text>
+                            <div>
+                                <Text fontWeight="400" fontSize="14px">
+                                    Kisaran harga
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" color="#9CA3AF">
+                                    Contoh: Rp1.000.000 - Rp2.000.000
+                                </Text>
+                            </div>
                             <Flex direction="column" alignItems="flex-start">
                                 <Flex direction="row" justifyContent="center">
                                     <InputGroup>
@@ -563,7 +569,7 @@ const EditInnovation: React.FC = () => {
                                             color="gray.300"
                                             fontSize="12px"
                                         >
-                                            Rp.
+                                            Rp
                                         </InputLeftElement>
                                         <Input
                                             name="priceMin"
@@ -581,7 +587,7 @@ const EditInnovation: React.FC = () => {
                                             color="gray.300"
                                             fontSize="12px"
                                         >
-                                            Rp.
+                                            Rp
                                         </InputLeftElement>
                                         <Input
                                             name="priceMax"
@@ -595,20 +601,30 @@ const EditInnovation: React.FC = () => {
                                     </InputGroup>
                                 </Flex>
                             </Flex>
-                            <Text fontWeight="400" fontSize="14px">
+                            <Text fontWeight="400" fontSize="14px" mb="-2">
                                 Foto inovasi <span style={{ color: "red" }}>*</span>
                             </Text>
-                            <ImageUpload
-                                selectedFile={selectedFiles}
-                                setSelectedFile={setSelectedFiles}
-                                selectFileRef={selectFileRef}
-                                onSelectImage={onSelectImage}
-                                maxFiles={5}
-                                disabled={!isEditable}
-                            />
-                            <Text fontWeight="700" fontSize="16px" mb="-2" mt="2">
-                                Manfaat Inovasi <span style={{ color: "red", fontSize: "14px", fontWeight: "400" }}>*</span>
-                            </Text>
+                            <Flex direction="column" alignItems="flex-start">
+                                <Text fontWeight="400" fontSize="10px" color="#9CA3AF" mb="0">
+                                    Maks 5 foto, format: png, jpg.
+                                </Text>
+                                <ImageUpload
+                                    selectedFile={selectedFiles}
+                                    setSelectedFile={setSelectedFiles}
+                                    selectFileRef={selectFileRef}
+                                    onSelectImage={onSelectImage}
+                                    maxFiles={5}
+                                    disabled={!isEditable}
+                                />
+                            </Flex>
+                            <div>
+                                <Text fontWeight="700" fontSize="16px" mt="2">
+                                    Manfaat Inovasi <span style={{ color: "red", fontSize: "14px", fontWeight: "400" }}>*</span>
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" color="#9CA3AF">
+                                    Contoh: Pencatatan data otomatis
+                                </Text>
+                            </div>
 
                             {benefit.map((item, index) => (
                                 <Flex key={index} direction="column" mb={2}>
@@ -675,18 +691,23 @@ const EditInnovation: React.FC = () => {
                                 Tambah Manfaat Lain
                             </Button>
 
-                            <Text fontWeight="700" fontSize="16px" mb="-2" mt="2">
-                                Persiapan Infrastruktur <span style={{ color: "red" }}>*</span>
-                            </Text>
+                            <div>
+                                <Text fontWeight="700" fontSize="16px" mt="2">
+                                    Persiapan Infrastruktur <span style={{ color: "red" }}>*</span>
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" color="#9CA3AF">
+                                    Contoh: Mempunyai listrik
+                                </Text>
+                            </div>
 
                             <Flex direction="column" mt={0}>
                                 {requirements.map((requirement, index) => (
-                                    <Flex key={index} direction="column" mb={3}>
+                                    <Flex key={index} direction="column" mb={2}>
                                         <Flex alignItems="center" position="relative" gap={2}>
                                             <Input
                                                 fontSize="14px"
+                                                placeholder="Masukkan persiapan infrastruktur"
                                                 value={requirement}
-                                                required
                                                 disabled={!isEditable}
                                                 onChange={(e) => {
                                                     const updatedRequirements = [...requirements];
@@ -710,32 +731,28 @@ const EditInnovation: React.FC = () => {
                                         </Flex>
                                     </Flex>
                                 ))}
-
-                                <Flex direction="column" mt={2}>
-                                    <Input
-                                        name="newRequirement"
-                                        fontSize="14px"
-                                        placeholder="Masukkan persiapan infrastruktur"
-                                        value={newRequirement}
-                                        disabled={!isEditable}
-                                        onChange={(e) => setNewRequirement(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") {
-                                                e.preventDefault();
-                                                onAddRequirement();
-                                            }
-                                        }}
-                                    />
-                                    <Button
-                                        variant="outline"
-                                        onClick={onAddRequirement}
-                                        leftIcon={<AddIcon />}
-                                        isDisabled={!isEditable}
-                                        mt={2}
-                                    >
-                                        Tambah Infrastruktur Lain
-                                    </Button>
-                                </Flex>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const lastReq = requirements[requirements.length - 1];
+                                        if (lastReq.trim() === "") {
+                                            toast({
+                                                title: "Harap isi infrastruktur!",
+                                                status: "warning",
+                                                duration: 3000,
+                                                position: "top",
+                                                isClosable: true,
+                                            });
+                                            return;
+                                        }
+                                        onAddRequirement();
+                                    }}
+                                    leftIcon={<AddIcon />}
+                                    isDisabled={!isEditable}
+                                    mt={1}
+                                >
+                                    Tambah Infrastruktur Lain
+                                </Button>
                             </Flex>
                         </Stack>
                     </Flex>
@@ -781,8 +798,11 @@ const EditInnovation: React.FC = () => {
                         )}
                         <Flex gap={2} width="100%">
                             <Button
-                                type="submit"
-                                form="UpdateInnovation"
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    onUpdateInnovation();
+                                }}
                                 flex={1}
                                 isLoading={loading}
                                 colorScheme="green"
