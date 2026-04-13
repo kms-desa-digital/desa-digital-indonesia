@@ -94,6 +94,7 @@ const EditInnovation: React.FC = () => {
     const [catatanAdmin, setCatatanAdmin] = useState("");
     const [otherBusinessModel, setOtherBusinessModel] = useState("");
     const [benefit, setBenefit] = useState([{ benefit: "", description: "" }]);
+    const [isEditable, setIsEditable] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
     const cancelRef = useRef<HTMLButtonElement>(null);
     const [isSuccessOpen, setIsSuccessOpen] = useState(false);
@@ -152,6 +153,11 @@ const EditInnovation: React.FC = () => {
                     setSelectedFiles(data.images || []);
                     setStatus(data.status || "");
                     setCatatanAdmin(data.catatanAdmin || "");
+                    if (data.status === "Menunggu") {
+                        setIsEditable(false);
+                    } else {
+                        setIsEditable(true);
+                    }
                 } else {
                     console.log("No such Innovation found via API!");
                 }
@@ -183,13 +189,34 @@ const EditInnovation: React.FC = () => {
         }
     };
 
+    const formatNumber = (num: string) => {
+        const value = num.replace(/\./g, "");
+        if (!/^\d*$/.test(value)) return num;
+        return value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    };
+
+    const parseNumber = (str: string) => {
+        return str.replace(/\./g, "");
+    };
+
     const onTextChange = ({
         target: { name, value },
     }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setTextInputsValue((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+        if (name === "priceMin" || name === "priceMax") {
+            const rawValue = parseNumber(value);
+            if (/^\d*$/.test(rawValue)) {
+                const formattedValue = formatNumber(rawValue);
+                setTextInputsValue((prev) => ({
+                    ...prev,
+                    [name]: formattedValue,
+                }));
+            }
+        } else {
+            setTextInputsValue((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
     };
 
     const options = [
@@ -296,20 +323,17 @@ const EditInnovation: React.FC = () => {
                 inputDesaMenerapkan: villages,
                 modelBisnis: selectedModels,
                 deskripsi: description,
-                hargaMinimal: priceMin,
-                hargaMaksimal: priceMax,
+                hargaMinimal: parseNumber(priceMin),
+                hargaMaksimal: parseNumber(priceMax),
                 manfaat: benefit.map((item) => ({
                     judul: item.benefit,
                     deskripsi: item.description,
                 })),
                 infrastruktur: finalRequirements,
-                images: selectedFiles // Assuming API handles Storage or we upload first then update
+                images: selectedFiles,
+                status: "Menunggu", // Re-submit sets status back to Menunggu
             };
 
-            // If there are new base64 images, we still need to upload them to storage
-            // OR if the API takes base64, we can send it directly. 
-            // For now, let's stick to the current Firebase Storage upload and then update API
-            
             const newImages = selectedFiles.filter(f => f.startsWith("data:"));
             if (newImages.length > 0) {
                 const uploadedUrls = await uploadFiles(selectedFiles, id);
@@ -317,8 +341,10 @@ const EditInnovation: React.FC = () => {
             }
 
             await updateInnovation(id, updateBody);
-            console.log("Innovation updated via API with ID: ", id);
+            console.log("Innovation updated and re-submitted via API with ID: ", id);
 
+            setStatus("Menunggu");
+            setIsEditable(false);
             setLoading(false);
             setIsSuccessOpen(true);
         } catch (error) {
@@ -393,6 +419,7 @@ const EditInnovation: React.FC = () => {
                                 name="status"
                                 onChange={(value) => setSelectedStatus(value)}
                                 value={selectedStatus}
+                                isDisabled={!isEditable}
                             >
                                 <HStack spacing={4}>
                                     {options.map((option) => (
@@ -417,6 +444,7 @@ const EditInnovation: React.FC = () => {
                                 _placeholder={{ color: "gray.500" }}
                                 value={textInputsValue.name}
                                 onChange={onTextChange}
+                                disabled={!isEditable}
                             />
                             <Text fontWeight="400" fontSize="14px">
                                 Kategori Inovasi <span style={{ color: "red" }}>*</span>
@@ -428,7 +456,7 @@ const EditInnovation: React.FC = () => {
                                 placeholder="Pilih kategori"
                                 title="Pilih Kategori Inovasi"
                                 searchPlaceholder="Cari kategori inovasi di sini..."
-                                disabled={loading || (status === "Menunggu")}
+                                disabled={loading || !isEditable}
                             />
                             <Text fontWeight="400" fontSize="14px">
                                 Tahun dibuat inovasi <span style={{ color: "red" }}>*</span>
@@ -439,6 +467,7 @@ const EditInnovation: React.FC = () => {
                                 placeholder="Ketik tahun"
                                 value={textInputsValue.year}
                                 onChange={onTextChange}
+                                disabled={!isEditable}
                             />
                             <Text fontWeight="400" fontSize="14px">
                                 Deskripsi <span style={{ color: "red" }}>*</span>
@@ -450,6 +479,7 @@ const EditInnovation: React.FC = () => {
                                 height="100px"
                                 value={textInputsValue.description}
                                 onChange={onTextChange}
+                                disabled={!isEditable}
                             />
                             <Stack spacing={1}>
                                 <div>
@@ -464,6 +494,7 @@ const EditInnovation: React.FC = () => {
                                     colorScheme="green"
                                     value={selectedModels as string[]}
                                     onChange={(values) => setSelectedModels(values)}
+                                    isDisabled={!isEditable}
                                 >
                                     <Flex gap={4}>
                                         {[firstColumn, secondColumn].map((column, colIndex) => (
@@ -487,6 +518,7 @@ const EditInnovation: React.FC = () => {
                                             name="otherBusinessModel"
                                             placeholder="Silahkan tulis model bisnis lainnya"
                                             value={otherBusinessModel}
+                                            disabled={!isEditable}
                                             onChange={(e) => {
                                                 const wordCount = e.target.value
                                                     .split(/\s+/)
@@ -515,6 +547,7 @@ const EditInnovation: React.FC = () => {
                                     value={textInputsValue.villages}
                                     onChange={onTextChange}
                                     required
+                                    disabled={!isEditable}
                                 />
                                 <Text fontWeight="400" fontSize="10px" color="gray.500">
                                     {getVillagesWordCount()}/20 kata
@@ -540,6 +573,7 @@ const EditInnovation: React.FC = () => {
                                             placeholder="Harga minimal"
                                             value={textInputsValue.priceMin}
                                             onChange={onTextChange}
+                                            disabled={!isEditable}
                                         />
                                     </InputGroup>
                                     <MinusIcon mx="2" color="#9CA3AF" mt="3" />
@@ -558,6 +592,7 @@ const EditInnovation: React.FC = () => {
                                             value={textInputsValue.priceMax}
                                             onChange={onTextChange}
                                             required
+                                            disabled={!isEditable}
                                         />
                                     </InputGroup>
                                 </Flex>
@@ -571,6 +606,7 @@ const EditInnovation: React.FC = () => {
                                 selectFileRef={selectFileRef}
                                 onSelectImage={onSelectImage}
                                 maxFiles={5}
+                                disabled={!isEditable}
                             />
                             <Text fontWeight="700" fontSize="16px" mb="-2" mt="2">
                                 Manfaat Inovasi <span style={{ color: "red", fontSize: "14px", fontWeight: "400" }}>*</span>
@@ -587,6 +623,7 @@ const EditInnovation: React.FC = () => {
                                             placeholder="Masukkan manfaat singkat inovasi"
                                             value={item.benefit}
                                             required
+                                            disabled={!isEditable}
                                             onChange={(e) => {
                                                 const updatedBenefits = [...benefit];
                                                 updatedBenefits[index].benefit = e.target.value;
@@ -616,6 +653,7 @@ const EditInnovation: React.FC = () => {
                                             placeholder="Masukkan deskripsi manfaat"
                                             value={item.description}
                                             required
+                                            disabled={!isEditable}
                                             onChange={(e) => {
                                                 const updatedBenefits = [...benefit];
                                                 updatedBenefits[index].description = e.target.value;
@@ -649,15 +687,17 @@ const EditInnovation: React.FC = () => {
                                                 fontSize="14px"
                                                 value={requirement}
                                                 required
+                                                disabled={!isEditable}
                                                 onChange={(e) => {
                                                     const updatedRequirements = [...requirements];
                                                     updatedRequirements[index] = e.target.value;
                                                     setRequirements(updatedRequirements);
                                                 }}
                                             />
-                                            {requirements.length >= 1 && (
+                                            {requirements.length > 0 && index !== 0 && (
                                                 <Button
                                                     variant="none"
+                                                    isDisabled={!isEditable}
                                                     onClick={() => {
                                                         setRequirements((prev) =>
                                                             prev.filter((_, i) => i !== index)
@@ -677,6 +717,7 @@ const EditInnovation: React.FC = () => {
                                         fontSize="14px"
                                         placeholder="Masukkan persiapan infrastruktur"
                                         value={newRequirement}
+                                        disabled={!isEditable}
                                         onChange={(e) => setNewRequirement(e.target.value)}
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter") {
@@ -689,6 +730,7 @@ const EditInnovation: React.FC = () => {
                                         variant="outline"
                                         onClick={onAddRequirement}
                                         leftIcon={<AddIcon />}
+                                        isDisabled={!isEditable}
                                         mt={2}
                                     >
                                         Tambah Infrastruktur Lain
@@ -706,69 +748,33 @@ const EditInnovation: React.FC = () => {
             )}
             {status === "Menunggu" ? (
                 <StatusCard status={status} />
-            ) : status === "Ditolak" ? (
+            ) : (
                 <>
-                    <StatusCard status={status} message={catatanAdmin} />
+                    {status === "Ditolak" && <StatusCard status={status} message={catatanAdmin} />}
                     <NavbarButton>
                         <Button
                             type="submit"
                             form="UpdateInnovation"
-                            width="80%"
-                            isLoading={loading}>
-                            Update Inovasi
-                        </Button>
-                        <Button
-                            type="button"
-                            width="80%"
-                            bg="red.500"
-                            color="white"
-                            _hover={{ bg: "red.600" }}
-                            onClick={handleDeleteClick}
+                            width={status === "Ditolak" || status === "Terverifikasi" ? "80%" : "100%"}
+                            isLoading={loading}
+                            colorScheme="green"
                         >
-                            Delete Inovasi
+                            {status === "Ditolak" ? "Ajukan Ulang" : "Update Inovasi"}
                         </Button>
+                        {(status === "Ditolak" || status === "Terverifikasi") && (
+                            <Button
+                                type="button"
+                                width="80%"
+                                bg="red.500"
+                                color="white"
+                                _hover={{ bg: "red.600" }}
+                                onClick={handleDeleteClick}
+                            >
+                                Delete Inovasi
+                            </Button>
+                        )}
                     </NavbarButton>
                 </>
-            ) : status === "Terverifikasi" ? (
-                <NavbarButton>
-                    <Button
-                        type="submit"
-                        form="UpdateInnovation"
-                        width="80%"
-                        isLoading={loading}>
-                        Update Inovasi
-                    </Button>
-                    <Button
-                        type="button"
-                        width="80%"
-                        bg="red.500"
-                        color="white"
-                        _hover={{ bg: "red.600" }}
-                        onClick={handleDeleteClick}
-                    >
-                        Delete Inovasi
-                    </Button>
-                </NavbarButton>
-            ) : (
-                <NavbarButton>
-                    <Button
-                        type="submit"
-                        form="UpdateInnovation"
-                        width="80%"
-                        isLoading={loading}>
-                        Update Inovasi
-                    </Button>
-                    <Button
-                        type="button"
-                        width="80%"
-                        bg="red.500"
-                        color="white"
-                        _hover={{ bg: "red.600" }}
-                        onClick={handleDeleteClick}
-                    >
-                        Delete Inovasi
-                    </Button>
-                </NavbarButton>
             )}
             <Box height="100px" />
             <AlertDialog

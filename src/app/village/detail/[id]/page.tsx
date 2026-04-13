@@ -497,7 +497,7 @@ export default function DetailVillagePage() {
                             </Text>
                         </Flex>
                         {village?.status === "Terverifikasi" && (
-                            <CardContainer style={{ paddingBottom: "40px" }}>
+                            <CardContainer style={{ paddingBottom: "10px" }}>
                                 <Horizontal>
                                     {innovations.length === 0 ? (
                                         <Text color="gray.400" fontSize={12}>
@@ -570,7 +570,7 @@ export default function DetailVillagePage() {
                         setMessage={setModalInput}
                         loading={loading}
                     />
-                    <Box height="80px" />
+                    <Box height="60px" />
                 </ContentContainer>
             </div>
             <ActionDrawer

@@ -760,10 +760,10 @@ const AddVillage: React.FC = () => {
                                             ]
                                             : []
                                     }
-                                    onChange={(selected) =>
+                                    onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            teknologi: selected?.[0]?.value || null,
+                                            teknologi: selected?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -794,10 +794,10 @@ const AddVillage: React.FC = () => {
                                             ]
                                             : []
                                     }
-                                    onChange={(selected) =>
+                                    onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            kemampuan: selected?.[0]?.value || null,
+                                            kemampuan: selected?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -854,10 +854,10 @@ const AddVillage: React.FC = () => {
                                             ]
                                             : []
                                     }
-                                    onChange={(selected) =>
+                                    onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            kondisijalan: selected?.[0]?.value || null,
+                                            kondisijalan: selected?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -907,10 +907,10 @@ const AddVillage: React.FC = () => {
                                             ]
                                             : []
                                     }
-                                    onChange={(selected) =>
+                                    onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            jaringan: selected?.[0]?.value || null,
+                                            jaringan: selected?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -941,10 +941,10 @@ const AddVillage: React.FC = () => {
                                             ]
                                             : []
                                     }
-                                    onChange={(selected) =>
+                                    onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            listrik: selected?.[0]?.value || null,
+                                            listrik: selected?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"

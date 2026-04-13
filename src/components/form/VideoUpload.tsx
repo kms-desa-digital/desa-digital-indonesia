@@ -141,7 +141,7 @@ const VidUpload: React.FC<VidUploadProps> = ({
             </Box>
           )}
 
-          {!uploading && (
+          {!uploading && !disabled && (
             <Button
               leftIcon={<img src={Video} alt="video" />}
               _hover={{ bg: "DBFFE6" }}

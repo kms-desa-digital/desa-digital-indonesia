@@ -470,6 +470,7 @@ const DetailInnovator: React.FC = () => {
                     website: innovatorData?.website || ""
                 }}
             />
+            <Box height="60px" />
         </Container>
     );
 };

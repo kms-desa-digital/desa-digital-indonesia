@@ -8,6 +8,7 @@ import {
     AccordionPanel,
     Box,
     Button,
+    Badge,
     Flex,
     Img,
     Stack,
@@ -629,7 +630,7 @@ function DetailInnovation() {
                         <Description>No specific needs listed.</Description>
                     )}
                 </Flex>
-                <Flex flexDirection="column" mb='70px' gap="8px">
+                <Flex flexDirection="column" mb='20px' gap="8px">
                     <Flex
                         justifyContent="space-between"
                         alignItems="flex-end"
@@ -760,7 +761,7 @@ function DetailInnovation() {
                         website: innovatorData?.website || "https://www.google.com/",
                     }}
                 />
-                <Box height="80px" />
+                <Box height="60px" />
             </ContentContainer>
         </Box>
     );

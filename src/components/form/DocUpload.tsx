@@ -143,7 +143,7 @@ const DocUpload: React.FC<DocUploadProps> = ({
             )}
 
             {
-                selectedDoc.length < 3 && !uploading && (
+                selectedDoc.length < 3 && !uploading && !disabled && (
                     <Button
                         leftIcon={<img src={Folder} alt="folder" />}
                         _hover={{ bg: "DBFFE6" }}

@@ -176,7 +176,7 @@ const KlaimInovasiDetail: React.FC = () => {
                         setIsManual(!data.inovasiId);
                         
                         // Extract evidence files correctly from alternate naming conventions
-                        const checkboxes = data.buktiJenis || data.jenisDokumen || data.bukti_jenis || [];
+                        const checkboxes = (data.buktiJenis || data.jenisDokumen || data.bukti_jenis || []).map((s: string) => s.toLowerCase());
                         setSelectedCheckboxes(Array.isArray(checkboxes) ? checkboxes : []);
                         
                         // Handle multiple possible field names from legacy/new API
@@ -327,14 +327,7 @@ const KlaimInovasiDetail: React.FC = () => {
                         </Stack>
                     )}
                     <CheckboxGroup>
-                        <JenisKlaim>
-                            <input
-                                style={{
-                                    transform: "scale(1.3)", // Memperbesar checkbox
-                                    marginRight: "8px", // Memberi jarak ke teks
-                                }}
-                                type="checkbox"
-                                checked={selectedCheckboxes.includes("foto")}
+                                checked={selectedCheckboxes.includes("foto") || selectedCheckboxes.includes("Foto")}
                                 disabled
                             />
                             Foto
@@ -346,7 +339,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                     marginRight: "8px", // Memberi jarak ke teks
                                 }}
                                 type="checkbox"
-                                checked={selectedCheckboxes.includes("video")}
+                                checked={selectedCheckboxes.includes("video") || selectedCheckboxes.includes("Video")}
                                 disabled
                             />
                             Video
@@ -358,14 +351,14 @@ const KlaimInovasiDetail: React.FC = () => {
                                     marginRight: "8px", // Memberi jarak ke teks
                                 }}
                                 type="checkbox"
-                                checked={selectedCheckboxes.includes("dokumen")}
+                                checked={selectedCheckboxes.includes("dokumen") || selectedCheckboxes.includes("Dokumen")}
                                 disabled
                             />
                             Dokumen
                         </JenisKlaim>
                     </CheckboxGroup>
 
-                    <Collapse in={selectedCheckboxes.includes("foto")} animateOpacity>
+                    <Collapse in={selectedCheckboxes.includes("foto") || selectedCheckboxes.includes("Foto")} animateOpacity>
                         <Field>
                             <Flex flexDirection="column" gap="2px">
                                 <Text1> Foto Inovasi </Text1>
@@ -386,7 +379,7 @@ const KlaimInovasiDetail: React.FC = () => {
                         </Field>
                     </Collapse>
 
-                    <Collapse in={selectedCheckboxes.includes("video")} animateOpacity>
+                    <Collapse in={selectedCheckboxes.includes("video") || selectedCheckboxes.includes("Video")} animateOpacity>
                         <Field>
                             <Flex flexDirection="column" gap="2px">
                                 <Text1> Video Inovasi </Text1>
@@ -406,7 +399,7 @@ const KlaimInovasiDetail: React.FC = () => {
                         </Field>
                     </Collapse>
 
-                    <Collapse in={selectedCheckboxes.includes("dokumen")} animateOpacity>
+                    <Collapse in={selectedCheckboxes.includes("dokumen") || selectedCheckboxes.includes("Dokumen")} animateOpacity>
                         <Field>
                             <Flex flexDirection="column" gap="2px">
                                 <Text1> Dokumen Pendukung </Text1>

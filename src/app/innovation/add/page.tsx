@@ -182,43 +182,57 @@ const AddInnovation: React.FC = () => {
         }
     };
 
+    const formatNumber = (num: string) => {
+        const value = num.replace(/\./g, "");
+        if (!/^\d*$/.test(value)) return num; // Keep as is if contains non-digits
+        return value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    };
+
+    const parseNumber = (str: string) => {
+        return str.replace(/\./g, "");
+    };
+
     const onTextChange = ({
         target: { name, value },
     }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const wordCount = value.split(/\s+/).filter((word) => word !== "").length;
         if (name === "priceMin" || name === "priceMax") {
-            if (/^\d*$/.test(value)) {
+            const rawValue = parseNumber(value);
+            if (/^\d*$/.test(rawValue)) {
+                const formattedValue = formatNumber(rawValue);
                 setTextInputsValue((prev) => ({
                     ...prev,
-                    [name]: value,
-                }));
-            }
-        } else if (name === "description") {
-            if (wordCount <= 80) {
-                setTextInputsValue((prev) => ({
-                    ...prev,
-                    [name]: value,
-                }));
-            }
-        } else if (name === "villages") {
-            if (wordCount <= 20) {
-                setTextInputsValue((prev) => ({
-                    ...prev,
-                    [name]: value,
-                }));
-            }
-        } else if (name === "otherBusinessModel") {
-            if (wordCount <= 5) {
-                setTextInputsValue((prev) => ({
-                    ...prev,
-                    [name]: value,
+                    [name]: formattedValue,
                 }));
             }
         } else {
-            setTextInputsValue((prev) => ({
-                ...prev,
-                [name]: value,
-            }));
+            const wordCount = value.split(/\s+/).filter((word) => word !== "").length;
+            if (name === "description") {
+                if (wordCount <= 80) {
+                    setTextInputsValue((prev) => ({
+                        ...prev,
+                        [name]: value,
+                    }));
+                }
+            } else if (name === "villages") {
+                if (wordCount <= 20) {
+                    setTextInputsValue((prev) => ({
+                        ...prev,
+                        [name]: value,
+                    }));
+                }
+            } else if (name === "otherBusinessModel") {
+                if (wordCount <= 5) {
+                    setTextInputsValue((prev) => ({
+                        ...prev,
+                        [name]: value,
+                    }));
+                }
+            } else {
+                setTextInputsValue((prev) => ({
+                    ...prev,
+                    [name]: value,
+                }));
+            }
         }
     };
 
@@ -317,6 +331,9 @@ const AddInnovation: React.FC = () => {
         const { name, year, description, villages, priceMax, priceMin } =
             textInputsValue;
 
+        const rawPriceMin = parseNumber(priceMin);
+        const rawPriceMax = parseNumber(priceMax);
+
         const modelBisnis = selectedModels.filter((model) => model !== "Lain-lain");
         if (
             selectedModels.includes("Lain-lain") &&
@@ -383,8 +400,8 @@ const AddInnovation: React.FC = () => {
                 tahunDibuat: year,
                 inputDesaMenerapkan: villages,
                 deskripsi: description,
-                hargaMinimal: priceMin,
-                hargaMaksimal: priceMax,
+                hargaMinimal: rawPriceMin,
+                hargaMaksimal: rawPriceMax,
                 manfaat: benefit.map((item) => ({
                     judul: item.benefit,
                     deskripsi: item.description,
@@ -413,10 +430,20 @@ const AddInnovation: React.FC = () => {
 
             // Handle Image Upload (Masih via Firebase Storage)
             if (selectedFiles.length > 0) {
-                const imageUrls = await uploadFiles(selectedFiles, newId);
-                // Update record di MongoDB dengan image URLs yang baru
-                await updateInnovation(newId, { images: imageUrls });
-                console.log("Images uploaded & Mongo updated", imageUrls);
+                // Determine which files are already URLs and which are base64
+                const newFiles = selectedFiles.filter(f => f.startsWith("data:image"));
+                const existingUrls = selectedFiles.filter(f => !f.startsWith("data:image"));
+                
+                if (newFiles.length > 0) {
+                    const uploadedImageUrls = await uploadFiles(newFiles, newId);
+                    const finalImageUrls = [...existingUrls, ...uploadedImageUrls];
+                    
+                    // Update record di MongoDB dengan image URLs yang baru
+                    await updateInnovation(newId, { images: finalImageUrls });
+                } else {
+                    // Update if we re-arranged
+                    await updateInnovation(newId, { images: existingUrls });
+                }
             }
 
             setStatus("Menunggu");
@@ -474,8 +501,8 @@ const AddInnovation: React.FC = () => {
                         year: data.tahunDibuat || "",
                         description: data.deskripsi || "",
                         villages: data.inputDesaMenerapkan || "",
-                        priceMin: data.hargaMinimal || "",
-                        priceMax: data.hargaMaksimal || "",
+                        priceMin: data.hargaMinimal ? formatNumber(data.hargaMinimal.toString()) : "",
+                        priceMax: data.hargaMaksimal ? formatNumber(data.hargaMaksimal.toString()) : "",
                         otherBusinessModel: data.otherBusinessModel || "",
                     });
                     setSelectedStatus(data.statusInovasi || "");
@@ -592,17 +619,18 @@ const AddInnovation: React.FC = () => {
                     id="innovationForm">
                     <Flex direction="column" marginTop="24px">
                         <Stack spacing={3} width="100%">
-                            <Alert
-                                status={alertStatus}
-                                fontSize={12}
-                                borderRadius={4}
-                                padding="12px"
-                                width="100%"
-                                maxWidth="360px"
-                                mx="auto"
-                            >
-                                {alertMessage}
-                            </Alert>
+                            <Flex width="100%" justifyContent="center">
+                                <Alert
+                                    status={alertStatus}
+                                    fontSize={12}
+                                    borderRadius={4}
+                                    padding="12px"
+                                    width="100%"
+                                    maxWidth="360px"
+                                >
+                                    {alertMessage}
+                                </Alert>
+                            </Flex>
                             <Text fontWeight="400" fontSize="14px" mb="-2">
                                 Status Inovasi <span style={{ color: "red" }}>*</span>
                             </Text>
@@ -916,10 +944,10 @@ const AddInnovation: React.FC = () => {
                                                     setRequirements(updatedRequirements);
                                                 }}
                                             />
-                                            {requirements.length >= 1 && (
+                                            {requirements.length > 0 && index !== 0 && (
                                                 <Button
                                                     variant="none"
-                                                    disabled={!isEditable}
+                                                    isDisabled={!isEditable || isFormLocked}
                                                     onClick={() => {
                                                         setRequirements((prev) =>
                                                             prev.filter((_, i) => i !== index)
