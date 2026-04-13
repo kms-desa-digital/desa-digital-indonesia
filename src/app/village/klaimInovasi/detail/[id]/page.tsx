@@ -327,6 +327,13 @@ const KlaimInovasiDetail: React.FC = () => {
                         </Stack>
                     )}
                     <CheckboxGroup>
+                        <JenisKlaim>
+                            <input
+                                style={{
+                                    transform: "scale(1.3)", // Memperbesar checkbox
+                                    marginRight: "8px", // Memberi jarak ke teks
+                                }}
+                                type="checkbox"
                                 checked={selectedCheckboxes.includes("foto") || selectedCheckboxes.includes("Foto")}
                                 disabled
                             />
