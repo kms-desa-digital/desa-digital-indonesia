@@ -84,13 +84,14 @@ const BottomSheetSelector: React.FC<BottomSheetSelectorProps> = ({
 
             <Drawer isOpen={isOpen} placement="bottom" onClose={onClose}>
                 <DrawerOverlay />
-                <DrawerContent 
-                    borderTopRadius="20px" 
-                    maxHeight="80vh" 
-                    maxWidth="360px" 
-                    width="100%" 
-                    left="50%" 
-                    transform="translateX(-50%)" 
+                <DrawerContent
+                    sx={{
+                        borderTopRadius: "3xl",
+                        width: "360px",
+                        h: "480px",
+                        my: "auto",
+                        mx: "auto",
+                    }}
                 >
                     <DrawerHeader borderBottomWidth="0px" pt={4} px={4}>
                         <Flex justify="space-between" align="center">
@@ -123,6 +124,20 @@ const BottomSheetSelector: React.FC<BottomSheetSelectorProps> = ({
 
                     <DrawerBody px={4} pb={6}>
                         <VStack align="stretch" spacing={0} mt={2}>
+                            {!search && (
+                                <Box
+                                    py={4}
+                                    borderBottomWidth="1px"
+                                    borderColor="gray.100"
+                                    cursor="pointer"
+                                    onClick={() => handleSelect({ value: "", label: "" })}
+                                    _hover={{ bg: "gray.50" }}
+                                >
+                                    <Text fontSize="14px" fontWeight={!value ? "600" : "400"} color={!value ? "green.500" : "black"}>
+                                        Semua {title.replace("Pilih ", "")}
+                                    </Text>
+                                </Box>
+                            )}
                             {filteredOptions.map((option, idx) => (
                                 <Box
                                     key={idx}
@@ -133,7 +148,11 @@ const BottomSheetSelector: React.FC<BottomSheetSelectorProps> = ({
                                     onClick={() => handleSelect(option)}
                                     _hover={{ bg: "gray.50" }}
                                 >
-                                    <Text fontSize="14px" fontWeight={value === option.value || value === option.label ? "600" : "400"}>
+                                    <Text
+                                        fontSize="14px"
+                                        fontWeight={value === option.value || value === option.label ? "600" : "400"}
+                                        color={value === option.value || value === option.label ? "green.500" : "black"}
+                                    >
                                         {option.label}
                                     </Text>
                                     {option.count !== undefined && (

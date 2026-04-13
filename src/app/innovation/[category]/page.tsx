@@ -14,8 +14,9 @@ import {
 // import { DocumentData } from "firebase/firestore";
 import { getInnovationByCategory } from "Services/innovationServices";
 
-import { Image, Input, InputGroup, InputLeftElement, Icon, Box } from "@chakra-ui/react";
+import { Image, Input, InputGroup, InputLeftElement, Icon, Box, Flex } from "@chakra-ui/react";
 import { FiSearch } from "react-icons/fi";
+import Loading from "Components/loading";
 import { useTranslations } from "next-intl";
 
 export default function InnovationCategoryPage() {
@@ -65,14 +66,12 @@ export default function InnovationCategoryPage() {
             <TopBar title={getTranslatedCategory(category)} onBack={() => router.back()} />
             <Box mt="12px" px="16px">
                 {loading ? (
-                   <DetailContainer>
-                       {[1,2,3,4].map(i => (
-                           <Skeleton key={i} height={150} borderRadius={8} style={{ marginBottom: 12 }} />
-                       ))}
-                   </DetailContainer>
+                    <Box mt="100px">
+                        <Loading />
+                    </Box>
                 ) : (
                     <>
-                        <Box mb="16px" position="sticky" top="56px" zIndex="10" bg="white" pb="8px" pt="4px">
+                        <Box mb="16px" position="sticky" top="0px" zIndex="10" bg="white" pb="8px" pt="4px">
                             <InputGroup>
                                 <InputLeftElement pointerEvents="none" height="40px">
                                     <Icon as={FiSearch} color="gray.400" />
@@ -92,13 +91,16 @@ export default function InnovationCategoryPage() {
                         <DetailContainer>
                             {data
                                 .filter((item) =>
+                                    category === "Semua Kategori Inovasi" || item.kategori === category
+                                )
+                                .filter((item) =>
                                     item.namaInovasi?.toLowerCase().includes(searchTerm.toLowerCase())
                                 )
                                 .map((item, idx) => (
                                     <CardInnovation
                                         key={idx}
                                         {...item}
-                                        jumlahDesa={item.jumlahDesaDiterapkan || item.jumlahDesa || item.appliedVillages?.length || 0}
+                                        jumlahDesa={item.appliedVillages?.length || item.jumlahDesaDiterapkan || item.jumlahDesa || 0}
                                         innovatorLogo={
                                             item.innovatorImgURL || item.logoInovator || item.logo || (
                                                 <Image src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />

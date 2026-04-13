@@ -47,9 +47,9 @@ export const Image = styled.div`
 export const Title = styled.p`
   font-size: 18px;
   font-weight: 700;
-  margin-top: 24px;
+  margin-top: 48px;
   position: relative;
-  color: #1F2937;
+  color: #1f2937;
 `;
 export const TagContainer = styled.div`
   display: flex;
@@ -177,13 +177,13 @@ export const ContPotensiDesa = styled.div`
 `;
 
 export const ButtonKontak = styled.div`
-display: flex;
-width: 100%;
-padding: 12px 16px;
-align-items: center;
-gap: 16px;
-margin-top: 12px;
-border-radius: 10px;
+  display: flex;
+  width: 100%;
+  padding: 10px 16px;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  border-radius: 10px;
 border: 1px solid var(--Gray-40, #D1D5DB);
 background: var(--Monochrome-White, #FFF);
 box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.06), 0px 1px 3px 0px rgba(0, 0, 0, 0.10);

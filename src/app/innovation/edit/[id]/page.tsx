@@ -1,6 +1,6 @@
 "use client";
 
-import { AddIcon, DeleteIcon, MinusIcon } from "@chakra-ui/icons";
+import { AddIcon, DeleteIcon, MinusIcon, CloseIcon } from "@chakra-ui/icons";
 import {
     AlertDialog,
     AlertDialogBody,
@@ -38,6 +38,7 @@ import { storage } from "src/firebase/clientApp";
 import { getInnovationById, updateInnovation, deleteInnovation } from "Services/innovationServices";
 import { NavbarButton } from "./_styles";
 import StatusCard from "Components/card/status/StatusCard";
+import Loading from "Components/loading";
 
 const categories = [
     "E-Government",
@@ -397,10 +398,7 @@ const EditInnovation: React.FC = () => {
 
     if (loading) {
         return (
-            <Container page>
-                <TopBar title="Edit Inovasi" onBack={() => router.back()} />
-                <Text>Loading...</Text>
-            </Container>
+            <Loading />
         );
     }
 
@@ -633,6 +631,7 @@ const EditInnovation: React.FC = () => {
                                         {benefit.length > 1 && (
                                             <Button
                                                 variant="none"
+                                                isDisabled={!isEditable}
                                                 onClick={() => {
                                                     setBenefit((prev) =>
                                                         prev.filter((_, i) => i !== index)
@@ -668,6 +667,7 @@ const EditInnovation: React.FC = () => {
                                 mt={-3}
                                 variant="outline"
                                 leftIcon={<AddIcon />}
+                                isDisabled={!isEditable}
                                 onClick={() => {
                                     setBenefit([...benefit, { benefit: "", description: "" }]);
                                 }}
@@ -694,7 +694,7 @@ const EditInnovation: React.FC = () => {
                                                     setRequirements(updatedRequirements);
                                                 }}
                                             />
-                                            {requirements.length > 0 && index !== 0 && (
+                                            {requirements.length > 1 && (
                                                 <Button
                                                     variant="none"
                                                     isDisabled={!isEditable}
@@ -749,32 +749,63 @@ const EditInnovation: React.FC = () => {
             {status === "Menunggu" ? (
                 <StatusCard status={status} />
             ) : (
-                <>
-                    {status === "Ditolak" && <StatusCard status={status} message={catatanAdmin} />}
-                    <NavbarButton>
-                        <Button
-                            type="submit"
-                            form="UpdateInnovation"
-                            width={status === "Ditolak" || status === "Terverifikasi" ? "80%" : "100%"}
-                            isLoading={loading}
-                            colorScheme="green"
-                        >
-                            {status === "Ditolak" ? "Ajukan Ulang" : "Update Inovasi"}
-                        </Button>
-                        {(status === "Ditolak" || status === "Terverifikasi") && (
-                            <Button
-                                type="button"
-                                width="80%"
-                                bg="red.500"
-                                color="white"
-                                _hover={{ bg: "red.600" }}
-                                onClick={handleDeleteClick}
-                            >
-                                Delete Inovasi
-                            </Button>
+                <Box
+                    position="fixed"
+                    bottom="0"
+                    left="0"
+                    right="0"
+                    zIndex="1001"
+                    bg="white"
+                    px="16px"
+                    pb="12px"
+                    pt="8px"
+                    boxShadow="0px -2px 4px rgba(0,0,0,0.1)"
+                    maxWidth="360px"
+                    mx="auto"
+                >
+                    <Stack spacing={3}>
+                        {status === "Ditolak" && (
+                            <Flex bg="#FEE2E2" p={2} borderRadius="8px" align="center" justify="center" direction="column">
+                                <Flex align="center">
+                                    <CloseIcon fontSize="10px" color="#EF4444" mr="8px" />
+                                    <Text fontSize="12px" fontWeight="700" color="#EF4444">
+                                        Pengajuan ditolak
+                                    </Text>
+                                </Flex>
+                                {catatanAdmin && (
+                                    <Text fontSize="10px" fontWeight="500" color="#EF4444" textAlign="center" mt={1}>
+                                        Catatan: {catatanAdmin}
+                                    </Text>
+                                )}
+                            </Flex>
                         )}
-                    </NavbarButton>
-                </>
+                        <Flex gap={2} width="100%">
+                            <Button
+                                type="submit"
+                                form="UpdateInnovation"
+                                flex={1}
+                                isLoading={loading}
+                                colorScheme="green"
+                                fontSize="14px"
+                            >
+                                {status === "Ditolak" ? "Ajukan Ulang" : "Update Inovasi"}
+                            </Button>
+                            {(status === "Ditolak" || status === "Terverifikasi") && (
+                                <Button
+                                    type="button"
+                                    flex={1}
+                                    bg="red.500"
+                                    color="white"
+                                    _hover={{ bg: "red.600" }}
+                                    onClick={handleDeleteClick}
+                                    fontSize="14px"
+                                >
+                                    Delete Inovasi
+                                </Button>
+                            )}
+                        </Flex>
+                    </Stack>
+                </Box>
             )}
             <Box height="100px" />
             <AlertDialog

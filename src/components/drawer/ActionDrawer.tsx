@@ -1,4 +1,5 @@
 import {
+  Box,
   Button,
   Drawer,
   DrawerBody,
@@ -53,8 +54,8 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({
       <DrawerContent
         sx={{
           borderRadius: "lg",
-          maxWidth: "360px",
-          width: "100%",
+          width: "360px",
+          my: "auto",
           mx: "auto",
         }}
       >
@@ -111,10 +112,11 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({
               />
               Kontak {role}
             </DrawerHeader>
-            <DrawerBody fontSize={12} color="#374151" paddingX={4} gap={4}>
-
-              Terapkan produk inovasi desa digital dengan cara menghubungi&nbsp;
-              {role} melalui saluran di bawah ini:
+            <DrawerBody fontSize={12} color="#374151" paddingX={4} pt={2} pb={6}>
+              <Box mb={2}>
+                Terapkan produk inovasi desa digital dengan cara menghubungi&nbsp;
+                {role} melalui saluran di bawah ini:
+              </Box>
 
               {/* Tombol WA */}
               <ButtonKontak as="a" href={contactData?.whatsapp ? `https://wa.me/${contactData.whatsapp}` : "#"} target="_blank">
@@ -136,7 +138,6 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({
             </DrawerBody>
           </>
         )}
-        <DrawerFooter></DrawerFooter>
       </DrawerContent>
     </Drawer>
   );

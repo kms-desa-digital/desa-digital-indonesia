@@ -871,7 +871,7 @@ const AddInnovation: React.FC = () => {
                                         {benefit.length > 1 && (
                                             <Button
                                                 variant="none"
-                                                disabled={!isEditable || isFormLocked}
+                                                isDisabled={!isEditable || isFormLocked}
                                                 onClick={() => {
                                                     setBenefit((prev) =>
                                                         prev.filter((_, i) => i !== index)
@@ -944,7 +944,7 @@ const AddInnovation: React.FC = () => {
                                                     setRequirements(updatedRequirements);
                                                 }}
                                             />
-                                            {requirements.length > 0 && index !== 0 && (
+                                            {requirements.length > 1 && (
                                                 <Button
                                                     variant="none"
                                                     isDisabled={!isEditable || isFormLocked}

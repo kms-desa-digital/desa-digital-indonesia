@@ -22,6 +22,7 @@ import ImageUpload from "Components/form/ImageUpload";
 import LogoUpload from "Components/form/LogoUpload";
 import LocationSelector from "Components/form/LocationSellector";
 import { getVillageById, createVillage, updateVillage } from "Services/villageServices";
+import Loading from "Components/loading";
 import {
     getDistricts,
     getProvinces,
@@ -62,6 +63,9 @@ const AddVillage: React.FC = () => {
     const [confirmedSubmit, setConfirmedSubmit] = useState(false);
     const [submitEvent, setSubmitEvent] = useState<React.FormEvent<HTMLFormElement> | null>(null);
     const toast = useToast();
+
+    // Use a single loading state for initial fetch and subsequent actions
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [textInputValue, setTextInputValue] = useState({
         name: "",
         description: "",
@@ -527,6 +531,8 @@ const AddVillage: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Error fetching village data from API:", error);
+            } finally {
+                setIsInitialLoading(false);
             }
         };
 
@@ -568,6 +574,10 @@ const AddVillage: React.FC = () => {
 
         return () => clearInterval(intervalId);
     }, [user, router]);
+
+    if (isInitialLoading) {
+        return <Loading />;
+    }
 
     return (
         <>
@@ -763,7 +773,7 @@ const AddVillage: React.FC = () => {
                                     onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            teknologi: selected?.value || null,
+                                            teknologi: selected[0]?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -797,7 +807,7 @@ const AddVillage: React.FC = () => {
                                     onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            kemampuan: selected?.value || null,
+                                            kemampuan: selected[0]?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -857,7 +867,7 @@ const AddVillage: React.FC = () => {
                                     onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            kondisijalan: selected?.value || null,
+                                            kondisijalan: selected[0]?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -910,7 +920,7 @@ const AddVillage: React.FC = () => {
                                     onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            jaringan: selected?.value || null,
+                                            jaringan: selected[0]?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -944,7 +954,7 @@ const AddVillage: React.FC = () => {
                                     onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            listrik: selected?.value || null,
+                                            listrik: selected[0]?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"

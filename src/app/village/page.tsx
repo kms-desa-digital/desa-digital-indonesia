@@ -117,7 +117,7 @@ const Village: React.FC = () => {
     const handleProvinceChange = (
         selected: { label: string; value: string } | null
     ) => {
-        if (selected) {
+        if (selected && selected.value !== "") {
             setSelectedProvince(selected.label);
             setSelectedRegency("");
             setRegencies([]);
@@ -132,7 +132,7 @@ const Village: React.FC = () => {
     const handleRegencyChange = (
         selected: { label: string; value: string } | null
     ) => {
-        if (selected) {
+        if (selected && selected.value !== "") {
             setSelectedRegency(selected.label);
         } else {
             setSelectedRegency("");

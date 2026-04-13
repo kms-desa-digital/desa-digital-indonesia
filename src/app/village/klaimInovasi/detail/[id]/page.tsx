@@ -174,19 +174,19 @@ const KlaimInovasiDetail: React.FC = () => {
                         setClaimData(data);
                         setEditable(data.status === "Ditolak");
                         setIsManual(!data.inovasiId);
-                        
+
                         // Extract evidence files correctly from alternate naming conventions
                         const checkboxes = (data.buktiJenis || data.jenisDokumen || data.bukti_jenis || []).map((s: string) => s.toLowerCase());
                         setSelectedCheckboxes(Array.isArray(checkboxes) ? checkboxes : []);
-                        
+
                         // Handle multiple possible field names from legacy/new API
                         const files = data.buktiFiles || data.bukti_files || {};
                         const fotos = files.foto || data.images || data.buktiFoto || data.bukti_foto || data.foto || [];
                         setSelectedFiles(Array.isArray(fotos) ? fotos : (fotos ? [fotos] : []));
-                        
+
                         const videos = files.video || data.video || data.selectedVid || data.buktiVideo || data.bukti_video || "";
                         setSelectedVid(Array.isArray(videos) ? (videos[0] || "") : videos);
-                        
+
                         const docs = files.dokumen || data.dokumen || data.selectedDoc || data.buktiDokumen || data.bukti_dokumen || [];
                         setSelectedDoc(Array.isArray(docs) ? docs : (docs ? [docs] : []));
 
@@ -232,7 +232,7 @@ const KlaimInovasiDetail: React.FC = () => {
                 // If it's a known innovation (not manual), we might have innovatorId
                 // For simplicity assuming metadata or linked innovation
                 console.log("Updating statistics for verified claim...");
-                
+
                 toast.success("Klaim berhasil diverifikasi!");
                 router.push(`/village/pengajuan/${claimData.desaId || user?.uid}`);
             }
@@ -253,9 +253,9 @@ const KlaimInovasiDetail: React.FC = () => {
         setLoading(true);
         try {
             if (id) {
-                await updateClaim(id, { 
-                    status: "Ditolak", 
-                    catatanAdmin: modalInput 
+                await updateClaim(id, {
+                    status: "Ditolak",
+                    catatanAdmin: modalInput
                 });
                 toast.success("Klaim ditolak");
                 router.push(`/village/pengajuan/${claimData?.desaId || user?.uid}`);
@@ -318,7 +318,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                         selectedFile={logoFiles}
                                         setSelectedFile={setLogoFiles}
                                         selectFileRef={logoFileRef}
-                                        onSelectImage={() => {}}
+                                        onSelectImage={() => { }}
                                         maxFiles={1}
                                         disabled={true}
                                     />
@@ -369,7 +369,7 @@ const KlaimInovasiDetail: React.FC = () => {
                         <Field>
                             <Flex flexDirection="column" gap="2px">
                                 <Text1> Foto Inovasi </Text1>
-                                <Text2> Bukti foto yang diunggah </Text2>
+                                <Text2> Maks 5 foto. format: png, jpg. </Text2>
                                 {selectedFiles.length > 0 ? (
                                     <ImageUpload
                                         selectedFile={selectedFiles}
@@ -390,12 +390,12 @@ const KlaimInovasiDetail: React.FC = () => {
                         <Field>
                             <Flex flexDirection="column" gap="2px">
                                 <Text1> Video Inovasi </Text1>
-                                <Text2> Bukti video yang diunggah </Text2>
+                                <Text2> Maks 100 mb. Format: mp4 </Text2>
                                 {selectedVid ? (
                                     <Box mt={2} borderRadius="8px" overflow="hidden" border="1px solid #E5E7EB">
-                                        <video 
-                                            src={selectedVid} 
-                                            controls 
+                                        <video
+                                            src={selectedVid}
+                                            controls
                                             style={{ width: "100%", maxHeight: "200px" }}
                                         />
                                     </Box>
@@ -410,7 +410,7 @@ const KlaimInovasiDetail: React.FC = () => {
                         <Field>
                             <Flex flexDirection="column" gap="2px">
                                 <Text1> Dokumen Pendukung </Text1>
-                                <Text2> Bukti dokumen yang diunggah </Text2>
+                                <Text2> Maks 3 file, 50 mb. Format: pdf, doc, docx </Text2>
                                 {selectedDoc.length > 0 ? (
                                     <DocUpload
                                         selectedDoc={selectedDoc}

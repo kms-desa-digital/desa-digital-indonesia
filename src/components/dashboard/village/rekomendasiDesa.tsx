@@ -84,8 +84,9 @@ const Rekomendasi = () => {
                 <DrawerContent
                     sx={{
                         borderTopRadius: "3xl",
-                        maxWidth: "360px",
-                        width: "100%",
+                        width: "360px",
+                        h: "550px",
+                        my: "auto",
                         mx: "auto",
                     }}
                 >

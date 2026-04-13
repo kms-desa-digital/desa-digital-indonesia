@@ -45,8 +45,8 @@ const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
       <DrawerContent
         sx={{
           borderRadius: "lg",
-          maxWidth: "360px",
-          width: "100%",
+          width: "360px",
+          my: "auto",
           mx: "auto",
         }}
       >
