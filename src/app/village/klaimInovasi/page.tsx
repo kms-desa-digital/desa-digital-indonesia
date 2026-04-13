@@ -16,7 +16,7 @@ import SecConfModal from "src/components/confirmModal/secConfModal";
 import DocUpload from "src/components/form/DocUpload";
 import ImageUpload from "src/components/form/ImageUpload";
 import VidUpload from "src/components/form/VideoUpload";
-import { getVillageById, claimInnovation } from "Services/villageServices";
+import { getVillageById, claimInnovation, getClaimById, updateClaim } from "Services/villageServices";
 import { getInnovationById } from "Services/innovationServices";
 
 import {
@@ -77,13 +77,40 @@ const KlaimInovasiContent: React.FC = () => {
     const inovasiId = searchParams.get("inovasiId");
 
     const { role } = useUser();
-    
+    const editId = searchParams.get("editId");
+
     useEffect(() => {
         if (role) {
             setIsAdmin(role === "admin");
-            setFetchLoading(false);
         }
     }, [role]);
+
+    useEffect(() => {
+        const fetchEditData = async () => {
+            if (editId) {
+                setFetchLoading(true);
+                try {
+                    const res: any = await getClaimById(editId);
+                    const data = res.data;
+                    if (data) {
+                        setClaimData(data);
+                        setSelectedCheckboxes(data.buktiJenis || []);
+                        const files = data.buktiFiles || {};
+                        setSelectedFiles(files.foto || data.images || []);
+                        setSelectedVid(files.video?.[0] || data.video || "");
+                        setSelectedDoc(files.dokumen || data.dokumen || []);
+                    }
+                } catch (err) {
+                    console.error("Error fetching edit data:", err);
+                } finally {
+                    setFetchLoading(false);
+                }
+            } else {
+                setFetchLoading(false);
+            }
+        };
+        fetchEditData();
+    }, [editId]);
 
     const handleCheckboxChange = (checkbox: string) => {
         if (selectedCheckboxes.includes(checkbox)) {
@@ -197,9 +224,12 @@ const KlaimInovasiContent: React.FC = () => {
     const submitClaim = async () => {
         console.log("Submitting claim via API...");
         setLoading(true);
+        setDisabled(true); // Disable buttons immediately
+        
         if (!user?.uid || !inovasiId) {
             setError("User atau ID inovasi tidak ditemukan");
             setLoading(false);
+            setDisabled(false);
             return;
         }
         
@@ -227,25 +257,34 @@ const KlaimInovasiContent: React.FC = () => {
                     foto: selectedCheckboxes.includes("foto") ? selectedFiles : [],
                     video: selectedCheckboxes.includes("video") ? [selectedVid] : [],
                     dokumen: selectedCheckboxes.includes("dokumen") ? selectedDoc : []
-                }
+                },
+                status: "Menunggu"
             };
 
-            const response: any = await claimInnovation(formData);
+            const response: any = editId 
+                ? await updateClaim(editId, formData)
+                : await claimInnovation(formData);
+
+            console.log("Response from server:", response);
 
             setIsModal1Open(false);
-            toast.success("Klaim inovasi berhasil diajukan", { position: "top-center" });
+            toast.success(editId ? "Klaim berhasil diperbarui" : "Klaim inovasi berhasil diajukan", { 
+                position: "top-center",
+                onClose: () => {
+                   const newClaimId = editId || response.claimId || response.data?.claimId || (typeof response === 'string' ? response : "");
+                   if (newClaimId) {
+                       router.push(`/village/klaimInovasi/detail/${newClaimId}`);
+                   } else {
+                       router.push(`/village/pengajuan/${user.uid}`);
+                   }
+                }
+            });
             
-            // Access detail page for the claim if available from response
-            const newClaimId = response.claimId || response.data?.claimId;
-            if (newClaimId) {
-              router.push(`/village/klaimInovasi/detail/${newClaimId}`);
-            } else {
-              router.push(`/village/pengajuan/${user.uid}`);
-            }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error submitting claim:", error);
-            setError("Gagal mengajukan klaim. Inovasi ini mungkin sudah diajukan sebelumnya.");
-            toast.error("Inovasi ini sudah dalam proses klaim");
+            const errMsg = error?.response?.data?.message || "Gagal mengajukan klaim. Inovasi ini mungkin sudah diajukan sebelumnya.";
+            setError(errMsg);
+            toast.error(errMsg);
             setDisabled(false);
         } finally {
             setLoading(false);
@@ -307,6 +346,9 @@ const KlaimInovasiContent: React.FC = () => {
                         </Label>
                         <Text2> Dapat lebih dari 1 </Text2>
                     </Flex>
+                    {claimData?.status === "Ditolak" && (
+                        <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
+                    )}
                     <CheckboxGroup>
                         <JenisKlaim>
                             <input

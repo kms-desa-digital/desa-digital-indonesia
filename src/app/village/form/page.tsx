@@ -22,6 +22,7 @@ import ImageUpload from "Components/form/ImageUpload";
 import LogoUpload from "Components/form/LogoUpload";
 import LocationSelector from "Components/form/LocationSellector";
 import { getVillageById, createVillage, updateVillage } from "Services/villageServices";
+import Loading from "Components/loading";
 import {
     getDistricts,
     getProvinces,
@@ -37,6 +38,7 @@ import {
     deleteObject
 } from "firebase/storage";
 import { storage } from "src/firebase/clientApp";
+import StatusCard from "Components/card/status/StatusCard";
 
 interface Option {
     value: string;
@@ -61,6 +63,9 @@ const AddVillage: React.FC = () => {
     const [confirmedSubmit, setConfirmedSubmit] = useState(false);
     const [submitEvent, setSubmitEvent] = useState<React.FormEvent<HTMLFormElement> | null>(null);
     const toast = useToast();
+
+    // Use a single loading state for initial fetch and subsequent actions
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [textInputValue, setTextInputValue] = useState({
         name: "",
         description: "",
@@ -146,7 +151,6 @@ const AddVillage: React.FC = () => {
             setConfirmedSubmit(false);
         }
     }, [confirmedSubmit]);
-
     const isFormValid = () => {
         return (
             textInputValue.name.trim() !== "" &&
@@ -154,9 +158,10 @@ const AddVillage: React.FC = () => {
             selectedRegency !== null &&
             selectedDistrict !== null &&
             selectedVillage !== null &&
-            selectedPotensi !== null &&
+            selectedPotensi.length > 0 &&
             selectedLogo.trim() !== "" &&
             selectedHeader.trim() !== "" &&
+            textInputValue.description.trim() !== "" &&
             textInputValue.geografis.trim() !== "" &&
             textInputValue.sosial.trim() !== "" &&
             textInputValue.resource.trim() !== "" &&
@@ -312,13 +317,13 @@ const AddVillage: React.FC = () => {
     }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const wordCount = value.split(/\s+/).filter((word) => word !== "").length;
         if (
-            textInputValue.name ||
-            textInputValue.whatsapp ||
-            textInputValue.instagram ||
-            textInputValue.website
+            name === "name" ||
+            name === "whatsapp" ||
+            name === "instagram" ||
+            name === "website"
         ) {
             setTextInputValue((prev: any) => ({ ...prev, [name]: value }));
-        } else if (textInputValue.description) {
+        } else if (name === "description") {
             if (wordCount <= 100) {
                 setTextInputValue((prev: any) => ({ ...prev, [name]: value }));
             }
@@ -428,7 +433,7 @@ const AddVillage: React.FC = () => {
                 images: imageUrls
             };
 
-            if (status === "Ditolak" || status === "Terverifikasi") {
+            if (status !== "") {
                 await updateVillage(userId, villagePayload);
                 console.log("Village updated via API (Storage URLs stored)");
             } else {
@@ -438,7 +443,7 @@ const AddVillage: React.FC = () => {
             setStatus("Menunggu");
 
             toast({
-                title: "Profile berhasil dibuat",
+                title: "Profile berhasil disimpan",
                 status: "success",
                 duration: 5000,
                 isClosable: true,
@@ -446,11 +451,11 @@ const AddVillage: React.FC = () => {
             });
         } catch (error) {
             console.error("Error adding document: ", error);
-            setLoading(false);
-            setError("Error adding document");
+            const errorMessage = (error as any)?.message || "Terjadi kesalahan saat menambahkan dokumen.";
+            setError(`Error: ${errorMessage}`);
             toast({
                 title: "Error",
-                description: "Terjadi kesalahan saat menambahkan dokumen.",
+                description: errorMessage,
                 status: "error",
                 duration: 5000,
                 isClosable: true,
@@ -515,7 +520,7 @@ const AddVillage: React.FC = () => {
                     if (data.status === "Menunggu") {
                         setIsEditable(false);
                         setStatus("Menunggu");
-                        setAlertStatus("info");
+                        setAlertStatus("warning");
                         setAlertMessage(`Profil sudah didaftarkan. Menunggu verifikasi admin.`);
                     } else if (data.status === "Ditolak") {
                         setIsEditable(true);
@@ -526,6 +531,8 @@ const AddVillage: React.FC = () => {
                 }
             } catch (error) {
                 console.error("Error fetching village data from API:", error);
+            } finally {
+                setIsInitialLoading(false);
             }
         };
 
@@ -542,7 +549,7 @@ const AddVillage: React.FC = () => {
                     setStatus((prevStatus) => {
                         if (prevStatus !== data.status) {
                             if (data.status === "Menunggu") {
-                                setAlertStatus("info");
+                                setAlertStatus("warning");
                                 setIsEditable(false);
                                 setAlertMessage(`Profil sudah didaftarkan. Menunggu verifikasi admin.`);
                             } else if (data.status === "Ditolak") {
@@ -568,6 +575,10 @@ const AddVillage: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [user, router]);
 
+    if (isInitialLoading) {
+        return <Loading />;
+    }
+
     return (
         <>
             <TopBar title="Registrasi Profil Desa" onBack={() => router.back()} />
@@ -588,7 +599,10 @@ const AddVillage: React.FC = () => {
                                 status={alertStatus}
                                 fontSize={12}
                                 borderRadius={4}
-                                padding="8px"
+                                padding="12px"
+                                width="100%"
+                                maxWidth="360px"
+                                mx="auto"
                             >
                                 {alertMessage}
                             </Alert>
@@ -647,7 +661,7 @@ const AddVillage: React.FC = () => {
                                 <Text fontWeight="400" fontSize="14px">
                                     Logo Desa <span style={{ color: "red" }}>*</span>
                                 </Text>
-                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                <Text fontWeight="400" fontSize="10px" mb="2px" color="#9CA3AF">
                                     Maks 1 foto. format: png, jpg.
                                 </Text>
                                 <LogoUpload
@@ -663,7 +677,7 @@ const AddVillage: React.FC = () => {
                                 <Text fontWeight="400" fontSize="14px">
                                     Header Desa <span style={{ color: "red" }}>*</span>
                                 </Text>
-                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                <Text fontWeight="400" fontSize="10px" mb="2px" color="#9CA3AF">
                                     Maks 1 foto. format: png, jpg.
                                 </Text>
                                 <HeaderUpload
@@ -678,9 +692,9 @@ const AddVillage: React.FC = () => {
 
                             <Box>
                                 <Text fontWeight="400" fontSize="14px">
-                                    Foto Inovasi di Desa <span style={{ color: "red" }}>*</span>
+                                    Foto Inovasi di Desa
                                 </Text>
-                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                <Text fontWeight="400" fontSize="10px" mb="2px" color="#9CA3AF">
                                     Maks 5 foto. format: png, jpg.
                                 </Text>
                                 <ImageUpload
@@ -713,6 +727,9 @@ const AddVillage: React.FC = () => {
                                 <Text fontWeight="400" fontSize="14px" mb="1">
                                     Potensi Desa <span style={{ color: "red" }}>*</span>
                                 </Text>
+                                <Text fontWeight="400" fontSize="10px" mb="6px" color="#9CA3AF">
+                                    Pilih opsi potensi desa atau tambahkan opsi lainnya
+                                </Text>
                                 <MultiSellect
                                     options={potensiDesa}
                                     value={selectedPotensi}
@@ -727,8 +744,11 @@ const AddVillage: React.FC = () => {
                             <FormSection
                                 isTextArea
                                 title="Geografis"
+                                description="Contoh: Dataran tinggi 1600 mdpl, Luas 100 ha"
                                 name="geografis"
                                 placeholder="Jelaskan kondisi geografis desa"
+                                wordCount={currentWordCount(textInputValue.geografis)}
+                                maxWords={30}
                                 value={textInputValue.geografis}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
@@ -737,6 +757,9 @@ const AddVillage: React.FC = () => {
                             <Box>
                                 <Text fontWeight="400" fontSize="14px" mb="1">
                                     Perkembangan Teknologi Digital <span style={{ color: "red" }}>*</span>
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" mb="2px" color="#9CA3AF">
+                                    Cth teknologi digital: Laptop, smartphone, website, aplikasi internet
                                 </Text>
                                 <MultiSellect
                                     options={[
@@ -756,10 +779,10 @@ const AddVillage: React.FC = () => {
                                             ]
                                             : []
                                     }
-                                    onChange={(selected) =>
+                                    onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            teknologi: selected?.[0]?.value || null,
+                                            teknologi: selected[0]?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -770,7 +793,10 @@ const AddVillage: React.FC = () => {
 
                             <Box>
                                 <Text fontWeight="400" fontSize="14px" mb="1">
-                                    Kemampuan Teknologi <span style={{ color: "red" }}>*</span>
+                                    Kemampuan Penggunaan Teknologi Digital <span style={{ color: "red" }}>*</span>
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" mb="2px" color="#9CA3AF">
+                                    Cth teknologi digital: Laptop, smartphone, website, aplikasi internet
                                 </Text>
                                 <MultiSellect
                                     options={[
@@ -790,10 +816,10 @@ const AddVillage: React.FC = () => {
                                             ]
                                             : []
                                     }
-                                    onChange={(selected) =>
+                                    onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            kemampuan: selected?.[0]?.value || null,
+                                            kemampuan: selected[0]?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -805,8 +831,11 @@ const AddVillage: React.FC = () => {
                             <FormSection
                                 isTextArea
                                 title="Sosial dan Budaya"
+                                description="Contoh: Mayoritas suku sunda, mata pencaharian petani, kuat bergotong royong, memegang kuat tradisi, terbuka"
                                 name="sosial"
                                 placeholder="Deskripsi sosial dan budaya desa"
+                                wordCount={currentWordCount(textInputValue.sosial)}
+                                maxWords={30}
                                 value={textInputValue.sosial}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
@@ -815,8 +844,11 @@ const AddVillage: React.FC = () => {
                             <FormSection
                                 isTextArea
                                 title="Sumber Daya Alam"
+                                description="Contoh: Pertanian pangan, perkebunan, bahan tembang, perikanan"
                                 name="resource"
                                 placeholder="Deskripsi sumber daya alam desa"
+                                wordCount={currentWordCount(textInputValue.resource)}
+                                maxWords={30}
                                 value={textInputValue.resource}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
@@ -850,10 +882,10 @@ const AddVillage: React.FC = () => {
                                             ]
                                             : []
                                     }
-                                    onChange={(selected) =>
+                                    onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            kondisijalan: selected?.[0]?.value || null,
+                                            kondisijalan: selected[0]?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -903,10 +935,10 @@ const AddVillage: React.FC = () => {
                                             ]
                                             : []
                                     }
-                                    onChange={(selected) =>
+                                    onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            jaringan: selected?.[0]?.value || null,
+                                            jaringan: selected[0]?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -937,10 +969,10 @@ const AddVillage: React.FC = () => {
                                             ]
                                             : []
                                     }
-                                    onChange={(selected) =>
+                                    onChange={(selected: any) =>
                                         setDropdownValue({
                                             ...dropdownValue,
-                                            listrik: selected?.[0]?.value || null,
+                                            listrik: selected[0]?.value || null,
                                         })
                                     }
                                     placeholder="Pilih"
@@ -954,10 +986,12 @@ const AddVillage: React.FC = () => {
                                 title="Lain-lain"
                                 name="infrastruktur"
                                 placeholder="Masukkan hal-lain terkait infrastruktur"
+                                wordCount={currentWordCount(textInputValue.infrastruktur)}
+                                maxWords={30}
                                 value={textInputValue.infrastruktur}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
-                                isRequired
+                                isRequired={false}
                             />
 
                             <Text fontWeight="700" fontSize="16px">
@@ -979,6 +1013,7 @@ const AddVillage: React.FC = () => {
                                 value={textInputValue.instagram}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
+                                isRequired={false}
                             />
                             <FormSection
                                 title="Website Desa"
@@ -987,10 +1022,12 @@ const AddVillage: React.FC = () => {
                                 value={textInputValue.website}
                                 onChange={onTextChange}
                                 disabled={!isEditable || isFormLocked}
+                                isRequired={false}
                             />
                         </Stack>
+                        <Box height="100px" />
                     </Flex>
-                    {status !== "Menunggu" && (
+                    {status !== "Menunggu" ? (
                         <>
                             <NavbarButton style={{ zIndex: 999 }}>
                                 <Button
@@ -998,7 +1035,25 @@ const AddVillage: React.FC = () => {
                                     form="VillageForm"
                                     width="100%"
                                     isLoading={loading}
-                                    loadingText="Submitting"
+                                    isDisabled={!isFormValid() || loading || isFormLocked || (status === "Menunggu" && !isEditable)}
+                                    onClick={(e) => {
+                                        if (isFormValid()) {
+                                            // Handled by form onSubmit
+                                        } else {
+                                            e.preventDefault();
+                                            setAlertMessage("Harap isi semua data yang wajib terlebih dahulu.");
+                                            setAlertStatus("error");
+                                            window.scrollTo({ top: 0, behavior: "smooth" });
+                                            toast({
+                                                title: "Form belum lengkap!",
+                                                description: "Harap isi semua field wajib.",
+                                                status: "error",
+                                                duration: 3000,
+                                                position: "top",
+                                                isClosable: true,
+                                            });
+                                        }
+                                    }}
                                 >
                                     {status === "Ditolak" || status === "Terverifikasi" ? "Edit Profile" : "Daftarkan Profil"}
                                 </Button>
@@ -1016,6 +1071,8 @@ const AddVillage: React.FC = () => {
                                 modalBody2={modalBody2}
                             />
                         </>
+                    ) : (
+                        <StatusCard status={status} />
                     )}
                 </form>
             </Box>

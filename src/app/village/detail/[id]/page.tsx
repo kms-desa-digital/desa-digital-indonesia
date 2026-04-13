@@ -236,7 +236,7 @@ export default function DetailVillagePage() {
     }
 
     return (
-        <Box paddingBottom={16}>
+        <Box paddingBottom={0}>
             <TopBar title="Detail Desa" onBack={() => router.back()} />
             <div style={{ position: "relative", width: "100%" }}>
                 <Background src={village?.header || "/images/default-header.svg"} alt="background" />
@@ -497,7 +497,7 @@ export default function DetailVillagePage() {
                             </Text>
                         </Flex>
                         {village?.status === "Terverifikasi" && (
-                            <CardContainer style={{ paddingBottom: "40px" }}>
+                            <CardContainer style={{ paddingBottom: "10px" }}>
                                 <Horizontal>
                                     {innovations.length === 0 ? (
                                         <Text color="gray.400" fontSize={12}>
@@ -570,6 +570,7 @@ export default function DetailVillagePage() {
                         setMessage={setModalInput}
                         loading={loading}
                     />
+                    <Box height="60px" />
                 </ContentContainer>
             </div>
             <ActionDrawer

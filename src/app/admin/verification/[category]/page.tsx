@@ -1,6 +1,11 @@
 "use client";
 
-import { ChevronDownIcon, SearchIcon } from "@chakra-ui/icons";
+import { 
+    ChevronDownIcon, 
+    SearchIcon, 
+    ChevronLeftIcon, 
+    ChevronRightIcon 
+} from "@chakra-ui/icons";
 import {
     Box,
     Button,
@@ -21,18 +26,11 @@ import CardNotification from "Components/card/notification/CardNotification";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
-import {
-    collection,
-    getDocs,
-    limit,
-    orderBy,
-    query,
-    startAfter,
-} from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { firestore } from "src/firebase/clientApp";
-import AdsPage from "Components/admin/ads/AdsPage";
+import { getVillages, getClaims } from "Services/villageServices";
+import { getInnovators } from "Services/innovatorServices";
+import { getInnovation } from "Services/innovationServices";
 
 const SkeletonCard = () => {
     return (
@@ -54,27 +52,31 @@ const VerificationPage: React.FC = () => {
     const params = useParams() as { category: string };
     const { category } = params;
     const [verifData, setVerifData] = useState<any[]>([]);
-    const [filteredData, setFilteredData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Pencarian dan filter
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+    const [selectedFilter, setSelectedFilter] = useState<string>("Semua");
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(5);
-    const [lastVisible, setLastVisible] = useState<any>(null);
-    const [isFirstPage, setIsFirstPage] = useState(true);
     const [hasMore, setHasMore] = useState(true);
 
-    const formatShortDate = (timestamp: {
-        seconds: number;
-        nanoseconds: number;
-    }) => {
-        if (!timestamp?.seconds) return "Invalid Date";
-        // Format: DD/MM/YY
-        const date = new Date(timestamp.seconds * 1000);
+    const formatShortDate = (dateSource: any) => {
+        if (!dateSource) return "-";
+        
+        let date: Date;
+        if (dateSource.seconds) {
+            // Firebase format
+            date = new Date(dateSource.seconds * 1000);
+        } else {
+            // Standard Date format or string
+            date = new Date(dateSource);
+        }
+
+        if (isNaN(date.getTime())) return "-";
+
         const day = date.getDate().toString().padStart(2, "0");
         const month = (date.getMonth() + 1).toString().padStart(2, "0");
         const year = date.getFullYear().toString().slice(2);
@@ -82,10 +84,10 @@ const VerificationPage: React.FC = () => {
     };
 
     const formatLocation = (lokasi: any) => {
-        if (!lokasi) return "No Location";
-        const kecamatan = lokasi.kecamatan?.label || "Unknown Subdistrict";
-        const kabupaten = lokasi.kabupatenKota?.label || "Unknown City";
-        const provinsi = lokasi.provinsi?.label || "Unknown Province";
+        if (!lokasi) return "-";
+        const kecamatan = lokasi.kecamatan?.label || lokasi.kecamatan || "Unknown Subdistrict";
+        const kabupaten = lokasi.kabupatenKota?.label || lokasi.kabupaten || "Unknown City";
+        const provinsi = lokasi.provinsi?.label || lokasi.provinsi || "Unknown Province";
 
         return `Kecamatan ${kecamatan}, ${kabupaten}, ${provinsi}`;
     };
@@ -107,196 +109,103 @@ const VerificationPage: React.FC = () => {
         }
     };
 
-    const categoryToCollectionMap: Record<string, string> = {
-        "Verifikasi Desa": "villages",
-        "Verifikasi Inovator": "innovators",
-        "Verifikasi Tambah Inovasi": "innovations",
-        "Verifikasi Klaim Inovasi": "claimInnovations",
-    };
-
     const statusOptions = ["Semua", "Menunggu", "Terverifikasi", "Ditolak"];
 
-    const fetchData = async (isNextPage = false) => {
-        const collectionName = categoryToCollectionMap[category || ""];
+    const fetchData = async (page = 1) => {
         setLoading(true);
-
-        if (!collectionName) {
-            return [];
-        }
-
         try {
-            let q;
+            let response: any;
+            const apiParams: any = {
+                status: selectedFilter === "Semua" ? undefined : selectedFilter,
+                search: searchTerm || undefined,
+                limit: itemsPerPage,
+                skip: (page - 1) * itemsPerPage
+            };
 
-            if (isNextPage && lastVisible) {
-                // Get next batch starting after the last visible document
-                q = query(
-                    collection(firestore, collectionName),
-                    orderBy("createdAt", "desc"),
-                    startAfter(lastVisible),
-                    limit(itemsPerPage)
-                );
-            } else {
-                // Get first batch
-                q = query(
-                    collection(firestore, collectionName),
-                    orderBy("createdAt", "desc"),
-                    limit(itemsPerPage)
-                );
-                setIsFirstPage(true);
+            const decodedCategory = decodeURIComponent(category || "");
+
+            switch (decodedCategory) {
+                case "Verifikasi Desa":
+                    response = await getVillages(apiParams);
+                    break;
+                case "Verifikasi Inovator":
+                    response = await getInnovators(apiParams);
+                    break;
+                case "Verifikasi Tambah Inovasi":
+                    response = await getInnovation(apiParams);
+                    break;
+                case "Verifikasi Klaim Inovasi":
+                    response = await getClaims(undefined, apiParams.status, apiParams.limit, apiParams.skip, apiParams.search);
+                    break;
+                default:
+                    console.warn("Unknown category:", decodedCategory);
+                    return [];
             }
 
-            const docSnap = await getDocs(q);
-
-            const data = docSnap.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-            console.log("Fetched data:", data);
-
-            // Check if we have more items
-            setHasMore(docSnap.docs.length === itemsPerPage);
-
-            if (docSnap.docs.length > 0) {
-                // Save the last visible document
-                setLastVisible(docSnap.docs[docSnap.docs.length - 1]);
-            } else if (isNextPage) {
-                // If no docs returned when navigating forward, there are no more docs
-                setHasMore(false);
-            }
-
-            return docSnap.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
+            const data = response.villages || response.innovators || response.innovations || response.claims || response.data || [];
+            
+            setHasMore(data.length === itemsPerPage);
+            return data;
         } catch (error) {
-            console.error("Error fetching data:", error);
+            console.error("Error fetching data from API:", error);
             return [];
         } finally {
             setLoading(false);
         }
     };
 
-    // Fungsi untuk melakukan pencarian dan filter
-    const applySearchAndFilter = () => {
-        let filtered = [...verifData];
-
-        // Terapkan pencarian jika ada
-        if (searchTerm) {
-            const searchLower = searchTerm.toLowerCase();
-            filtered = filtered.filter((item) => {
-                // Sesuaikan field pencarian berdasarkan kategori
-                if (category === "Verifikasi Desa") {
-                    return (item.namaDesa || "").toLowerCase().includes(searchLower);
-                } else if (category === "Verifikasi Inovator") {
-                    return (item.namaInovator || "").toLowerCase().includes(searchLower);
-                } else {
-                    return (item.namaInovasi || "").toLowerCase().includes(searchLower);
-                }
-            });
-        }
-
-        // Terapkan filter status jika dipilih (selain "Semua")
-        if (selectedFilter && selectedFilter !== "Semua") {
-            filtered = filtered.filter((item) => item.status === selectedFilter);
-        }
-
-        setFilteredData(filtered);
-    };
-
-    // Load initial data
+    // Load data when category, filter, or page changes
     useEffect(() => {
-        const loadInitialData = async () => {
-            const data = await fetchData();
+        const load = async () => {
+            const data = await fetchData(currentPage);
             setVerifData(data || []);
-            setFilteredData(data || []);
-            setCurrentPage(1);
-            setIsFirstPage(true);
-            setSearchTerm("");
-            setSelectedFilter(null);
         };
-        loadInitialData();
-    }, [category]);
+        load();
+    }, [category, selectedFilter, currentPage]);
 
-    // Terapkan pencarian dan filter ketika nilai-nilainya berubah
+    // Reset page when filter changes
     useEffect(() => {
-        applySearchAndFilter();
-    }, [searchTerm, selectedFilter, verifData]);
+        setCurrentPage(1);
+    }, [selectedFilter]);
 
-    // Handle next page navigation
-    const handleNextPage = async () => {
-        const data = await fetchData(true);
-        if (data.length > 0) {
-            setVerifData(data);
-            setCurrentPage(currentPage + 1);
-            setIsFirstPage(false);
-        }
+    // Search optimization: delay search
+    useEffect(() => {
+        const timeoutId = setTimeout(async () => {
+            setCurrentPage(1);
+            const data = await fetchData(1);
+            setVerifData(data || []);
+        }, 500);
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
+
+    const handleNextPage = () => {
+        if (hasMore) setCurrentPage(prev => prev + 1);
     };
 
-    // Handle previous page navigation
-    const handlePrevPage = async () => {
-        if (currentPage > 1) {
-            // For previous page, we need to reset and load from the beginning
-            // and then navigate to the correct page
-            let data = await fetchData(false);
-            setVerifData(data);
-
-            if (currentPage > 2) {
-                // If we're not going back to page 1, we need to navigate forward
-                // until we reach the desired page
-                let lastVisibleDoc = null;
-                for (let i = 1; i < currentPage - 1; i++) {
-                    lastVisibleDoc = data[data.length - 1];
-                    const q = query(
-                        collection(firestore, categoryToCollectionMap[category || ""]),
-                        orderBy("createdAt", "desc"),
-                        startAfter(lastVisibleDoc),
-                        limit(itemsPerPage)
-                    );
-                    const docSnap = await getDocs(q);
-                    data = docSnap.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }));
-                    setLastVisible(docSnap.docs[docSnap.docs.length - 1]);
-                }
-                setVerifData(data);
-            }
-
-            setCurrentPage(currentPage - 1);
-            setIsFirstPage(currentPage - 1 === 1);
-        }
+    const handlePrevPage = () => {
+        if (currentPage > 1) setCurrentPage(prev => prev - 1);
     };
 
-    // Handler untuk pencarian
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
     };
 
-    // Handler untuk filter
     const handleFilterSelect = (status: string) => {
-        setSelectedFilter(status === "Semua" ? null : status);
+        setSelectedFilter(status);
     };
 
     return (
         <Container page>
-            <TopBar title={category || "Verification"} onBack={() => router.back()} />
+            <TopBar title={decodeURIComponent(category || "Verification")} onBack={() => router.back()} />
 
-            {category !== "Pembuatan Iklan" && (
-                <Stack padding="0 16px" gap={2} marginBottom={4}>
-                    {/* Search and Filter Bar */}
+            <Stack padding="0 16px" gap={2} marginBottom={4}>
                     <Flex gap={2} mb={2} mt={8}>
                         <InputGroup flex={1}>
                             <InputLeftElement pointerEvents="none">
                                 <SearchIcon color="gray.400" />
                             </InputLeftElement>
                             <Input
-                                placeholder={
-                                    category === "Verifikasi Desa"
-                                        ? "Cari desa di sini"
-                                        : category === "Verifikasi Inovator"
-                                            ? "Cari inovator di sini"
-                                            : "Cari inovasi di sini"
-                                }
+                                placeholder="Cari di sini..."
                                 size="md"
                                 borderRadius="full"
                                 value={searchTerm}
@@ -318,19 +227,14 @@ const VerificationPage: React.FC = () => {
                                 fontSize="12px"
                                 fontWeight="normal"
                             >
-                                {selectedFilter || "Filter"}
+                                {selectedFilter}
                             </MenuButton>
                             <MenuList>
                                 {statusOptions.map((status) => (
                                     <MenuItem
                                         key={status}
                                         onClick={() => handleFilterSelect(status)}
-                                        fontWeight={
-                                            selectedFilter === status ||
-                                                (status === "Semua" && !selectedFilter)
-                                                ? "bold"
-                                                : "normal"
-                                        }
+                                        fontWeight={selectedFilter === status ? "bold" : "normal"}
                                     >
                                         {status}
                                     </MenuItem>
@@ -340,12 +244,13 @@ const VerificationPage: React.FC = () => {
                     </Flex>
                     {loading ? (
                         Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
-                    ) : filteredData.length > 0 ? (
-                        filteredData.map((data, index) => {
-                            const isVillageCategory = category === "Verifikasi Desa";
+                    ) : verifData.length > 0 ? (
+                        verifData.map((data, index) => {
+                            const decodedCategory = decodeURIComponent(category || "");
+                            const isVillageCategory = decodedCategory === "Verifikasi Desa";
                             const description = isVillageCategory
                                 ? formatLocation(data.lokasi)
-                                : data.deskripsi || "Klaim " + data.namaInovasi;
+                                : data.deskripsi || data.kategori || "Klaim " + (data.namaInovasi || "");
 
                             return (
                                 <CardNotification
@@ -359,7 +264,7 @@ const VerificationPage: React.FC = () => {
                                     status={data.status || "Menunggu"}
                                     date={formatShortDate(data.createdAt)}
                                     description={description}
-                                    onClick={() => handleCardClick(data.id)}
+                                    onClick={() => handleCardClick(data.id || data._id)}
                                 />
                             );
                         })
@@ -368,45 +273,45 @@ const VerificationPage: React.FC = () => {
                             Tidak ada data untuk ditampilkan
                         </Text>
                     )}
-                    {/* Pagination Controls */}
-                    {filteredData.length > 0 && (
+                    
+                    {verifData.length > 0 && (
                         <Flex
-                            justifyContent="space-between"
-                            mt={4}
-                            mb={4}
+                            justifyContent="center"
+                            mt={8}
+                            mb={8}
                             alignItems="center"
+                            gap={4}
                         >
                             <Button
                                 onClick={handlePrevPage}
-                                isDisabled={isFirstPage}
-                                colorScheme="teal"
-                                size="sm"
+                                isDisabled={currentPage === 1}
                                 variant="outline"
-                                borderRadius="md"
-                                width="120px"
+                                size="sm"
+                                borderColor="gray.200"
+                                color="#347357"
+                                _hover={{ bg: "gray.50" }}
                             >
-                                Sebelumnya
+                                <ChevronLeftIcon />
                             </Button>
-                            <Text textAlign="center" fontWeight="medium">
+                            
+                            <Text textAlign="center" fontWeight="500" fontSize="14px" color="gray.700">
                                 Halaman {currentPage}
                             </Text>
+                            
                             <Button
                                 onClick={handleNextPage}
                                 isDisabled={!hasMore}
-                                colorScheme="teal"
-                                size="sm"
                                 variant="outline"
-                                borderRadius="md"
-                                width="120px"
+                                size="sm"
+                                borderColor="gray.200"
+                                color="#347357"
+                                _hover={{ bg: "gray.50" }}
                             >
-                                Selanjutnya
+                                <ChevronRightIcon />
                             </Button>
                         </Flex>
                     )}
                 </Stack>
-            )}
-
-            {category === "Pembuatan Iklan" && <AdsPage />}
         </Container>
     );
 };

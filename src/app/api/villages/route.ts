@@ -4,7 +4,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 // =========================================================
 // GET /api/villages
 // Mengambil daftar semua desa
-// Query: ?status=<status> (misal: Terverifikasi, Menunggu, Ditolak)
+// Query: ?status=<status>&limit=<n>&skip=<n> (misal: Terverifikasi, Menunggu, Ditolak)
 // =========================================================
 export async function GET(request: NextRequest) {
   try {
@@ -13,6 +13,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const provinsi = searchParams.get('provinsi')
     const kabupatenKota = searchParams.get('kabupatenKota')
+    const limitVal = parseInt(searchParams.get('limit') || '0')
+    const skipVal = parseInt(searchParams.get('skip') || '0')
 
     const db = await connectToDatabase()
     const andConditions: any[] = []
@@ -58,10 +60,12 @@ export async function GET(request: NextRequest) {
 
     const filter: any = andConditions.length ? { $and: andConditions } : {}
 
-    const villages = await db.collection('villages')
-      .find(filter)
-      .sort({ createdAt: -1 })
-      .toArray()
+    let villageQuery = db.collection('villages').find(filter).sort({ createdAt: -1 })
+
+    if (skipVal > 0) villageQuery = villageQuery.skip(skipVal)
+    if (limitVal > 0) villageQuery = villageQuery.limit(limitVal)
+
+    const villages = await villageQuery.toArray()
 
     const result = villages.map(doc => ({
       ...doc,
@@ -86,11 +90,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { 
-      userId, namaDesa, deskripsi, logo, header, 
-      manfaat, whatsApp, provinsi, kabupaten, 
-      kecamatan, desa 
-    } = body
+    const { userId, namaDesa } = body
 
     if (!userId || !namaDesa) {
       return NextResponse.json({ message: 'userId dan namaDesa wajib diisi' }, { status: 400 })
@@ -105,17 +105,7 @@ export async function POST(request: NextRequest) {
     }
 
     const newVillage = {
-      userId,
-      namaDesa,
-      deskripsi: deskripsi || '',
-      logo: logo || null,
-      header: header || null,
-      manfaat: manfaat || '',
-      whatsApp: whatsApp || '',
-      provinsi: provinsi || '',
-      kabupaten: kabupaten || '',
-      kecamatan: kecamatan || '',
-      desa: desa || '',
+      ...body,
       status: 'Menunggu', // Default status verifikasi admin
       catatanAdmin: '',
       createdAt: new Date(),

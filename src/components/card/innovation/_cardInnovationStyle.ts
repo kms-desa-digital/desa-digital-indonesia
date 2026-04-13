@@ -32,17 +32,22 @@ export const Title = styled.p`
   font-size: 12px;
   font-weight: 700;
   color: black;
-  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
   overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
 `
 
 export const Category = styled.p`
   font-size: 10px;
   font-weight: 400;
   color: #374151;
-  margin: 4px 0;
+  margin: 2px 0;
   white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 `
 
 export const Description = styled.p`
@@ -85,7 +90,11 @@ export const CompanyContainer = styled.div`
 export const InnovatorName = styled.span`
   font-size: 10px;
   font-weight: 500;
-  color: #4B5563; // Adjust color as needed
+  color: #4B5563;
   margin-left: 2px;
-  align-self: center; // Adjust alignment as needed
-`;
+  align-self: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+`;

@@ -12,6 +12,7 @@ export const paths = {
   // ! admin
   ADMIN_PAGE: "/admin",
   VERIFICATION_PAGE: "/admin/verification/:category",
+  ADMIN_ADS: "/admin/ads",
   MAKE_ADS: "/admin/ads/make",
   ADMIN_DASHBOARD: "/admin/dashboard",
   ADMIN_DASHBOARD_DESA: "/admin/dashboard-desa",

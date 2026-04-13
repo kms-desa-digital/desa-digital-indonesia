@@ -15,9 +15,13 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     }
 
     const db = await connectToDatabase()
-    const query: any = ObjectId.isValid(id)
-      ? { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
-      : { _id: id }
+    const query: any = { 
+      $or: [
+        ...(ObjectId.isValid(id) ? [{ _id: new ObjectId(id) }] : []),
+        { _id: id },
+        { userId: id }
+      ] 
+    }
 
     const innovators = await db.collection('innovators').aggregate([
       { $match: query },

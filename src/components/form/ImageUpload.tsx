@@ -64,7 +64,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           </Button>
         </Flex>
       ))}
-      {selectedFile.length < maxFiles && (
+      {!disabled && selectedFile.length < maxFiles && (
         <Flex
           justify="center"
           align="center"

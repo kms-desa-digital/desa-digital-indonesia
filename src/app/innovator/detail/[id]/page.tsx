@@ -30,6 +30,7 @@ import { TbPlant2 } from "react-icons/tb";
 import { useRouter, useParams } from "next/navigation";
 import { auth, firestore } from "src/firebase/clientApp";
 import InnovationPreview from "Components/innovator/hero/innovations";
+import Loading from "Components/loading";
 import {
     Background,
     ContentContainer,
@@ -205,15 +206,29 @@ const DetailInnovator: React.FC = () => {
     }, [id]);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <Loading />;
     }
 
     if (error) {
-        return <div>{error}</div>;
+        return (
+            <Container page>
+                <TopBar title="Profil Inovator" onBack={() => router.back()} />
+                <Flex align="center" justify="center" height="70vh">
+                    <Text color="red.500">{error}</Text>
+                </Flex>
+            </Container>
+        );
     }
 
     if (!innovatorData) {
-        return <div>No data available</div>;
+        return (
+            <Container page>
+                <TopBar title="Profil Inovator" onBack={() => router.back()} />
+                <Flex align="center" justify="center" height="70vh">
+                    <Text color="gray.500">No data available</Text>
+                </Flex>
+            </Container>
+        );
     }
 
     const truncateText = (text: string, wordLimit: number) => {
@@ -470,6 +485,7 @@ const DetailInnovator: React.FC = () => {
                     website: innovatorData?.website || ""
                 }}
             />
+            <Box height="60px" />
         </Container>
     );
 };

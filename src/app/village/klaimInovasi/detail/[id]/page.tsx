@@ -6,6 +6,7 @@ import {
     Collapse,
     Flex,
     Text,
+    Stack,
     useDisclosure,
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar";
@@ -66,6 +67,7 @@ const KlaimInovasiDetail: React.FC = () => {
     const selectedFileRef = useRef<HTMLInputElement>(null);
     const selectedVidRef = useRef<HTMLInputElement>(null);
     const selectedDocRef = useRef<HTMLInputElement>(null);
+    const logoFileRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
     const [fetchLoading, setFetchLoading] = useState(false);
     const [error, setError] = useState("");
@@ -77,7 +79,15 @@ const KlaimInovasiDetail: React.FC = () => {
     const [modalInput, setModalInput] = useState("");
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [disabled, setDisabled] = useState(false);
-    // const [editable, setEditable] = useState(false);
+    const [editable, setEditable] = useState(false);
+    const [isManual, setIsManual] = useState(false);
+    const [textInputsValue, setTextInputsValue] = useState({
+        inovationName: "",
+        inovatorName: "",
+        description: "",
+    });
+    const [logoFiles, setLogoFiles] = useState<string[]>([]);
+    const [innovationFiles, setInnovationFiles] = useState<string[]>([]);
     const {
         isOpen: isRecOpen,
         onOpen: onRecOpen,
@@ -139,12 +149,13 @@ const KlaimInovasiDetail: React.FC = () => {
 
     useEffect(() => {
         // Jika salah satu modal terbuka, sembunyikan scrollbar
-        if (isModal1Open || isModal2Open) {
+        const isAnyModalOpen = isModal1Open || isModal2Open || openModal || isOpen;
+        if (isAnyModalOpen) {
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = ""; // Kembalikan scrollbar jika kedua modal tertutup
         }
-    }, [isModal1Open, isModal2Open]);
+    }, [isModal1Open, isModal2Open, openModal, isOpen]);
 
     useEffect(() => {
         if (id) {
@@ -161,13 +172,33 @@ const KlaimInovasiDetail: React.FC = () => {
                     if (data) {
                         console.log("Claim data from API:", JSON.stringify(data, null, 2));
                         setClaimData(data);
-                        
-                        // Extract evidence files correctly from object if available
-                        const files = data.buktiFiles || {};
-                        setSelectedCheckboxes(data.buktiJenis || []);
-                        setSelectedFiles(files.foto || data.images || []);
-                        setSelectedVid(files.video?.[0] || data.video || "");
-                        setSelectedDoc(files.dokumen || data.dokumen || []);
+                        setEditable(data.status === "Ditolak");
+                        setIsManual(!data.inovasiId);
+
+                        // Extract evidence files correctly from alternate naming conventions
+                        const checkboxes = (data.buktiJenis || data.jenisDokumen || data.bukti_jenis || []).map((s: string) => s.toLowerCase());
+                        setSelectedCheckboxes(Array.isArray(checkboxes) ? checkboxes : []);
+
+                        // Handle multiple possible field names from legacy/new API
+                        const files = data.buktiFiles || data.bukti_files || {};
+                        const fotos = files.foto || data.images || data.buktiFoto || data.bukti_foto || data.foto || [];
+                        setSelectedFiles(Array.isArray(fotos) ? fotos : (fotos ? [fotos] : []));
+
+                        const videos = files.video || data.video || data.selectedVid || data.buktiVideo || data.bukti_video || "";
+                        setSelectedVid(Array.isArray(videos) ? (videos[0] || "") : videos);
+
+                        const docs = files.dokumen || data.dokumen || data.selectedDoc || data.buktiDokumen || data.bukti_dokumen || [];
+                        setSelectedDoc(Array.isArray(docs) ? docs : (docs ? [docs] : []));
+
+                        if (!data.inovasiId) {
+                            setTextInputsValue({
+                                inovationName: data.namaInovasi || data.nama_inovasi || "",
+                                inovatorName: data.namaInovator || data.nama_inovator || "",
+                                description: data.deskripsiInovasi || data.deskripsi || "",
+                            });
+                            setLogoFiles(data.logoInovator || data.logo_inovator ? [data.logoInovator || data.logo_inovator] : []);
+                            setInnovationFiles(data.fotoInovasi || data.foto_inovasi ? [data.fotoInovasi || data.foto_inovasi] : []);
+                        }
                     } else {
                         console.log("Claim not found via API");
                     }
@@ -201,7 +232,7 @@ const KlaimInovasiDetail: React.FC = () => {
                 // If it's a known innovation (not manual), we might have innovatorId
                 // For simplicity assuming metadata or linked innovation
                 console.log("Updating statistics for verified claim...");
-                
+
                 toast.success("Klaim berhasil diverifikasi!");
                 router.push(`/village/pengajuan/${claimData.desaId || user?.uid}`);
             }
@@ -222,9 +253,9 @@ const KlaimInovasiDetail: React.FC = () => {
         setLoading(true);
         try {
             if (id) {
-                await updateClaim(id, { 
-                    status: "Ditolak", 
-                    catatanAdmin: modalInput 
+                await updateClaim(id, {
+                    status: "Ditolak",
+                    catatanAdmin: modalInput
                 });
                 toast.success("Klaim ditolak");
                 router.push(`/village/pengajuan/${claimData?.desaId || user?.uid}`);
@@ -262,6 +293,39 @@ const KlaimInovasiDetail: React.FC = () => {
                         </Label>
                         <Text2> Dapat lebih dari 1 </Text2>
                     </Flex>
+                    {isManual && (
+                        <Stack spacing={4} mb={4}>
+                            <Box>
+                                <Label>Informasi Inovasi (Manual)</Label>
+                                <Text2>Detail inovasi yang Anda ajukan secara manual</Text2>
+                            </Box>
+                            <Box>
+                                <Text fontWeight="400" fontSize="14px">Nama Inovator</Text>
+                                <Text fontSize="16px" fontWeight="600">{textInputsValue.inovatorName}</Text>
+                            </Box>
+                            <Box>
+                                <Text fontWeight="400" fontSize="14px">Nama Inovasi</Text>
+                                <Text fontSize="16px" fontWeight="600">{textInputsValue.inovationName}</Text>
+                            </Box>
+                            <Box>
+                                <Text fontWeight="400" fontSize="14px">Deskripsi</Text>
+                                <Text fontSize="14px">{textInputsValue.description}</Text>
+                            </Box>
+                            {logoFiles.length > 0 && (
+                                <Box>
+                                    <Text fontWeight="400" fontSize="14px">Logo Inovator</Text>
+                                    <ImageUpload
+                                        selectedFile={logoFiles}
+                                        setSelectedFile={setLogoFiles}
+                                        selectFileRef={logoFileRef}
+                                        onSelectImage={() => { }}
+                                        maxFiles={1}
+                                        disabled={true}
+                                    />
+                                </Box>
+                            )}
+                        </Stack>
+                    )}
                     <CheckboxGroup>
                         <JenisKlaim>
                             <input
@@ -270,7 +334,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                     marginRight: "8px", // Memberi jarak ke teks
                                 }}
                                 type="checkbox"
-                                checked={selectedCheckboxes.includes("foto")}
+                                checked={selectedCheckboxes.includes("foto") || selectedCheckboxes.includes("Foto")}
                                 disabled
                             />
                             Foto
@@ -282,7 +346,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                     marginRight: "8px", // Memberi jarak ke teks
                                 }}
                                 type="checkbox"
-                                checked={selectedCheckboxes.includes("video")}
+                                checked={selectedCheckboxes.includes("video") || selectedCheckboxes.includes("Video")}
                                 disabled
                             />
                             Video
@@ -294,65 +358,71 @@ const KlaimInovasiDetail: React.FC = () => {
                                     marginRight: "8px", // Memberi jarak ke teks
                                 }}
                                 type="checkbox"
-                                checked={selectedCheckboxes.includes("dokumen")}
+                                checked={selectedCheckboxes.includes("dokumen") || selectedCheckboxes.includes("Dokumen")}
                                 disabled
                             />
                             Dokumen
                         </JenisKlaim>
                     </CheckboxGroup>
 
-                    <Collapse in={selectedCheckboxes.includes("foto")} animateOpacity>
+                    <Collapse in={selectedCheckboxes.includes("foto") || selectedCheckboxes.includes("Foto")} animateOpacity>
                         <Field>
                             <Flex flexDirection="column" gap="2px">
-                                <Text1>
-                                    Foto Inovasi
-                                    <span style={{ color: "red" }}>*</span>
-                                </Text1>
-                                <Text2> Maks 2 foto. format: png, jpg </Text2>
-                                <ImageUpload
-                                    selectedFile={selectedFiles}
-                                    setSelectedFile={setSelectedFiles}
-                                    selectFileRef={selectedFileRef}
-                                    onSelectImage={onSelectImage}
-                                    maxFiles={2}
-                                />
+                                <Text1> Foto Inovasi </Text1>
+                                <Text2> Maks 5 foto. format: png, jpg. </Text2>
+                                {selectedFiles.length > 0 ? (
+                                    <ImageUpload
+                                        selectedFile={selectedFiles}
+                                        setSelectedFile={setSelectedFiles}
+                                        selectFileRef={selectedFileRef}
+                                        onSelectImage={onSelectImage}
+                                        maxFiles={2}
+                                        disabled={true}
+                                    />
+                                ) : (
+                                    <Text fontSize="12px" color="gray.500" fontStyle="italic">Tidak ada foto</Text>
+                                )}
                             </Flex>
                         </Field>
                     </Collapse>
 
-                    <Collapse in={selectedCheckboxes.includes("video")} animateOpacity>
+                    <Collapse in={selectedCheckboxes.includes("video") || selectedCheckboxes.includes("Video")} animateOpacity>
                         <Field>
                             <Flex flexDirection="column" gap="2px">
-                                <Text1>
-                                    Video inovasi
-                                    <span style={{ color: "red" }}>*</span>
-                                </Text1>
+                                <Text1> Video Inovasi </Text1>
                                 <Text2> Maks 100 mb. Format: mp4 </Text2>
+                                {selectedVid ? (
+                                    <Box mt={2} borderRadius="8px" overflow="hidden" border="1px solid #E5E7EB">
+                                        <video
+                                            src={selectedVid}
+                                            controls
+                                            style={{ width: "100%", maxHeight: "200px" }}
+                                        />
+                                    </Box>
+                                ) : (
+                                    <Text fontSize="12px" color="gray.500" fontStyle="italic">Tidak ada video</Text>
+                                )}
                             </Flex>
-                            <VidUpload
-                                selectedVid={selectedVid}
-                                setSelectedVid={setSelectedVid}
-                                selectVidRef={selectedVidRef}
-                                onSelectVid={onSelectVid}
-                            />
                         </Field>
                     </Collapse>
 
-                    <Collapse in={selectedCheckboxes.includes("dokumen")} animateOpacity>
+                    <Collapse in={selectedCheckboxes.includes("dokumen") || selectedCheckboxes.includes("Dokumen")} animateOpacity>
                         <Field>
                             <Flex flexDirection="column" gap="2px">
-                                <Text1>
-                                    Dokumen Pendukung
-                                    <span style={{ color: "red" }}>*</span>
-                                </Text1>
+                                <Text1> Dokumen Pendukung </Text1>
                                 <Text2> Maks 3 file, 50 mb. Format: pdf, doc, docx </Text2>
+                                {selectedDoc.length > 0 ? (
+                                    <DocUpload
+                                        selectedDoc={selectedDoc}
+                                        setSelectedDoc={setSelectedDoc}
+                                        selectDocRef={selectedDocRef}
+                                        onSelectDoc={onSelectDoc}
+                                        disabled={true}
+                                    />
+                                ) : (
+                                    <Text fontSize="12px" color="gray.500" fontStyle="italic">Tidak ada dokumen</Text>
+                                )}
                             </Flex>
-                            <DocUpload
-                                selectedDoc={selectedDoc}
-                                setSelectedDoc={setSelectedDoc}
-                                selectDocRef={selectedDocRef}
-                                onSelectDoc={onSelectDoc} // Ensure this matches the updated DocUploadProps
-                            />
                         </Field>
                     </Collapse>
                     <RecommendationDrawer
@@ -383,21 +453,29 @@ const KlaimInovasiDetail: React.FC = () => {
                             </NavbarButton>
                         )
                     ) : (
-                        <NavbarButton>
-                            {/* <Button
-                width="100%"
-                isLoading={loading}
-                onClick={handleAjukanKlaim}
-                type="button"
-                disabled={disabled}
-              >
-                Ajukan Klaim
-              </Button> */}
+                        claimData?.status === "Ditolak" ? (
+                            <>
+                                <StatusCard
+                                    status={claimData.status}
+                                    message={claimData.catatanAdmin}
+                                />
+                                <NavbarButton>
+                                    <Button
+                                        width="100%"
+                                        isLoading={loading}
+                                        onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?id=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
+                                        type="button"
+                                    >
+                                        Edit & Ajukan Kembali
+                                    </Button>
+                                </NavbarButton>
+                            </>
+                        ) : (
                             <StatusCard
                                 status={claimData?.status}
                                 message={claimData?.catatanAdmin}
                             />
-                        </NavbarButton>
+                        )
                     )}
                     <ConfModal
                         isOpen={isModal1Open}

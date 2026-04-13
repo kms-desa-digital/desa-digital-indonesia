@@ -11,7 +11,7 @@ export const StyledContainer = styled.div.withConfig({
   ${({ $page }) => {
     if ($page)
       return css`
-        padding: 43px 0 70px 0;
+        padding: 43px 0 20px 0;
       `
     return css`
       padding: 0 16px;
