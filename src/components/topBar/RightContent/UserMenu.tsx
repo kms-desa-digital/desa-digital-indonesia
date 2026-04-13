@@ -199,16 +199,19 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
           padding={1}
           as={IconButton}
           aria-label="Notification"
+          variant="ghost"
+          _hover={{ bg: "whiteAlpha.200" }}
           icon={
             <Image
               src={notification}
               alt="Bell"
               width={24}
               height={24}
-              style={{ width: "24px", height: "24px" }}
+              style={{ width: "24px", height: "24px", filter: "brightness(0) invert(1)" }}
             />
           }
           height="40px"
+          onClick={() => router.push("/notification")}
         />
 
         <MenuButton

@@ -41,7 +41,8 @@ export async function POST(request: NextRequest) {
     if (inovasiId) {
       const existing = await db.collection('claimInnovations').findOne({ 
         desaId, 
-        inovasiId 
+        inovasiId,
+        status: { $ne: 'Ditolak' } // Hanya cek yang belum ditolak
       })
       
       if (existing) {
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
       fotoInovasi: fotoInovasi || null,
       buktiJenis: buktiJenis, // Menyimpan jenis bukti yang dipilih
       buktiFiles: buktiFiles || {}, // Menyimpan URL file bukti (foto/video/dokumen)
+      isManual: body.isManual || false,
       status: 'Menunggu', // Status verifikasi admin
       catatanAdmin: '',
       createdAt: new Date(),

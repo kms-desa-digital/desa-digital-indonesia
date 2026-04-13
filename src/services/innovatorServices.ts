@@ -14,12 +14,12 @@ export const getInnovatorById = async (id: string) => {
   return api.get(`/innovator/detail/${id}`); // Assumes it uses detail endpoint now
 };
 
-export const createInnovator = async (data: any) => {
-  return api.post("/innovator", data);
+export const createInnovator = async (id: string, data: any) => {
+  return api.post(`/innovator/profile/${id}`, data);
 };
 
 export const updateInnovator = async (id: string, data: any) => {
-  return api.put(`/innovator/edit`, data); // Note: update API endpoints if it expects ID in URL
+  return api.put(`/innovator/edit/${id}`, data);
 };
 
 export const deleteInnovator = async (id: string) => {

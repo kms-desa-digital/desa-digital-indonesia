@@ -53,13 +53,21 @@ const KlaimInovasiManualContent: React.FC = () => {
     const [modalInput, setModalInput] = useState("");
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [disabled, setDisabled] = useState(false);
-    const [editable, setEditable] = useState(false);
+    const [editable, setEditable] = useState(true);
     const [textInputsValue, setTextInputsValue] = useState({
         inovationName: "",
         inovatorName: "",
         description: "",
     });
+    const [isUploading, setIsUploading] = useState({
+        foto: false,
+        video: false,
+        dokumen: false,
+        logo: false,
+        innovation: false
+    });
 
+    const editId = searchParams.get("editId");
     const inovasiId = searchParams.get("inovasiId");
 
     const { role } = useUser();
@@ -68,6 +76,8 @@ const KlaimInovasiManualContent: React.FC = () => {
     }, [role]);
 
     const handleCheckboxChange = (checkbox: string) => {
+        if (isUploading[checkbox as keyof typeof isUploading]) return;
+        
         if (selectedCheckboxes.includes(checkbox)) {
             setSelectedCheckboxes(selectedCheckboxes.filter((item) => item !== checkbox));
         } else {
@@ -75,29 +85,26 @@ const KlaimInovasiManualContent: React.FC = () => {
         }
     };
 
+    const isFormValid = () => {
+        // Required basic info
+        if (!textInputsValue.inovationName.trim() || !textInputsValue.inovatorName.trim() || !textInputsValue.description.trim() || logoFiles.length === 0 || innovationFiles.length === 0) return false;
+        
+        // Checklist must be selected
+        if (selectedCheckboxes.length === 0) return false;
+        
+        // Checklist items must have content
+        for (const item of selectedCheckboxes) {
+            if (item === "foto" && buktiFoto.length === 0) return false;
+            if (item === "video" && !selectedVid) return false;
+            if (item === "dokumen" && selectedDoc.length === 0) return false;
+        }
+        
+        return true;
+    };
+
     const handleAjukanKlaim = () => {
-        if (selectedCheckboxes.length === 0) {
-            toast.error("Minimal pilih 1 jenis bukti klaim (Foto, Video, atau Dokumen)", {
-                position: "top-center", autoClose: 2000, hideProgressBar: false,
-                closeOnClick: true, pauseOnHover: true, draggable: true, progress: undefined,
-            });
-            return;
-        }
-
-        let isValid = true;
-        if (selectedCheckboxes.includes("foto") && buktiFoto.length === 0) isValid = false;
-        if (selectedCheckboxes.includes("video") && selectedVid === "") isValid = false;
-        if (selectedCheckboxes.includes("dokumen") && selectedDoc.length === 0) isValid = false;
-
-        if (!isValid) {
-            toast.error("Mohon lengkapi semua bukti klaim yang dipilih (Foto, Video, atau Dokumen)", {
-                position: "top-center", autoClose: 2000,
-            });
-            return;
-        }
-
-        if (logoFiles.length === 0 || innovationFiles.length === 0 || textInputsValue.inovationName.trim() === "" || textInputsValue.inovatorName.trim() === "" || textInputsValue.description.trim() === "") {
-             toast.error("Mohon lengkapi seluruh informasi inovasi yang bertanda (*)", {
+        if (!isFormValid()) {
+            toast.error("Harap lengkapi semua data dan bukti yang dipilih.", {
                 position: "top-center", autoClose: 2000,
             });
             return;
@@ -109,26 +116,32 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     const onSelectLogo = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
-        if (files) {
+        if (files?.[0]) {
+            setIsUploading(prev => ({ ...prev, logo: true }));
             const reader = new FileReader();
             reader.onload = (readerEvent) => {
                 if (readerEvent.target?.result) {
                     setLogoFiles([readerEvent.target.result as string]);
+                    setIsUploading(prev => ({ ...prev, logo: false }));
                 }
             };
+            reader.onerror = () => setIsUploading(prev => ({ ...prev, logo: false }));
             reader.readAsDataURL(files[0]);
         }
     };
 
     const onSelectInnovationPhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
-        if (files) {
+        if (files?.[0]) {
+            setIsUploading(prev => ({ ...prev, innovation: true }));
             const reader = new FileReader();
             reader.onload = (readerEvent) => {
                 if (readerEvent.target?.result) {
                     setInnovationFiles([readerEvent.target.result as string]);
+                    setIsUploading(prev => ({ ...prev, innovation: false }));
                 }
             };
+            reader.onerror = () => setIsUploading(prev => ({ ...prev, innovation: false }));
             reader.readAsDataURL(files[0]);
         }
     };
@@ -136,6 +149,7 @@ const KlaimInovasiManualContent: React.FC = () => {
     const onSelectBuktiFoto = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files) {
+            setIsUploading(prev => ({ ...prev, foto: true }));
             const imagesArray: string[] = [];
             for (let i = 0; i < files.length; i++) {
                 const reader = new FileReader();
@@ -144,9 +158,11 @@ const KlaimInovasiManualContent: React.FC = () => {
                         imagesArray.push(readerEvent.target.result as string);
                         if (imagesArray.length === files.length) {
                             setBuktiFoto((prev) => [...prev, ...imagesArray].slice(0, 2));
+                            setIsUploading(prev => ({ ...prev, foto: false }));
                         }
                     }
                 };
+                reader.onerror = () => setIsUploading(prev => ({ ...prev, foto: false }));
                 reader.readAsDataURL(files[i]);
             }
         }
@@ -154,15 +170,23 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     const onSelectVid = (event: React.ChangeEvent<HTMLInputElement>) => {
         const reader = new FileReader();
-        if (event.target.files?.[0]) reader.readAsDataURL(event.target.files[0]);
+        if (event.target.files?.[0]) {
+            setIsUploading(prev => ({ ...prev, video: true }));
+            reader.readAsDataURL(event.target.files[0]);
+        }
         reader.onload = (readerEvent) => {
-            if (readerEvent.target?.result) setSelectedVid(readerEvent.target?.result as string);
+            if (readerEvent.target?.result) {
+                setSelectedVid(readerEvent.target?.result as string);
+                setIsUploading(prev => ({ ...prev, video: false }));
+            }
         };
+        reader.onerror = () => setIsUploading(prev => ({ ...prev, video: false }));
     };
 
     const onSelectDoc = (event: React.ChangeEvent<HTMLInputElement>) => {
         const doc = event.target.files;
         if (doc) {
+            setIsUploading(prev => ({ ...prev, dokumen: true }));
             const docArray: string[] = [];
             for (let i = 0; i < doc.length; i++) {
                 const reader = new FileReader();
@@ -171,9 +195,11 @@ const KlaimInovasiManualContent: React.FC = () => {
                         docArray.push(readerEvent.target.result as string);
                         if (docArray.length === doc.length) {
                             setSelectedDoc((prev) => [...prev, ...docArray]);
+                            setIsUploading(prev => ({ ...prev, dokumen: false }));
                         }
                     }
                 };
+                reader.onerror = () => setIsUploading(prev => ({ ...prev, dokumen: false }));
                 reader.readAsDataURL(doc[i]);
             }
         }
@@ -218,26 +244,24 @@ const KlaimInovasiManualContent: React.FC = () => {
                 status: "Menunggu"
             };
 
-            const response: any = id 
-                ? await updateClaim(id as string, formData)
+            const response: any = editId 
+                ? await updateClaim(editId as string, formData)
                 : await claimInnovation(formData);
 
-            setIsModal1Open(false);
-            toast.success(id ? "Klaim manual berhasil diperbarui" : "Klaim inovasi manual berhasil diajukan", {
+            setIsModal2Open(true);
+            toast.success(editId ? "Klaim manual berhasil diperbarui" : "Klaim inovasi manual berhasil diajukan", {
                 position: "top-center", 
-                autoClose: 2000,
-                onClose: () => {
-                    const newClaimId = id || response.claimId || response.data?.claimId || (typeof response === 'string' ? response : "");
-                    if (newClaimId) {
-                        router.push(`/village/klaimInovasi/detail/${newClaimId}`);
-                    } else {
-                        router.push(`/village/pengajuan/${user?.uid}`);
-                    }
-                }
+                autoClose: 3000
             });
+            
+            setTimeout(() => {
+                if (!isModal2Open) {
+                    handleSuccessRedirect(response);
+                }
+            }, 5000);
         } catch (error: any) {
             console.error("Error submitting manual claim:", error);
-            const errMsg = error?.response?.data?.message || "Gagal mengajukan klaim manual.";
+            const errMsg = error?.message || "Gagal mengajukan klaim manual.";
             setError(errMsg);
             toast.error(errMsg);
             setDisabled(false);
@@ -253,8 +277,23 @@ const KlaimInovasiManualContent: React.FC = () => {
         setIsModal2Open(false);
     };
 
+    const handleSuccessRedirect = (response?: any) => {
+        const newClaimId = editId || response?.claimId || response?.data?.claimId || (typeof response === 'string' ? response : "");
+        if (newClaimId) {
+            router.push(`/village/klaimInovasi/detail/${newClaimId}`);
+        } else {
+            router.push(`/village/pengajuan/${user?.uid}`);
+        }
+    };
+
     const handleModal1Yes = async () => {
+        setIsModal1Open(false);
         await submitClaim();
+    };
+    
+    const handleModal2Close = () => {
+        setIsModal2Open(false);
+        handleSuccessRedirect();
     };
 
     const getDescriptionWordCount = () => {
@@ -275,11 +314,11 @@ const KlaimInovasiManualContent: React.FC = () => {
     }, [isModal1Open, isModal2Open]);
 
     useEffect(() => {
-        if (id) {
+        if (editId) {
             const fetchClaim = async () => {
                 setFetchLoading(true);
                 try {
-                    const response: any = await getClaimById(id as string);
+                    const response: any = await getClaimById(editId as string);
                     const claimData = response.data;
                     if (claimData) {
                         setClaimData(claimData);
@@ -304,7 +343,7 @@ const KlaimInovasiManualContent: React.FC = () => {
             };
             fetchClaim();
         }
-    }, [id]);
+    }, [editId]);
 
     const handleVerify = async () => {
         setLoading(true);
@@ -421,10 +460,15 @@ const KlaimInovasiManualContent: React.FC = () => {
                         {["foto", "video", "dokumen"].map((type) => (
                             <JenisKlaim key={type}>
                                 <input
-                                    style={{ transform: "scale(1.3)", marginRight: "8px" }}
+                                    style={{ 
+                                        transform: "scale(1.3)", 
+                                        marginRight: "8px",
+                                        cursor: (isUploading[type as keyof typeof isUploading] || !editable || loading || disabled) ? "not-allowed" : "pointer"
+                                    }}
                                     type="checkbox"
                                     onChange={() => handleCheckboxChange(type)}
                                     checked={selectedCheckboxes.includes(type)}
+                                    disabled={isUploading[type as keyof typeof isUploading] || !editable || loading || disabled}
                                 />
                                 {type.charAt(0).toUpperCase() + type.slice(1)}
                             </JenisKlaim>
@@ -489,13 +533,13 @@ const KlaimInovasiManualContent: React.FC = () => {
                         )
                     ) : (
                         <NavbarButton>
-                            <Button width="100%" isLoading={loading} onClick={handleAjukanKlaim} type="button" disabled={disabled}>
+                            <Button width="100%" isLoading={loading} onClick={handleAjukanKlaim} type="button" disabled={disabled || !isFormValid()}>
                                 Ajukan Klaim
                             </Button>
                         </NavbarButton>
                     )}
                     <ConfModal isOpen={isModal1Open} onClose={closeModal} modalTitle="" modalBody1={modalBody1} onYes={handleModal1Yes} isLoading={loading} />
-                    <SecConfModal isOpen={isModal2Open} onClose={closeModal} modalBody2={modalBody2} />
+                    <SecConfModal isOpen={isModal2Open} onClose={handleModal2Close} modalBody2={modalBody2} />
                     <RejectionModal isOpen={openModal} onClose={() => setOpenModal(false)} onConfirm={handleReject} message={modalInput} setMessage={setModalInput} loading={loading} />
                     <ActionDrawer isOpen={isOpen} onClose={onClose} setOpenModal={setOpenModal} isAdmin={isAdmin} loading={loading} onVerify={handleVerify} role="admin" />
                 </div>

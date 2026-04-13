@@ -3,32 +3,27 @@
 import {
     Box,
     Button,
-    Collapse,
     Flex,
     Text,
     Stack,
+    Image,
+    Tag,
+    Badge,
+    SimpleGrid,
     useDisclosure,
+    Avatar
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
-import ConfModal from "src/components/confirmModal/confModal";
-import SecConfModal from "src/components/confirmModal/secConfModal";
-import DocUpload from "src/components/form/DocUpload";
-import ImageUpload from "src/components/form/ImageUpload";
-import VidUpload from "src/components/form/VideoUpload";
 import { auth } from "src/firebase/clientApp";
 import { getClaimById, updateVillage, updateClaim, getVillageById } from "Services/villageServices";
-import { getInnovationById, updateInnovation } from "Services/innovationServices";
-import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
+import { getInnovationById } from "Services/innovationServices";
 
 import {
-    CheckboxGroup,
     Container,
-    Field,
-    JenisKlaim,
-    Label,
     NavbarButton,
+    Label,
     Text1,
     Text2,
 } from "../../_styles";
@@ -37,22 +32,9 @@ import StatusCard from "Components/card/status/StatusCard";
 import RejectionModal from "Components/confirmModal/RejectionModal";
 import ActionDrawer from "Components/drawer/ActionDrawer";
 import Loading from "Components/loading";
-/*
-import {
-    // addDoc,
-    // collection,
-    doc,
-    getDoc,
-    increment,
-    // serverTimestamp,
-    updateDoc,
-} from "firebase/firestore";
-*/
-// import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { useUser } from "src/contexts/UserContext";
-import RecommendationDrawer from "Components/drawer/RecommendationDrawer";
 
 const KlaimInovasiDetail: React.FC = () => {
     const router = useRouter();
@@ -60,147 +42,29 @@ const KlaimInovasiDetail: React.FC = () => {
     const params = useParams();
     const id = params.id as string;
     const [claimData, setClaimData] = useState<any>(null);
-    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-    const [selectedDoc, setSelectedDoc] = useState<string[]>([]);
-    const [selectedVid, setSelectedVid] = useState<string>("");
-    const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
-    const selectedFileRef = useRef<HTMLInputElement>(null);
-    const selectedVidRef = useRef<HTMLInputElement>(null);
-    const selectedDocRef = useRef<HTMLInputElement>(null);
-    const logoFileRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
     const [fetchLoading, setFetchLoading] = useState(false);
-    const [error, setError] = useState("");
     const [isAdmin, setIsAdmin] = useState(false);
-    const modalBody1 = "Apakah Anda yakin ingin mengajukan klaim?";
-    const modalBody2 =
-        "Inovasi sudah ditambahkan. Admin sedang memverifikasi pengajuan klaim inovasi. Silahkan cek pada halaman pengajuan klaim";
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
     const { isOpen, onOpen, onClose } = useDisclosure();
-    const [disabled, setDisabled] = useState(false);
-    const [editable, setEditable] = useState(false);
     const [isManual, setIsManual] = useState(false);
-    const [textInputsValue, setTextInputsValue] = useState({
-        inovationName: "",
-        inovatorName: "",
-        description: "",
-    });
-    const [logoFiles, setLogoFiles] = useState<string[]>([]);
-    const [innovationFiles, setInnovationFiles] = useState<string[]>([]);
-    const {
-        isOpen: isRecOpen,
-        onOpen: onRecOpen,
-        onClose: onRecClose,
-    } = useDisclosure();
-
-    const inovasiId = claimData?.inovasiId; // Use inovasiId from fetched claimData
-    // console.log("Inovasi ID:", inovasiId);
 
     const { role } = useUser();
     useEffect(() => {
-        if (role === "admin") {
-            setIsAdmin(true);
-        } else {
-            setIsAdmin(false);
-        }
+        setIsAdmin(role === "admin");
     }, [role]);
-
-    const handleCheckboxChange = (checkbox: string) => {
-        // Read-only in detail view
-        return;
-    };
-
-    const handleAjukanKlaim = () => {
-        // This is detail view, mostly for verification or viewing status.
-        // Re-upload logic could be added here if needed, but for now assuming read-only/verification.
-        return;
-    };
-
-    const onSelectImage = (event: React.ChangeEvent<HTMLInputElement>) => {
-        // Read-only
-    };
-
-    const onSelectVid = (event: React.ChangeEvent<HTMLInputElement>) => {
-        // Read-only
-    };
-
-    const onSelectDoc = (event: React.ChangeEvent<HTMLInputElement>) => {
-        // Read-only
-    };
-
-    const onSubmitForm = async (event: React.FormEvent<HTMLElement>) => {
-        event.preventDefault();
-        // submitClaim();
-        // setEditable(false);
-    };
-
-    const [isModal1Open, setIsModal1Open] = useState(false);
-    const [isModal2Open, setIsModal2Open] = useState(false);
-    const closeModal = () => {
-        setIsModal1Open(false);
-        setIsModal2Open(false);
-    };
-
-    const handleModal1Yes = async () => {
-        console.log("Modal 1 Yes clicked");
-        // await submitClaim();
-    };
-
-    useEffect(() => {
-        // Jika salah satu modal terbuka, sembunyikan scrollbar
-        const isAnyModalOpen = isModal1Open || isModal2Open || openModal || isOpen;
-        if (isAnyModalOpen) {
-            document.body.style.overflow = "hidden";
-        } else {
-            document.body.style.overflow = ""; // Kembalikan scrollbar jika kedua modal tertutup
-        }
-    }, [isModal1Open, isModal2Open, openModal, isOpen]);
 
     useEffect(() => {
         if (id) {
             const fetchClaim = async () => {
                 setFetchLoading(true);
                 try {
-                    /*
-                    const claimRef = doc(firestore, "claimInnovations", id);
-                    const claimSnap = await getDoc(claimRef);
-                    ... Firestore Logic ...
-                    */
                     const res: any = await getClaimById(id);
                     const data = res.data;
                     if (data) {
-                        console.log("Claim data from API:", JSON.stringify(data, null, 2));
                         setClaimData(data);
-                        setEditable(data.status === "Ditolak");
                         setIsManual(!data.inovasiId);
-
-                        // Extract evidence files correctly from alternate naming conventions
-                        const checkboxes = (data.buktiJenis || data.jenisDokumen || data.bukti_jenis || []).map((s: string) => s.toLowerCase());
-                        setSelectedCheckboxes(Array.isArray(checkboxes) ? checkboxes : []);
-
-                        // Handle multiple possible field names from legacy/new API
-                        const files = data.buktiFiles || data.bukti_files || {};
-                        const fotos = files.foto || data.images || data.buktiFoto || data.bukti_foto || data.foto || [];
-                        setSelectedFiles(Array.isArray(fotos) ? fotos : (fotos ? [fotos] : []));
-
-                        const videos = files.video || data.video || data.selectedVid || data.buktiVideo || data.bukti_video || "";
-                        setSelectedVid(Array.isArray(videos) ? (videos[0] || "") : videos);
-
-                        const docs = files.dokumen || data.dokumen || data.selectedDoc || data.buktiDokumen || data.bukti_dokumen || [];
-                        setSelectedDoc(Array.isArray(docs) ? docs : (docs ? [docs] : []));
-
-                        if (!data.inovasiId) {
-                            setTextInputsValue({
-                                inovationName: data.namaInovasi || data.nama_inovasi || "",
-                                inovatorName: data.namaInovator || data.nama_inovator || "",
-                                description: data.deskripsiInovasi || data.deskripsi || "",
-                            });
-                            setLogoFiles(data.logoInovator || data.logo_inovator ? [data.logoInovator || data.logo_inovator] : []);
-                            setInnovationFiles(data.fotoInovasi || data.foto_inovasi ? [data.fotoInovasi || data.foto_inovasi] : []);
-                        }
-                    } else {
-                        console.log("Claim not found via API");
                     }
                 } catch (error) {
                     console.error("Error fetching claim from API:", error);
@@ -212,33 +76,23 @@ const KlaimInovasiDetail: React.FC = () => {
         }
     }, [id]);
 
-
     const handleVerify = async () => {
         setLoading(true);
         try {
             if (id && claimData) {
-                // 1. Update claim status to Terverifikasi
                 await updateClaim(id, { status: "Terverifikasi" });
-
-                // 2. Increment Village's "jumlahInovasiDiterapkan"
                 if (claimData.desaId) {
                     const vRes: any = await getVillageById(claimData.desaId);
                     const vData = vRes.data || vRes.village;
                     const newValue = (Number(vData?.jumlahInovasiDiterapkan) || 0) + 1;
                     await updateVillage(claimData.desaId, { jumlahInovasiDiterapkan: newValue });
                 }
-
-                // 3. Increment Innovator's "implementedCount"
-                // If it's a known innovation (not manual), we might have innovatorId
-                // For simplicity assuming metadata or linked innovation
-                console.log("Updating statistics for verified claim...");
-
                 toast.success("Klaim berhasil diverifikasi!");
                 router.push(`/village/pengajuan/${claimData.desaId || user?.uid}`);
             }
         } catch (error) {
             console.error("Failed to verify claim via API:", error);
-            setError("Gagal memverifikasi klaim");
+            toast.error("Gagal memverifikasi klaim");
         } finally {
             setLoading(false);
             onClose();
@@ -262,7 +116,7 @@ const KlaimInovasiDetail: React.FC = () => {
             }
         } catch (error) {
             console.error("Failed to reject claim via API:", error);
-            setError("Failed to reject claim");
+            toast.error("Gagal menolak klaim");
         } finally {
             setLoading(false);
             setOpenModal(false);
@@ -270,246 +124,209 @@ const KlaimInovasiDetail: React.FC = () => {
         }
     };
 
-    if (fetchLoading) {
-        return <Loading />;
-    }
+    if (fetchLoading) return <Loading />;
+    if (!claimData) return null;
+
+    const files = claimData.buktiFiles || claimData.bukti_files || {};
+    const fotos = files.foto || claimData.images || [];
+    const video = files.video || claimData.video || "";
+    const docs = files.dokumen || claimData.dokumen || [];
 
     return (
-        <Box>
-            <form onSubmit={onSubmitForm}>
-                <TopBar
-                    title={isAdmin ? "Verifikasi Klaim Inovasi" : "Klaim Inovasi"}
-                    onBack={() => router.back()}
-                />
-                <Container>
-                    <Flex flexDirection="column" gap="2px">
-                        {isAdmin && claimData && (
-                            <Text fontWeight="700" mb={2} fontSize="16px">
-                                Desa {claimData.namaDesa}
+        <Box bg="#F9FAFB" minH="100vh">
+            <TopBar
+                title="Detail Klaim Inovasi"
+                onBack={() => router.back()}
+            />
+            
+            <Container style={{ paddingTop: "72px", paddingBottom: "120px" }}>
+                {/* Header Profile Section */}
+                <Box bg="white" p={5} borderRadius="xl" shadow="sm" borderWidth="1px" borderColor="gray.100" mb={4}>
+                    <Flex gap={4} align="center">
+                        <Image 
+                            src={claimData.logoInovator || "/images/default-logo.svg"} 
+                            alt="Logo" 
+                            boxSize="64px" 
+                            borderRadius="lg" 
+                            objectFit="cover" 
+                            bg="gray.50"
+                        />
+                        <Box flex={1}>
+                            <Text fontWeight="800" fontSize="16px" color="gray.800" noOfLines={2}>
+                                {claimData.namaInovasi}
                             </Text>
-                        )}
-                        <Label>
-                            Jenis Dokumen Bukti Klaim <span style={{ color: "red" }}>*</span>
-                        </Label>
-                        <Text2> Dapat lebih dari 1 </Text2>
+                            <Text fontSize="13px" color="gray.500" fontWeight="500">
+                                {claimData.namaInovator}
+                            </Text>
+                        </Box>
+                        <Badge colorScheme={isManual ? "blue" : "green"} variant="subtle" borderRadius="md" px={2} py={0.5} fontSize="10px">
+                            {isManual ? "MANUAL" : "KATALOG"}
+                        </Badge>
                     </Flex>
-                    {isManual && (
-                        <Stack spacing={4} mb={4}>
-                            <Box>
-                                <Label>Informasi Inovasi (Manual)</Label>
-                                <Text2>Detail inovasi yang Anda ajukan secara manual</Text2>
-                            </Box>
-                            <Box>
-                                <Text fontWeight="400" fontSize="14px">Nama Inovator</Text>
-                                <Text fontSize="16px" fontWeight="600">{textInputsValue.inovatorName}</Text>
-                            </Box>
-                            <Box>
-                                <Text fontWeight="400" fontSize="14px">Nama Inovasi</Text>
-                                <Text fontSize="16px" fontWeight="600">{textInputsValue.inovationName}</Text>
-                            </Box>
-                            <Box>
-                                <Text fontWeight="400" fontSize="14px">Deskripsi</Text>
-                                <Text fontSize="14px">{textInputsValue.description}</Text>
-                            </Box>
-                            {logoFiles.length > 0 && (
-                                <Box>
-                                    <Text fontWeight="400" fontSize="14px">Logo Inovator</Text>
-                                    <ImageUpload
-                                        selectedFile={logoFiles}
-                                        setSelectedFile={setLogoFiles}
-                                        selectFileRef={logoFileRef}
-                                        onSelectImage={() => { }}
-                                        maxFiles={1}
-                                        disabled={true}
-                                    />
-                                </Box>
-                            )}
-                        </Stack>
+                </Box>
+
+                {/* Deskripsi Section */}
+                <Box bg="white" p={5} borderRadius="xl" shadow="sm" borderWidth="1px" borderColor="gray.100" mb={4}>
+                    <Text fontWeight="700" fontSize="14px" color="gray.800" mb={2}>Deskripsi Penerapan</Text>
+                    <Text fontSize="13px" color="gray.600" lineHeight="1.6">
+                        {claimData.deskripsiInovasi || "Tidak ada deskripsi tersedia untuk klaim ini."}
+                    </Text>
+                    
+                    {!isManual && (
+                        <Button 
+                            mt={4} 
+                            w="full" 
+                            variant="link" 
+                            colorScheme="green" 
+                            size="sm" 
+                            onClick={() => router.push(`/innovation/detail/${claimData.inovasiId}`)}
+                        >
+                            Lihat Detail Produk di Katalog
+                        </Button>
                     )}
-                    <CheckboxGroup>
-                        <JenisKlaim>
-                            <input
-                                style={{
-                                    transform: "scale(1.3)", // Memperbesar checkbox
-                                    marginRight: "8px", // Memberi jarak ke teks
-                                }}
-                                type="checkbox"
-                                checked={selectedCheckboxes.includes("foto") || selectedCheckboxes.includes("Foto")}
-                                disabled
-                            />
-                            Foto
-                        </JenisKlaim>
-                        <JenisKlaim>
-                            <input
-                                style={{
-                                    transform: "scale(1.3)", // Memperbesar checkbox
-                                    marginRight: "8px", // Memberi jarak ke teks
-                                }}
-                                type="checkbox"
-                                checked={selectedCheckboxes.includes("video") || selectedCheckboxes.includes("Video")}
-                                disabled
-                            />
-                            Video
-                        </JenisKlaim>
-                        <JenisKlaim>
-                            <input
-                                style={{
-                                    transform: "scale(1.3)", // Memperbesar checkbox
-                                    marginRight: "8px", // Memberi jarak ke teks
-                                }}
-                                type="checkbox"
-                                checked={selectedCheckboxes.includes("dokumen") || selectedCheckboxes.includes("Dokumen")}
-                                disabled
-                            />
-                            Dokumen
-                        </JenisKlaim>
-                    </CheckboxGroup>
+                </Box>
 
-                    <Collapse in={selectedCheckboxes.includes("foto") || selectedCheckboxes.includes("Foto")} animateOpacity>
-                        <Field>
-                            <Flex flexDirection="column" gap="2px">
-                                <Text1> Foto Inovasi </Text1>
-                                <Text2> Maks 5 foto. format: png, jpg. </Text2>
-                                {selectedFiles.length > 0 ? (
-                                    <ImageUpload
-                                        selectedFile={selectedFiles}
-                                        setSelectedFile={setSelectedFiles}
-                                        selectFileRef={selectedFileRef}
-                                        onSelectImage={onSelectImage}
-                                        maxFiles={2}
-                                        disabled={true}
-                                    />
-                                ) : (
-                                    <Text fontSize="12px" color="gray.500" fontStyle="italic">Tidak ada foto</Text>
-                                )}
-                            </Flex>
-                        </Field>
-                    </Collapse>
-
-                    <Collapse in={selectedCheckboxes.includes("video") || selectedCheckboxes.includes("Video")} animateOpacity>
-                        <Field>
-                            <Flex flexDirection="column" gap="2px">
-                                <Text1> Video Inovasi </Text1>
-                                <Text2> Maks 100 mb. Format: mp4 </Text2>
-                                {selectedVid ? (
-                                    <Box mt={2} borderRadius="8px" overflow="hidden" border="1px solid #E5E7EB">
-                                        <video
-                                            src={selectedVid}
-                                            controls
-                                            style={{ width: "100%", maxHeight: "200px" }}
-                                        />
-                                    </Box>
-                                ) : (
-                                    <Text fontSize="12px" color="gray.500" fontStyle="italic">Tidak ada video</Text>
-                                )}
-                            </Flex>
-                        </Field>
-                    </Collapse>
-
-                    <Collapse in={selectedCheckboxes.includes("dokumen") || selectedCheckboxes.includes("Dokumen")} animateOpacity>
-                        <Field>
-                            <Flex flexDirection="column" gap="2px">
-                                <Text1> Dokumen Pendukung </Text1>
-                                <Text2> Maks 3 file, 50 mb. Format: pdf, doc, docx </Text2>
-                                {selectedDoc.length > 0 ? (
-                                    <DocUpload
-                                        selectedDoc={selectedDoc}
-                                        setSelectedDoc={setSelectedDoc}
-                                        selectDocRef={selectedDocRef}
-                                        onSelectDoc={onSelectDoc}
-                                        disabled={true}
-                                    />
-                                ) : (
-                                    <Text fontSize="12px" color="gray.500" fontStyle="italic">Tidak ada dokumen</Text>
-                                )}
-                            </Flex>
-                        </Field>
-                    </Collapse>
-                    <RecommendationDrawer
-                        innovationId={inovasiId}
-                        isOpen={isRecOpen}
-                        onClose={() => onRecClose()}
-                    />
-                </Container>
-                <div>
-                    {isAdmin ? (
-                        claimData?.status === "Terverifikasi" ||
-                            claimData?.status === "Ditolak" ? (
-                            <StatusCard
-                                status={claimData.status}
-                                message={claimData.catatanAdmin}
-                            />
-                        ) : (
-                            <NavbarButton>
-                                <Button
-                                    width="100%"
-                                    isLoading={loading}
-                                    onClick={onOpen}
-                                    type="button"
-                                    disabled={disabled}
+                {/* Evidence Photo Section */}
+                {fotos.length > 0 && (
+                    <Box mb={4}>
+                        <Text fontWeight="700" fontSize="14px" color="gray.800" mb={3}>Bukti Foto</Text>
+                        <SimpleGrid columns={2} spacing={3}>
+                            {fotos.map((src: string, i: number) => (
+                                <Box 
+                                    key={i} 
+                                    borderRadius="lg" 
+                                    overflow="hidden" 
+                                    height="140px" 
+                                    bg="gray.200"
+                                    cursor="pointer"
+                                    onClick={() => window.open(src, '_blank')}
                                 >
-                                    Verifikasi Permohonan Klaim
-                                </Button>
-                            </NavbarButton>
-                        )
+                                    <Image src={src} boxSize="full" objectFit="cover" alt={`Bukti Foto ${i+1}`} />
+                                </Box>
+                            ))}
+                        </SimpleGrid>
+                    </Box>
+                )}
+
+                {/* Video Section */}
+                {video && (
+                    <Box mb={4}>
+                        <Text fontWeight="700" fontSize="14px" color="gray.800" mb={3}>Dokumentasi Video</Text>
+                        <Box borderRadius="lg" overflow="hidden" bg="black" shadow="sm">
+                            <video src={video} controls style={{ width: "100%", maxHeight: "250px" }} />
+                        </Box>
+                    </Box>
+                )}
+
+                {/* Documents Section */}
+                {docs.length > 0 && (
+                    <Box mb={4}>
+                        <Text fontWeight="700" fontSize="14px" color="gray.800" mb={3}>Dokumen Pendukung</Text>
+                        <Stack spacing={3}>
+                            {docs.map((src: string, i: number) => (
+                                <Flex 
+                                    key={i} 
+                                    p={3} 
+                                    bg="white" 
+                                    borderRadius="lg" 
+                                    align="center" 
+                                    justify="space-between"
+                                    borderWidth="1px"
+                                    borderColor="gray.200"
+                                    cursor="pointer"
+                                    onClick={() => window.open(src, '_blank')}
+                                    _hover={{ bg: "gray.50" }}
+                                >
+                                    <Flex align="center" gap={3}>
+                                        <Box p={2} bg="blue.50" borderRadius="md">
+                                            <Text fontSize="16px" fontWeight="800" color="blue.500">PDF</Text>
+                                        </Box>
+                                        <Box>
+                                            <Text fontSize="13px" fontWeight="700" noOfLines={1} color="gray.700">
+                                                {decodeURIComponent(src.split('/').pop()?.split('?')[0] || `Dokumen_${i+1}.pdf`)}
+                                            </Text>
+                                            <Text fontSize="11px" color="gray.500">Ketuk untuk mengunduh</Text>
+                                        </Box>
+                                    </Flex>
+                                </Flex>
+                            ))}
+                        </Stack>
+                    </Box>
+                )}
+            </Container>
+
+            {/* Fixed Action Bar at the Bottom */}
+            <Box 
+                position="fixed" 
+                bottom="0" 
+                left="50%" 
+                transform="translateX(-50%)" 
+                width="100%" 
+                maxW="363px" 
+                bg="white" 
+                p={4} 
+                pb="24px" 
+                zIndex="20" 
+                shadow="0px -4px 10px rgba(0,0,0,0.05)"
+                borderTopWidth="1px"
+            >
+                {isAdmin ? (
+                    claimData.status === "Menunggu" ? (
+                        <Button
+                            w="full"
+                            h="48px"
+                            borderRadius="lg"
+                            colorScheme="green"
+                            isLoading={loading}
+                            onClick={onOpen}
+                            fontWeight="800"
+                            fontSize="15px"
+                        >
+                            Verifikasi Klaim
+                        </Button>
                     ) : (
-                        claimData?.status === "Ditolak" ? (
-                            <>
-                                <StatusCard
-                                    status={claimData.status}
-                                    message={claimData.catatanAdmin}
-                                />
-                                <NavbarButton>
-                                    <Button
-                                        width="100%"
-                                        isLoading={loading}
-                                        onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?id=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
-                                        type="button"
-                                    >
-                                        Edit & Ajukan Kembali
-                                    </Button>
-                                </NavbarButton>
-                            </>
-                        ) : (
-                            <StatusCard
-                                status={claimData?.status}
-                                message={claimData?.catatanAdmin}
-                            />
-                        )
-                    )}
-                    <ConfModal
-                        isOpen={isModal1Open}
-                        onClose={closeModal}
-                        modalTitle=""
-                        modalBody1={modalBody1}
-                        onYes={handleModal1Yes}
-                        isLoading={loading}
-                    />
-                    <SecConfModal
-                        isOpen={isModal2Open}
-                        onClose={closeModal}
-                        modalBody2={modalBody2} // Mengirimkan teks konten modal
-                    />
-                    <RejectionModal
-                        isOpen={openModal}
-                        onClose={() => setOpenModal(false)}
-                        onConfirm={handleReject}
-                        message={modalInput}
-                        setMessage={setModalInput}
-                        loading={loading}
-                    />
-                    <ActionDrawer
-                        isOpen={isOpen}
-                        onClose={onClose}
-                        setOpenModal={setOpenModal}
-                        isAdmin={isAdmin}
-                        loading={loading}
-                        onVerify={handleVerify}
-                        role="admin"
-                    />
-                </div>
-            </form>
+                        <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
+                    )
+                ) : (
+                    <>
+                        <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
+                        {claimData.status === "Ditolak" && (
+                            <Button
+                                mt={3}
+                                w="full"
+                                h="48px"
+                                borderRadius="lg"
+                                colorScheme="green"
+                                onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?editId=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
+                                fontWeight="800"
+                                fontSize="15px"
+                            >
+                                Perbaiki & Ajukan Kembali
+                            </Button>
+                        )}
+                    </>
+                )}
+            </Box>
+
+            <RejectionModal
+                isOpen={openModal}
+                onClose={() => setOpenModal(false)}
+                onConfirm={handleReject}
+                message={modalInput}
+                setMessage={setModalInput}
+                loading={loading}
+            />
+            <ActionDrawer
+                isOpen={isOpen}
+                onClose={onClose}
+                setOpenModal={setOpenModal}
+                isAdmin={isAdmin}
+                loading={loading}
+                onVerify={handleVerify}
+                role="admin"
+            />
         </Box>
     );
 };
+
 export default KlaimInovasiDetail;
