@@ -88,7 +88,7 @@ function TopBar(props: TopBarProps) {
     switch (claimStatus) {
       case "Terverifikasi":
         return {
-          label: "Sudah Klaim",
+          label: t("claimStatus.verified"),
           bg: "#71A686",
           color: "white",
           leftIcon: <FaCheck />,
@@ -99,7 +99,7 @@ function TopBar(props: TopBarProps) {
         };
       case "Menunggu":
         return {
-          label: "Proses Klaim",
+          label: t("claimStatus.pending"),
           bg: "#71A686",
           color: "white",
           leftIcon: undefined,
@@ -110,7 +110,7 @@ function TopBar(props: TopBarProps) {
         };
       case "Ditolak":
         return {
-          label: "Ditolak",
+          label: t("claimStatus.rejected"),
           bg: "red.500",
           color: "white",
           leftIcon: undefined,
@@ -122,7 +122,7 @@ function TopBar(props: TopBarProps) {
       case "":
       default:
         return {
-          label: "Klaim Inovasi",
+          label: t("claimStatus.default"),
           bg: "white",
           color: "#347357",
           hover: {
@@ -139,7 +139,7 @@ function TopBar(props: TopBarProps) {
     if (isDisabled) return;
     if (!isVillageVerified) {
       toast.warning(
-        "Akun anda belum terdaftar atau terverifikaasi sebagai desa digital",
+        t("toastVillageNotVerified"),
         {
           position: "top-center",
           autoClose: 3000,

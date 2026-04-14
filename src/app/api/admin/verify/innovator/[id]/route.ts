@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 type Params = Promise<{ id: string }>
 
@@ -13,6 +14,9 @@ type VerifyBody = {
 // Verifikasi atau tolak profil inovator oleh admin.
 export async function POST(request: NextRequest, { params }: { params: Params }) {
   try {
+    const auth = await requireRole(request, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { id } = await params
     if (!id) {
       return NextResponse.json({ message: 'Innovator ID is required' }, { status: 400 })

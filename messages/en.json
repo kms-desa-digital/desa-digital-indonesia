@@ -9,7 +9,11 @@
         "categories": "Innovation Categories",
         "featuredVillages": "Featured Villages",
         "featuredInnovators": "Featured Innovators",
-        "bestTitle": "Featured Innovators and Villages"
+        "bestTitle": "Featured Innovators and Villages",
+        "toastInnovatorNotVerified": "Your account is not registered or verified as an innovator",
+        "searchButton": "Search",
+        "searchLoading": "Searching innovations...",
+        "searchEmpty": "No innovations found for this keyword."
     },
     "Categories": {
         "smartAgri": "Smart Agriculture",
@@ -49,7 +53,14 @@
             "home": "Home",
             "village": "Digital Village",
             "innovator": "Innovator"
-        }
+        },
+        "claimStatus": {
+            "verified": "Already Claimed",
+            "pending": "Claim in Progress",
+            "rejected": "Rejected",
+            "default": "Claim Innovation"
+        },
+        "toastVillageNotVerified": "Your account is not registered or verified as a digital village"
     },
     "Innovator": {
         "selectInnovator": "Select Innovator",
@@ -112,6 +123,14 @@
         "ariaOpen": "Open chat",
         "ariaClearHistory": "Clear chat history",
         "ariaClose": "Close chat",
-        "ariaSend": "Send message"
+        "ariaSend": "Send message",
+        "welcomeTitle": "Hello! How can I help you?",
+        "welcomeDesc": "Choose a question below or type your information needs directly.",
+        "suggestion1": "What is the main potential of Desa Petir?",
+        "suggestion2": "Fishery innovation recommendations",
+        "suggestion3": "Who are the registered innovators?",
+        "errorServer": "The server is having issues. Please try again shortly.",
+        "errorClient": "Invalid request. Try refreshing the page.",
+        "errorNetwork": "Connection lost. Check your network and try again."
     }
 }

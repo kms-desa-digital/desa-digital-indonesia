@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 // =========================================================
 // GET /api/innovations
@@ -36,9 +37,9 @@ export async function GET(request: NextRequest) {
 
     const innovations = await db
       .collection('innovations')
-      .find(filter)
-      .sort({ createdAt: -1 })
-      .toArray()
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .toArray()
 
     // Konversi _id ObjectId → string untuk kemudahan konsumsi frontend
     const result = innovations.map((doc) => ({
@@ -64,6 +65,9 @@ export async function GET(request: NextRequest) {
 // =========================================================
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireRole(request, ["innovator", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const body = await request.json()
 
     const {

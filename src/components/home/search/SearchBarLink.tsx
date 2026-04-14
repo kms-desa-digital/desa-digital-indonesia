@@ -13,6 +13,7 @@ import {
 } from "@chakra-ui/react";
 import React from "react";
 import CardInnovation from "Components/card/innovation";
+import { useTranslations } from "next-intl";
 
 type SearchSuggestion = {
   id: string;
@@ -61,6 +62,7 @@ const SearchBarLink: React.FC<SearchBarLinkProps> = ({
   showSearchButton = false,
   onSearchClick,
 }) => {
+  const t = useTranslations("Home");
   const renderHighlightedText = (value: string) => {
     const query = highlightQuery?.trim();
 
@@ -129,7 +131,7 @@ const SearchBarLink: React.FC<SearchBarLinkProps> = ({
                 onClick={onSearchClick}
                 onMouseDown={(e) => e.preventDefault()}
               >
-                Cari
+                {t('searchButton')}
               </Button>
             </InputRightElement>
           )}
@@ -157,11 +159,11 @@ const SearchBarLink: React.FC<SearchBarLinkProps> = ({
             {isSuggestionsLoading ? (
               <Flex py={6} justify="center" align="center" gap={2}>
                 <Spinner size="sm" color="green.500" />
-                <Text fontSize="sm" color="gray.500">Mencari inovasi...</Text>
+                <Text fontSize="sm" color="gray.500">{t('searchLoading')}</Text>
               </Flex>
             ) : suggestions.length === 0 ? (
               <Text px={2} py={4} fontSize="sm" color="gray.500" textAlign="center">
-                Belum ada inovasi untuk kata kunci ini.
+                {t('searchEmpty')}
               </Text>
             ) : (
               <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={3}>

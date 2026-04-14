@@ -1,27 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
-    }
-
-    const token = authHeader.split(' ')[1]
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string)
+    const auth = await requireRole(request, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
 
     const db = await connectToDatabase()
 
     // Cari user dan cek role admin
     const user = await db.collection('users').findOne(
-      { _id: new ObjectId(decoded.userId) }
+      { _id: new ObjectId(auth.uid) }
     )
 
-    if (!user || user.role !== 'admin') {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 })
+    if (!user) {
+      return NextResponse.json({ message: 'Not found' }, { status: 404 })
     }
 
     // Ambil data dashboard

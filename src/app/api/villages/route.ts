@@ -13,12 +13,18 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const provinsi = searchParams.get('provinsi')
     const kabupatenKota = searchParams.get('kabupatenKota')
-
+    
     const db = await connectToDatabase()
     const andConditions: any[] = []
 
     const escapeRegex = (value: string) =>
       value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    const normalizeRegionName = (value: string) =>
+      value
+        .trim()
+        .replace(/^(kabupaten|kota|kab\.?)\s+/i, '')
+        .replace(/\s+/g, ' ')
 
     if (status) {
       andConditions.push({ status })
@@ -46,7 +52,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (kabupatenKota && kabupatenKota.trim()) {
-      const kabupatenRegex = new RegExp(`^${escapeRegex(kabupatenKota.trim())}$`, 'i')
+      const normalizedKabupaten = normalizeRegionName(kabupatenKota)
+      const kabupatenRegex = new RegExp(
+        `^(?:(?:kabupaten|kab\\.?|kota)\\s+)?${escapeRegex(normalizedKabupaten)}$`,
+        'i'
+      )
       andConditions.push({
         $or: [
           { kabupatenKota: { $regex: kabupatenRegex } },
@@ -59,9 +69,9 @@ export async function GET(request: NextRequest) {
     const filter: any = andConditions.length ? { $and: andConditions } : {}
 
     const villages = await db.collection('villages')
-      .find(filter)
-      .sort({ createdAt: -1 })
-      .toArray()
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .toArray()
 
     const result = villages.map(doc => ({
       ...doc,
@@ -70,8 +80,8 @@ export async function GET(request: NextRequest) {
     }))
 
     return new NextResponse(JSON.stringify({ villages: result }, null, 2), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
     })
   } catch (error) {
     console.error('Error fetching villages:', error)

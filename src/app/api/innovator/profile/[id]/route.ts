@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 type Params = Promise<{ id: string }>
 type MongoFilter = { [key: string]: any }
@@ -23,6 +24,9 @@ const buildFilter = (id: string): MongoFilter => {
 // Create or update innovator profile in MongoDB.
 export async function POST(request: NextRequest, { params }: { params: Params }) {
   try {
+    const auth = await requireRole(request, ["innovator", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { id } = await params
 
     if (!id) {

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireRole(request, ["kementerian", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const db = await connectToDatabase()
 
     const [

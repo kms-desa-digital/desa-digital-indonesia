@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 // =========================================================
 // POST /api/villages/claim
@@ -8,6 +9,9 @@ import { ObjectId } from 'mongodb'
 // =========================================================
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireRole(request, ["village", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const body = await request.json()
     const { 
       desaId, 
@@ -104,6 +108,9 @@ export async function POST(request: NextRequest) {
 // =========================================================
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireRole(request, ["village", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { searchParams } = new URL(request.url)
     const desaId = searchParams.get('desaId')
     const status = searchParams.get('status')
