@@ -202,7 +202,6 @@ const InnovatorForm: React.FC = () => {
         setLoading(true);
         setError("");
 
-        // Ensure user and user.uid are defined
         if (!user?.uid) {
             setError("User ID is not defined. Please make sure you are logged in.");
             setLoading(false);
@@ -210,110 +209,66 @@ const InnovatorForm: React.FC = () => {
         }
 
         try {
-            const { name, description, instagram, website, whatsapp } =
-                textInputsValue;
-
+            const { name, description, instagram, website, whatsapp } = textInputsValue;
             const userId = user.uid;
-            let innovatorData: any = null;
-            try {
-                const res: any = await getInnovatorById(userId);
-                innovatorData = res?.innovator || res?.data || res;
-            } catch (err) {
-                console.log("No existing innovator profile found for user:", userId);
+
+            let logoUrl = selectedLogo;
+            let headerUrl = selectedHeader;
+
+            // Upload Logo to Storage if it's base64
+            if (selectedLogo && selectedLogo.startsWith("data:image")) {
+                const logoRef = ref(storage, `innovators/${userId}/logo`);
+                await uploadString(logoRef, selectedLogo, "data_url");
+                logoUrl = await getDownloadURL(logoRef);
+                console.log("Logo uploaded to storage");
             }
 
-            if (status === "Ditolak") {
-                let logoUrl = innovatorData?.logo;
-                let headerUrl = innovatorData?.header;
+            // Upload Header to Storage if it's base64
+            if (selectedHeader && selectedHeader.startsWith("data:image")) {
+                const headerRef = ref(storage, `innovators/${userId}/header`);
+                await uploadString(headerRef, selectedHeader, "data_url");
+                headerUrl = await getDownloadURL(headerRef);
+                console.log("Header uploaded to storage");
+            }
 
-                if (selectedLogo && selectedLogo !== innovatorData?.logo) {
-                    if (innovatorData?.logo && innovatorData.logo.startsWith("http")) {
-                        // Optional: Delete from storage if you want
-                    }
-                    const logoRef = ref(storage, `innovators/${userId}/logo`);
-                    await uploadString(logoRef, selectedLogo, "data_url");
-                    logoUrl = await getDownloadURL(logoRef);
-                    console.log("Logo updated: ", logoUrl);
-                }
+            const innovatorPayload = {
+                userId,
+                namaInovator: name,
+                deskripsi: description,
+                kategori: selectedCategory?.label,
+                instagram,
+                website,
+                whatsapp,
+                logo: logoUrl || "",
+                header: headerUrl || "",
+                status: "Menunggu",
+            };
 
-                if (selectedHeader && selectedHeader !== innovatorData?.header) {
-                    const headerRef = ref(storage, `innovators/${userId}/header`);
-                    await uploadString(headerRef, selectedHeader, "data_url");
-                    headerUrl = await getDownloadURL(headerRef);
-                    console.log("Header updated: ", headerUrl);
-                }
-
-                const updatePayload = {
-                    namaInovator: name,
-                    deskripsi: description,
-                    kategori: selectedCategory?.label,
-                    instagram,
-                    website,
-                    whatsapp,
-                    logo: logoUrl,
-                    header: headerUrl,
-                    status: "Menunggu",
-                };
-
-                await updateInnovator(userId, updatePayload);
-                console.log("Innovator updated via API: ", userId);
-                setStatus("Menunggu");
-                setAlertStatus("info");
+            if (status !== "") {
+                await updateInnovator(userId, innovatorPayload);
+                console.log("Innovator updated via API");
             } else {
-                // Add new/Set
-                let logoUrl = null;
-                let headerUrl = null;
-
-                if (selectedLogo) {
-                    const logoRef = ref(storage, `innovators/${userId}/logo`);
-                    await uploadString(logoRef, selectedLogo, "data_url");
-                    logoUrl = await getDownloadURL(logoRef);
-                } else {
-                    setError("Logo harus diisi");
-                    setLoading(false);
-                    return;
-                }
-
-                if (selectedHeader) {
-                    const headerRef = ref(storage, `innovators/${userId}/header`);
-                    await uploadString(headerRef, selectedHeader, "data_url");
-                    headerUrl = await getDownloadURL(headerRef);
-                }
-
-                const createPayload = {
-                    userId,
-                    namaInovator: name,
-                    deskripsi: description,
-                    kategori: selectedCategory?.label,
-                    instagram,
-                    website,
-                    whatsapp,
-                    logo: logoUrl,
-                    header: headerUrl,
-                    status: "Menunggu",
-                };
-
-                await createInnovator(createPayload);
-                console.log("Innovator created via API: ", userId);
-                setStatus("Menunggu");
-                setAlertStatus("info");
+                await createInnovator(userId, innovatorPayload);
+                console.log("Innovator created via API");
             }
+
+            setStatus("Menunggu");
             toast({
                 title: "Profile berhasil disimpan",
                 status: "success",
-                duration: 3000,
+                duration: 5000,
                 isClosable: true,
                 position: "top",
             });
         } catch (error) {
-            console.error("Error adding document: ", error);
-            setLoading(false);
-            setError("Error adding document");
+            console.error("Error submitting form: ", error);
+            const errorMessage = (error as any)?.response?.data?.message || (error as any)?.message || "Terjadi kesalahan saat menyimpan profil.";
+            setError(`Error: ${errorMessage}`);
             toast({
                 title: "Error",
-                description: "Terjadi kesalahan saat menambahkan dokumen.",
+                description: errorMessage,
                 status: "error",
-                duration: 1000,
+                duration: 5000,
                 isClosable: true,
                 position: "top",
             });
