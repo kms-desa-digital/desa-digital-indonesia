@@ -58,8 +58,8 @@ function List(props: ListProps) {
         if (isFetched) {
             const categoriesData = data?.categories || data || [];
             const filtered = Array.isArray(categoriesData)
-                ? categoriesData.filter((item: any) => 
-                    item.title !== "Semua Kategori Inovasi" && 
+                ? categoriesData.filter((item: any) =>
+                    item.title !== "Semua Kategori Inovasi" &&
                     item.title !== "Lihat Semua"
                 )
                 : [];
@@ -67,7 +67,7 @@ function List(props: ListProps) {
 
             // Calculate counts from allInnovations if available
             const countMap: Record<string, number> = {};
-            
+
             // Initial counts from categoriesData as fallback
             filtered.forEach((cat: any) => {
                 countMap[cat.title] = cat.innovationCount || 0;
@@ -81,7 +81,7 @@ function List(props: ListProps) {
                     countMap[cat.title] = realCount;
                 });
             }
-            
+
             setCounts(countMap);
         }
     }, [isFetched, data, allInnovations]);
@@ -92,7 +92,7 @@ function List(props: ListProps) {
 
     return (
         <Box pt="10px">
-            <Box px="16px" mb="16px" position="sticky" top="56px" zIndex="10" bg="white" pb="8px">
+            <Box px="16px" mb="16px" mt="16px" bg="white" pb="8px">
                 <InputGroup>
                     <InputLeftElement pointerEvents="none" height="40px">
                         <Icon as={FiSearch} color="gray.400" />

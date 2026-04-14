@@ -220,7 +220,7 @@ const PengajuanKlaim: React.FC = () => {
                             title={item.namaInovasi || "Tanpa Nama Inovasi"}
                             status={item.status || "Unknown"}
                             date={formatTimestamp(item.createdAt)}
-                            description={item.deskripsi || "Tidak ada deskripsi"}
+                            description={item.deskripsiInovasi || item.deskripsi || "Tidak ada deskripsi"}
                             onClick={() =>
                                 router.push(`/village/klaimInovasi/detail/${item.id}`)
                             }

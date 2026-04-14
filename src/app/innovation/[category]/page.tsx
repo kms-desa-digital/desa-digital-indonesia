@@ -61,61 +61,55 @@ export default function InnovationCategoryPage() {
             });
     }, [category]);
 
+    if (loading) return <Loading />;
+
     return (
         <Container page>
             <TopBar title={getTranslatedCategory(category)} onBack={() => router.back()} />
             <Box mt="12px" px="16px">
-                {loading ? (
-                    <Box mt="100px">
-                        <Loading />
-                    </Box>
-                ) : (
-                    <>
-                        <Box mb="16px" position="sticky" top="0px" zIndex="10" bg="white" pb="8px" pt="4px">
-                            <InputGroup>
-                                <InputLeftElement pointerEvents="none" height="40px">
-                                    <Icon as={FiSearch} color="gray.400" />
-                                </InputLeftElement>
-                                <Input
-                                    placeholder="Cari inovasi di sini..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    borderRadius="full"
-                                    fontSize="14px"
-                                    bg="#F9FAFB"
-                                    border="1px solid #E5E7EB"
-                                    height="40px"
-                                />
-                            </InputGroup>
-                        </Box>
-                        <DetailContainer>
-                            {data
-                                .filter((item) =>
-                                    category === "Semua Kategori Inovasi" || item.kategori === category
-                                )
-                                .filter((item) =>
-                                    item.namaInovasi?.toLowerCase().includes(searchTerm.toLowerCase())
-                                )
-                                .map((item, idx) => (
-                                    <CardInnovation
-                                        key={idx}
-                                        {...item}
-                                        jumlahDesa={item.appliedVillages?.length || item.jumlahDesaDiterapkan || item.jumlahDesa || 0}
-                                        innovatorLogo={
-                                            item.innovatorImgURL || item.logoInovator || item.logo || (
-                                                <Image src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />
-                                            )
-                                        }
-                                        innovatorName={item.namaInnovator || item.namaInovator}
-                                        onClick={() =>
-                                            router.push(`/innovation/detail/${item.id || item._id}`)
-                                        }
-                                    />
-                                ))}
-                        </DetailContainer>
-                        <Box height="40px" />
-                    </>
-                )}
+                <Box mb="16px" mt="16px" bg="white" pb="8px" pt="10px">
+                    <InputGroup>
+                        <InputLeftElement pointerEvents="none" height="40px">
+                            <Icon as={FiSearch} color="gray.400" />
+                        </InputLeftElement>
+                        <Input
+                            placeholder="Cari inovasi di sini..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            borderRadius="full"
+                            fontSize="14px"
+                            bg="#F9FAFB"
+                            border="1px solid #E5E7EB"
+                            height="40px"
+                        />
+                    </InputGroup>
+                </Box>
+                <DetailContainer>
+                    {data
+                        .filter((item) =>
+                            category === "Semua Kategori Inovasi" || item.kategori === category
+                        )
+                        .filter((item) =>
+                            item.namaInovasi?.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                        .map((item, idx) => (
+                            <CardInnovation
+                                key={idx}
+                                {...item}
+                                jumlahDesa={item.appliedVillages?.length || item.jumlahDesaDiterapkan || item.jumlahDesa || 0}
+                                innovatorLogo={
+                                    item.innovatorImgURL || item.logoInovator || item.logo || (
+                                        <Image src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />
+                                    )
+                                }
+                                innovatorName={item.namaInnovator || item.namaInovator}
+                                onClick={() =>
+                                    router.push(`/innovation/detail/${item.id || item._id}`)
+                                }
+                            />
+                        ))}
+                </DetailContainer>
+                <Box height="40px" />
             </Box>
         </Container>
     );
