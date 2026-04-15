@@ -5,6 +5,8 @@ type VillageFilters = {
   search?: string;
   provinsi?: string;
   kabupatenKota?: string;
+  limit?: number;
+  skip?: number;
 };
 
 export const getVillages = async (filters?: string | VillageFilters) => {

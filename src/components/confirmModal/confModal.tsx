@@ -35,7 +35,7 @@ const ConfModal: React.FC<ClaimModalProps> = ({
         <ModalBody paddingTop={4}>
           <Flex direction={"column"} alignItems={"center"} fontSize="12px" textAlign={"center"}>
             <Image
-              src={QuestionRobot}
+              src={QuestionRobot.src}
               alt="question robot"
               boxSize={14}
               color="green.500"

@@ -1,10 +1,9 @@
-import { CheckIcon, CloseIcon } from "@chakra-ui/icons";
+import { CheckIcon, CloseIcon, InfoIcon } from "@chakra-ui/icons";
 import { Flex, Box, Text } from "@chakra-ui/react";
 import React from "react";
-import village from "../village";
 
 type StatusCardProps = {
-  message: string;
+  message?: string;
   status: string;
 };
 
@@ -23,32 +22,43 @@ const StatusCard: React.FC<StatusCardProps> = ({ message, status }) => {
         maxW="360px"
         width="100%"
         boxShadow="0px -2px 4px 0px rgba(0, 0, 0, 0.06), 0px -4px 6px 0px rgba(0, 0, 0, 0.10)"
+        zIndex="1000"
       >
-        {/*  jika terverifikasi */}
+        {/* jika terverifikasi */}
         {status === "Terverifikasi" ? (
-          <Flex align="center">
-            <CheckIcon fontSize="14px" color="#22C55E" mr="8px" />
-            <Text fontSize="14px" fontWeight="700" color="#22C55E">
-              Permohonan Akun Diverifikasi
+          <Flex align="center" bg="#DCFCE7" p={3} borderRadius="8px" width="100%" justify="center">
+            <CheckIcon fontSize="14px" color="#347357" mr="8px" />
+            <Text fontSize="14px" fontWeight="700" color="#347357">
+              Pengajuan telah diverifikasi oleh admin
             </Text>
           </Flex>
         ) : status === "Ditolak" ? (
-          <Box>
+          <Box bg="#FEE2E2" p={3} borderRadius="8px" width="100%">
             <Flex align="center" justify='center'>
               <CloseIcon fontSize="12px" color="#EF4444" mr="8px" />
               <Text fontSize="14px" fontWeight="700" color="#EF4444">
-                Permohonan Akun Ditolak
+                Pengajuan ditolak
               </Text>
             </Flex>
-            <Text
-              fontSize="10px"
-              fontWeight="500"
-              color="#EF4444"
-              textAlign="center"
-            >
-              Catatan: {message}
-            </Text>
+            {message && (
+              <Text
+                fontSize="12px"
+                fontWeight="500"
+                color="#EF4444"
+                textAlign="center"
+                mt={1}
+              >
+                Catatan: {message}
+              </Text>
+            )}
           </Box>
+        ) : status === "Menunggu" || status === "Dalam Verifikasi" ? (
+          <Flex align="center" bg="#FEF9C3" p={3} borderRadius="8px" width="100%" justify="center">
+            <InfoIcon fontSize="14px" color="#854D0E" mr="8px" />
+            <Text fontSize="14px" fontWeight="700" color="#854D0E">
+              Pengajuan sedang menunggu verifikasi admin
+            </Text>
+          </Flex>
         ) : null}
       </Flex>
     </Flex>

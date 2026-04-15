@@ -79,8 +79,7 @@ function TopBar(props: TopBarProps) {
             setClaimStatus(data.status);
           });
         }
-      }
-      );
+      });
     }
   }, [user, id]);
 
@@ -134,7 +133,6 @@ function TopBar(props: TopBarProps) {
     }
   })();
 
-
   const handleClick = () => {
     if (isDisabled) return;
     if (!isVillageVerified) {
@@ -150,7 +148,7 @@ function TopBar(props: TopBarProps) {
         }
       );
     } else {
-      router.push(`/village/klaimInovasi?id=${id}`);
+      router.push(`/village/klaimInovasi?inovasiId=${id}`);
     }
   };
 
@@ -186,6 +184,7 @@ function TopBar(props: TopBarProps) {
           ml={onBack ? "8px" : "0"}
           flex={1}
           mr={1}
+          noOfLines={1}
         >
           {title}
         </Text>

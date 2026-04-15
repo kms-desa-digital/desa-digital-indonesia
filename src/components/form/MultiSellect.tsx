@@ -79,8 +79,14 @@ const MultiSellect: React.FC<MultiSellectProps> = ({
         options={options}
         placeholder={placeholder}
         styles={customStyles}
-        value={value}
-        onChange={onChange}
+        value={isMulti ? value : (value && value.length > 0 ? value[0] : null)}
+        onChange={(selected: any) => {
+          if (isMulti) {
+            onChange(selected);
+          } else {
+            onChange(selected ? [selected] : []);
+          }
+        }}
         isDisabled={disabled}
       />
     </Box>

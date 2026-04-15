@@ -25,6 +25,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                                     autoClose={2000}
                                     theme="light"
                                     transition={Bounce}
+                                    style={{ width: "90%", maxWidth: "360px", left: "50%", transform: "translateX(-50%)" }}
                                 />
                             </div>
                         </UserProvider>

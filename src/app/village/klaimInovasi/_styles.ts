@@ -24,6 +24,11 @@ export const CheckboxGroup = styled.div`
   width: 100%;
 `;
 
+export const Title = styled.p`
+  font-size: 18px;
+  font-weight: 700;
+`;
+
 export const Field = styled.div`
   display: flex;
   flex-direction: column;

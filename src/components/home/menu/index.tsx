@@ -112,7 +112,9 @@ const Menu: React.FC<MenuProps> = ({ isAdmin = false }) => {
                   title === "Semua Kategori Inovasi"
                     ? paths.INNOVATION_PAGE
                     : isAdmin
-                      ? paths.VERIFICATION_PAGE.replace(":category", title)
+                      ? title === "Pembuatan Iklan"
+                        ? paths.ADMIN_ADS
+                        : paths.VERIFICATION_PAGE.replace(":category", title)
                       : paths.INNOVATION_CATEGORY_PAGE.replace(":category", title)
                 }
                 style={{ textDecoration: 'none' }}
