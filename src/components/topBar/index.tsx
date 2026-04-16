@@ -33,6 +33,7 @@ function TopBar(props: TopBarProps) {
   const { isAuthenticated } = useAuthToken();
   const [village, setVillage] = useState(false);
   const { isVillageVerified } = useUser();
+  const [claimStatus, setClaimStatus] = useState("");
 
   const allowedPaths = [
     paths.LANDING_PAGE,
@@ -62,27 +63,88 @@ function TopBar(props: TopBarProps) {
     fecthVillage();
   }, [user]);
 
+  useEffect(() => {
+    if (user && id) {
+      const q = query(
+        collection(firestore, "claimInnovations"),
+        where("desaId", "==", user.uid),
+        where("inovasiId", "==", id)
+      );
+      getDocs(q).then((querySnapshot) => {
+        if (querySnapshot.empty) {
+          setClaimStatus("");
+        } else {
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            setClaimStatus(data.status);
+          });
+        }
+      });
+    }
+  }, [user, id]);
+
   const { label, bg, color, leftIcon, isDisabled, hover } = (() => {
-    return {
-      label: "Klaim Inovasi",
-      bg: "white",
-      color: "#347357",
-      hover: {
-        bg: "gray.200",
-      },
-      leftIcon: undefined,
-      isDisabled: false,
-    };
+    switch (claimStatus) {
+      case "Terverifikasi":
+        return {
+          label: t("claimStatus.verified"),
+          bg: "#71A686",
+          color: "white",
+          leftIcon: <FaCheck />,
+          isDisabled: true,
+          hover: {
+            bg: "#5C8B6F",
+          },
+        };
+      case "Menunggu":
+        return {
+          label: t("claimStatus.pending"),
+          bg: "#71A686",
+          color: "white",
+          leftIcon: undefined,
+          isDisabled: true,
+          hover: {
+            bg: "#5C8B6F",
+          },
+        };
+      case "Ditolak":
+        return {
+          label: t("claimStatus.rejected"),
+          bg: "red.500",
+          color: "white",
+          leftIcon: undefined,
+          isDisabled: false,
+          hover: {
+            bg: "red.400",
+          },
+        };
+      case "":
+      default:
+        return {
+          label: t("claimStatus.default"),
+          bg: "white",
+          color: "#347357",
+          hover: {
+            bg: "gray.200",
+          },
+          leftIcon: undefined,
+          isDisabled: false,
+        };
+    }
   })();
 
   const handleClick = () => {
     if (isDisabled) return;
     if (!isVillageVerified) {
       toast.warning(
-        "Akun anda belum terdaftar atau terverifikasi sebagai desa digital",
+        t("toastVillageNotVerified"),
         {
           position: "top-center",
           autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
         }
       );
     } else {
@@ -130,7 +192,7 @@ function TopBar(props: TopBarProps) {
         <Flex align="center" gap={0}>
           {rightElement}
 
-          {!rightElement && isClaimButtonVisible && village && (
+          {isClaimButtonVisible && village && (
             <Button
               fontSize="12px"
               fontWeight="500"

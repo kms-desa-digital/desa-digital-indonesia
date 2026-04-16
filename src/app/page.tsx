@@ -175,7 +175,7 @@ export default function Home() {
       router.push(paths.ADD_INNOVATION);
     } else {
       toast.warning(
-        "Akun anda belum terdaftar atau terverifikasi sebagai inovator",
+        t("toastInnovatorNotVerified"),
         {
           position: "top-center",
           autoClose: 3000,

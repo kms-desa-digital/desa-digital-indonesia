@@ -15,12 +15,17 @@ export async function GET(request: NextRequest) {
     const kabupatenKota = searchParams.get('kabupatenKota')
     const limitVal = parseInt(searchParams.get('limit') || '0')
     const skipVal = parseInt(searchParams.get('skip') || '0')
-
     const db = await connectToDatabase()
     const andConditions: any[] = []
 
     const escapeRegex = (value: string) =>
       value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    const normalizeRegionName = (value: string) =>
+      value
+        .trim()
+        .replace(/^(kabupaten|kota|kab\.?)\s+/i, '')
+        .replace(/\s+/g, ' ')
 
     if (status) {
       andConditions.push({ status })
@@ -48,7 +53,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (kabupatenKota && kabupatenKota.trim()) {
-      const kabupatenRegex = new RegExp(`^${escapeRegex(kabupatenKota.trim())}$`, 'i')
+      const normalizedKabupaten = normalizeRegionName(kabupatenKota)
+      const kabupatenRegex = new RegExp(
+        `^(?:(?:kabupaten|kab\\.?|kota)\\s+)?${escapeRegex(normalizedKabupaten)}$`,
+        'i'
+      )
       andConditions.push({
         $or: [
           { kabupatenKota: { $regex: kabupatenRegex } },
@@ -74,8 +83,8 @@ export async function GET(request: NextRequest) {
     }))
 
     return new NextResponse(JSON.stringify({ villages: result }, null, 2), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
     })
   } catch (error) {
     console.error('Error fetching villages:', error)

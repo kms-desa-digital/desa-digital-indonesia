@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireRole(request, ["village", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { searchParams } = new URL(request.url)
     const desaId = searchParams.get('desaId')
 

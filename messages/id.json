@@ -9,7 +9,11 @@
         "categories": "Kategori Inovasi",
         "featuredVillages": "Desa Unggulan",
         "featuredInnovators": "Inovator Unggulan",
-        "bestTitle": "Inovator dan Desa Unggulan"
+        "bestTitle": "Inovator dan Desa Unggulan",
+        "toastInnovatorNotVerified": "Akun anda belum terdaftar atau terverifikasi sebagai inovator",
+        "searchButton": "Cari",
+        "searchLoading": "Mencari inovasi...",
+        "searchEmpty": "Belum ada inovasi untuk kata kunci ini."
     },
     "Categories": {
         "smartAgri": "Pertanian Cerdas",
@@ -49,7 +53,14 @@
             "home": "Beranda",
             "village": "Desa Digital",
             "innovator": "Inovator"
-        }
+        },
+        "claimStatus": {
+            "verified": "Sudah Klaim",
+            "pending": "Proses Klaim",
+            "rejected": "Ditolak",
+            "default": "Klaim Inovasi"
+        },
+        "toastVillageNotVerified": "Akun anda belum terdaftar atau terverifikasi sebagai desa digital"
     },
     "Innovator": {
         "selectInnovator": "Pilih Inovator",
@@ -112,6 +123,14 @@
         "ariaOpen": "Buka chat",
         "ariaClearHistory": "Hapus riwayat chat",
         "ariaClose": "Tutup chat",
-        "ariaSend": "Kirim pesan"
+        "ariaSend": "Kirim pesan",
+        "welcomeTitle": "Halo! Ada yang bisa saya bantu?",
+        "welcomeDesc": "Pilih pertanyaan di bawah atau ketik langsung kebutuhan informasi Anda.",
+        "suggestion1": "Apa potensi utama Desa Petir?",
+        "suggestion2": "Rekomendasi inovasi perikanan",
+        "suggestion3": "Siapa saja inovator yang terdaftar?",
+        "errorServer": "Server sedang bermasalah. Silakan coba beberapa saat lagi.",
+        "errorClient": "Permintaan tidak valid. Coba refresh halaman.",
+        "errorNetwork": "Koneksi terputus. Periksa jaringan Anda dan coba lagi."
     }
 }

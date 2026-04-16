@@ -66,14 +66,14 @@ function CardVillage(props: CardVillageProps) {
   return (
     <Container onClick={onClick} $isHome={isHome}>
       <Background src={header} alt="background" />
-      <CardContent>
+      <CardContent $isHome={isHome}>
         <Logo src={logo} alt={logo} />
         <ContBadge>
           {ranking == 1 && <img src="/icons/badge-1.svg" alt="badge" />}
           {ranking == 2 && <img src="/icons/badge-2.svg" alt="badge" />}
           {ranking == 3 && <img src="/icons/badge-3.svg" alt="badge" />}
         </ContBadge>
-        <Title>{renderHighlightedText(namaDesa)}</Title>
+        <Title $isHome={isHome}>{renderHighlightedText(namaDesa)}</Title>
         <Description>{jumlahInovasiDiterapkan} Inovasi diterapkan</Description>
         <Flex direction="column" marginTop="auto">
           <Location>

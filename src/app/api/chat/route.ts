@@ -5,28 +5,16 @@
 import { searchAllSources, type QueryIntent } from "@/lib/ai/rag-utils";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { connectToDatabase } from "@/lib/db/mongodb";
+import { verifyRoleFromToken, sanitizeRole } from "@/lib/auth/verifyRole";
+import { Innovation } from "@/types";
 
-// Validasi role di server-side, jangan percaya body.role begitu saja
-// Role yang valid harus ada di enum ini
-const VALID_ROLES = ["admin", "kementerian", "innovator", "village", "guest"] as const;
-type ValidRole = typeof VALID_ROLES[number];
-
-function sanitizeRole(rawRole: unknown): ValidRole {
-  if (typeof rawRole === "string" && VALID_ROLES.includes(rawRole.toLowerCase() as ValidRole)) {
-    return rawRole.toLowerCase() as ValidRole;
-  }
-  return "guest";
+interface RagSourceItem {
+  source_id?: string;
+  metadata?: { id?: string };
+  _id?: any;
 }
 
-// Idealnya role diverifikasi dari JWT/session di sini, bukan dari body.
-// Contoh skeleton — sesuaikan dengan auth library yang dipakai (misal next-auth, jose, dll):
-// import { getServerSession } from "next-auth";
-// const session = await getServerSession(authOptions);
-// const userRole = sanitizeRole(session?.user?.role);
-//
-// Untuk sekarang, kita tetap ambil dari body tapi sanitize ketat.
-
-function resolveSourceId(item: any): string {
+function resolveSourceId(item: RagSourceItem): string {
   const raw =
     item?.source_id ??
     item?.metadata?.id ??
@@ -69,9 +57,9 @@ async function findInnovationCardsByQuery(userMessage: string) {
     .find({ $or: orConditions })
     .project({ namaInovasi: 1, label: 1, inovator_nama: 1, kategori: 1 })
     .limit(3)
-    .toArray();
+    .toArray() as unknown as Innovation[];
 
-  return rows.map((row: any) => {
+  return rows.map((row) => {
     const sourceId = String(row?._id || "").trim();
     const rawInnovator = row?.inovator_nama;
     const subtitle = Array.isArray(rawInnovator)
@@ -285,10 +273,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const messages = Array.isArray(body?.messages) ? body.messages : [];
-
-    // Sanitize role — tolak nilai sembarang dari client
-    // Ganti dengan verifikasi JWT/session untuk keamanan penuh
-    const userRole = sanitizeRole(body?.role);
+    const authHeader = req.headers.get("Authorization");
+    const { uid, role: verifiedRole } = await verifyRoleFromToken(authHeader);
+    const userRole = verifiedRole;
 
     const lastUserMessage = messages[messages.length - 1]?.content?.trim() || "";
 

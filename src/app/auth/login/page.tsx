@@ -9,7 +9,7 @@ import {
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -26,6 +26,7 @@ import {
     Title,
 } from "./_styles";
 import { toast } from "react-toastify";
+import { FcGoogle } from "react-icons/fc";
 
 const Login: React.FC = () => {
     const [loginForm, setLoginForm] = useState({
@@ -37,6 +38,7 @@ const Login: React.FC = () => {
     const [show, setShow] = useState(false);
     const router = useRouter();
     const onShowPassword = () => setShow(!show);
+    const googleProvider = new GoogleAuthProvider();
 
     const onChange = ({ target }: { target: HTMLInputElement }) => {
         setLoginForm((prev) => ({ ...prev, [target.name]: target.value }));
@@ -104,6 +106,78 @@ const Login: React.FC = () => {
         }
     };
 
+    const onGoogleSignIn = async () => {
+        if (error) setError("");
+        setLoading(true);
+        try {
+            const userCredential = await signInWithPopup(auth, googleProvider);
+            const user = userCredential.user;
+
+            const userRef = doc(firestore, "users", user.uid);
+            const userDoc = await getDoc(userRef);
+
+            if (!userDoc.exists()) {
+                router.push(`${paths.REGISTER_PAGE}?google=1`);
+                toast.info("Silakan pilih peran untuk melengkapi pendaftaran", {
+                    position: "top-center",
+                    autoClose: 2500,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                });
+                return;
+            }
+
+            const userData = userDoc.data();
+            const userRole = (userData?.role || "").toLowerCase();
+
+            if (!userRole) {
+                router.push(`${paths.REGISTER_PAGE}?google=1`);
+                toast.info("Silakan pilih peran untuk melengkapi pendaftaran", {
+                    position: "top-center",
+                    autoClose: 2500,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                });
+                return;
+            }
+
+            localStorage.removeItem("token");
+            localStorage.setItem("userRole", userRole);
+            window.dispatchEvent(new Event("auth:tokenChanged"));
+            router.refresh();
+
+            if (userRole === "admin") {
+                router.push(paths.ADMIN_PAGE);
+            } else if (userRole === "ministry") {
+                router.push(paths.DASHBOARD_MINISTRY_HOME);
+            } else {
+                router.push(paths.LANDING_PAGE);
+            }
+
+            toast.success("Berhasil Masuk dengan Google", {
+                position: "top-center",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+        } catch (error: any) {
+            console.log("Error during Google login:", error);
+            setError(
+                FIREBASE_ERRORS[error?.message as keyof typeof FIREBASE_ERRORS] ||
+                    "Gagal login dengan Google"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <>
             <TopBar title="" onBack={() => router.back()} />
@@ -156,6 +230,17 @@ const Login: React.FC = () => {
                             isLoading={loading}
                         >
                             Masuk
+                        </Button>
+
+                        <Button
+                            mt={3}
+                            width="100%"
+                            variant="outline"
+                            onClick={onGoogleSignIn}
+                            isLoading={loading}
+                            leftIcon={<FcGoogle />}
+                        >
+                            Masuk dengan Google
                         </Button>
                     </form>
 

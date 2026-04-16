@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 type Params = Promise<{ id: string }>
 
@@ -10,6 +11,9 @@ type Params = Promise<{ id: string }>
 // =========================================================
 export async function GET(_request: NextRequest, { params }: { params: Params }) {
   try {
+    const auth = await requireRole(_request, ["village", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { id } = await params
     const db = await connectToDatabase()
     
@@ -52,6 +56,9 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
 // =========================================================
 export async function PUT(request: NextRequest, { params }: { params: Params }) {
   try {
+    const auth = await requireRole(request, ["village", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { id } = await params
     const body = await request.json()
     const db = await connectToDatabase()

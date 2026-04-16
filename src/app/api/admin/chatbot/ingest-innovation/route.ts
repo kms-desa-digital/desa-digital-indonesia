@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { generateEmbeddings } from "@/lib/ai/rag-utils";
+import { requireRole } from "@/lib/auth/apiAuth";
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireRole(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const body = await req.json();
     const {
       judul,

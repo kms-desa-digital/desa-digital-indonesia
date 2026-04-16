@@ -13,7 +13,7 @@ import {
 import { X, Send, Trash2, Bot } from 'lucide-react';
 import ChatMessage from './ChatMessage';
 import { useTranslations } from 'next-intl';
-import { useAuthToken } from '@/hooks/useAuthToken';
+import { auth } from '@/firebase/clientApp';
 
 interface ChatWindowProps {
     onClose: () => void;
@@ -25,11 +25,6 @@ interface ChatWindowProps {
 const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWindowProps) => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { role: tokenRole } = useAuthToken();
-
-    // FIX: Hapus getRoleFromCookie — fungsi ini tidak pernah dipakai (dead code).
-    // Role sudah diambil dari useAuthToken di bawah.
-    const userRole = (tokenRole || 'guest').toLowerCase();
 
     const t = useTranslations('Chatbot');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -67,7 +62,6 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
         }
     };
 
-    // FIX: Gunakan useCallback agar submitMessage stabil sebagai dependency
     const submitMessage = useCallback(async (messageText: string) => {
         if (!messageText.trim() || isLoading) return;
 
@@ -77,8 +71,7 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
             content: messageText,
         };
 
-        // FIX: Simpan snapshot messages sebelum update state untuk dipakai di fetch,
-        // karena state React bersifat async dan `messages` di closure bisa stale
+
         const messagesSnapshot = [...messages, userMessage];
 
         setMessages(prev => [...prev, userMessage]);
@@ -92,17 +85,27 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
         const assistantMessageId = `assistant-${Date.now()}`;
 
         try {
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+            };
+
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                try {
+                    const idToken = await currentUser.getIdToken();
+                    headers['Authorization'] = `Bearer ${idToken}`;
+                } catch (tokenError) {
+                    console.warn('Failed to get Firebase ID token:', tokenError);
+                }
+            }
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({
-                    // FIX: Gunakan snapshot yang sudah pasti berisi pesan user terbaru
                     messages: messagesSnapshot,
-                    role: userRole,
                 }),
             });
-
-            // FIX: Bedakan error berdasarkan status HTTP untuk pesan yang lebih informatif
             if (!response.ok) {
                 const isServerError = response.status >= 500;
                 throw new Error(
@@ -129,13 +132,12 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
         } catch (error: any) {
             console.error('Chat error:', error);
 
-            // FIX: Pesan error yang lebih spesifik berdasarkan jenis error
             const errorContent =
                 error?.message === 'server_error'
-                    ? 'Server sedang bermasalah. Silakan coba beberapa saat lagi.'
+                    ? t('errorServer')
                     : error?.message === 'client_error'
-                    ? 'Permintaan tidak valid. Coba refresh halaman.'
-                    : 'Koneksi terputus. Periksa jaringan Anda dan coba lagi.';
+                        ? t('errorClient')
+                        : t('errorNetwork');
 
             setMessages(prev => [
                 ...prev,
@@ -144,22 +146,19 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                     role: 'assistant',
                     content: errorContent,
                     error: true,
-                    // FIX: Simpan teks asli pesan user untuk keperluan retry
                     retryContent: messageText,
                 },
             ]);
         } finally {
             setIsLoading(false);
         }
-    }, [isLoading, messages, userRole, setMessages]);
+    }, [isLoading, messages, setMessages]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         submitMessage(input);
     };
 
-    // FIX: Retry menggunakan retryContent dari pesan error, bukan mencari
-    // pesan user terakhir dari seluruh array (yang bisa menunjuk pesan yang salah)
     const handleRetry = useCallback((retryContent?: string) => {
         if (retryContent) {
             submitMessage(retryContent);
@@ -236,17 +235,17 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                             </Flex>
                         </Flex>
                         <Text fontSize="13px" fontWeight="700" color="gray.800" mb={1.5}>
-                            Halo! Ada yang bisa saya bantu?
+                            {t('welcomeTitle')}
                         </Text>
                         <Text fontSize="12px" color="gray.500" mb={6} px={4} lineHeight="1.5">
-                            Pilih pertanyaan di bawah atau ketik langsung kebutuhan informasi Anda.
+                            {t('welcomeDesc')}
                         </Text>
 
                         <VStack spacing={1.5} align="stretch">
                             {[
-                                "Apa potensi utama Desa Petir?",
-                                "Rekomendasi inovasi perikanan",
-                                "Siapa saja inovator yang terdaftar?"
+                                t('suggestion1'),
+                                t('suggestion2'),
+                                t('suggestion3')
                             ].map((promptText, index) => (
                                 <Box
                                     key={index}
@@ -277,7 +276,6 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
                         key={m.id}
                         message={m}
                         onSuggestionClick={handleSuggestionClick}
-                        // FIX: Kirim retryContent dari pesan error ke handler retry
                         onRetry={() => handleRetry(m.retryContent)}
                     />
                 ))}

@@ -11,9 +11,9 @@ import {
 import { paths } from "Consts/path";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import React, { useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import icons
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FIREBASE_ERRORS } from "src/firebase/errors";
 import { auth, firestore } from "src/firebase/clientApp";
 import {
@@ -28,7 +28,7 @@ import {
 } from "./_styles";
 import TopBar from "Components/topBar";
 
-const Register: React.FC = () => {
+const RegisterContent: React.FC = () => {
     const [regisForm, setRegisForm] = useState({
         email: "",
         password: "",
@@ -36,16 +36,70 @@ const Register: React.FC = () => {
     });
     const [confirmPassword, setConfirmPassword] = useState(""); // State untuk konfirmasi kata sandi
     const [error, setError] = useState("");
-    const [show, setShow] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const isGoogleFlow = searchParams.get("google") === "1";
 
-    const onShowPassword = () => setShow(!show);
+    const onTogglePassword = () => setShowPassword((prev) => !prev);
+    const onToggleConfirmPassword = () => setShowConfirmPassword((prev) => !prev);
+
+    useEffect(() => {
+        if (isGoogleFlow && auth.currentUser?.email) {
+            setRegisForm((prev) => ({
+                ...prev,
+                email: auth.currentUser?.email || "",
+            }));
+        }
+    }, [isGoogleFlow]);
 
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (error) setError("");
+
+        if (!regisForm.role) {
+            return setError("Silakan pilih daftar sebagai");
+        }
+
+        if (isGoogleFlow) {
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                return setError("Sesi Google tidak ditemukan, silakan login ulang");
+            }
+
+            setLoading(true);
+            try {
+                const role = regisForm.role.toLowerCase();
+                await setDoc(doc(firestore, "users", currentUser.uid), {
+                    id: currentUser.uid,
+                    email: currentUser.email || regisForm.email || "",
+                    role,
+                });
+
+                localStorage.removeItem("token");
+                localStorage.setItem("userRole", role);
+                window.dispatchEvent(new Event("auth:tokenChanged"));
+                router.refresh();
+
+                if (role === "admin") {
+                    router.push(paths.ADMIN_PAGE);
+                } else if (role === "ministry") {
+                    router.push(paths.DASHBOARD_MINISTRY_HOME);
+                } else {
+                    router.push(paths.LANDING_PAGE);
+                }
+            } catch (submitError: any) {
+                console.error("Error completing Google registration:", submitError);
+                setError("Terjadi kesalahan, coba lagi");
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+
         if (!regisForm.email.includes("@")) return setError("Email tidak valid");
         if (regisForm.email === "" || regisForm.password === "")
             return setError("Email dan kata sandi harus diisi");
@@ -116,55 +170,61 @@ const Register: React.FC = () => {
                             name="email"
                             type="email"
                             onChange={onChange}
-                            required
+                            required={!isGoogleFlow}
                             placeholder="Email"
                             mt="4px"
                             fontSize="10pt"
+                            value={regisForm.email}
+                            readOnly={isGoogleFlow}
                         />
-                        <Text fontSize="10pt" mt="12px">
-                            Kata sandi
-                        </Text>
+                        {!isGoogleFlow && (
+                            <>
+                                <Text fontSize="10pt" mt="12px">
+                                    Kata sandi
+                                </Text>
 
-                        <InputGroup mt="4px" alignItems="center">
-                            <Input
-                                name="password"
-                                type={show ? "text" : "password"}
-                                onChange={onChange}
-                                required
-                                placeholder="Kata sandi"
-                                fontSize="10pt"
-                            />
-                            <InputRightElement onClick={onShowPassword} cursor="pointer">
-                                {show ? <FaEyeSlash /> : <FaEye />}
-                            </InputRightElement>
-                        </InputGroup>
-                        <Text
-                            fontWeight="400"
-                            fontStyle="normal"
-                            fontSize="10px"
-                            color="#9CA3AF"
-                            mb="-2"
-                        >
-                            Kata sandi minimal 6 karakter.
-                        </Text>
+                                <InputGroup mt="4px" alignItems="center">
+                                    <Input
+                                        name="password"
+                                        type={showPassword ? "text" : "password"}
+                                        onChange={onChange}
+                                        required
+                                        placeholder="Kata sandi"
+                                        fontSize="10pt"
+                                    />
+                                    <InputRightElement onClick={onTogglePassword} cursor="pointer">
+                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </InputRightElement>
+                                </InputGroup>
+                                <Text
+                                    fontWeight="400"
+                                    fontStyle="normal"
+                                    fontSize="10px"
+                                    color="#9CA3AF"
+                                    mb="-2"
+                                >
+                                    Kata sandi minimal 6 karakter.
+                                </Text>
 
-                        <Text fontSize="10pt" mt="12px">
-                            Ulangi kata sandi
-                        </Text>
+                                <Text fontSize="10pt" mt="12px">
+                                    Ulangi kata sandi
+                                </Text>
 
-                        <InputGroup mt="4px" alignItems="center">
-                            <Input
-                                name="password"
-                                type={show ? "text" : "password"}
-                                onChange={handleConfirmPasswordChange} // Gunakan handleConfirmPasswordChange
-                                required
-                                placeholder="Tulis ulang kata sandi"
-                                fontSize="10pt"
-                            />
-                            <InputRightElement onClick={onShowPassword} cursor="pointer">
-                                {show ? <FaEyeSlash /> : <FaEye />}
-                            </InputRightElement>
-                        </InputGroup>
+                                <InputGroup mt="4px" alignItems="center">
+                                    <Input
+                                        name="password"
+                                        type={showConfirmPassword ? "text" : "password"}
+                                        onChange={handleConfirmPasswordChange} // Gunakan handleConfirmPasswordChange
+                                        required
+                                        placeholder="Tulis ulang kata sandi"
+                                        fontSize="10pt"
+                                    />
+                                    <InputRightElement onClick={onToggleConfirmPassword} cursor="pointer">
+                                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </InputRightElement>
+                                </InputGroup>
+                            </>
+                        )}
 
                         <Label mt={12}>Daftar sebagai:</Label>
                         <CheckboxContainer mt={12}>
@@ -214,7 +274,7 @@ const Register: React.FC = () => {
                             isLoading={loading}
                             fontSize="14px"
                         >
-                            Registrasi
+                            {isGoogleFlow ? "Lanjutkan" : "Registrasi"}
                         </Button>
                     </form>
 
@@ -225,6 +285,14 @@ const Register: React.FC = () => {
                 </Container>
             </Background>
         </Box>
+    );
+};
+
+const Register: React.FC = () => {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <RegisterContent />
+        </Suspense>
     );
 };
 

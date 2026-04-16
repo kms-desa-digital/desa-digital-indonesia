@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { generateEmbeddings } from "@/lib/ai/rag-utils";
+import { requireRole } from "@/lib/auth/apiAuth";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const pdf = require("pdf-parse");
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireRole(req, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const customSource = formData.get("sourceName") as string;
