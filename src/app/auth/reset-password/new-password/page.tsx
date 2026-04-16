@@ -17,8 +17,10 @@ const NewPasswordContent: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [accountEmail, setAccountEmail] = useState("");
     const [oobCodeValid, setOobCodeValid] = useState(false);
-    const [show, setShow] = useState(false);
-    const onShowPassword = () => setShow(!show);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const onTogglePassword = () => setShowPassword((prev) => !prev);
+    const onToggleConfirmPassword = () => setShowConfirmPassword((prev) => !prev);
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -94,26 +96,26 @@ const NewPasswordContent: React.FC = () => {
                     <InputGroup mt="4px" alignItems="center">
                         <Input
                             name="password"
-                            type={show ? "text" : "password"}
+                            type={showPassword ? "text" : "password"}
                             onChange={onChange}
                             required
                             placeholder="Kata sandi"
                         />
-                        <InputRightElement onClick={onShowPassword} cursor="pointer">
-                            {show ? <FaEyeSlash /> : <FaEye />}
+                        <InputRightElement onClick={onTogglePassword} cursor="pointer">
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
                         </InputRightElement>
                     </InputGroup>
                     <Text fontSize="10pt" mt="12px">Konfirmasi kata sandi</Text>
                     <InputGroup mt="4px" alignItems="center">
                         <Input
                             name="confirmPassword"
-                            type={show ? "text" : "password"}
+                            type={showConfirmPassword ? "text" : "password"}
                             onChange={onConfirmPasswordChange}
                             required
                             placeholder="Konfirmasi kata sandi"
                         />
-                        <InputRightElement onClick={onShowPassword} cursor="pointer">
-                            {show ? <FaEyeSlash /> : <FaEye />}
+                        <InputRightElement onClick={onToggleConfirmPassword} cursor="pointer">
+                            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                         </InputRightElement>
                     </InputGroup>
                     {error && (

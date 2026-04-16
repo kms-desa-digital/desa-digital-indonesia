@@ -2,9 +2,9 @@ import styled from 'styled-components'
 
 export const MenuContainer = styled.div`
   border-radius: 12px;
-  padding: 16px 16px 16px 8px ;
+  padding: 15px 16px 14px 8px;
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.06), 0px 4px 6px rgba(0, 0, 0, 0.1);
-  margin: 24px 0;
+  margin: 14px 0;
   border: 1px solid #e5e7eb;
 `
 
