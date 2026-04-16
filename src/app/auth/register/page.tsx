@@ -11,7 +11,7 @@ import {
 import { paths } from "Consts/path";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import icons
 import { useRouter, useSearchParams } from "next/navigation";
 import { FIREBASE_ERRORS } from "src/firebase/errors";
@@ -28,7 +28,7 @@ import {
 } from "./_styles";
 import TopBar from "Components/topBar";
 
-const Register: React.FC = () => {
+const RegisterContent: React.FC = () => {
     const [regisForm, setRegisForm] = useState({
         email: "",
         password: "",
@@ -285,6 +285,14 @@ const Register: React.FC = () => {
                 </Container>
             </Background>
         </Box>
+    );
+};
+
+const Register: React.FC = () => {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <RegisterContent />
+        </Suspense>
     );
 };
 
