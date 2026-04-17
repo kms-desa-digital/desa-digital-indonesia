@@ -100,7 +100,8 @@ const VerificationPage: React.FC = () => {
     };
 
     const handleCardClick = (id: string) => {
-        const pathTemplate = categoryToPathMap[category || ""];
+        const decodedCategory = decodeURIComponent(category || "");
+        const pathTemplate = categoryToPathMap[decodedCategory];
         if (pathTemplate) {
             const path = pathTemplate.replace(":id", id);
             router.push(path);

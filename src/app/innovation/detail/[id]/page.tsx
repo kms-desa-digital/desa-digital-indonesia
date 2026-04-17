@@ -36,7 +36,6 @@ import { paths } from "Consts/path";
 import { auth } from "src/firebase/clientApp";
 import { getInnovationById, getAppliedVillages, updateInnovation } from "Services/innovationServices";
 import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
-import { getUserById } from "Services/userServices";
 import { getVillageById, getClaims, updateVillage } from "Services/villageServices";
 import {
     ActionContainer,
@@ -80,20 +79,8 @@ function DetailInnovation() {
     const villageMap = new Map();
 
     useEffect(() => {
-        const fetchUser = async () => {
-            if (user?.uid) {
-                try {
-                    const res: any = await getUserById(user.uid);
-                    if (res.data) {
-                        setAdmin(res.data.role === "admin");
-                    }
-                } catch (err) {
-                    console.error("Error fetching user role from API:", err);
-                }
-            }
-        };
-        fetchUser();
-    }, [user]);
+        setAdmin(role === "admin");
+    }, [role]);
 
     useEffect(() => {
         if (id) {

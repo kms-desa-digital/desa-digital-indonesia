@@ -7,8 +7,9 @@
 
 import { getFirebaseAdminAuth } from "@/lib/firebase/admin";
 import { connectToDatabase } from "@/lib/db/mongodb";
+import { getFirestore } from "firebase-admin/firestore";
 
-const VALID_ROLES = ["admin", "kementerian", "innovator", "village", "guest"] as const;
+const VALID_ROLES = ["admin", "kementerian", "innovator", "village", "guest", "ministry"] as const;
 export type ValidRole = (typeof VALID_ROLES)[number];
 
 /**
@@ -47,9 +48,9 @@ export async function verifyRoleFromToken(
       return { uid: null, role: "guest" };
     }
 
-    // Cari role user di MongoDB (collection "users" — synced dari Firestore)
-    // Ini lebih reliable untuk API route yang sudah pakai MongoDB
+    // Cari role user di MongoDB terlebih dahulu
     let role: ValidRole = "guest";
+    let foundRole = false;
 
     try {
       const db = await connectToDatabase();
@@ -62,10 +63,24 @@ export async function verifyRoleFromToken(
 
       if (user && typeof user.role === "string") {
         role = sanitizeRole(user.role);
+        foundRole = role !== "guest";
       }
     } catch (dbError) {
       console.error("[verifyRoleFromToken] MongoDB lookup failed:", dbError);
-      // Fallback: jika MongoDB gagal, tetap return uid tapi role = guest
+    }
+
+    // Fallback ke Firestore jika role belum ditemukan di MongoDB
+    if (!foundRole) {
+      try {
+        const adminDb = getFirestore(adminAuth.app);
+        const userDoc = await adminDb.collection("users").doc(uid).get();
+        if (userDoc.exists) {
+          const userData = userDoc.data();
+          role = sanitizeRole(userData?.role);
+        }
+      } catch (firestoreError) {
+        console.error("[verifyRoleFromToken] Firestore lookup failed:", firestoreError);
+      }
     }
 
     return { uid, role };
@@ -87,11 +102,12 @@ export async function verifyRoleFromToken(
 
 // Sanitize role hanya terima nilai yang valid
 export function sanitizeRole(rawRole: unknown): ValidRole {
-  if (
-    typeof rawRole === "string" &&
-    VALID_ROLES.includes(rawRole.toLowerCase() as ValidRole)
-  ) {
-    return rawRole.toLowerCase() as ValidRole;
+  if (typeof rawRole === "string") {
+    const normalized = rawRole.toLowerCase();
+    if (normalized === "ministry") return "kementerian";
+    if (VALID_ROLES.includes(normalized as ValidRole)) {
+      return normalized as ValidRole;
+    }
   }
   return "guest";
 }
