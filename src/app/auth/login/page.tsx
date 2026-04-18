@@ -72,8 +72,9 @@ const Login: React.FC = () => {
 
             const userData = userDoc.data();
             const userRole = (userData?.role || "").toLowerCase();
+            const idToken = await userCredential.user.getIdToken();
 
-            localStorage.removeItem("token");
+            localStorage.setItem("token", idToken);
             localStorage.setItem("userRole", userRole);
             window.dispatchEvent(new Event("auth:tokenChanged"));
             router.refresh();
@@ -131,6 +132,7 @@ const Login: React.FC = () => {
 
             const userData = userDoc.data();
             const userRole = (userData?.role || "").toLowerCase();
+            const idToken = await user.getIdToken();
 
             if (!userRole) {
                 router.push(`${paths.REGISTER_PAGE}?google=1`);
@@ -145,7 +147,7 @@ const Login: React.FC = () => {
                 return;
             }
 
-            localStorage.removeItem("token");
+            localStorage.setItem("token", idToken);
             localStorage.setItem("userRole", userRole);
             window.dispatchEvent(new Event("auth:tokenChanged"));
             router.refresh();

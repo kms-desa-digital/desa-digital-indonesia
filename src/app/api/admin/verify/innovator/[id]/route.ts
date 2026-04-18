@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { getFirebaseAdminFirestore } from '@/lib/firebase/admin'
 
 type Params = Promise<{ id: string }>
 
@@ -49,6 +50,26 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     const result = await db.collection('innovators').updateOne(query, { $set: updatePayload })
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Profil inovator tidak ditemukan' }, { status: 404 })
+    }
+
+    try {
+      const firestore = getFirebaseAdminFirestore()
+      const innovatorDocId = innovator.userId || innovator._id?.toString()
+      if (innovatorDocId) {
+        await firestore
+          .collection('innovators')
+          .doc(innovatorDocId)
+          .set(
+            {
+              status: desiredStatus,
+              catatanAdmin,
+              verifiedAt: desiredStatus === 'Terverifikasi' ? new Date() : undefined,
+            },
+            { merge: true }
+          )
+      }
+    } catch (firestoreError) {
+      console.warn('Failed to sync innovator status to Firestore:', firestoreError)
     }
 
     return NextResponse.json(

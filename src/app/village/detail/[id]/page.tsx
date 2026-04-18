@@ -39,7 +39,7 @@ import { DocumentData } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 // import { auth, firestore } from "src/firebase/clientApp";
 import { auth } from "src/firebase/clientApp";
-import { getVillageById, updateVillage, getVillageInnovations } from "Services/villageServices";
+import { getVillageById, updateVillage, verifyVillage, getVillageInnovations } from "Services/villageServices";
 import { getUserById } from "Services/userServices";
 import {
     ActionContainer,
@@ -96,13 +96,7 @@ export default function DetailVillagePage() {
         setLoading(true);
         try {
             if (id) {
-                /*
-                const docRef = doc(firestore, "villages", id);
-                await updateDoc(docRef, {
-                    status: "Terverifikasi",
-                });
-                */
-                await updateVillage(id, { status: "Terverifikasi" });
+                await verifyVillage(id, "Terverifikasi");
                 setVillage((prev: any) =>
                     prev ? ({
                         ...prev,
@@ -122,17 +116,7 @@ export default function DetailVillagePage() {
         setLoading(true);
         try {
             if (id) {
-                /*
-                const docRef = doc(firestore, "villages", id);
-                await updateDoc(docRef, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput, // Simpan alasan penolakan ke Firestore
-                });
-                */
-                await updateVillage(id, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput,
-                });
+                await verifyVillage(id, "Ditolak", modalInput);
                 setVillage((prev: any) =>
                     prev ? ({
                         ...prev,

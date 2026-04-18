@@ -16,10 +16,13 @@ const normalizeArray = (value: unknown) => {
 }
 
 const buildFilter = (id: string): MongoFilter => {
+  const conditions: any[] = [{ _id: id }, { userId: id }]
+
   if (ObjectId.isValid(id)) {
-    return { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
+    conditions.unshift({ _id: new ObjectId(id) })
   }
-  return { _id: id }
+
+  return { $or: conditions }
 }
 
 // PUT /api/innovator/edit/:id
@@ -96,7 +99,10 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       createdAt: existingDoc.createdAt ?? existingDoc._id,
     }
 
-    await innovatorCollection.updateOne(filter, { $set: updatedProfile })
+    const result = await innovatorCollection.updateOne(filter, { $set: updatedProfile })
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ message: 'Profil inovator tidak ditemukan' }, { status: 404 })
+    }
 
     return NextResponse.json(
       {

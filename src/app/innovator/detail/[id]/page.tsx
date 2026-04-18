@@ -18,7 +18,8 @@ import ActionDrawer from "Components/drawer/ActionDrawer";
 import TopBar from "Components/topBar/index";
 import { paths } from "Consts/path";
 // import { DocumentData, collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { getInnovatorById, updateInnovator, getAssistedVillages } from "Services/innovatorServices";
+import { getInnovatorById, getAssistedVillages } from "Services/innovatorServices";
+import { verifyInnovator } from "Services/adminServices";
 import { getInnovation } from "Services/innovationServices";
 import { getUserById } from "Services/userServices";
 import { DocumentData } from "firebase/firestore"; // Still used for type
@@ -70,7 +71,7 @@ const DetailInnovator: React.FC = () => {
                 status: "Terverifikasi",
             });
             */
-            await updateInnovator(id, { status: "Terverifikasi" });
+            await verifyInnovator(id, { status: "Terverifikasi", catatanAdmin: "" });
             setInnovatorData((prev) => (prev ? { ...prev, status: "Terverifikasi" } : null));
         } catch (error) {
             console.error("Error verifying innovator via API:", error);
@@ -94,7 +95,7 @@ const DetailInnovator: React.FC = () => {
                 catatanAdmin: modalInput,
             });
             */
-            await updateInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
+            await verifyInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
             setInnovatorData((prev) => (prev ? {
                 ...prev,
                 status: "Ditolak",

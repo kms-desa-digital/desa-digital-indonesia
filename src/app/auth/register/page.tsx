@@ -79,7 +79,8 @@ const RegisterContent: React.FC = () => {
                     role,
                 });
 
-                localStorage.removeItem("token");
+                const idToken = await currentUser.getIdToken();
+                localStorage.setItem("token", idToken);
                 localStorage.setItem("userRole", role);
                 window.dispatchEvent(new Event("auth:tokenChanged"));
                 router.refresh();

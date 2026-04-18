@@ -14,22 +14,26 @@ const normalizeArray = (value: unknown) => {
 }
 
 const buildFilter = (id: string): MongoFilter => {
+  const conditions: any[] = [{ _id: id }, { userId: id }]
+
   if (ObjectId.isValid(id)) {
-    return { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
+    conditions.unshift({ _id: new ObjectId(id) })
   }
-  return { _id: id }
+
+  return { $or: conditions }
 }
 
 // POST /api/innovator/profile/:id
-// Create or update innovator profile in MongoDB.
+// Create or update innovator profile in MongoDB using Firebase authentication.
 export async function POST(request: NextRequest, { params }: { params: Params }) {
   try {
     const auth = await requireRole(request, ["innovator", "admin"]);
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params
+    const targetId = auth.role === "admin" ? id : auth.uid;
 
-    if (!id) {
+    if (!targetId) {
       return NextResponse.json({ message: 'Innovator ID is required' }, { status: 400 })
     }
 
@@ -61,11 +65,14 @@ export async function POST(request: NextRequest, { params }: { params: Params })
 
     const db = await connectToDatabase()
     const innovatorCollection = db.collection<InnovatorDoc>('innovators')
-    const filter = buildFilter(id)
+    const filter = buildFilter(targetId)
     const existingDoc = await innovatorCollection.findOne(filter)
     const now = new Date()
 
+    const ownerUserId = existingDoc?.userId ?? (auth.role === 'admin' ? targetId : auth.uid);
+
     const profile = {
+      userId: ownerUserId,
       namaInovator,
       deskripsi,
       kategori,
@@ -92,7 +99,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
 
     if (!existingDoc) {
       const newDoc = {
-        _id: ObjectId.isValid(id) ? new ObjectId(id) : id,
+        _id: ObjectId.isValid(targetId) ? new ObjectId(targetId) : targetId,
         ...profile,
       }
 

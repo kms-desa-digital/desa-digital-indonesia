@@ -14,7 +14,8 @@ import {
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar/index";
 import { paths } from "Consts/path";
-import { getInnovatorById, updateInnovator, getAssistedVillages } from "Services/innovatorServices";
+import { getInnovatorById, getAssistedVillages } from "Services/innovatorServices";
+import { verifyInnovator } from "Services/adminServices";
 import { getInnovation } from "Services/innovationServices";
 import React, { useEffect, useState } from "react";
 
@@ -88,14 +89,7 @@ const ProfileInnovator: React.FC = () => {
         setLoading(true);
         try {
             if (id) {
-                /*
-                const innovatorRef = doc(firestore, "innovators", id);
-                await updateDoc(innovatorRef, {
-                    status: "Terverifikasi",
-                    catatanAdmin: "",
-                });
-                */
-                await updateInnovator(id, { status: "Terverifikasi", catatanAdmin: "" });
+                await verifyInnovator(id, { status: "Terverifikasi", catatanAdmin: "" });
                 setInnovatorData((prev) =>
                     prev ? ({ ...prev, status: "Terverifikasi" }) : null
                 );
@@ -116,14 +110,7 @@ const ProfileInnovator: React.FC = () => {
         setLoading(true);
         try {
             if (id) {
-                /*
-                const innovatorRef = doc(firestore, "innovators", id);
-                await updateDoc(innovatorRef, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput,
-                });
-                */
-                await updateInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
+                await verifyInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
                 setInnovatorData((prev) =>
                     prev ? ({
                         ...prev,
