@@ -20,7 +20,6 @@ import { paths } from "Consts/path";
 // import { DocumentData, collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { getInnovatorById, updateInnovator, getAssistedVillages } from "Services/innovatorServices";
 import { getInnovation } from "Services/innovationServices";
-import { getUserById } from "Services/userServices";
 import { DocumentData } from "firebase/firestore"; // Still used for type
 import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -29,6 +28,7 @@ import { LuDot } from "react-icons/lu";
 import { TbPlant2 } from "react-icons/tb";
 import { useRouter, useParams } from "next/navigation";
 import { auth, firestore } from "src/firebase/clientApp";
+import { useUser } from "src/contexts/UserContext";
 import InnovationPreview from "Components/innovator/hero/innovations";
 import Loading from "Components/loading";
 import {
@@ -53,6 +53,7 @@ const DetailInnovator: React.FC = () => {
     const [admin, setAdmin] = useState(false);
     const [owner, setOwner] = useState(false);
     const [userLogin] = useAuthState(auth);
+    const { role } = useUser();
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
 
@@ -109,28 +110,9 @@ const DetailInnovator: React.FC = () => {
     };
 
     useEffect(() => {
-        const fetchUser = async () => {
-            if (userLogin?.uid) {
-                try {
-                /*
-                const userRef = doc(firestore, "users", userLogin.uid);
-                const userDoc = await getDoc(userRef);
-                */
-                    const res: any = await getUserById(userLogin.uid);
-                    const userData = res.data;
-                    if (userData) {
-                        setAdmin(userData.role === "admin");
-                        if (id === userLogin.uid) {
-                            setOwner(true);
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error fetching user via API:", err);
-                }
-            }
-        };
-        fetchUser();
-    }, [userLogin, id]);
+        setAdmin(role === "admin");
+        setOwner(id === userLogin?.uid);
+    }, [role, userLogin, id]);
 
     useEffect(() => {
         if (!id) {

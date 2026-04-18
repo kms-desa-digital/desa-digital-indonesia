@@ -192,22 +192,6 @@ function TopBar(props: TopBarProps) {
         <Flex align="center" gap={0}>
           {rightElement}
 
-          {isClaimButtonVisible && village && (
-            <Button
-              fontSize="12px"
-              fontWeight="500"
-              variant="inverted"
-              height="32px"
-              _hover={{ bg: hover?.bg }}
-              bg={bg}
-              color={color}
-              leftIcon={leftIcon}
-              onClick={handleClick}
-            >
-              {label}
-            </Button>
-          )}
-
           {!isClaimButtonVisible &&
             isUserMenuVisible &&
             (user || isAuthenticated ? (
