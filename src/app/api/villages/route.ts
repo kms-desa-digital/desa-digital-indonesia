@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 // =========================================================
 // GET /api/villages
@@ -98,6 +99,9 @@ export async function GET(request: NextRequest) {
 // =========================================================
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireRole(request, ["village", "admin"])
+    if (auth instanceof NextResponse) return auth
+
     const body = await request.json()
     const { userId, namaDesa } = body
 

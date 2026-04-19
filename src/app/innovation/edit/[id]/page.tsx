@@ -832,20 +832,29 @@ const EditInnovation: React.FC = () => {
                 isOpen={isOpen}
                 leastDestructiveRef={cancelRef}
                 onClose={handleClose}
+                isCentered
             >
                 <AlertDialogOverlay>
-                    <AlertDialogContent>
-                        <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                    <AlertDialogContent w="90%" maxW="320px" borderRadius="xl" p={2}>
+                        <AlertDialogHeader fontSize="lg" fontWeight="bold" pb={2}>
                             Hapus Inovasi
                         </AlertDialogHeader>
 
-                        <AlertDialogBody>
+                        <AlertDialogBody fontSize="14px" color="gray.600">
                             Apakah Anda yakin? Anda tidak dapat membatalkan tindakan ini
                             setelah inovasi dihapus.
                         </AlertDialogBody>
 
                         <AlertDialogFooter>
-                            <Button ref={cancelRef} onClick={handleClose}>
+                            <Button 
+                                ref={cancelRef} 
+                                onClick={handleClose}
+                                bg="#347357"
+                                color="white"
+                                _hover={{ bg: "#275942" }}
+                                size="sm"
+                                px={4}
+                            >
                                 Batal
                             </Button>
                             <Button
@@ -854,6 +863,8 @@ const EditInnovation: React.FC = () => {
                                 ml={3}
                                 bg="red.500"
                                 _hover={{ bg: "red.600" }}
+                                size="sm"
+                                px={4}
                             >
                                 Hapus
                             </Button>
@@ -865,17 +876,26 @@ const EditInnovation: React.FC = () => {
                 isOpen={isSuccessOpen}
                 leastDestructiveRef={cancelRef}
                 onClose={handleSuccessClose}
+                isCentered
             >
                 <AlertDialogOverlay>
-                    <AlertDialogContent>
-                        <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                    <AlertDialogContent w="90%" maxW="320px" borderRadius="xl" p={2}>
+                        <AlertDialogHeader fontSize="lg" fontWeight="bold" pb={2}>
                             Sukses
                         </AlertDialogHeader>
-                        <AlertDialogBody>
+                        <AlertDialogBody fontSize="14px" color="gray.600">
                             Inovasi telah berhasil diperbarui.
                         </AlertDialogBody>
                         <AlertDialogFooter>
-                            <Button ref={cancelRef} onClick={handleSuccessClose}>
+                            <Button 
+                                ref={cancelRef} 
+                                onClick={handleSuccessClose}
+                                bg="#347357"
+                                color="white"
+                                _hover={{ bg: "#275942" }}
+                                size="sm"
+                                px={6}
+                            >
                                 OK
                             </Button>
                         </AlertDialogFooter>

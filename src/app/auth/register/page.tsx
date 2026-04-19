@@ -79,7 +79,8 @@ const RegisterContent: React.FC = () => {
                     role,
                 });
 
-                localStorage.removeItem("token");
+                // Simpan role ke localStorage (bukan data sensitif)
+                // Token dikelola otomatis oleh Firebase SDK via onIdTokenChanged
                 localStorage.setItem("userRole", role);
                 window.dispatchEvent(new Event("auth:tokenChanged"));
                 router.refresh();

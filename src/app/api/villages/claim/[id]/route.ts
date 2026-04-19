@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { createNotification } from '@/services/notificationServices'
 
 type Params = Promise<{ id: string }>
 
@@ -70,9 +71,25 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
         query = { $or: [{ _id: id as any }, { id: id as any }] }
     }
 
+    const claim = await db.collection('claimInnovations').findOne(query)
+    if (!claim) {
+      return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
+    }
+
+    const isAdmin = auth.role === 'admin'
+
     const updateData: any = { ...body, updatedAt: new Date() }
     delete updateData._id
     delete updateData.id
+
+    // Non-admin tidak boleh mengubah status verifikasi
+    if (!isAdmin) {
+      delete updateData.status
+      delete updateData.catatanAdmin
+    }
+
+    const nextStatus = updateData.status || body.status
+    const nextCatatanAdmin = updateData.catatanAdmin || body.catatanAdmin || null
 
     const result = await db.collection('claimInnovations').updateOne(
       query,
@@ -81,6 +98,32 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
+    }
+
+    // Kirim notifikasi jika admin mengubah status verifikasi
+    try {
+      if (isAdmin && nextStatus && nextStatus !== claim?.status) {
+        const villageId = claim.desaId
+        if (villageId) {
+          const notifTitle = nextStatus === 'Terverifikasi'
+            ? 'Klaim Inovasi Disetujui!'
+            : 'Klaim Inovasi Ditolak'
+          const notifDescription = nextStatus === 'Terverifikasi'
+            ? `Selamat! Klaim Anda untuk "${claim.namaInovasi}" telah disetujui oleh admin.`
+            : `Klaim Anda untuk "${claim.namaInovasi}" ditolak. Alasan: ${nextCatatanAdmin || claim.catatanAdmin || 'Tidak ada catatan'}`
+
+          await createNotification({
+            userId: villageId,
+            type: 'personal',
+            title: notifTitle,
+            description: notifDescription,
+            actionType: 'claim_detail',
+            relatedId: claim._id.toString(),
+          })
+        }
+      }
+    } catch (notifError) {
+      console.error('Error creating claim update notification:', notifError)
     }
 
     return NextResponse.json({ message: 'Klaim berhasil diperbarui' })

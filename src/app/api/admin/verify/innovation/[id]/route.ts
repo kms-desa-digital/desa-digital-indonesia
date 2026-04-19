@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { createNotification } from '@/services/notificationServices'
 
 type Params = Promise<{ id: string }>
 
@@ -51,6 +52,30 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     const result = await db.collection('innovations').updateOne(query, { $set: updatePayload })
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
+    }
+
+    // Create notification for innovator
+    try {
+      const innovatorId = innovation.innovatorId
+      if (innovatorId) {
+        const notifTitle = desiredStatus === 'Terverifikasi' 
+          ? 'Inovasi Disetujui!'
+          : 'Inovasi Ditolak'
+        const notifDescription = desiredStatus === 'Terverifikasi'
+          ? `Selamat! Inovasi "${innovation.namaInovasi}" telah disetujui oleh admin.`
+          : `Inovasi "${innovation.namaInovasi}" ditolak. Alasan: ${catatanAdmin || 'Tidak ada catatan'}`
+
+        await createNotification({
+          userId: innovatorId,
+          type: 'personal',
+          title: notifTitle,
+          description: notifDescription,
+          actionType: 'innovation_detail',
+          relatedId: id,
+        })
+      }
+    } catch (notifError) {
+      console.error('Error creating notification for innovation verification:', notifError)
     }
 
     return NextResponse.json(

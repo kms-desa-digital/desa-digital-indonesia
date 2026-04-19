@@ -4,6 +4,7 @@ import {
 } from "firebase/firestore";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { onIdTokenChanged } from "firebase/auth";
 import { auth, firestore } from "src/firebase/clientApp";
 
 type UserContextType = {
@@ -37,6 +38,21 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isInnovationVerified, setInnovationVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  // Dispatch event saat sesi Firebase berubah agar useAuthToken hook sinkron
+  // Token TIDAK disimpan ke localStorage — tetap di memory (useAuthToken via onIdTokenChanged)
+  useEffect(() => {
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
+      if (user) {
+        // Cukup dispatch event — useAuthToken akan ambil token fresh dari Firebase
+        window.dispatchEvent(new Event("auth:tokenChanged"));
+      } else {
+        localStorage.removeItem("userRole");
+        window.dispatchEvent(new Event("auth:tokenChanged"));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const loadUserData = async () => {
