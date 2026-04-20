@@ -1,8 +1,9 @@
-// app/api/admin/verify/innovation/[id]/route.ts
+// app/api/admin/verify/claims/[id]/route.ts
 
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 type Params = Promise<{ id: string }>
 
@@ -11,13 +12,16 @@ type VerifyBody = {
   catatanAdmin?: string | null
 }
 
-// POST /api/admin/verify/innovation/:id
-// Verifikasi atau tolak inovasi oleh admin.
+// POST /api/admin/verify/claims/:id
+// Verifikasi atau tolak klaim inovasi oleh admin.
 export async function POST(request: NextRequest, { params }: { params: Params }) {
   try {
+    const auth = await requireRole(request, ["admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { id } = await params
     if (!id) {
-      return NextResponse.json({ message: 'Innovation ID is required' }, { status: 400 })
+      return NextResponse.json({ message: 'Claim ID is required' }, { status: 400 })
     }
 
     const body: VerifyBody = await request.json().catch(() => ({}))
@@ -25,43 +29,48 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     const catatanAdmin = body.catatanAdmin ?? null
 
     const db = await connectToDatabase()
-    const query: any = ObjectId.isValid(id)
-      ? { $or: [{ _id: new ObjectId(id) }, { userId: id }] }
-      : { userId: id }
 
-    const innovation = await db.collection('innovations').findOne(query)
-    if (!innovation) {
-      return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
+    // Query for the claim
+    let query: any = {}
+    if (ObjectId.isValid(id)) {
+      query._id = new ObjectId(id)
+    } else {
+      query = { $or: [{ _id: id as any }, { id: id as any }] }
+    }
+
+    const claim = await db.collection('claimInnovations').findOne(query)
+    if (!claim) {
+      return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
     }
 
     const updatePayload: any = {
       status: desiredStatus,
       catatanAdmin,
-      editedAt: new Date(),
+      updatedAt: new Date(),
     }
 
     if (desiredStatus === 'Terverifikasi') {
       updatePayload.verifiedAt = new Date()
     }
 
-    const result = await db.collection('innovations').updateOne(query, { $set: updatePayload })
+    const result = await db.collection('claimInnovations').updateOne(query, { $set: updatePayload })
     if (result.matchedCount === 0) {
-      return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
+      return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
     }
 
     return NextResponse.json(
       {
         message:
           desiredStatus === 'Terverifikasi'
-            ? 'Inovasi berhasil diverifikasi'
-            : 'Inovasi berhasil ditolak',
-        innovationId: id,
+            ? 'Klaim inovasi berhasil diverifikasi'
+            : 'Klaim inovasi berhasil ditolak',
+        claimId: id,
         status: desiredStatus,
       },
       { status: 200 }
     )
   } catch (error) {
-    console.error('Error verifying innovation:', error)
+    console.error('Error verifying claim:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
