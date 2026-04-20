@@ -26,6 +26,7 @@ import "slick-carousel/slick/slick.css";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useUser } from "src/contexts/UserContext";
+import { useAdminStatus } from "Hooks/useAdminStatus";
 
 import StatusCard from "Components/card/status/StatusCard";
 import RejectionModal from "Components/confirmModal/RejectionModal";
@@ -36,7 +37,6 @@ import { paths } from "Consts/path";
 import { auth } from "src/firebase/clientApp";
 import { getInnovationById, getAppliedVillages, updateInnovation } from "Services/innovationServices";
 import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
-import { getUserById } from "Services/userServices";
 import { getVillageById, getClaims, updateVillage } from "Services/villageServices";
 import {
     ActionContainer,
@@ -67,7 +67,6 @@ function DetailInnovation() {
     const [data, setData] = useState<any>({});
     const [innovatorData, setDatainnovator] = useState<any>({});
     const [village, setVillage] = useState<any[]>([]);
-    const [admin, setAdmin] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
     const [loading, setLoading] = useState(true);
@@ -76,24 +75,10 @@ function DetailInnovation() {
     const [claimId, setClaimId] = useState("");
     const [claimStatus, setClaimStatus] = useState("");
 
+    const { isAdmin } = useAdminStatus();
+
     const villageSafe = Array.isArray(village) ? village : [];
     const villageMap = new Map();
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            if (user?.uid) {
-                try {
-                    const res: any = await getUserById(user.uid);
-                    if (res.data) {
-                        setAdmin(res.data.role === "admin");
-                    }
-                } catch (err) {
-                    console.error("Error fetching user role from API:", err);
-                }
-            }
-        };
-        fetchUser();
-    }, [user]);
 
     useEffect(() => {
         if (id) {
@@ -724,7 +709,7 @@ function DetailInnovation() {
                         zIndex="999"
                         boxShadow="0px -6px 12px rgba(0, 0, 0, 0.1)"
                     >
-                        {admin ? (
+                        {isAdmin ? (
                             data.status === "Terverifikasi" || data.status === "Ditolak" ? (
                                 <StatusCard message={data.catatanAdmin} status={data.status} />
                             ) : (
@@ -750,7 +735,7 @@ function DetailInnovation() {
                 <ActionDrawer
                     isOpen={isOpen}
                     onClose={onClose}
-                    isAdmin={admin}
+                    isAdmin={isAdmin}
                     loading={loading}
                     onVerify={handleVerify}
                     setOpenModal={setOpenModal}
