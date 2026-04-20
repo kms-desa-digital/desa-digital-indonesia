@@ -52,22 +52,28 @@ const onRequest = async (config: InternalAxiosRequestConfig) => {
 };
 
 /**
+ * Request interceptor
+ */
+
+
+/**
  * Response interceptor
  */
 const onResponseSuccess = (response: AxiosResponse): AxiosResponse =>
   response.data;
 const onResponseError = (error: AxiosError): Promise<AxiosError> => {
-  const responseData = error.response?.data as any;
-  const message =
-    responseData?.message ||
-    (typeof responseData === "string" ? responseData : undefined) ||
-    error.message ||
-    "Unknown API error";
+  const responseData: any = error.response?.data;
+  const normalizedError = {
+    message:
+      responseData?.message ||
+      error.message ||
+      "Request failed",
+    status: error.response?.status,
+    data: responseData,
+    response: error.response,
+  };
 
-  const enhancedError = error as AxiosError & { message?: string; status?: number };
-  enhancedError.message = message;
-  enhancedError.status = error.response?.status;
-  return Promise.reject(enhancedError);
+  return Promise.reject(normalizedError as any);
 };
 
 /**

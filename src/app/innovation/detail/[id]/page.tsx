@@ -80,6 +80,7 @@ function DetailInnovation() {
     const villageSafe = Array.isArray(village) ? village : [];
     const villageMap = new Map();
 
+   
     useEffect(() => {
         if (id) {
             setLoading(true);

@@ -34,7 +34,8 @@ const Login: React.FC = () => {
         password: "",
     });
     const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [loginLoading, setLoginLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const [show, setShow] = useState(false);
     const router = useRouter();
     const onShowPassword = () => setShow(!show);
@@ -54,7 +55,7 @@ const Login: React.FC = () => {
         if (loginForm.password.length < 6)
             return setError("Kata sandi minimal 6 karakter");
 
-        setLoading(true);
+        setLoginLoading(true);
         try {
             const userCredential = await signInWithEmailAndPassword(
                 auth,
@@ -103,13 +104,13 @@ const Login: React.FC = () => {
                     "Terjadi kesalahan, coba lagi"
             );
         } finally {
-            setLoading(false);
+            setLoginLoading(false);
         }
     };
 
     const onGoogleSignIn = async () => {
         if (error) setError("");
-        setLoading(true);
+        setGoogleLoading(true);
         try {
             const userCredential = await signInWithPopup(auth, googleProvider);
             const user = userCredential.user;
@@ -176,7 +177,7 @@ const Login: React.FC = () => {
                     "Gagal login dengan Google"
             );
         } finally {
-            setLoading(false);
+            setGoogleLoading(false);
         }
     };
 
@@ -229,7 +230,7 @@ const Login: React.FC = () => {
                             type="submit"
                             // alignItems="center"
                             width="100%"
-                            isLoading={loading}
+                            isLoading={loginLoading}
                         >
                             Masuk
                         </Button>
@@ -239,7 +240,7 @@ const Login: React.FC = () => {
                             width="100%"
                             variant="outline"
                             onClick={onGoogleSignIn}
-                            isLoading={loading}
+                            isLoading={googleLoading}
                             leftIcon={<FcGoogle />}
                         >
                             Masuk dengan Google
