@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { notifyRole } from '@/services/notificationServices'
 
 type Params = Promise<{ id: string }>
 
@@ -27,13 +28,17 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     const catatanAdmin = body.catatanAdmin ?? null
 
     const db = await connectToDatabase()
-    const query: any = ObjectId.isValid(id)
-      ? { $or: [{ _id: new ObjectId(id) }, { userId: id }] }
-      : { userId: id }
+    const query: any = {
+      $or: [
+        ...(ObjectId.isValid(id) ? [{ _id: new ObjectId(id) }] : []),
+        { _id: id },
+        { userId: id }
+      ]
+    }
 
     const innovator = await db.collection('innovators').findOne(query)
     if (!innovator) {
-      return NextResponse.json({ message: 'Profil inovator tidak ditemukan' }, { status: 404 })
+      return NextResponse.json({ message: 'DEBUG: Profil inovator tidak ditemukan di database' }, { status: 404 })
     }
 
     const updatePayload: any = {
@@ -49,6 +54,22 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     const result = await db.collection('innovators').updateOne(query, { $set: updatePayload })
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Profil inovator tidak ditemukan' }, { status: 404 })
+    }
+
+    // Notify all villages about new verified innovator
+    if (desiredStatus === 'Terverifikasi') {
+      try {
+        await notifyRole('village', {
+          type: 'general',
+          category: 'new_innovator',
+          title: 'Innovator Baru Terdaftar! 👤+',
+          description: `${innovator.namaInnovator || innovator.name || 'Seorang Innovator'} baru saja bergabung dan terverifikasi. Ayo cek profil mereka!`,
+          actionType: 'profile',
+          relatedId: innovator.userId || innovator._id.toString()
+        })
+      } catch (notifErr) {
+        console.error('Error notifying villages about new innovator:', notifErr)
+      }
     }
 
     return NextResponse.json(

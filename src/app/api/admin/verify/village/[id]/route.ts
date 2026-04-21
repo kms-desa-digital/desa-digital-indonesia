@@ -27,9 +27,13 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     const catatanAdmin = body.catatanAdmin ?? null
 
     const db = await connectToDatabase()
-    const query: any = ObjectId.isValid(id)
-      ? { $or: [{ _id: new ObjectId(id) }, { userId: id }] }
-      : { userId: id }
+    const query: any = {
+      $or: [
+        ...(ObjectId.isValid(id) ? [{ _id: new ObjectId(id) }] : []),
+        { _id: id },
+        { userId: id }
+      ]
+    }
 
     const village = await db.collection('villages').findOne(query)
     if (!village) {

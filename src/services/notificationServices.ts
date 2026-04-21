@@ -3,9 +3,10 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 export interface NotificationPayload {
   userId: string
   type: 'general' | 'personal'
+  category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status'
   title: string
   description: string
-  actionType: 'innovation_detail' | 'claim_detail' | 'profile' | 'dashboard'
+  actionType: 'innovation_detail' | 'claim_detail' | 'profile' | 'dashboard' | 'notification_detail'
   relatedId?: string | null
   actionUrl?: string | null
 }
@@ -20,6 +21,7 @@ export async function createNotification(payload: NotificationPayload): Promise<
     const newNotification = {
       userId: payload.userId,
       type: payload.type,
+      category: payload.category || (payload.type === 'personal' ? 'submission_status' : 'announcement'),
       title: payload.title,
       description: payload.description,
       isRead: false,
@@ -49,6 +51,7 @@ export async function createNotificationBatch(
     const docs = notifications.map(payload => ({
       userId: payload.userId,
       type: payload.type,
+      category: payload.category || (payload.type === 'personal' ? 'submission_status' : 'announcement'),
       title: payload.title,
       description: payload.description,
       isRead: false,
@@ -57,6 +60,8 @@ export async function createNotificationBatch(
       actionUrl: payload.actionUrl || null,
       createdAt: new Date(),
     }))
+
+    if (docs.length === 0) return []
 
     const result = await db.collection('notifications').insertMany(docs)
     return Object.values(result.insertedIds).map(id => id.toString())
@@ -67,65 +72,72 @@ export async function createNotificationBatch(
 }
 
 /**
- * Notify all admins about a specific event.
- * Cari admin di Firestore, lalu simpan notifikasi ke MongoDB.
+ * Notify all users of a specific role
  */
-export async function notifyAllAdmins(payload: Omit<NotificationPayload, 'userId'>) {
+export async function notifyRole(role: string, payload: Omit<NotificationPayload, 'userId'>) {
   try {
-    console.log("[notifyAllAdmins] === START ===");
-
-    // 1. Inisialisasi Firebase Admin + Firestore
     const { getFirebaseAdminAuth } = await import('@/lib/firebase/admin')
     const { getFirestore } = await import('firebase-admin/firestore')
     const adminAuth = getFirebaseAdminAuth()
     const firestoreDb = getFirestore(adminAuth.app)
-    console.log("[notifyAllAdmins] Firebase Admin initialized OK");
 
-    // 2. Ambil SEMUA user dari Firestore dan filter yang role-nya admin
-    const adminUids: string[] = []
-
-    const snapshot = await firestoreDb.collection('users').get()
-    console.log(`[notifyAllAdmins] Firestore users collection: ${snapshot.size} documents`);
+    const userUids: string[] = []
+    const snapshot = await firestoreDb.collection('users').where('role', '==', role).get()
 
     snapshot.forEach((doc) => {
-      const data = doc.data()
-      const role = (data.role || "").toString().toLowerCase().trim()
-      console.log(`[notifyAllAdmins] Doc ${doc.id} → role: "${data.role}" (normalized: "${role}")`)
-
-      if (role === 'admin') {
-        // Gunakan doc.id sebagai UID utama (karena di Firestore, doc ID = Firebase UID)
-        const uid = doc.id
-        adminUids.push(uid)
-        console.log(`[notifyAllAdmins] ✓ Admin found: ${uid}`)
-      }
+      userUids.push(doc.id)
     })
 
-    console.log(`[notifyAllAdmins] Total admin recipients: ${adminUids.length}`)
+    if (userUids.length === 0) return []
 
-    if (adminUids.length === 0) {
-      console.warn("[notifyAllAdmins] Tidak ada admin ditemukan di Firestore.")
-      return []
-    }
+    const notifications = userUids.map(uid => ({
+      ...payload,
+      userId: uid,
+    })) as NotificationPayload[]
 
-    // 3. Kirim notifikasi ke setiap admin via createNotification (menulis ke MongoDB)
-    const results: (string | null)[] = []
-    for (const uid of adminUids) {
-      console.log(`[notifyAllAdmins] Sending notification to: ${uid}`)
-      const result = await createNotification({
-        ...payload,
-        userId: uid,
-      })
-      console.log(`[notifyAllAdmins] Result for ${uid}: ${result ? 'OK' : 'FAILED'}`)
-      results.push(result)
-    }
-
-    const successCount = results.filter(r => r !== null).length
-    console.log(`[notifyAllAdmins] === DONE === (${successCount}/${adminUids.length} sent)`)
-    return results.filter(r => r !== null) as string[]
+    return await createNotificationBatch(notifications)
   } catch (error) {
-    console.error('[notifyAllAdmins] === ERROR ===', error)
+    console.error(`Error notifying role ${role}:`, error)
     return []
   }
+}
+
+/**
+ * Notify all users (except specific role if needed)
+ */
+export async function notifyAll(payload: Omit<NotificationPayload, 'userId'>) {
+  try {
+    const { getFirebaseAdminAuth } = await import('@/lib/firebase/admin')
+    const { getFirestore } = await import('firebase-admin/firestore')
+    const adminAuth = getFirebaseAdminAuth()
+    const firestoreDb = getFirestore(adminAuth.app)
+
+    const userUids: string[] = []
+    const snapshot = await firestoreDb.collection('users').get()
+
+    snapshot.forEach((doc) => {
+      userUids.push(doc.id)
+    })
+
+    if (userUids.length === 0) return []
+
+    const notifications = userUids.map(uid => ({
+      ...payload,
+      userId: uid,
+    })) as NotificationPayload[]
+
+    return await createNotificationBatch(notifications)
+  } catch (error) {
+    console.error('Error notifying all users:', error)
+    return []
+  }
+}
+
+/**
+ * Notify all admins about a specific event.
+ */
+export async function notifyAllAdmins(payload: Omit<NotificationPayload, 'userId'>) {
+  return await notifyRole('admin', payload)
 }
 
 /**

@@ -28,7 +28,11 @@ import {
     AlertDialogOverlay,
     Button,
 } from "@chakra-ui/react";
-import { ChevronLeft, Bell, CheckCircle2, XCircle, Info, Star, ArrowRight, MoreVertical, Trash2, CheckCircle } from "lucide-react";
+import {
+    ChevronLeft, Bell, CheckCircle2, XCircle, Info, Star,
+    ArrowRight, MoreVertical, Trash2, CheckCircle,
+    Trophy, Megaphone, Lightbulb, UserPlus
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import TopBar from "Components/topBar";
 import { useAuthToken } from "@/hooks/useAuthToken";
@@ -37,6 +41,7 @@ interface NotificationItem {
     id: string;
     userId: string;
     type: "general" | "personal";
+    category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status';
     title: string;
     description: string;
     isRead: boolean;
@@ -58,10 +63,22 @@ const NotificationPage = () => {
     const notifIconBg = useColorModeValue("white", "gray.800");
     const notifBorderColor = useColorModeValue("gray.100", "gray.700");
 
+    const LIMIT = 15;
     const [generalNotifs, setGeneralNotifs] = useState<NotificationItem[]>([]);
     const [personalNotifs, setPersonalNotifs] = useState<NotificationItem[]>([]);
+
+    const [generalSkip, setGeneralSkip] = useState(0);
+    const [personalSkip, setPersonalSkip] = useState(0);
+    const [hasMoreGeneral, setHasMoreGeneral] = useState(false);
+    const [hasMorePersonal, setHasMorePersonal] = useState(false);
+
+    const [generalUnread, setGeneralUnread] = useState(0);
+    const [personalUnread, setPersonalUnread] = useState(0);
+
     const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [tabIndex, setTabIndex] = useState(0);
 
     const [isDeleteAllOpen, setIsDeleteAllOpen] = useState(false);
     const [isDeleteSingleOpen, setIsDeleteSingleOpen] = useState(false);
@@ -79,10 +96,10 @@ const NotificationPage = () => {
             return;
         }
 
-        fetchNotifications();
+        fetchInitial();
     }, [token, isLoaded]);
 
-    const fetchNotifications = async () => {
+    const fetchInitial = async () => {
         try {
             setLoading(true);
             setError(null);
@@ -92,20 +109,23 @@ const NotificationPage = () => {
                 "Content-Type": "application/json",
             };
 
-            // Fetch general notifications
-            const generalRes = await fetch(`/api/notifications?type=general&limit=50`, {
-                headers,
-            });
-            const generalData = generalRes.ok ? await generalRes.json() : { notifications: [] };
+            const [generalRes, personalRes] = await Promise.all([
+                fetch(`/api/notifications?type=general&limit=${LIMIT}&skip=0`, { headers }),
+                fetch(`/api/notifications?type=personal&limit=${LIMIT}&skip=0`, { headers })
+            ]);
 
-            // Fetch personal notifications
-            const personalRes = await fetch(`/api/notifications?type=personal&limit=50`, {
-                headers,
-            });
-            const personalData = personalRes.ok ? await personalRes.json() : { notifications: [] };
+            const generalData = generalRes.ok ? await generalRes.json() : { notifications: [], pagination: { hasMore: false }, unreadCount: 0 };
+            const personalData = personalRes.ok ? await personalRes.json() : { notifications: [], pagination: { hasMore: false }, unreadCount: 0 };
 
             setGeneralNotifs(generalData.notifications || []);
+            setHasMoreGeneral(generalData.pagination?.hasMore || false);
+            setGeneralSkip(LIMIT);
+            setGeneralUnread(generalData.unreadCount || 0);
+
             setPersonalNotifs(personalData.notifications || []);
+            setHasMorePersonal(personalData.pagination?.hasMore || false);
+            setPersonalSkip(LIMIT);
+            setPersonalUnread(personalData.unreadCount || 0);
 
         } catch (err) {
             console.error("Error fetching notifications:", err);
@@ -115,11 +135,59 @@ const NotificationPage = () => {
         }
     };
 
+    const fetchMore = async (type: 'general' | 'personal') => {
+        if (loadingMore) return;
+
+        try {
+            setLoadingMore(true);
+            const skip = type === 'general' ? generalSkip : personalSkip;
+            const headers: any = {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json",
+            };
+
+            const res = await fetch(`/api/notifications?type=${type}&limit=${LIMIT}&skip=${skip}`, { headers });
+            const data = res.ok ? await res.json() : null;
+
+            if (data) {
+                if (type === 'general') {
+                    setGeneralNotifs(prev => [...prev, ...(data.notifications || [])]);
+                    setHasMoreGeneral(data.pagination?.hasMore || false);
+                    setGeneralSkip(prev => prev + LIMIT);
+                } else {
+                    setPersonalNotifs(prev => [...prev, ...(data.notifications || [])]);
+                    setHasMorePersonal(data.pagination?.hasMore || false);
+                    setPersonalSkip(prev => prev + LIMIT);
+                }
+            }
+        } catch (err) {
+            console.error("Error fetching more notifications:", err);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const bottom = Math.ceil(window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 100;
+            if (bottom) {
+                if (tabIndex === 0 && hasMoreGeneral && !loadingMore) {
+                    fetchMore('general');
+                } else if (tabIndex === 1 && hasMorePersonal && !loadingMore) {
+                    fetchMore('personal');
+                }
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [tabIndex, hasMoreGeneral, hasMorePersonal, loadingMore, generalSkip, personalSkip]);
+
     const handleMarkAllAsRead = async () => {
         try {
             const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
             await fetch('/api/notifications/bulk', { method: 'PATCH', headers });
-            fetchNotifications();
+            fetchInitial();
         } catch (error) {
             console.error("Error marking all as read:", error);
         }
@@ -134,8 +202,7 @@ const NotificationPage = () => {
         try {
             const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
             await fetch('/api/notifications/bulk', { method: 'DELETE', headers });
-            setGeneralNotifs([]);
-            setPersonalNotifs([]);
+            fetchInitial();
         } catch (error) {
             console.error("Error deleting all notifications:", error);
         }
@@ -153,18 +220,25 @@ const NotificationPage = () => {
         try {
             const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
             await fetch(`/api/notifications/${selectedNotifId}`, { method: 'DELETE', headers });
-            fetchNotifications();
+            fetchInitial();
             setSelectedNotifId(null);
         } catch (error) {
             console.error("Error deleting notification:", error);
         }
     };
 
-    const getIcon = (type: string) => {
-        switch (type) {
-            case "general": return <Info size={20} color="#3B82F6" />;
-            case "personal": return <Star size={20} color="#F59E0B" />;
-            default: return <Info size={20} color="#3B82F6" />;
+    const getIcon = (notif: NotificationItem) => {
+        const category = notif.category;
+
+        if (category === 'ranking') return <Trophy size={18} color="#EAB308" />;
+        if (category === 'announcement') return <Megaphone size={18} color="#3B82F6" />;
+        if (category === 'innovation_recommendation') return <Lightbulb size={18} color="#F59E0B" />;
+        if (category === 'new_innovator') return <UserPlus size={18} color="#10B981" />;
+
+        switch (notif.type) {
+            case "general": return <Info size={18} color="#3B82F6" />;
+            case "personal": return <Star size={18} color="#F59E0B" />;
+            default: return <Info size={18} color="#3B82F6" />;
         }
     };
 
@@ -184,18 +258,8 @@ const NotificationPage = () => {
             }
         }
 
-        // Navigate based on actionType
-        const pathMap: Record<string, string> = {
-            innovation_detail: `/innovation/detail/${notif.relatedId}`,
-            claim_detail: `/village/klaimInovasi/detail/${notif.relatedId}`,
-            profile: `/village/profile/${notif.relatedId}`,
-            dashboard: `/admin/dashboard`,
-        };
-
-        const path = pathMap[notif.actionType];
-        if (path) {
-            router.push(path);
-        }
+        // Selalu arahkan ke halaman detail notifikasi
+        router.push(`/notification/${notif.id}`);
     };
 
     const NotificationCard = ({ notif }: { notif: NotificationItem }) => (
@@ -211,6 +275,20 @@ const NotificationPage = () => {
             position="relative"
             onClick={() => handleNavigate(notif)}
         >
+            {/* Tombol Hapus di Pojok Atas */}
+            <IconButton
+                aria-label="Hapus notifikasi"
+                icon={<Trash2 size={13} />}
+                size="xs"
+                variant="ghost"
+                color="red.400"
+                position="absolute"
+                top={2}
+                right={2}
+                onClick={(e) => handleDeleteSingleClick(notif.id, e)}
+                _hover={{ bg: "red.50", color: "red.600" }}
+            />
+
             <Flex gap={4}>
                 <Box mt={1}>
                     <Flex
@@ -223,17 +301,20 @@ const NotificationPage = () => {
                         shadow="sm"
                         borderWidth="1px"
                     >
-                        {getIcon(notif.type)}
+                        {getIcon(notif)}
                     </Flex>
                 </Box>
                 <Box flex={1}>
                     <Flex justify="space-between" align="start" mb={1}>
-                        <Text fontWeight="800" fontSize="15px" color={notifTitleColor}>
+                        <Text 
+                            fontWeight="800" 
+                            fontSize="15px" 
+                            color={notifTitleColor} 
+                            noOfLines={1} 
+                            pr={6} // Padding agar judul tidak mepet tombol hapus
+                        >
                             {notif.title}
                         </Text>
-                        {!notif.isRead && (
-                            <Box w="8px" h="8px" bg="green.500" borderRadius="full" mt={1.5} />
-                        )}
                     </Flex>
                     <Text fontSize="13px" color={notifDescColor} mb={2} noOfLines={2}>
                         {notif.description}
@@ -242,19 +323,10 @@ const NotificationPage = () => {
                         <Text fontSize="11px" color="gray.400" fontWeight="500">
                             {formatDate(notif.createdAt)}
                         </Text>
-                        <Flex align="center" gap={3}>
-                            <IconButton
-                                aria-label="Hapus notifikasi"
-                                icon={<Trash2 size={14} color="red" />}
-                                size="xs"
-                                variant="ghost"
-                                colorScheme="red"
-                                onClick={(e) => handleDeleteSingleClick(notif.id, e)}
-                            />
-                            <Flex align="center" gap={1} color="green.600">
-                                <Text fontSize="11px" fontWeight="700">Buka</Text>
-                                <ArrowRight size={12} />
-                            </Flex>
+                        
+                        <Flex align="center" gap={1} color="green.600">
+                            <Text fontSize="11px" fontWeight="700">Buka</Text>
+                            <ArrowRight size={12} />
                         </Flex>
                     </Flex>
                 </Box>
@@ -325,7 +397,7 @@ const NotificationPage = () => {
                         {error}
                     </Box>
                 ) : (
-                    <Tabs variant="soft-rounded" colorScheme="green" isFitted>
+                    <Tabs variant="soft-rounded" colorScheme="green" isFitted onChange={(index) => setTabIndex(index)}>
                         <TabList
                             bg={tabListBgColor}
                             p={1.5}
@@ -339,7 +411,7 @@ const NotificationPage = () => {
                                 fontWeight="700"
                                 _selected={{ bg: "green.600", color: "white", shadow: "md" }}
                             >
-                                Umum {generalNotifs.length > 0 && <Badge ml={2} bg="yellow.400" color="gray.800" borderRadius="full">{generalNotifs.filter(n => !n.isRead).length}</Badge>}
+                                Umum {generalUnread > 0 && <Badge ml={2} bg="yellow.400" color="gray.800" borderRadius="full">{generalUnread}</Badge>}
                             </Tab>
                             <Tab
                                 borderRadius="full"
@@ -347,7 +419,7 @@ const NotificationPage = () => {
                                 fontWeight="700"
                                 _selected={{ bg: "green.600", color: "white", shadow: "md" }}
                             >
-                                Pengajuan {personalNotifs.length > 0 && <Badge ml={2} bg="yellow.400" color="gray.800" borderRadius="full">{personalNotifs.filter(n => !n.isRead).length}</Badge>}
+                                Pengajuan {personalUnread > 0 && <Badge ml={2} bg="yellow.400" color="gray.800" borderRadius="full">{personalUnread}</Badge>}
                             </Tab>
                         </TabList>
 
@@ -355,9 +427,16 @@ const NotificationPage = () => {
                             <TabPanel p={0}>
                                 <Stack spacing={3}>
                                     {generalNotifs.length > 0 ? (
-                                        generalNotifs.map(notif => (
-                                            <NotificationCard key={notif.id} notif={notif} />
-                                        ))
+                                        <>
+                                            {generalNotifs.map((notif, i) => (
+                                                <NotificationCard key={`${notif.id}-${i}`} notif={notif} />
+                                            ))}
+                                            {loadingMore && tabIndex === 0 && (
+                                                <Flex justify="center" py={4}>
+                                                    <Spinner size="sm" color="green.500" />
+                                                </Flex>
+                                            )}
+                                        </>
                                     ) : (
                                         <EmptyState />
                                     )}
@@ -366,9 +445,16 @@ const NotificationPage = () => {
                             <TabPanel p={0}>
                                 <Stack spacing={3}>
                                     {personalNotifs.length > 0 ? (
-                                        personalNotifs.map(notif => (
-                                            <NotificationCard key={notif.id} notif={notif} />
-                                        ))
+                                        <>
+                                            {personalNotifs.map((notif, i) => (
+                                                <NotificationCard key={`${notif.id}-${i}`} notif={notif} />
+                                            ))}
+                                            {loadingMore && tabIndex === 1 && (
+                                                <Flex justify="center" py={4}>
+                                                    <Spinner size="sm" color="green.500" />
+                                                </Flex>
+                                            )}
+                                        </>
                                     ) : (
                                         <EmptyState />
                                     )}
@@ -397,8 +483,8 @@ const NotificationPage = () => {
                         </AlertDialogBody>
 
                         <AlertDialogFooter>
-                            <Button 
-                                ref={cancelRef} 
+                            <Button
+                                ref={cancelRef}
                                 onClick={() => setIsDeleteAllOpen(false)}
                                 bg="#347357"
                                 color="white"
@@ -442,8 +528,8 @@ const NotificationPage = () => {
                         </AlertDialogBody>
 
                         <AlertDialogFooter>
-                            <Button 
-                                ref={cancelRef} 
+                            <Button
+                                ref={cancelRef}
                                 onClick={() => setIsDeleteSingleOpen(false)}
                                 bg="#347357"
                                 color="white"
