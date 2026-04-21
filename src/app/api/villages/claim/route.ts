@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
     try {
       // Notify all admins about new claim
       await notifyAllAdmins({
-        type: 'general',
+        type: 'personal',
+        category: 'claim_submission',
         title: `Klaim Inovasi Baru: ${namaInovasi}`,
         description: `${namaDesa} telah mengajukan klaim untuk inovasi "${namaInovasi}". Silakan verifikasi pengajuan ini.`,
         actionType: 'claim_detail',

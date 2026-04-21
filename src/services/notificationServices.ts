@@ -3,7 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 export interface NotificationPayload {
   userId: string
   type: 'general' | 'personal'
-  category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status'
+  category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status' | 'innovation_submission' | 'claim_submission' | 'profile_submission'
   title: string
   description: string
   actionType: 'innovation_detail' | 'claim_detail' | 'profile' | 'dashboard' | 'notification_detail'

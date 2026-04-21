@@ -55,6 +55,30 @@ export async function POST(request: NextRequest, { params }: { params: Params })
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
     }
 
+    // Create notification for the Village owner
+    try {
+      const { createNotification } = await import('@/services/notificationServices')
+      const targetUserId = village.userId || village.firebaseUid || id;
+      const notifTitle = desiredStatus === 'Terverifikasi'
+        ? 'Profil Desa Terverifikasi'
+        : 'Profil Desa Ditolak'
+      const notifDescription = desiredStatus === 'Terverifikasi'
+        ? `Selamat! Profil desa Anda telah diverifikasi oleh admin. Sekarang Anda dapat mulai mengecek inovasi.`
+        : `Pengajuan profil desa Anda ditolak. Catatan: ${catatanAdmin || 'Data kurang lengkap'}`
+
+      await createNotification({
+        userId: targetUserId,
+        type: 'personal',
+        category: 'submission_status',
+        title: notifTitle,
+        description: notifDescription,
+        actionType: 'profile',
+        relatedId: targetUserId,
+      })
+    } catch (notifErr) {
+      console.error('Error notifying village about verification:', notifErr)
+    }
+
     return NextResponse.json(
       {
         message: desiredStatus === 'Terverifikasi'

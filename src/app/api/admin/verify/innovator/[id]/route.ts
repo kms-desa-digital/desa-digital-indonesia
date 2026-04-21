@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
-import { notifyRole } from '@/services/notificationServices'
+import { createNotification, notifyRole } from '@/services/notificationServices'
 
 type Params = Promise<{ id: string }>
 
@@ -56,14 +56,37 @@ export async function POST(request: NextRequest, { params }: { params: Params })
       return NextResponse.json({ message: 'Profil inovator tidak ditemukan' }, { status: 404 })
     }
 
-    // Notify all villages about new verified innovator
+    // Create notification for the Innovator owner
+    try {
+      const targetUserId = innovator.userId || innovator.firebaseUid || id;
+      const notifTitle = desiredStatus === 'Terverifikasi'
+        ? 'Profil Innovator Terverifikasi'
+        : 'Profil Innovator Ditolak'
+      const notifDescription = desiredStatus === 'Terverifikasi'
+        ? `Selamat! Profil innovator Anda telah diverifikasi oleh admin. Sekarang Anda dapat mulai menambahkan inovasi.`
+        : `Pengajuan profil innovator Anda ditolak. Catatan: ${catatanAdmin || 'Data kurang lengkap'}`
+
+      await createNotification({
+        userId: targetUserId,
+        type: 'personal',
+        category: 'submission_status',
+        title: notifTitle,
+        description: notifDescription,
+        actionType: 'profile',
+        relatedId: targetUserId,
+      })
+    } catch (notifErr) {
+      console.error('Error notifying innovator about verification:', notifErr)
+    }
+
+    // Notify all villages about new verified innovator (Broad Recommendation)
     if (desiredStatus === 'Terverifikasi') {
       try {
         await notifyRole('village', {
           type: 'general',
           category: 'new_innovator',
           title: 'Innovator Baru Terdaftar! 👤+',
-          description: `${innovator.namaInnovator || innovator.name || 'Seorang Innovator'} baru saja bergabung dan terverifikasi. Ayo cek profil mereka!`,
+          description: `${innovator.namaInovator || innovator.namaInnovator || innovator.name || 'Seorang Innovator'} baru saja bergabung dan terverifikasi. Ayo cek profil mereka!`,
           actionType: 'profile',
           relatedId: innovator.userId || innovator._id.toString()
         })

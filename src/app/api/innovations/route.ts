@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
     try {
       await notifyAllAdmins({
         type: 'personal',
+        category: 'innovation_submission',
         title: `Inovasi Baru: ${namaInovasi}`,
         description: `Innovator ${newInnovation.namaInnovator || 'unknown'} telah menambahkan inovasi baru. Silakan verifikasi pengajuan ini.`,
         actionType: 'innovation_detail',

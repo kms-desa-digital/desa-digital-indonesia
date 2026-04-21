@@ -61,7 +61,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
       const innovatorId = innovation.innovatorId
       if (innovatorId) {
         const notifTitle = desiredStatus === 'Terverifikasi'
-          ? 'Inovasi Disetujui!'
+          ? 'Inovasi Disetujui'
           : 'Inovasi Ditolak'
         const notifDescription = desiredStatus === 'Terverifikasi'
           ? `Selamat! Inovasi "${innovation.namaInovasi}" telah disetujui oleh admin.`

@@ -126,11 +126,27 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await db.collection('villages').insertOne(newVillage)
+    const villageId = result.insertedId.toString()
+
+    // Notify all admins about new registered village profile
+    try {
+      const { notifyAllAdmins } = await import('@/services/notificationServices')
+      await notifyAllAdmins({
+        type: 'personal',
+        category: 'profile_submission',
+        title: `Pendaftaran Desa Baru: ${namaDesa}`,
+        description: `Sebuah desa baru telah mendaftar: ${namaDesa}. Silakan verifikasi profil desa ini.`,
+        actionType: 'profile',
+        relatedId: userId,
+      })
+    } catch (notifErr) {
+      console.error('Error notifying admins about new village profile:', notifErr)
+    }
 
     return new NextResponse(
       JSON.stringify({ 
         message: 'Profil desa berhasil dibuat', 
-        villageId: result.insertedId.toString() 
+        villageId: villageId 
       }, null, 2),
       {
         status: 201,

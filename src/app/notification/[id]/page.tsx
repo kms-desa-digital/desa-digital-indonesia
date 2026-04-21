@@ -19,7 +19,7 @@ import {
 import {
     ChevronLeft, Trophy, Megaphone, Lightbulb,
     UserPlus, Star, Info, Calendar, ArrowRight,
-    ExternalLink
+    ExternalLink, CheckCircle, XCircle
 } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import TopBar from "Components/topBar";
@@ -29,7 +29,7 @@ interface NotificationItem {
     id: string;
     userId: string;
     type: "general" | "personal";
-    category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status';
+    category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status' | 'innovation_submission' | 'claim_submission' | 'profile_submission';
     title: string;
     description: string;
     isRead: boolean;
@@ -93,7 +93,23 @@ const NotificationDetailPage = () => {
         fetchDetail();
     }, [id, token, isLoaded]);
 
-    const getIcon = (category?: string, type?: string) => {
+    const getIcon = (category?: string, type?: string, titleStr: string = "") => {
+        const title = titleStr.toLowerCase();
+
+        // 1. Status Verifikasi untuk User
+        if (title.includes('disetujui') || title.includes('terverifikasi') || title.includes('sukses')) {
+            return <CheckCircle size={32} color="#10B981" />;
+        }
+        if (title.includes('ditolak') || title.includes('gagal') || title.includes('tolak')) {
+            return <XCircle size={32} color="#EF4444" />;
+        }
+
+        // 2. Pengajuan Baru untuk Admin (Bintang)
+        if (category === 'innovation_submission' || category === 'claim_submission' || category === 'profile_submission') {
+            return <Star size={32} color="#F59E0B" />;
+        }
+
+        // 3. Kategori Khusus
         if (category === 'ranking') return <Trophy size={32} color="#EAB308" />;
         if (category === 'announcement') return <Megaphone size={32} color="#3B82F6" />;
         if (category === 'innovation_recommendation') return <Lightbulb size={32} color="#F59E0B" />;
@@ -192,7 +208,7 @@ const NotificationDetailPage = () => {
                                 bottom="0"
                                 zIndex={2}
                             >
-                                {getIcon(notif.category, notif.type)}
+                                {getIcon(notif.category, notif.type, notif.title)}
                             </Flex>
                         </Box>
 

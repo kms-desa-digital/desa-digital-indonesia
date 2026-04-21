@@ -41,7 +41,7 @@ interface NotificationItem {
     id: string;
     userId: string;
     type: "general" | "personal";
-    category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status';
+    category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status' | 'innovation_submission' | 'claim_submission' | 'profile_submission';
     title: string;
     description: string;
     isRead: boolean;
@@ -229,12 +229,28 @@ const NotificationPage = () => {
 
     const getIcon = (notif: NotificationItem) => {
         const category = notif.category;
+        const title = notif.title.toLowerCase();
 
+        // 1. Status Verifikasi untuk User (Role Innovator/Desa)
+        if (title.includes('disetujui') || title.includes('terverifikasi') || title.includes('sukses')) {
+            return <CheckCircle size={18} color="#10B981" />;
+        }
+        if (title.includes('ditolak') || title.includes('gagal') || title.includes('tolak')) {
+            return <XCircle size={18} color="#EF4444" />;
+        }
+
+        // 2. Pengajuan Baru untuk Admin (Bintang)
+        if (category === 'innovation_submission' || category === 'claim_submission' || category === 'profile_submission') {
+            return <Star size={18} color="#F59E0B" />;
+        }
+
+        // 3. Kategori Khusus Lainnya
         if (category === 'ranking') return <Trophy size={18} color="#EAB308" />;
         if (category === 'announcement') return <Megaphone size={18} color="#3B82F6" />;
         if (category === 'innovation_recommendation') return <Lightbulb size={18} color="#F59E0B" />;
         if (category === 'new_innovator') return <UserPlus size={18} color="#10B981" />;
 
+        // 4. Fallback berdasarkan tipe
         switch (notif.type) {
             case "general": return <Info size={18} color="#3B82F6" />;
             case "personal": return <Star size={18} color="#F59E0B" />;
