@@ -188,6 +188,25 @@ const ENDPOINTS: Record<string, Endpoint[]> = {
       desc: "Memverifikasi atau menolak profil inovator.",
       body: { status: "Terverifikasi | Ditolak", catatanAdmin: "string?" },
     },
+    {
+      method: "POST",
+      url: "/api/admin/verify/claims/[id]",
+      desc: "Memverifikasi atau menolak pengajuan klaim inovasi desa.",
+      body: { status: "Terverifikasi | Ditolak", catatanAdmin: "string?" },
+    },
+    {
+      method: "GET",
+      url: "/api/admin/notifications",
+      desc: "Mengambil statistik notifikasi untuk dashboard admin.",
+      auth: "Bearer Token",
+    },
+    {
+      method: "POST",
+      url: "/api/admin/notifications",
+      desc: "Mengirim broadcast manual atau mendaftar ranking sistem.",
+      body: { type: "broadcast_all | broadcast_role | trigger_ranking", title: "string?", description: "string?" },
+      auth: "Bearer Token",
+    },
   ],
   Ministry: [
     {
@@ -241,6 +260,40 @@ const ENDPOINTS: Record<string, Endpoint[]> = {
       body: { namaInovator: "string", kategori: "string", etc: "..." },
     },
   ],
+  Notifications: [
+    {
+      method: "GET",
+      url: "/api/notifications",
+      desc: "Mengambil daftar notifikasi terpaginasi.",
+      params: ["type", "limit", "skip"],
+      auth: "Bearer Token",
+    },
+    {
+      method: "GET",
+      url: "/api/notifications/unread-count",
+      desc: "Mengambil jumlah total notifikasi yang belum dibaca.",
+      auth: "Bearer Token",
+    },
+    {
+      method: "PATCH",
+      url: "/api/notifications/[id]",
+      desc: "Menandai notifikasi sebagai sudah dibaca.",
+      body: { isRead: true },
+      auth: "Bearer Token",
+    },
+    {
+      method: "DELETE",
+      url: "/api/notifications/[id]",
+      desc: "Menghapus satu notifikasi.",
+      auth: "Bearer Token",
+    },
+    {
+      method: "DELETE",
+      url: "/api/notifications/bulk",
+      desc: "Menghapus seluruh notifikasi milik pengguna.",
+      auth: "Bearer Token",
+    },
+  ],
 };
 
 const MethodBadge = ({ method }: { method: string }) => {
@@ -249,6 +302,7 @@ const MethodBadge = ({ method }: { method: string }) => {
     POST: "green",
     PUT: "orange",
     DELETE: "red",
+    PATCH: "purple",
   };
   return (
     <Badge colorScheme={colors[method]} width="60px" textAlign="center">

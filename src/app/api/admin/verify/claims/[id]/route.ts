@@ -69,8 +69,8 @@ export async function POST(request: NextRequest, { params }: { params: Params })
         // Gunakan Firebase UID jika ketemu, fallback ke desaId (jika sudah Firebase UID)
         const targetUserId = villageUser?.uid || villageUser?.firebaseUid || villageDesaId
 
-        const notifTitle = desiredStatus === 'Terverifikasi' 
-          ? 'Klaim Inovasi Disetujui!'
+        const notifTitle = desiredStatus === 'Terverifikasi'
+          ? 'Klaim Inovasi Disetujui'
           : 'Klaim Inovasi Ditolak'
         const notifDescription = desiredStatus === 'Terverifikasi'
           ? `Selamat! Klaim Anda untuk "${claim.namaInovasi}" telah disetujui oleh admin.`
