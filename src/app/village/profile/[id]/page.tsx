@@ -69,7 +69,7 @@ export default function ProfileVillage() {
         const provinsi = lokasi.provinsi?.label || villageData.provinsi || "Unknown Province";
 
         if (kecamatan === "Unknown Subdistrict" && kabupaten === "Unknown City" && provinsi === "Unknown Province") {
-             return "No Location";
+            return "No Location";
         }
         return `KECAMATAN ${kecamatan}, ${kabupaten}, ${provinsi}`;
     };
@@ -157,7 +157,7 @@ export default function ProfileVillage() {
                 try {
                     const response: any = await getVillageById(id);
                     const data = response.village || response.data;
-                    
+
                     if (data) {
                         setVillage(data);
                         const uid = userLogin?.uid;
@@ -165,18 +165,18 @@ export default function ProfileVillage() {
                         if (uid) {
                             setOwner(isOwner);
                         }
-                        
+
                         // Redirect Owner if status is Ditolak
                         if (isOwner && data.status === "Ditolak") {
                             router.push(paths.VILLAGE_FORM || "/village/form");
                             return;
                         }
                     } else {
-                         // No data returned
-                         if (userLogin?.uid === id) {
-                             router.push(paths.VILLAGE_FORM || "/village/form");
-                             return;
-                         }
+                        // No data returned
+                        if (userLogin?.uid === id) {
+                            router.push(paths.VILLAGE_FORM || "/village/form");
+                            return;
+                        }
                     }
                 } catch (error) {
                     console.error("Error fetching village data:", error);
@@ -188,7 +188,7 @@ export default function ProfileVillage() {
             }
         };
         fetchVillageData();
-        
+
         // Polling for real-time status updates
         const intervalId = setInterval(async () => {
             if (!id) return;
@@ -499,7 +499,7 @@ export default function ProfileVillage() {
                         >
                             <SubText>Inovasi yang Diterapkan</SubText>
                             <Text
-                                onClick={() => router.push("/target-page")} // Ganti "/target-page" dengan rute yang sesuai
+                                onClick={() => router.push(`/village/detail/${id}/innovations`)}
                                 cursor="pointer"
                                 color="var(--Primary, #347357)"
                                 fontSize="12px"
@@ -507,8 +507,7 @@ export default function ProfileVillage() {
                                 textDecorationLine="underline"
                                 paddingBottom="12px"
                             >
-                                {" "}
-                                Lihat Semua{" "}
+                                Lihat Semua
                             </Text>
                         </Flex>
                         <CardContainer>
@@ -537,6 +536,7 @@ export default function ProfileVillage() {
                                 )}
                             </Horizontal>
                         </CardContainer>
+                        <Box height="100px" />
                     </div>
                 </ContentContainer>
             </div>
@@ -562,20 +562,20 @@ export default function ProfileVillage() {
                         message={village?.catatanAdmin}
                     />
                 ) : (
-                <NavbarButton>
-                    <Button
-                        width="100%"
-                        onClick={() => {
-                            if (owner) {
-                                toEditVillage();
-                            } else {
-                                onOpen();
-                            }
-                        }}
-                    >
-                        {owner ? "Edit Profile" : " "}
-                    </Button>
-                </NavbarButton>
+                    <NavbarButton>
+                        <Button
+                            width="100%"
+                            onClick={() => {
+                                if (owner) {
+                                    toEditVillage();
+                                } else {
+                                    onOpen();
+                                }
+                            }}
+                        >
+                            {owner ? "Edit Profile" : " "}
+                        </Button>
+                    </NavbarButton>
                 )
             )}
             <RejectionModal

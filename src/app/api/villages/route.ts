@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 // =========================================================
 // GET /api/villages
 // Mengambil daftar semua desa
-// Query: ?status=<status> (misal: Terverifikasi, Menunggu, Ditolak)
+// Query: ?status=<status>&limit=<n>&skip=<n> (misal: Terverifikasi, Menunggu, Ditolak)
 // =========================================================
 export async function GET(request: NextRequest) {
   try {
@@ -13,12 +14,19 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const provinsi = searchParams.get('provinsi')
     const kabupatenKota = searchParams.get('kabupatenKota')
-
+    const limitVal = parseInt(searchParams.get('limit') || '0')
+    const skipVal = parseInt(searchParams.get('skip') || '0')
     const db = await connectToDatabase()
     const andConditions: any[] = []
 
     const escapeRegex = (value: string) =>
       value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    const normalizeRegionName = (value: string) =>
+      value
+        .trim()
+        .replace(/^(kabupaten|kota|kab\.?)\s+/i, '')
+        .replace(/\s+/g, ' ')
 
     if (status) {
       andConditions.push({ status })
@@ -46,7 +54,11 @@ export async function GET(request: NextRequest) {
     }
 
     if (kabupatenKota && kabupatenKota.trim()) {
-      const kabupatenRegex = new RegExp(`^${escapeRegex(kabupatenKota.trim())}$`, 'i')
+      const normalizedKabupaten = normalizeRegionName(kabupatenKota)
+      const kabupatenRegex = new RegExp(
+        `^(?:(?:kabupaten|kab\\.?|kota)\\s+)?${escapeRegex(normalizedKabupaten)}$`,
+        'i'
+      )
       andConditions.push({
         $or: [
           { kabupatenKota: { $regex: kabupatenRegex } },
@@ -58,10 +70,12 @@ export async function GET(request: NextRequest) {
 
     const filter: any = andConditions.length ? { $and: andConditions } : {}
 
-    const villages = await db.collection('villages')
-      .find(filter)
-      .sort({ createdAt: -1 })
-      .toArray()
+    let villageQuery = db.collection('villages').find(filter).sort({ createdAt: -1 })
+
+    if (skipVal > 0) villageQuery = villageQuery.skip(skipVal)
+    if (limitVal > 0) villageQuery = villageQuery.limit(limitVal)
+
+    const villages = await villageQuery.toArray()
 
     const result = villages.map(doc => ({
       ...doc,
@@ -70,8 +84,8 @@ export async function GET(request: NextRequest) {
     }))
 
     return new NextResponse(JSON.stringify({ villages: result }, null, 2), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
     })
   } catch (error) {
     console.error('Error fetching villages:', error)
@@ -85,12 +99,11 @@ export async function GET(request: NextRequest) {
 // =========================================================
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireRole(request, ["village", "admin"])
+    if (auth instanceof NextResponse) return auth
+
     const body = await request.json()
-    const { 
-      userId, namaDesa, deskripsi, logo, header, 
-      manfaat, whatsApp, provinsi, kabupaten, 
-      kecamatan, desa 
-    } = body
+    const { userId, namaDesa } = body
 
     if (!userId || !namaDesa) {
       return NextResponse.json({ message: 'userId dan namaDesa wajib diisi' }, { status: 400 })
@@ -105,17 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     const newVillage = {
-      userId,
-      namaDesa,
-      deskripsi: deskripsi || '',
-      logo: logo || null,
-      header: header || null,
-      manfaat: manfaat || '',
-      whatsApp: whatsApp || '',
-      provinsi: provinsi || '',
-      kabupaten: kabupaten || '',
-      kecamatan: kecamatan || '',
-      desa: desa || '',
+      ...body,
       status: 'Menunggu', // Default status verifikasi admin
       catatanAdmin: '',
       createdAt: new Date(),
@@ -123,11 +126,27 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await db.collection('villages').insertOne(newVillage)
+    const villageId = result.insertedId.toString()
+
+    // Notify all admins about new registered village profile
+    try {
+      const { notifyAllAdmins } = await import('@/services/notificationServices')
+      await notifyAllAdmins({
+        type: 'personal',
+        category: 'profile_submission',
+        title: `Pendaftaran Desa Baru: ${namaDesa}`,
+        description: `Sebuah desa baru telah mendaftar: ${namaDesa}. Silakan verifikasi profil desa ini.`,
+        actionType: 'profile',
+        relatedId: userId,
+      })
+    } catch (notifErr) {
+      console.error('Error notifying admins about new village profile:', notifErr)
+    }
 
     return new NextResponse(
       JSON.stringify({ 
         message: 'Profil desa berhasil dibuat', 
-        villageId: result.insertedId.toString() 
+        villageId: villageId 
       }, null, 2),
       {
         status: 201,

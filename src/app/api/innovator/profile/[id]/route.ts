@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 type Params = Promise<{ id: string }>
 type MongoFilter = { [key: string]: any }
@@ -23,6 +24,9 @@ const buildFilter = (id: string): MongoFilter => {
 // Create or update innovator profile in MongoDB.
 export async function POST(request: NextRequest, { params }: { params: Params }) {
   try {
+    const auth = await requireRole(request, ["innovator", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { id } = await params
 
     if (!id) {
@@ -93,6 +97,21 @@ export async function POST(request: NextRequest, { params }: { params: Params })
       }
 
       await innovatorCollection.insertOne(newDoc)
+
+      // Notify all admins about new registered innovator profile
+      try {
+        const { notifyAllAdmins } = await import('@/services/notificationServices')
+        await notifyAllAdmins({
+          type: 'personal',
+          category: 'profile_submission',
+          title: `Pendaftaran Innovator Baru: ${namaInovator}`,
+          description: `Seorang innovator baru has mendaftar: ${namaInovator}. Silakan verifikasi profil ini.`,
+          actionType: 'profile',
+          relatedId: id,
+        })
+      } catch (notifErr) {
+        console.error('Error notifying admins about new innovator profile:', notifErr)
+      }
 
       return NextResponse.json(
         {

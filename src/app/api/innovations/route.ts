@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
+import { notifyAllAdmins } from '@/services/notificationServices'
 
 // =========================================================
 // GET /api/innovations
@@ -9,6 +11,7 @@ import { ObjectId } from 'mongodb'
 //   ?status=<Terverifikasi|Menunggu|Ditolak>  → filter by status
 //   ?innovatorId=<id>  → filter by innovator
 //   ?search=<keyword> → filter by nama inovasi / deskripsi / nama innovator
+//   ?limit=<n> & ?skip=<n>
 // =========================================================
 export async function GET(request: NextRequest) {
   try {
@@ -17,6 +20,8 @@ export async function GET(request: NextRequest) {
     const status      = searchParams.get('status')
     const innovatorId = searchParams.get('innovatorId')
     const search      = searchParams.get('search')
+    const limitVal    = parseInt(searchParams.get('limit') || '0')
+    const skipVal     = parseInt(searchParams.get('skip') || '0')
 
     const db = await connectToDatabase()
     const filter: Record<string, any> = {}
@@ -34,11 +39,12 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const innovations = await db
-      .collection('innovations')
-      .find(filter)
-      .sort({ createdAt: -1 })
-      .toArray()
+    let innovationQuery = db.collection('innovations').find(filter).sort({ createdAt: -1 })
+
+    if (skipVal > 0) innovationQuery = innovationQuery.skip(skipVal)
+    if (limitVal > 0) innovationQuery = innovationQuery.limit(limitVal)
+
+    const innovations = await innovationQuery.toArray()
 
     // Konversi _id ObjectId → string untuk kemudahan konsumsi frontend
     const result = innovations.map((doc) => ({
@@ -57,13 +63,12 @@ export async function GET(request: NextRequest) {
 // =========================================================
 // POST /api/innovations
 // Tambah inovasi baru
-// Body: { namaInovasi, kategori, tahunDibuat, deskripsi,
-//         statusInovasi, modelBisnis[], manfaat[], infrastruktur[],
-//         inputDesaMenerapkan, hargaMinimal, hargaMaksimal,
-//         innovatorId, namaInnovator, innovatorImgURL, images[] }
 // =========================================================
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireRole(request, ["innovator", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const body = await request.json()
 
     const {
@@ -71,17 +76,7 @@ export async function POST(request: NextRequest) {
       kategori,
       tahunDibuat,
       deskripsi,
-      statusInovasi,
-      modelBisnis,
-      manfaat,
-      infrastruktur,
-      inputDesaMenerapkan,
-      hargaMinimal,
-      hargaMaksimal,
       innovatorId,
-      namaInnovator,
-      innovatorImgURL,
-      images,
     } = body
 
     // Validasi field wajib
@@ -95,21 +90,7 @@ export async function POST(request: NextRequest) {
     const db = await connectToDatabase()
 
     const newInnovation = {
-      namaInovasi,
-      kategori,
-      tahunDibuat,
-      deskripsi,
-      statusInovasi:        statusInovasi || 'Masih diproduksi',
-      modelBisnis:          modelBisnis   || [],
-      manfaat:              manfaat       || [],
-      infrastruktur:        infrastruktur || [],
-      inputDesaMenerapkan:  inputDesaMenerapkan || '',
-      hargaMinimal:         hargaMinimal  || '',
-      hargaMaksimal:        hargaMaksimal || '',
-      innovatorId,
-      namaInnovator:        namaInnovator || '',
-      innovatorImgURL:      innovatorImgURL || null,
-      images:               images || [],
+      ...body,
       status:               'Menunggu',   // status verifikasi admin
       catatanAdmin:         null,
       createdAt:            new Date(),
@@ -118,10 +99,27 @@ export async function POST(request: NextRequest) {
 
     const result = await db.collection('innovations').insertOne(newInnovation)
 
+    const innovationId = result.insertedId.toString()
+
+    // Notify admins about new innovation (innovator tidak perlu notif untuk aksi sendiri)
+    try {
+      await notifyAllAdmins({
+        type: 'personal',
+        category: 'innovation_submission',
+        title: `Inovasi Baru: ${namaInovasi}`,
+        description: `Innovator ${newInnovation.namaInnovator || 'unknown'} telah menambahkan inovasi baru. Silakan verifikasi pengajuan ini.`,
+        actionType: 'innovation_detail',
+        relatedId: innovationId,
+      })
+    } catch (notifError) {
+      // Log notification error but don't fail the innovation creation
+      console.error('Error creating notifications for innovation:', notifError)
+    }
+
     return NextResponse.json(
       {
         message:      'Inovasi berhasil ditambahkan, menunggu verifikasi admin',
-        innovationId: result.insertedId.toString(),
+        innovationId: innovationId,
       },
       { status: 201 }
     )

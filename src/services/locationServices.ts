@@ -4,7 +4,7 @@ interface Location {
   name: string;
 }
 
-const BASE_LOCATION_URL = "https://adsattt.github.io/api-wilayah-indonesia";
+const BASE_LOCATION_URL = "https://www.emsifa.com/api-wilayah-indonesia";
 
 export const getProvinces = async (): Promise<Location[]> => {
   try {

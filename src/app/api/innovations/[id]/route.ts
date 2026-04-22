@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
+import { createNotification, notifyAllAdmins } from '@/services/notificationServices'
 
 type Params = Promise<{ id: string }>
 
@@ -46,11 +48,18 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
 // =========================================================
 export async function PUT(request: NextRequest, { params }: { params: Params }) {
   try {
+    const auth = await requireRole(request, ["innovator", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { id } = await params
     const body = await request.json()
 
-    // Field yang TIDAK boleh diubah oleh user (dikelola admin)
-    const protectedFields = ['status', 'catatanAdmin', 'createdAt', '_id']
+    const isAdmin = auth.role === 'admin'
+
+    // Field yang TIDAK boleh diubah oleh user biasa
+    const protectedFields = isAdmin
+      ? ['createdAt', '_id']
+      : ['status', 'catatanAdmin', 'createdAt', '_id']
     protectedFields.forEach((field) => delete body[field])
 
     // Selalu update editedAt
@@ -72,8 +81,9 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
     }
 
-    // Jika status sebelumnya "Ditolak", reset ke "Menunggu" saat diedit ulang
-    if (existing.status === 'Ditolak') {
+    // Jika inovasi diedit ulang oleh pemilik dan status sebelumnya Ditolak, reset ke Menunggu
+    const isResubmission = !isAdmin && existing.status === 'Ditolak'
+    if (isResubmission) {
       body.status = 'Menunggu'
       body.catatanAdmin = null
     }
@@ -85,6 +95,44 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
+    }
+
+    // Kirim notifikasi
+    try {
+      // 1. Jika admin mengubah status verifikasi → notif ke innovator
+      if (isAdmin && body.status && body.status !== existing.status) {
+        const innovatorId = existing.innovatorId || existing.userId
+        if (innovatorId) {
+          const notifTitle = body.status === 'Terverifikasi'
+            ? 'Inovasi Disetujui!'
+            : 'Inovasi Ditolak'
+          const notifDescription = body.status === 'Terverifikasi'
+            ? `Selamat! Inovasi "${existing.namaInovasi}" telah disetujui oleh admin.`
+            : `Inovasi "${existing.namaInovasi}" ditolak. Alasan: ${body.catatanAdmin || existing.catatanAdmin || 'Tidak ada catatan'}`
+
+          await createNotification({
+            userId: innovatorId,
+            type: 'personal',
+            title: notifTitle,
+            description: notifDescription,
+            actionType: 'innovation_detail',
+            relatedId: existing._id.toString(),
+          })
+        }
+      }
+
+      // 2. Jika innovator mengajukan ulang inovasi yang ditolak → notif ke admin
+      if (isResubmission) {
+        await notifyAllAdmins({
+          type: 'personal',
+          title: `Pengajuan Ulang: ${existing.namaInovasi}`,
+          description: `Innovator ${existing.namaInnovator || 'unknown'} telah mengajukan ulang inovasi yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+          actionType: 'innovation_detail',
+          relatedId: existing._id.toString(),
+        })
+      }
+    } catch (notifError) {
+      console.error('Error creating innovation update notification:', notifError)
     }
 
     return NextResponse.json(
@@ -103,6 +151,9 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 // =========================================================
 export async function DELETE(_request: NextRequest, { params }: { params: Params }) {
   try {
+    const auth = await requireRole(_request, ["innovator", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { id } = await params
     const db = await connectToDatabase()
     

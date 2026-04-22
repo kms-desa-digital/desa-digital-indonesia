@@ -479,24 +479,24 @@ const ProfileInnovator: React.FC = () => {
                                  shadow="xs"
                                  _hover={{ shadow: 'sm', borderColor: '#347357' }}
                                  onClick={() =>
-                                     router.push(`/village/profile/${village.id}`)
+                                     router.push(`/village/detail/${village.id}`)
                                  }
                              >
                                  <Flex alignItems="center">
                                      <Image
                                          src={village.logo || "/images/default-logo.svg"}
                                          alt={`${village.namaDesa} Logo`}
-                                         boxSize="40px"
+                                         boxSize="32px"
                                          borderRadius="full"
-                                         mr={4}
+                                         mr={3}
                                      />
                                      <Text fontSize="13px" fontWeight="700" color="#1F2937">
                                          {village.namaDesa}
                                      </Text>
                                      <ChevronRightIcon color="gray.400" ml="auto" />
                                  </Flex>
-                                 <Box borderTop="1px" borderColor="gray.200" pt={3} mt={3}>
-                                     <Text fontSize="11px" fontWeight="400" mb={2} color="#9CA3AF">
+                                 <Box borderTop="1px" borderColor="gray.100" pt={2} mt={2}>
+                                     <Text fontSize="10px" fontWeight="400" mb={1} color="#9CA3AF">
                                          Inovasi diterapkan
                                      </Text>
                                      <Flex direction="row" gap={2} flexWrap="wrap">
@@ -529,6 +529,7 @@ const ProfileInnovator: React.FC = () => {
                         </Text>
                     )}
                 </Flex>
+                <Box height="100px" />
             </ContentContainer>
             <div>
                 {isAdmin ? (

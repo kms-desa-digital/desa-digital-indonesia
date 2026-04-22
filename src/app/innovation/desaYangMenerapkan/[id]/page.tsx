@@ -63,8 +63,8 @@ const InovasiDesaYangMenerapkan = () => {
         } else {
             const lower = searchTerm.toLowerCase();
             setFilteredVillages(
-                villages.filter((v) => 
-                    v.namaDesa.toLowerCase().includes(lower) || 
+                villages.filter((v) =>
+                    v.namaDesa.toLowerCase().includes(lower) ||
                     (v.kabupaten || "").toLowerCase().includes(lower)
                 )
             );
@@ -146,7 +146,7 @@ const InovasiDesaYangMenerapkan = () => {
                                 cursor="pointer"
                                 shadow="sm"
                                 _hover={{ shadow: 'md', borderColor: '#347357' }}
-                                onClick={() => router.push(`/village/profile/${village.id}`)}
+                                onClick={() => router.push(`/village/detail/${village.id}`)}
                             >
                                 <Flex alignItems="center">
                                     <Image

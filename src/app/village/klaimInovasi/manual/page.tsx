@@ -12,7 +12,7 @@ import DocUpload from "src/components/form/DocUpload";
 import ImageUpload from "src/components/form/ImageUpload";
 import VidUpload from "src/components/form/VideoUpload";
 import { auth } from "src/firebase/clientApp";
-import { getVillageById, claimInnovation, updateVillage, getClaimById } from "Services/villageServices";
+import { getVillageById, claimInnovation, updateVillage, getClaimById, updateClaim } from "Services/villageServices";
 import {
     CheckboxGroup, Container, Field, JenisKlaim, Label, NavbarButton, Text1, Text2,
 } from "../_styles";
@@ -32,11 +32,15 @@ const KlaimInovasiManualContent: React.FC = () => {
     const params = useParams();
     const id = params.id as string;
     const [claimData, setClaimData] = useState<any>(null);
-    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+    const [logoFiles, setLogoFiles] = useState<string[]>([]);
+    const [innovationFiles, setInnovationFiles] = useState<string[]>([]);
+    const [buktiFoto, setBuktiFoto] = useState<string[]>([]);
     const [selectedDoc, setSelectedDoc] = useState<string[]>([]);
     const [selectedVid, setSelectedVid] = useState<string>("");
     const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
-    const selectedFileRef = useRef<HTMLInputElement>(null);
+    const logoFileRef = useRef<HTMLInputElement>(null);
+    const innovationFileRef = useRef<HTMLInputElement>(null);
+    const buktiFotoRef = useRef<HTMLInputElement>(null);
     const selectedVidRef = useRef<HTMLInputElement>(null);
     const selectedDocRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
@@ -49,13 +53,21 @@ const KlaimInovasiManualContent: React.FC = () => {
     const [modalInput, setModalInput] = useState("");
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [disabled, setDisabled] = useState(false);
-    const [editable, setEditable] = useState(false);
+    const [editable, setEditable] = useState(true);
     const [textInputsValue, setTextInputsValue] = useState({
         inovationName: "",
         inovatorName: "",
         description: "",
     });
+    const [isUploading, setIsUploading] = useState({
+        foto: false,
+        video: false,
+        dokumen: false,
+        logo: false,
+        innovation: false
+    });
 
+    const editId = searchParams.get("editId");
     const inovasiId = searchParams.get("inovasiId");
 
     const { role } = useUser();
@@ -64,6 +76,8 @@ const KlaimInovasiManualContent: React.FC = () => {
     }, [role]);
 
     const handleCheckboxChange = (checkbox: string) => {
+        if (isUploading[checkbox as keyof typeof isUploading]) return;
+        
         if (selectedCheckboxes.includes(checkbox)) {
             setSelectedCheckboxes(selectedCheckboxes.filter((item) => item !== checkbox));
         } else {
@@ -71,24 +85,27 @@ const KlaimInovasiManualContent: React.FC = () => {
         }
     };
 
-    const handleAjukanKlaim = () => {
-        if (selectedCheckboxes.length === 0) {
-            toast.error("Minimal pilih 1 jenis bukti klaim (Foto, Video, atau Dokumen)", {
-                position: "top-center", autoClose: 2000, hideProgressBar: false,
-                closeOnClick: true, pauseOnHover: true, draggable: true, progress: undefined,
-            });
-            return;
+    const isFormValid = () => {
+        // Required basic info
+        if (!textInputsValue.inovationName.trim() || !textInputsValue.inovatorName.trim() || !textInputsValue.description.trim() || logoFiles.length === 0 || innovationFiles.length === 0) return false;
+        
+        // Checklist must be selected
+        if (selectedCheckboxes.length === 0) return false;
+        
+        // Checklist items must have content
+        for (const item of selectedCheckboxes) {
+            if (item === "foto" && buktiFoto.length === 0) return false;
+            if (item === "video" && !selectedVid) return false;
+            if (item === "dokumen" && selectedDoc.length === 0) return false;
         }
+        
+        return true;
+    };
 
-        let isValid = true;
-        if (selectedCheckboxes.includes("foto") && selectedFiles.length === 0) isValid = false;
-        if (selectedCheckboxes.includes("video") && selectedVid === "") isValid = false;
-        if (selectedCheckboxes.includes("dokumen") && selectedDoc.length === 0) isValid = false;
-
-        if (!isValid) {
-            toast.error("Mohon lengkapi semua bukti klaim yang dipilih (Foto, Video, atau Dokumen)", {
-                position: "top-center", autoClose: 2000, hideProgressBar: false,
-                closeOnClick: true, pauseOnHover: true, draggable: true, progress: undefined,
+    const handleAjukanKlaim = () => {
+        if (!isFormValid()) {
+            toast.error("Harap lengkapi semua data dan bukti yang dipilih.", {
+                position: "top-center", autoClose: 2000,
             });
             return;
         }
@@ -97,9 +114,42 @@ const KlaimInovasiManualContent: React.FC = () => {
         setDisabled(true);
     };
 
-    const onSelectImage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onSelectLogo = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (files?.[0]) {
+            setIsUploading(prev => ({ ...prev, logo: true }));
+            const reader = new FileReader();
+            reader.onload = (readerEvent) => {
+                if (readerEvent.target?.result) {
+                    setLogoFiles([readerEvent.target.result as string]);
+                    setIsUploading(prev => ({ ...prev, logo: false }));
+                }
+            };
+            reader.onerror = () => setIsUploading(prev => ({ ...prev, logo: false }));
+            reader.readAsDataURL(files[0]);
+        }
+    };
+
+    const onSelectInnovationPhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (files?.[0]) {
+            setIsUploading(prev => ({ ...prev, innovation: true }));
+            const reader = new FileReader();
+            reader.onload = (readerEvent) => {
+                if (readerEvent.target?.result) {
+                    setInnovationFiles([readerEvent.target.result as string]);
+                    setIsUploading(prev => ({ ...prev, innovation: false }));
+                }
+            };
+            reader.onerror = () => setIsUploading(prev => ({ ...prev, innovation: false }));
+            reader.readAsDataURL(files[0]);
+        }
+    };
+
+    const onSelectBuktiFoto = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files) {
+            setIsUploading(prev => ({ ...prev, foto: true }));
             const imagesArray: string[] = [];
             for (let i = 0; i < files.length; i++) {
                 const reader = new FileReader();
@@ -107,10 +157,12 @@ const KlaimInovasiManualContent: React.FC = () => {
                     if (readerEvent.target?.result) {
                         imagesArray.push(readerEvent.target.result as string);
                         if (imagesArray.length === files.length) {
-                            setSelectedFiles((prev) => [...prev, ...imagesArray]);
+                            setBuktiFoto((prev) => [...prev, ...imagesArray].slice(0, 2));
+                            setIsUploading(prev => ({ ...prev, foto: false }));
                         }
                     }
                 };
+                reader.onerror = () => setIsUploading(prev => ({ ...prev, foto: false }));
                 reader.readAsDataURL(files[i]);
             }
         }
@@ -118,15 +170,23 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     const onSelectVid = (event: React.ChangeEvent<HTMLInputElement>) => {
         const reader = new FileReader();
-        if (event.target.files?.[0]) reader.readAsDataURL(event.target.files[0]);
+        if (event.target.files?.[0]) {
+            setIsUploading(prev => ({ ...prev, video: true }));
+            reader.readAsDataURL(event.target.files[0]);
+        }
         reader.onload = (readerEvent) => {
-            if (readerEvent.target?.result) setSelectedVid(readerEvent.target?.result as string);
+            if (readerEvent.target?.result) {
+                setSelectedVid(readerEvent.target?.result as string);
+                setIsUploading(prev => ({ ...prev, video: false }));
+            }
         };
+        reader.onerror = () => setIsUploading(prev => ({ ...prev, video: false }));
     };
 
     const onSelectDoc = (event: React.ChangeEvent<HTMLInputElement>) => {
         const doc = event.target.files;
         if (doc) {
+            setIsUploading(prev => ({ ...prev, dokumen: true }));
             const docArray: string[] = [];
             for (let i = 0; i < doc.length; i++) {
                 const reader = new FileReader();
@@ -135,9 +195,11 @@ const KlaimInovasiManualContent: React.FC = () => {
                         docArray.push(readerEvent.target.result as string);
                         if (docArray.length === doc.length) {
                             setSelectedDoc((prev) => [...prev, ...docArray]);
+                            setIsUploading(prev => ({ ...prev, dokumen: false }));
                         }
                     }
                 };
+                reader.onerror = () => setIsUploading(prev => ({ ...prev, dokumen: false }));
                 reader.readAsDataURL(doc[i]);
             }
         }
@@ -151,9 +213,12 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     const submitClaim = async () => {
         setLoading(true);
+        setDisabled(true); // Disable buttons immediately
+
         if (!user?.uid) {
             setError("User tidak ditemukan");
             setLoading(false);
+            setDisabled(false);
             return;
         }
 
@@ -167,34 +232,39 @@ const KlaimInovasiManualContent: React.FC = () => {
                 namaInovator: textInputsValue.inovatorName,
                 namaInovasi: textInputsValue.inovationName,
                 deskripsiInovasi: textInputsValue.description,
-                logoInovator: selectedFiles[0] || null,
-                fotoInovasi: selectedFiles[1] || null,
+                logoInovator: logoFiles[0] || null,
+                fotoInovasi: innovationFiles[0] || null,
                 buktiJenis: selectedCheckboxes,
                 buktiFiles: {
-                    foto: selectedCheckboxes.includes("foto") ? selectedFiles : [],
+                    foto: selectedCheckboxes.includes("foto") ? buktiFoto : [],
                     video: selectedCheckboxes.includes("video") ? [selectedVid] : [],
                     dokumen: selectedCheckboxes.includes("dokumen") ? selectedDoc : []
                 },
-                isManual: true
+                isManual: true,
+                status: "Menunggu"
             };
 
-            const response: any = await claimInnovation(formData);
+            const response: any = editId 
+                ? await updateClaim(editId as string, formData)
+                : await claimInnovation(formData);
 
-            setIsModal1Open(false);
-            toast.success("Klaim inovasi manual berhasil diajukan", {
-                position: "top-center", autoClose: 2000,
+            setIsModal2Open(true);
+            toast.success(editId ? "Klaim manual berhasil diperbarui" : "Klaim inovasi manual berhasil diajukan", {
+                position: "top-center", 
+                autoClose: 3000
             });
-
-            const newClaimId = response.claimId || response.data?.claimId;
-            if (newClaimId) {
-                router.push(`/village/klaimInovasi/detail/${newClaimId}`);
-            } else {
-                router.push(`/village/pengajuan/${user?.uid}`);
-            }
-        } catch (error) {
+            
+            setTimeout(() => {
+                if (!isModal2Open) {
+                    handleSuccessRedirect(response);
+                }
+            }, 5000);
+        } catch (error: any) {
             console.error("Error submitting manual claim:", error);
-            setError("Gagal mengajukan klaim manual.");
-            toast.error("Gagal mengajukan klaim");
+            const errMsg = error?.message || "Gagal mengajukan klaim manual.";
+            setError(errMsg);
+            toast.error(errMsg);
+            setDisabled(false);
         } finally {
             setLoading(false);
         }
@@ -207,8 +277,23 @@ const KlaimInovasiManualContent: React.FC = () => {
         setIsModal2Open(false);
     };
 
+    const handleSuccessRedirect = (response?: any) => {
+        const newClaimId = editId || response?.claimId || response?.data?.claimId || (typeof response === 'string' ? response : "");
+        if (newClaimId) {
+            router.push(`/village/klaimInovasi/detail/${newClaimId}`);
+        } else {
+            router.push(`/village/pengajuan/${user?.uid}`);
+        }
+    };
+
     const handleModal1Yes = async () => {
+        setIsModal1Open(false);
         await submitClaim();
+    };
+    
+    const handleModal2Close = () => {
+        setIsModal2Open(false);
+        handleSuccessRedirect();
     };
 
     const getDescriptionWordCount = () => {
@@ -229,19 +314,21 @@ const KlaimInovasiManualContent: React.FC = () => {
     }, [isModal1Open, isModal2Open]);
 
     useEffect(() => {
-        if (id) {
+        if (editId) {
             const fetchClaim = async () => {
                 setFetchLoading(true);
                 try {
-                    const response: any = await getClaimById(id as string);
+                    const response: any = await getClaimById(editId as string);
                     const claimData = response.data;
                     if (claimData) {
                         setClaimData(claimData);
-                        setEditable(claimData.status === undefined || claimData.status === "" || claimData.status === "Menunggu");
+                        setEditable(claimData.status === "Ditolak" || !claimData.status);
                         setSelectedCheckboxes(claimData.jenisDokumen || claimData.buktiJenis || []);
-                        setSelectedFiles(claimData.images || []);
-                        setSelectedVid(claimData.video || "");
-                        setSelectedDoc(claimData.dokumen || []);
+                        setLogoFiles(claimData.logoInovator ? [claimData.logoInovator] : []);
+                        setInnovationFiles(claimData.fotoInovasi ? [claimData.fotoInovasi] : []);
+                        setBuktiFoto((claimData.buktiFiles?.foto || claimData.images || []));
+                        setSelectedVid(claimData.buktiFiles?.video?.[0] || claimData.video || "");
+                        setSelectedDoc(claimData.buktiFiles?.dokumen || claimData.dokumen || []);
                         setTextInputsValue({
                             inovationName: claimData.namaInovasi || "",
                             inovatorName: claimData.namaInovator || "",
@@ -256,7 +343,7 @@ const KlaimInovasiManualContent: React.FC = () => {
             };
             fetchClaim();
         }
-    }, [id]);
+    }, [editId]);
 
     const handleVerify = async () => {
         setLoading(true);
@@ -304,6 +391,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                         name="inovatorName" fontSize="14px" placeholder="Nama Inovator"
                         _placeholder={{ color: "#9CA3AF" }} _focus={{ outline: "none", bg: "white", border: "none" }}
                         value={textInputsValue.inovatorName} onChange={onTextChange} required
+                        disabled={!editable || loading}
                     />
                     <Text fontWeight="400" fontSize="14px" mb="-2">
                         Nama Inovasi <span style={{ color: "red" }}>*</span>
@@ -312,6 +400,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                         name="inovationName" fontSize="14px" placeholder="Nama Inovasi"
                         _placeholder={{ color: "#9CA3AF" }} _focus={{ outline: "none", bg: "white", border: "none" }}
                         value={textInputsValue.inovationName} onChange={onTextChange} required
+                        disabled={!editable || loading}
                     />
                     <Text fontWeight="400" fontSize="14px" mb="-2">
                         Deskripsi Inovasi <span style={{ color: "red" }}>*</span>
@@ -322,6 +411,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                             placeholder="Masukkan deskripsi singkat tentang inovasi"
                             _placeholder={{ color: "#9CA3AF" }} _focus={{ outline: "none", bg: "white", border: "none" }}
                             height="100px" value={textInputsValue.description} onChange={onTextChange} required
+                            disabled={!editable || loading}
                         />
                         <Text fontWeight="400" fontStyle="normal" fontSize="10px" color="gray.500">
                             {getDescriptionWordCount()}/80 kata
@@ -329,21 +419,23 @@ const KlaimInovasiManualContent: React.FC = () => {
                     </Flex>
                     <Field>
                         <Flex flexDirection="column" gap="2px">
-                            <Text1>Logo Inovator</Text1>
+                            <Text1>Logo Inovator <span style={{ color: "red" }}>*</span></Text1>
                             <Text2>Maks 1 foto. format: png, jpg</Text2>
                             <ImageUpload
-                                selectedFile={selectedFiles} setSelectedFile={setSelectedFiles}
-                                selectFileRef={selectedFileRef} onSelectImage={onSelectImage} maxFiles={1}
+                                selectedFile={logoFiles} setSelectedFile={setLogoFiles}
+                                selectFileRef={logoFileRef} onSelectImage={onSelectLogo} maxFiles={1}
+                                disabled={!editable || loading}
                             />
                         </Flex>
                     </Field>
                     <Field>
                         <Flex flexDirection="column" gap="2px">
-                            <Text1>Foto Inovasi</Text1>
+                            <Text1>Foto Inovasi <span style={{ color: "red" }}>*</span></Text1>
                             <Text2>Maks 1 foto. format: png, jpg</Text2>
                             <ImageUpload
-                                selectedFile={selectedFiles} setSelectedFile={setSelectedFiles}
-                                selectFileRef={selectedFileRef} onSelectImage={onSelectImage} maxFiles={1}
+                                selectedFile={innovationFiles} setSelectedFile={setInnovationFiles}
+                                selectFileRef={innovationFileRef} onSelectImage={onSelectInnovationPhoto} maxFiles={1}
+                                disabled={!editable || loading}
                             />
                         </Flex>
                     </Field>
@@ -358,14 +450,25 @@ const KlaimInovasiManualContent: React.FC = () => {
                         <Label>Jenis Dokumen Bukti Klaim <span style={{ color: "red" }}>*</span></Label>
                         <Text2>Dapat lebih dari 1</Text2>
                     </Flex>
+                    {claimData?.status === "Ditolak" && (
+                        <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
+                    )}
+                    {claimData?.status === "Menunggu" && (
+                        <StatusCard status={claimData.status} />
+                    )}
                     <CheckboxGroup>
                         {["foto", "video", "dokumen"].map((type) => (
                             <JenisKlaim key={type}>
                                 <input
-                                    style={{ transform: "scale(1.3)", marginRight: "8px" }}
+                                    style={{ 
+                                        transform: "scale(1.3)", 
+                                        marginRight: "8px",
+                                        cursor: (isUploading[type as keyof typeof isUploading] || !editable || loading || disabled) ? "not-allowed" : "pointer"
+                                    }}
                                     type="checkbox"
                                     onChange={() => handleCheckboxChange(type)}
                                     checked={selectedCheckboxes.includes(type)}
+                                    disabled={isUploading[type as keyof typeof isUploading] || !editable || loading || disabled}
                                 />
                                 {type.charAt(0).toUpperCase() + type.slice(1)}
                             </JenisKlaim>
@@ -377,8 +480,9 @@ const KlaimInovasiManualContent: React.FC = () => {
                                 <Text1>Foto Inovasi <span style={{ color: "red" }}>*</span></Text1>
                                 <Text2>Maks 2 foto. format: png, jpg</Text2>
                                 <ImageUpload
-                                    selectedFile={selectedFiles} setSelectedFile={setSelectedFiles}
-                                    selectFileRef={selectedFileRef} onSelectImage={onSelectImage} maxFiles={2}
+                                    selectedFile={buktiFoto} setSelectedFile={setBuktiFoto}
+                                    selectFileRef={buktiFotoRef} onSelectImage={onSelectBuktiFoto} maxFiles={2}
+                                    disabled={!editable || loading}
                                 />
                             </Flex>
                         </Field>
@@ -392,6 +496,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                             <VidUpload
                                 selectedVid={selectedVid} setSelectedVid={setSelectedVid}
                                 selectVidRef={selectedVidRef} onSelectVid={onSelectVid}
+                                disabled={!editable || loading}
                             />
                         </Field>
                     </Collapse>
@@ -404,9 +509,16 @@ const KlaimInovasiManualContent: React.FC = () => {
                             <DocUpload
                                 selectedDoc={selectedDoc} setSelectedDoc={setSelectedDoc}
                                 selectDocRef={selectedDocRef} onSelectDoc={onSelectDoc}
+                                disabled={!editable || loading}
                             />
                         </Field>
                     </Collapse>
+                    {!editable && claimData?.status === "Menunggu" && (
+                        <Box mt={4}>
+                             <StatusCard status="Menunggu" />
+                        </Box>
+                    )}
+                    <Box height="100px" />
                 </Container>
                 <div>
                     {isAdmin ? (
@@ -421,13 +533,13 @@ const KlaimInovasiManualContent: React.FC = () => {
                         )
                     ) : (
                         <NavbarButton>
-                            <Button width="100%" isLoading={loading} onClick={handleAjukanKlaim} type="button" disabled={disabled}>
+                            <Button width="100%" isLoading={loading} onClick={handleAjukanKlaim} type="button" disabled={disabled || !isFormValid()}>
                                 Ajukan Klaim
                             </Button>
                         </NavbarButton>
                     )}
                     <ConfModal isOpen={isModal1Open} onClose={closeModal} modalTitle="" modalBody1={modalBody1} onYes={handleModal1Yes} isLoading={loading} />
-                    <SecConfModal isOpen={isModal2Open} onClose={closeModal} modalBody2={modalBody2} />
+                    <SecConfModal isOpen={isModal2Open} onClose={handleModal2Close} modalBody2={modalBody2} />
                     <RejectionModal isOpen={openModal} onClose={() => setOpenModal(false)} onConfirm={handleReject} message={modalInput} setMessage={setModalInput} loading={loading} />
                     <ActionDrawer isOpen={isOpen} onClose={onClose} setOpenModal={setOpenModal} isAdmin={isAdmin} loading={loading} onVerify={handleVerify} role="admin" />
                 </div>

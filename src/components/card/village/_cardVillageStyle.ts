@@ -7,7 +7,7 @@ export const Container = styled.div.withConfig({
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   display: flex;
-  width: ${(props) => (props.$isHome ? '38%' : '100%')};
+  width: 100%;
   flex-shrink: 0;
   height: 197px;
   flex-direction: column;
@@ -31,11 +31,13 @@ export const Logo = styled.img`
   top: -25px;
 `;
 
-export const CardContent = styled.div`
+export const CardContent = styled.div.withConfig({
+  shouldForwardProp: (prop) => prop !== '$isHome'
+})<{ $isHome?: boolean }>`
   padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: ${({ $isHome }) => ($isHome ? '4px' : '2px')};
   position: relative;
   align-items: flex-start;
   flex: 1 0 0;
@@ -52,8 +54,10 @@ export const ContBadge = styled.div`
   padding: 8px;
 `;
 
-export const Title = styled.p`
-  font-size: 10px;
+export const Title = styled.p.withConfig({
+  shouldForwardProp: (prop) => prop !== '$isHome'
+})<{ $isHome?: boolean }>`
+  font-size: ${({ $isHome }) => ($isHome ? '12px' : '10px')};
   font-weight: 700;
   color: #1f2937;
   line-height: 140%;
@@ -68,7 +72,7 @@ export const Title = styled.p`
 export const Description = styled.p`
   font-size: 10px;
   font-weight: 400;
-  color: #374151;
+  color: #4b5563;
   white-space: wrap;
   overflow: hidden;
   display: -webkit-box;
@@ -83,4 +87,5 @@ export const Location = styled.div`
   align-items: center;
   gap: 2px;
   margin-top: auto;
+  width: 100%;
 `;

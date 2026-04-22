@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const search = searchParams.get('search')
     const kategori = searchParams.get('kategori')
+    const limitVal = parseInt(searchParams.get('limit') || '0')
+    const skipVal = parseInt(searchParams.get('skip') || '0')
 
     const db = await connectToDatabase()
     const filter: any = {}
@@ -21,10 +23,44 @@ export async function GET(request: NextRequest) {
       filter.namaInovator = { $regex: escapedSearch, $options: 'i' }
     }
 
+    const pipeline: any[] = [
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'innovations',
+          let: { innovator_id: { $toString: '$_id' }, user_id: '$userId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ['$innovatorId', '$$innovator_id'] },
+                    { $eq: ['$innovatorId', '$$user_id'] }
+                  ]
+                }
+              }
+            },
+            { $unwind: { path: '$desaId', preserveNullAndEmptyArrays: false } },
+            { $group: { _id: '$desaId' } }
+          ],
+          as: 'uniqueDesas'
+        }
+      },
+      {
+        $addFields: {
+          // override the static field with the calculated one if innovations exist
+          jumlahDesaDampingan: { $size: '$uniqueDesas' }
+        }
+      },
+      { $sort: { createdAt: -1 } }
+    ]
+
+    if (skipVal > 0) pipeline.push({ $skip: skipVal })
+    if (limitVal > 0) pipeline.push({ $limit: limitVal })
+
     const innovators = await db
       .collection('innovators')
-      .find(filter)
-      .sort({ createdAt: -1 })
+      .aggregate(pipeline)
       .toArray()
 
     const result = innovators.map((doc) => ({

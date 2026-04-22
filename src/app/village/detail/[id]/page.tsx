@@ -40,7 +40,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 // import { auth, firestore } from "src/firebase/clientApp";
 import { auth } from "src/firebase/clientApp";
 import { getVillageById, updateVillage, getVillageInnovations } from "Services/villageServices";
-import { getUserById } from "Services/userServices";
+import { useUser } from "src/contexts/UserContext";
 import {
     ActionContainer,
     Background,
@@ -62,6 +62,7 @@ import ActionDrawer from "Components/drawer/ActionDrawer";
 export default function DetailVillagePage() {
     const router = useRouter();
     const [userLogin] = useAuthState(auth);
+    const { role } = useUser();
     const [innovations, setInnovations] = useState<DocumentData[]>([]);
     const [village, setVillage] = useState<DocumentData | undefined>();
     const params = useParams();
@@ -69,7 +70,6 @@ export default function DetailVillagePage() {
 
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [admin, setAdmin] = useState(false);
-    const [owner, setOwner] = useState(false);
     const [loading, setLoading] = useState(true);
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState(""); // Catatan admin
@@ -150,33 +150,8 @@ export default function DetailVillagePage() {
     };
 
     useEffect(() => {
-        const fetchUser = async () => {
-            if (userLogin?.uid) {
-                try {
-                    /*
-                    const userRef = doc(firestore, "users", userLogin.uid);
-                    const userSnap = await getDoc(userRef);
-                    if (userSnap.exists()) {
-                        setAdmin(userSnap.data()?.role === "admin");
-                        if (userSnap.data()?.id === id) {
-                            setOwner(true);
-                        }
-                    }
-                    */
-                    const res: any = await getUserById(userLogin.uid);
-                    if (res.data) {
-                        setAdmin(res.data.role === "admin");
-                        if (res.data.id === id) {
-                            setOwner(true);
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error fetching user role via API:", err);
-                }
-            }
-        };
-        fetchUser();
-    }, [userLogin, id]);
+        setAdmin(role === "admin");
+    }, [role]);
 
 
     useEffect(() => {
@@ -184,25 +159,6 @@ export default function DetailVillagePage() {
             if (id) {
                 setLoading(true);
                 try {
-                    /*
-                    const docRef = doc(firestore, "villages", id);
-                    const docSnap = await getDoc(docRef);
-
-                    const inovationRef = collection(firestore, "innovations");
-                    const q = query(inovationRef, where("desaId", "array-contains", id));
-                    const innovationsSnapshot = await getDocs(q);
-                    const innovationsData = innovationsSnapshot.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }));
-                    setInnovations(innovationsData);
-                    console.log("Inovasi:", innovationsData);
-                    if (docSnap.exists()) {
-                        setVillage(docSnap.data());
-                    } else {
-                        console.error("No such document!");
-                    }
-                    */
                     const res: any = await getVillageById(id);
                     const villageData = res.village || res.data;
                     if (villageData) {
@@ -236,7 +192,7 @@ export default function DetailVillagePage() {
     }
 
     return (
-        <Box paddingBottom={16}>
+        <Box paddingBottom={0}>
             <TopBar title="Detail Desa" onBack={() => router.back()} />
             <div style={{ position: "relative", width: "100%" }}>
                 <Background src={village?.header || "/images/default-header.svg"} alt="background" />
@@ -497,7 +453,7 @@ export default function DetailVillagePage() {
                             </Text>
                         </Flex>
                         {village?.status === "Terverifikasi" && (
-                            <CardContainer style={{ paddingBottom: "40px" }}>
+                            <CardContainer style={{ paddingBottom: "10px" }}>
                                 <Horizontal>
                                     {innovations.length === 0 ? (
                                         <Text color="gray.400" fontSize={12}>
@@ -570,6 +526,7 @@ export default function DetailVillagePage() {
                         setMessage={setModalInput}
                         loading={loading}
                     />
+                    <Box height="60px" />
                 </ContentContainer>
             </div>
             <ActionDrawer

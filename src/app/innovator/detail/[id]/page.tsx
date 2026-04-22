@@ -18,9 +18,8 @@ import ActionDrawer from "Components/drawer/ActionDrawer";
 import TopBar from "Components/topBar/index";
 import { paths } from "Consts/path";
 // import { DocumentData, collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
+import { getInnovatorById, updateInnovator, getAssistedVillages } from "Services/innovatorServices";
 import { getInnovation } from "Services/innovationServices";
-import { getUserById } from "Services/userServices";
 import { DocumentData } from "firebase/firestore"; // Still used for type
 import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -29,7 +28,9 @@ import { LuDot } from "react-icons/lu";
 import { TbPlant2 } from "react-icons/tb";
 import { useRouter, useParams } from "next/navigation";
 import { auth, firestore } from "src/firebase/clientApp";
+import { useUser } from "src/contexts/UserContext";
 import InnovationPreview from "Components/innovator/hero/innovations";
+import Loading from "Components/loading";
 import {
     Background,
     ContentContainer,
@@ -52,6 +53,7 @@ const DetailInnovator: React.FC = () => {
     const [admin, setAdmin] = useState(false);
     const [owner, setOwner] = useState(false);
     const [userLogin] = useAuthState(auth);
+    const { role } = useUser();
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
 
@@ -108,28 +110,9 @@ const DetailInnovator: React.FC = () => {
     };
 
     useEffect(() => {
-        const fetchUser = async () => {
-            if (userLogin?.uid) {
-                try {
-                /*
-                const userRef = doc(firestore, "users", userLogin.uid);
-                const userDoc = await getDoc(userRef);
-                */
-                    const res: any = await getUserById(userLogin.uid);
-                    const userData = res.data;
-                    if (userData) {
-                        setAdmin(userData.role === "admin");
-                        if (id === userLogin.uid) {
-                            setOwner(true);
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error fetching user via API:", err);
-                }
-            }
-        };
-        fetchUser();
-    }, [userLogin, id]);
+        setAdmin(role === "admin");
+        setOwner(id === userLogin?.uid);
+    }, [role, userLogin, id]);
 
     useEffect(() => {
         if (!id) {
@@ -192,30 +175,42 @@ const DetailInnovator: React.FC = () => {
     }, [id]);
 
     useEffect(() => {
-        const dummyVillages = [
-            {
-                id: "village1",
-                namaDesa: "Desa Puntang",
-                inovasiDiterapkan: [
-                    "Pakan Otomatis (eFeeder)",
-                    "Lapak Ikan (eFisheryFeed)",
-                ],
-                logo: "https://via.placeholder.com/50",
-            },
-        ];
-        setVillages(dummyVillages);
-    }, []);
+        const fetchVillages = async () => {
+             if (!id) return;
+             try {
+                 const res: any = await getAssistedVillages(id);
+                 setVillages(res?.villages || res?.data || []);
+             } catch (err) {
+                 console.error("Error fetching villages:", err);
+             }
+        };
+        fetchVillages();
+    }, [id]);
 
     if (loading) {
-        return <div>Loading...</div>;
+        return <Loading />;
     }
 
     if (error) {
-        return <div>{error}</div>;
+        return (
+            <Container page>
+                <TopBar title="Profil Inovator" onBack={() => router.back()} />
+                <Flex align="center" justify="center" height="70vh">
+                    <Text color="red.500">{error}</Text>
+                </Flex>
+            </Container>
+        );
     }
 
     if (!innovatorData) {
-        return <div>No data available</div>;
+        return (
+            <Container page>
+                <TopBar title="Profil Inovator" onBack={() => router.back()} />
+                <Flex align="center" justify="center" height="70vh">
+                    <Text color="gray.500">No data available</Text>
+                </Flex>
+            </Container>
+        );
     }
 
     const truncateText = (text: string, wordLimit: number) => {
@@ -265,7 +260,7 @@ const DetailInnovator: React.FC = () => {
                         <Icon as={LuDot} color="#4B5563" />
                         <Icon as={TbPlant2} color="#4B5563" />
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
-                            {innovatorData.jumlahDesaDampingan} Desa Dampingan
+                            {villages.length > 0 ? villages.length : innovatorData.jumlahDesaDampingan} Desa Dampingan
                         </Text>
                     </Flex>
                 </Stack>
@@ -387,56 +382,61 @@ const DetailInnovator: React.FC = () => {
                     <Text fontSize="16px" fontWeight="700" mb={3}>
                         Desa Dampingan
                     </Text>
-                    {villages.map((village) => (
+                    {villages.slice(0, 3).map((village) => (
                         <Box
                             key={village.id}
                             borderWidth="1px"
-                            borderRadius="lg"
-                            overflow="hidden"
-                            p={2}
-                            mb={4}
+                            borderRadius="xl"
+                            p={3}
+                            mb={3}
                             cursor="pointer"
                             backgroundColor="white"
                             borderColor="gray.200"
+                            shadow="xs"
+                            _hover={{ shadow: 'sm', borderColor: '#347357' }}
                             onClick={() =>
-                                router.push(
-                                    paths.DETAIL_VILLAGE_PAGE.replace(":id", village.id)
-                                )
+                                router.push(`/village/detail/${village.id}`)
                             }
                         >
-                            <Flex alignItems="center" mb={3}>
+                            <Flex alignItems="center">
                                 <Image
-                                    src={village.logo}
+                                    src={village.logo || "/images/default-logo.svg"}
                                     alt={`${village.namaDesa} Logo`}
-                                    boxSize="40px"
+                                    boxSize="32px"
                                     borderRadius="full"
-                                    mr={4}
+                                    mr={3}
                                 />
-                                <Text fontSize="12px" fontWeight="600">
+                                <Text fontSize="13px" fontWeight="700">
                                     {village.namaDesa}
                                 </Text>
-                                <ChevronRightIcon color="gray.500" ml="auto" />
+                                <ChevronRightIcon color="gray.400" ml="auto" />
                             </Flex>
-                            <Box borderTop="1px" borderColor="gray.300" pt={3} mt={3}></Box>
-                            <Text fontSize="12px" fontWeight="400" mb={2} color="#9CA3AF">
-                                Inovasi diterapkan
-                            </Text>
-                            <Flex direction="row" gap={2} flexWrap="wrap">
-                                {Array.isArray(village.inovasiDiterapkan) &&
-                                    village.inovasiDiterapkan.map((inovasi: string, index: number) => (
-                                        <Box
-                                            key={index}
-                                            px={0}
-                                            py={0}
-                                            backgroundColor="gray.100"
-                                            borderRadius="full"
-                                            fontSize="12px"
-                                            display="inline-flex"
-                                        >
-                                            {inovasi}
-                                        </Box>
-                                    ))}
-                            </Flex>
+                            <Box borderTop="1px" borderColor="gray.100" pt={2} mt={2}>
+                                <Text fontSize="10px" fontWeight="400" mb={1} color="#9CA3AF">
+                                    Inovasi diterapkan
+                                </Text>
+                                <Flex direction="row" gap={1.5} flexWrap="wrap">
+                                    {Array.isArray(village.inovasiDiterapkan) && village.inovasiDiterapkan.length > 0 ? (
+                                        village.inovasiDiterapkan.map((inovasi: string, index: number) => (
+                                            <Box
+                                                key={index}
+                                                px={2}
+                                                py={0.5}
+                                                backgroundColor="#F3F4F6"
+                                                borderRadius="full"
+                                                fontSize="10px"
+                                                fontWeight="500"
+                                                color="#4B5563"
+                                                border="1px solid #E5E7EB"
+                                            >
+                                                {inovasi}
+                                            </Box>
+                                        ))
+                                    ) : (
+                                        <Text fontSize="10px" color="#D1D5DB">Belum ada inovasi spesifik</Text>
+                                    )}
+                                </Flex>
+                            </Box>
                         </Box>
                     ))}
                 </Flex>
@@ -467,6 +467,7 @@ const DetailInnovator: React.FC = () => {
                     website: innovatorData?.website || ""
                 }}
             />
+            <Box height="60px" />
         </Container>
     );
 };

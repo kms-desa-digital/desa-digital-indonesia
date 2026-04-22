@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
+import { createNotification } from '@/services/notificationServices'
 
 type Params = Promise<{ id: string }>
 
@@ -10,13 +12,25 @@ type Params = Promise<{ id: string }>
 // =========================================================
 export async function GET(_request: NextRequest, { params }: { params: Params }) {
   try {
+    const auth = await requireRole(_request, ["village", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
     const { id } = await params
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ message: 'ID klaim tidak valid' }, { status: 400 })
+    const db = await connectToDatabase()
+    
+    // Try finding by ObjectId first, then by string _id (migrated data), then by 'id' field
+    let claim = null;
+    if (ObjectId.isValid(id)) {
+      claim = await db.collection('claimInnovations').findOne({ _id: new ObjectId(id) })
+    }
+    
+    if (!claim) {
+      claim = await db.collection('claimInnovations').findOne({ _id: id as any })
     }
 
-    const db = await connectToDatabase()
-    const claim = await db.collection('claimInnovations').findOne({ _id: new ObjectId(id) })
+    if (!claim) {
+      claim = await db.collection('claimInnovations').findOne({ id: id as any })
+    }
 
     if (!claim) {
       return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
@@ -43,25 +57,73 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
 // =========================================================
 export async function PUT(request: NextRequest, { params }: { params: Params }) {
   try {
-    const { id } = await params
-    if (!ObjectId.isValid(id)) {
-      return NextResponse.json({ message: 'ID klaim tidak valid' }, { status: 400 })
-    }
+    const auth = await requireRole(request, ["village", "admin"]);
+    if (auth instanceof NextResponse) return auth;
 
+    const { id } = await params
     const body = await request.json()
     const db = await connectToDatabase()
+
+    let query: any = {}
+    if (ObjectId.isValid(id)) {
+        query._id = new ObjectId(id)
+    } else {
+        query = { $or: [{ _id: id as any }, { id: id as any }] }
+    }
+
+    const claim = await db.collection('claimInnovations').findOne(query)
+    if (!claim) {
+      return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
+    }
+
+    const isAdmin = auth.role === 'admin'
 
     const updateData: any = { ...body, updatedAt: new Date() }
     delete updateData._id
     delete updateData.id
 
+    // Non-admin tidak boleh mengubah status verifikasi
+    if (!isAdmin) {
+      delete updateData.status
+      delete updateData.catatanAdmin
+    }
+
+    const nextStatus = updateData.status || body.status
+    const nextCatatanAdmin = updateData.catatanAdmin || body.catatanAdmin || null
+
     const result = await db.collection('claimInnovations').updateOne(
-      { _id: new ObjectId(id) },
+      query,
       { $set: updateData }
     )
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
+    }
+
+    // Kirim notifikasi jika admin mengubah status verifikasi
+    try {
+      if (isAdmin && nextStatus && nextStatus !== claim?.status) {
+        const villageId = claim.desaId
+        if (villageId) {
+          const notifTitle = nextStatus === 'Terverifikasi'
+            ? 'Klaim Inovasi Disetujui!'
+            : 'Klaim Inovasi Ditolak'
+          const notifDescription = nextStatus === 'Terverifikasi'
+            ? `Selamat! Klaim Anda untuk "${claim.namaInovasi}" telah disetujui oleh admin.`
+            : `Klaim Anda untuk "${claim.namaInovasi}" ditolak. Alasan: ${nextCatatanAdmin || claim.catatanAdmin || 'Tidak ada catatan'}`
+
+          await createNotification({
+            userId: villageId,
+            type: 'personal',
+            title: notifTitle,
+            description: notifDescription,
+            actionType: 'claim_detail',
+            relatedId: claim._id.toString(),
+          })
+        }
+      }
+    } catch (notifError) {
+      console.error('Error creating claim update notification:', notifError)
     }
 
     return NextResponse.json({ message: 'Klaim berhasil diperbarui' })

@@ -9,7 +9,7 @@ import {
 } from "@chakra-ui/react";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import React, { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -26,6 +26,7 @@ import {
     Title,
 } from "./_styles";
 import { toast } from "react-toastify";
+import { FcGoogle } from "react-icons/fc";
 
 const Login: React.FC = () => {
     const [loginForm, setLoginForm] = useState({
@@ -33,10 +34,12 @@ const Login: React.FC = () => {
         password: "",
     });
     const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [loginLoading, setLoginLoading] = useState(false);
+    const [googleLoading, setGoogleLoading] = useState(false);
     const [show, setShow] = useState(false);
     const router = useRouter();
     const onShowPassword = () => setShow(!show);
+    const googleProvider = new GoogleAuthProvider();
 
     const onChange = ({ target }: { target: HTMLInputElement }) => {
         setLoginForm((prev) => ({ ...prev, [target.name]: target.value }));
@@ -52,7 +55,7 @@ const Login: React.FC = () => {
         if (loginForm.password.length < 6)
             return setError("Kata sandi minimal 6 karakter");
 
-        setLoading(true);
+        setLoginLoading(true);
         try {
             const userCredential = await signInWithEmailAndPassword(
                 auth,
@@ -71,7 +74,8 @@ const Login: React.FC = () => {
             const userData = userDoc.data();
             const userRole = (userData?.role || "").toLowerCase();
 
-            localStorage.removeItem("token");
+            // Simpan role ke localStorage (bukan data sensitif)
+            // Token dikelola otomatis oleh Firebase SDK via onIdTokenChanged
             localStorage.setItem("userRole", userRole);
             window.dispatchEvent(new Event("auth:tokenChanged"));
             router.refresh();
@@ -100,7 +104,80 @@ const Login: React.FC = () => {
                     "Terjadi kesalahan, coba lagi"
             );
         } finally {
-            setLoading(false);
+            setLoginLoading(false);
+        }
+    };
+
+    const onGoogleSignIn = async () => {
+        if (error) setError("");
+        setGoogleLoading(true);
+        try {
+            const userCredential = await signInWithPopup(auth, googleProvider);
+            const user = userCredential.user;
+
+            const userRef = doc(firestore, "users", user.uid);
+            const userDoc = await getDoc(userRef);
+
+            if (!userDoc.exists()) {
+                router.push(`${paths.REGISTER_PAGE}?google=1`);
+                toast.info("Silakan pilih peran untuk melengkapi pendaftaran", {
+                    position: "top-center",
+                    autoClose: 2500,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                });
+                return;
+            }
+
+            const userData = userDoc.data();
+            const userRole = (userData?.role || "").toLowerCase();
+
+            if (!userRole) {
+                router.push(`${paths.REGISTER_PAGE}?google=1`);
+                toast.info("Silakan pilih peran untuk melengkapi pendaftaran", {
+                    position: "top-center",
+                    autoClose: 2500,
+                    hideProgressBar: false,
+                    closeOnClick: true,
+                    pauseOnHover: true,
+                    draggable: true,
+                });
+                return;
+            }
+
+            // Simpan role ke localStorage (bukan data sensitif)
+            // Token dikelola otomatis oleh Firebase SDK via onIdTokenChanged
+            localStorage.setItem("userRole", userRole);
+            window.dispatchEvent(new Event("auth:tokenChanged"));
+            router.refresh();
+
+            if (userRole === "admin") {
+                router.push(paths.ADMIN_PAGE);
+            } else if (userRole === "ministry") {
+                router.push(paths.DASHBOARD_MINISTRY_HOME);
+            } else {
+                router.push(paths.LANDING_PAGE);
+            }
+
+            toast.success("Berhasil Masuk dengan Google", {
+                position: "top-center",
+                autoClose: 2000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+        } catch (error: any) {
+            console.log("Error during Google login:", error);
+            setError(
+                FIREBASE_ERRORS[error?.message as keyof typeof FIREBASE_ERRORS] ||
+                    "Gagal login dengan Google"
+            );
+        } finally {
+            setGoogleLoading(false);
         }
     };
 
@@ -153,9 +230,20 @@ const Login: React.FC = () => {
                             type="submit"
                             // alignItems="center"
                             width="100%"
-                            isLoading={loading}
+                            isLoading={loginLoading}
                         >
                             Masuk
+                        </Button>
+
+                        <Button
+                            mt={3}
+                            width="100%"
+                            variant="outline"
+                            onClick={onGoogleSignIn}
+                            isLoading={googleLoading}
+                            leftIcon={<FcGoogle />}
+                        >
+                            Masuk dengan Google
                         </Button>
                     </form>
 

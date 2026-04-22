@@ -12,10 +12,11 @@ export async function GET(request: NextRequest) {
 
     // Jika ada query ?name=<kategori>, kembalikan inovasi terverifikasi di kategori itu
     if (categoryName) {
+      const isAll = categoryName === 'Semua Kategori Inovasi'
       const innovations = await db
         .collection('innovations')
         .find({
-          kategori: categoryName,
+          ...(isAll ? {} : { kategori: categoryName }),
           status:   'Terverifikasi',
         })
         .sort({ createdAt: -1 })

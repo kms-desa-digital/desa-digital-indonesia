@@ -79,8 +79,7 @@ function TopBar(props: TopBarProps) {
             setClaimStatus(data.status);
           });
         }
-      }
-      );
+      });
     }
   }, [user, id]);
 
@@ -88,7 +87,7 @@ function TopBar(props: TopBarProps) {
     switch (claimStatus) {
       case "Terverifikasi":
         return {
-          label: "Sudah Klaim",
+          label: t("claimStatus.verified"),
           bg: "#71A686",
           color: "white",
           leftIcon: <FaCheck />,
@@ -99,7 +98,7 @@ function TopBar(props: TopBarProps) {
         };
       case "Menunggu":
         return {
-          label: "Proses Klaim",
+          label: t("claimStatus.pending"),
           bg: "#71A686",
           color: "white",
           leftIcon: undefined,
@@ -110,7 +109,7 @@ function TopBar(props: TopBarProps) {
         };
       case "Ditolak":
         return {
-          label: "Ditolak",
+          label: t("claimStatus.rejected"),
           bg: "red.500",
           color: "white",
           leftIcon: undefined,
@@ -122,7 +121,7 @@ function TopBar(props: TopBarProps) {
       case "":
       default:
         return {
-          label: "Klaim Inovasi",
+          label: t("claimStatus.default"),
           bg: "white",
           color: "#347357",
           hover: {
@@ -134,12 +133,11 @@ function TopBar(props: TopBarProps) {
     }
   })();
 
-
   const handleClick = () => {
     if (isDisabled) return;
     if (!isVillageVerified) {
       toast.warning(
-        "Akun anda belum terdaftar atau terverifikaasi sebagai desa digital",
+        t("toastVillageNotVerified"),
         {
           position: "top-center",
           autoClose: 3000,
@@ -150,7 +148,7 @@ function TopBar(props: TopBarProps) {
         }
       );
     } else {
-      router.push(`/village/klaimInovasi?id=${id}`);
+      router.push(`/village/klaimInovasi?inovasiId=${id}`);
     }
   };
 
@@ -186,28 +184,13 @@ function TopBar(props: TopBarProps) {
           ml={onBack ? "8px" : "0"}
           flex={1}
           mr={1}
+          noOfLines={1}
         >
           {title}
         </Text>
 
         <Flex align="center" gap={0}>
           {rightElement}
-
-          {isClaimButtonVisible && village && (
-            <Button
-              fontSize="12px"
-              fontWeight="500"
-              variant="inverted"
-              height="32px"
-              _hover={{ bg: hover?.bg }}
-              bg={bg}
-              color={color}
-              leftIcon={leftIcon}
-              onClick={handleClick}
-            >
-              {label}
-            </Button>
-          )}
 
           {!isClaimButtonVisible &&
             isUserMenuVisible &&

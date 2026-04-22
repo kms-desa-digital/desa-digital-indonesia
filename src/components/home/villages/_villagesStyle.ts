@@ -17,7 +17,7 @@ export const Horizontal = styled.div`
   &::-webkit-scrollbar {
     display: none;            /* Chrome, Safari, Edge */
   }
-  padding-bottom: 8px;
+  padding-bottom: 4px;
   width: 100%;
 `
 

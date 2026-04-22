@@ -64,7 +64,7 @@ const Village: React.FC = () => {
                 style={{ textDecoration: 'none', width: '38%', flexShrink: 0, display: 'block' }}
               >
                 <CardVillage
-                  isHome={false}
+                  isHome={true}
                   namaDesa={item.namaDesa}
                   logo={item.logo || "/images/default-logo.svg"}
                   header={item.header || "/images/default-header.svg"}

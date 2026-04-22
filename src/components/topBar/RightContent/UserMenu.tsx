@@ -8,6 +8,8 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
+  Badge,
+  Box,
 } from "@chakra-ui/react";
 import notification from "@public/icons/bell.svg";
 import profileIcon from "@public/icons/profile.svg";
@@ -31,6 +33,8 @@ import { toast } from "react-toastify";
 import { auth, firestore } from "../../../firebase/clientApp";
 import { useUser } from "../../../contexts/UserContext";
 import { useAuthToken } from "../../../hooks/useAuthToken";
+import { getVillageById } from "Services/villageServices";
+import { getInnovatorById } from "Services/innovatorServices";
 
 type UserMenuProps = {
   user?: User | null;
@@ -47,6 +51,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Ambil role dari token atau context
   useEffect(() => {
@@ -54,68 +59,70 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
     setUserRole(role);
   }, [tokenRole, contextRole]);
 
-  // Ambil role dari Firestore + cek profile berdasarkan role
+  // Cek profile berdasarkan role dari MongoDB
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        const db = getFirestore();
-
-        const usersRef = collection(db, "users");
-        const userQuery = query(usersRef, where("id", "==", user.uid));
-
-        onSnapshot(userQuery, (snapshot) => {
-          if (!snapshot.empty) {
-            const userData = snapshot.docs[0].data();
-            setUserRole(userData.role);
-
-            if (userData.role === "village") {
-              const villagesRef = collection(db, "villages");
-              const villageQuery = query(
-                villagesRef,
-                where("id", "==", user.uid)
-              );
-
-              onSnapshot(villageQuery, (villageSnapshot) => {
-                setProfileExists(!villageSnapshot.empty);
-
-                if (!villageSnapshot.empty) {
-                  const data = villageSnapshot.docs[0].data();
-                  setStatus(data?.status);
-                }
-              });
-
-            } else if (userData.role === "innovator") {
-              const innovatorsRef = collection(db, "innovators");
-              const innovatorQuery = query(
-                innovatorsRef,
-                where("id", "==", user.uid)
-              );
-
-              onSnapshot(innovatorQuery, (innovatorSnapshot) => {
-                setProfileExists(!innovatorSnapshot.empty);
-
-                if (!innovatorSnapshot.empty) {
-                  const data = innovatorSnapshot.docs[0].data();
-                  setStatus(data?.status);
-                }
-              });
-
+    const fetchProfileStatus = async () => {
+      const user = auth.currentUser;
+      const role = tokenRole || contextRole;
+      if (user && role) {
+        if (role === "village") {
+          try {
+            const res: any = await getVillageById(user.uid);
+            const data = res.village || res.data || res;
+            if (data && (data._id || data.id)) {
+              setProfileExists(true);
+              setStatus(data.status);
             } else {
               setProfileExists(false);
             }
-          } else {
-            setUserRole(null);
+          } catch (err) {
             setProfileExists(false);
           }
-        });
-      } else {
-        setUserRole(null);
-        setProfileExists(false);
+        } else if (role === "innovator") {
+          try {
+            const res: any = await getInnovatorById(user.uid);
+            const data = res.innovator || res.data || res;
+            if (data && (data._id || data.id)) {
+              setProfileExists(true);
+              setStatus(data.status);
+            } else {
+              setProfileExists(false);
+            }
+          } catch (err) {
+            setProfileExists(false);
+          }
+        }
       }
-    });
+    };
 
-    return () => unsubscribe();
-  }, []);
+    fetchProfileStatus();
+  }, [tokenRole, contextRole]);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!token) return;
+      try {
+        const headers = {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        };
+        const res = await fetch(`/api/notifications?limit=1`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          // Gunakan unreadCount dari API (sudah dihitung di server untuk semua notif)
+          setUnreadCount(data.unreadCount || 0);
+        }
+      } catch (err) {
+        console.error("Error fetching unread count:", err);
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [token]);
 
   /*
   useEffect(() => {
@@ -165,21 +172,33 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
   }, [user]);
   */
 
-  const handleProfileClick = () => {
+  const handleProfileClick = async () => {
+    const user = auth.currentUser;
     if (!user) return;
+    const role = userRole || tokenRole || contextRole;
 
-    if (userRole === "village") {
-      if (status === "Terverifikasi") {
-        const path = paths.VILLAGE_PROFILE_PAGE.replace(":id", user.uid);
-        router.push(path);
-      } else {
+    if (role === "village") {
+      try {
+        const res: any = await getVillageById(user.uid);
+        const data = res.village || res.data;
+        if (data && data.status === "Terverifikasi") {
+          router.push(paths.VILLAGE_PROFILE_PAGE.replace(":id", user.uid));
+        } else {
+          router.push(paths.VILLAGE_FORM);
+        }
+      } catch (err) {
         router.push(paths.VILLAGE_FORM);
       }
-    } else if (userRole === "innovator") {
-      if (status === "Terverifikasi") {
-        const path = paths.INNOVATOR_PROFILE_PAGE.replace(":id", user.uid);
-        router.push(path);
-      } else {
+    } else if (role === "innovator") {
+      try {
+        const res: any = await getInnovatorById(user.uid);
+        const data = res.innovator || res.data;
+        if (data && data.status === "Terverifikasi") {
+          router.push(paths.INNOVATOR_PROFILE_PAGE.replace(":id", user.uid));
+        } else {
+          router.push(paths.INNOVATOR_FORM);
+        }
+      } catch (err) {
         router.push(paths.INNOVATOR_FORM);
       }
     }
@@ -205,21 +224,44 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
   return (
     <Flex justify="center" align="center" height="56px">
       <Menu placement="bottom-end">
-        <Button
-          padding={1}
-          as={IconButton}
-          aria-label="Notification"
-          icon={
-            <Image
-              src={notification}
-              alt="Bell"
-              width={24}
-              height={24}
-              style={{ width: "24px", height: "24px" }}
-            />
-          }
-          height="40px"
-        />
+        <Box position="relative">
+          <Badge
+            position="absolute"
+            top="0px"
+            right="0px"
+            borderRadius="full"
+            bg="yellow.400"
+            color="gray.800"
+            fontSize="10px"
+            fontWeight="bold"
+            display={unreadCount > 0 ? "flex" : "none"}
+            alignItems="center"
+            justifyContent="center"
+            w="18px"
+            h="18px"
+            zIndex="2"
+          >
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </Badge>
+          <Button
+            padding={1}
+            as={IconButton}
+            aria-label="Notification"
+            variant="ghost"
+            _hover={{ bg: "whiteAlpha.200" }}
+            icon={
+              <Image
+                src={notification}
+                alt="Bell"
+                width={24}
+                height={24}
+                style={{ width: "24px", height: "24px", filter: "brightness(0) invert(1)" }}
+              />
+            }
+            height="40px"
+            onClick={() => router.push("/notification")}
+          />
+        </Box>
 
         <MenuButton
           as={IconButton}
@@ -246,7 +288,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
                 contextRole?.toLowerCase() === "village" ||
                 contextRole?.toLowerCase() === "innovator") && (
                   <MenuItem onClick={handleProfileClick}>
-                    {profileExists ? "Profile" : "Isi Profile"}
+                    {status === "Terverifikasi" ? "Profile" : "Isi Profile"}
                   </MenuItem>
                 )}
 
@@ -255,11 +297,18 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
               {(userRole?.toLowerCase() === "admin" ||
                 tokenRole?.toLowerCase() === "admin" ||
                 contextRole?.toLowerCase() === "admin") && (
-                  <MenuItem
-                    onClick={() => router.push(paths.CHATBOT_INGEST)}
-                  >
-                    Chatbot Data
-                  </MenuItem>
+                  <>
+                    <MenuItem
+                      onClick={() => router.push("/admin/notifications")}
+                    >
+                      Pengumuman
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => router.push(paths.CHATBOT_INGEST)}
+                    >
+                      Chatbot Data
+                    </MenuItem>
+                  </>
                 )}
 
               <MenuItem onClick={handleLogout}>Logout</MenuItem>

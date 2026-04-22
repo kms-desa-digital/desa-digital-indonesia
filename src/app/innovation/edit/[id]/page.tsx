@@ -1,6 +1,6 @@
 "use client";
 
-import { AddIcon, DeleteIcon, MinusIcon } from "@chakra-ui/icons";
+import { AddIcon, DeleteIcon, MinusIcon, CloseIcon } from "@chakra-ui/icons";
 import {
     AlertDialog,
     AlertDialogBody,
@@ -22,9 +22,9 @@ import {
     Stack,
     Text,
     Textarea,
-    Select as ChakraSelect,
     useToast,
 } from "@chakra-ui/react";
+import BottomSheetSelector from "Components/form/BottomSheetSelector";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
@@ -37,18 +37,26 @@ import { auth } from "src/firebase/clientApp";
 import { storage } from "src/firebase/clientApp";
 import { getInnovationById, updateInnovation, deleteInnovation } from "Services/innovationServices";
 import { NavbarButton } from "./_styles";
+import StatusCard from "Components/card/status/StatusCard";
+import Loading from "Components/loading";
 
-const categories = [
-    "E-Government",
-    "E-Tourism",
-    "Layanan Keuangan",
-    "Layanan Sosial",
-    "Pemasaran Agri-Food dan E-Commerce",
-    "Pengembangan Masyarakat dan Ekonomi",
-    "Pengelolaan Sumber Daya",
-    "Pertanian Cerdas",
-    "Sistem Informasi",
-    "UMKM",
+const categoryOptions = [
+    { value: "E-Government", label: "E-Government" },
+    { value: "E-Tourism", label: "E-Tourism" },
+    { value: "Infrastruktur Lokal", label: "Infrastruktur Lokal" },
+    { value: "Layanan Keuangan", label: "Layanan Keuangan" },
+    { value: "Layanan Sosial", label: "Layanan Sosial" },
+    {
+        value: "Pemasaran Agri-Food dan E-Commerce",
+        label: "Pemasaran Agri-Food dan E-Commerce",
+    },
+    {
+        value: "Pengembangan Masyarakat dan Ekonomi",
+        label: "Pengembangan Masyarakat dan Ekonomi",
+    },
+    { value: "Pengelolaan Sumber Daya", label: "Pengelolaan Sumber Daya" },
+    { value: "Pertanian Cerdas", label: "Pertanian Cerdas" },
+    { value: "Sistem Informasi", label: "Sistem Informasi" },
 ];
 
 const predefinedModels = [
@@ -85,12 +93,14 @@ const EditInnovation: React.FC = () => {
         priceMax: "",
     });
     const [category, setCategory] = useState("");
-    const [requirements, setRequirements] = useState<string[]>([]);
-    const [newRequirement, setNewRequirement] = useState("");
+    const [requirements, setRequirements] = useState<string[]>([""]);
     const [selectedStatus, setSelectedStatus] = useState("");
     const [selectedModels, setSelectedModels] = useState<(string | number)[]>([]);
+    const [status, setStatus] = useState("");
+    const [catatanAdmin, setCatatanAdmin] = useState("");
     const [otherBusinessModel, setOtherBusinessModel] = useState("");
     const [benefit, setBenefit] = useState([{ benefit: "", description: "" }]);
+    const [isEditable, setIsEditable] = useState(true);
     const [isOpen, setIsOpen] = useState(false);
     const cancelRef = useRef<HTMLButtonElement>(null);
     const [isSuccessOpen, setIsSuccessOpen] = useState(false);
@@ -124,7 +134,7 @@ const EditInnovation: React.FC = () => {
                     });
                     setSelectedStatus(data.statusInovasi || "");
                     setCategory(data.kategori || "");
-                    
+
                     const otherModel = (data.modelBisnis || []).find(
                         (model: string) => !predefinedModels.includes(model)
                     );
@@ -145,8 +155,15 @@ const EditInnovation: React.FC = () => {
                         })) || [];
 
                     setBenefit(mappedManfaat);
-                    setRequirements(data.infrastruktur || []);
+                    setRequirements(data.infrastruktur && data.infrastruktur.length > 0 ? data.infrastruktur : [""]);
                     setSelectedFiles(data.images || []);
+                    setStatus(data.status || "");
+                    setCatatanAdmin(data.catatanAdmin || "");
+                    if (data.status === "Menunggu") {
+                        setIsEditable(false);
+                    } else {
+                        setIsEditable(true);
+                    }
                 } else {
                     console.log("No such Innovation found via API!");
                 }
@@ -178,13 +195,34 @@ const EditInnovation: React.FC = () => {
         }
     };
 
+    const formatNumber = (num: string) => {
+        const value = num.replace(/\./g, "");
+        if (!/^\d*$/.test(value)) return num;
+        return value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    };
+
+    const parseNumber = (str: string) => {
+        return str.replace(/\./g, "");
+    };
+
     const onTextChange = ({
         target: { name, value },
     }: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setTextInputsValue((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+        if (name === "priceMin" || name === "priceMax") {
+            const rawValue = parseNumber(value);
+            if (/^\d*$/.test(rawValue)) {
+                const formattedValue = formatNumber(rawValue);
+                setTextInputsValue((prev) => ({
+                    ...prev,
+                    [name]: formattedValue,
+                }));
+            }
+        } else {
+            setTextInputsValue((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
     };
 
     const options = [
@@ -204,23 +242,14 @@ const EditInnovation: React.FC = () => {
             .length;
     };
 
-    const finalRequirements = [...requirements];
-    if (
-        newRequirement.trim() !== "" &&
-        !finalRequirements.includes(newRequirement.trim())
-    ) {
-        finalRequirements.push(newRequirement.trim());
-    }
+
 
     const onSelectCategory = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setCategory(event.target.value);
     };
 
     const onAddRequirement = () => {
-        if (newRequirement.trim() !== "") {
-            setRequirements((prev) => [...prev, newRequirement]);
-            setNewRequirement("");
-        }
+        setRequirements((prev) => [...prev, ""]);
     };
 
     const uploadFiles = async (
@@ -272,8 +301,7 @@ const EditInnovation: React.FC = () => {
         return Promise.all(promises);
     };
 
-    const onUpdateInnovation = async (event: React.FormEvent) => {
-        event.preventDefault();
+    const onUpdateInnovation = async () => {
         setLoading(true);
         const { name, year, description, villages, priceMax, priceMin } = textInputsValue;
 
@@ -291,29 +319,29 @@ const EditInnovation: React.FC = () => {
                 inputDesaMenerapkan: villages,
                 modelBisnis: selectedModels,
                 deskripsi: description,
-                hargaMinimal: priceMin,
-                hargaMaksimal: priceMax,
+                hargaMinimal: parseNumber(priceMin),
+                hargaMaksimal: parseNumber(priceMax),
                 manfaat: benefit.map((item) => ({
                     judul: item.benefit,
                     deskripsi: item.description,
                 })),
-                infrastruktur: finalRequirements,
-                images: selectedFiles // Assuming API handles Storage or we upload first then update
+                infrastruktur: requirements.filter(r => r.trim() !== ""),
+                images: selectedFiles,
+                status: "Menunggu", // Re-submit sets status back to Menunggu
             };
 
-            // If there are new base64 images, we still need to upload them to storage
-            // OR if the API takes base64, we can send it directly. 
-            // For now, let's stick to the current Firebase Storage upload and then update API
-            
             const newImages = selectedFiles.filter(f => f.startsWith("data:"));
             if (newImages.length > 0) {
                 const uploadedUrls = await uploadFiles(selectedFiles, id);
                 updateBody.images = uploadedUrls;
             }
 
+            console.log("Updating innovation in API...", updateBody);
             await updateInnovation(id, updateBody);
-            console.log("Innovation updated via API with ID: ", id);
+            console.log("Innovation updated and re-submitted via API with ID: ", id);
 
+            setStatus("Menunggu");
+            setIsEditable(false);
             setLoading(false);
             setIsSuccessOpen(true);
         } catch (error) {
@@ -343,9 +371,9 @@ const EditInnovation: React.FC = () => {
         } catch (error: any) {
             console.error("Error deleting innovation via API:", error);
             if (error.response?.data?.message === "ID tidak valid") {
-                 setError("ID tidak valid (Database mismatch)");
+                setError("ID tidak valid (Database mismatch)");
             } else {
-                 setError("Gagal menghapus inovasi");
+                setError("Gagal menghapus inovasi");
             }
             setLoading(false);
         }
@@ -366,10 +394,7 @@ const EditInnovation: React.FC = () => {
 
     if (loading) {
         return (
-            <Container page>
-                <TopBar title="Edit Inovasi" onBack={() => router.back()} />
-                <Text>Loading...</Text>
-            </Container>
+            <Loading />
         );
     }
 
@@ -388,6 +413,7 @@ const EditInnovation: React.FC = () => {
                                 name="status"
                                 onChange={(value) => setSelectedStatus(value)}
                                 value={selectedStatus}
+                                isDisabled={!isEditable}
                             >
                                 <HStack spacing={4}>
                                     {options.map((option) => (
@@ -412,23 +438,20 @@ const EditInnovation: React.FC = () => {
                                 _placeholder={{ color: "gray.500" }}
                                 value={textInputsValue.name}
                                 onChange={onTextChange}
+                                disabled={!isEditable}
                             />
                             <Text fontWeight="400" fontSize="14px">
                                 Kategori Inovasi <span style={{ color: "red" }}>*</span>
                             </Text>
-                            <ChakraSelect
-                                placeholder="Pilih kategori"
-                                name="category"
-                                fontSize="10pt"
+                            <BottomSheetSelector
+                                options={categoryOptions}
                                 value={category}
-                                onChange={onSelectCategory}
-                            >
-                                {categories.map((cat) => (
-                                    <option key={cat} value={cat}>
-                                        {cat}
-                                    </option>
-                                ))}
-                            </ChakraSelect>
+                                onChange={(value, label) => setCategory(value)}
+                                placeholder="Pilih kategori"
+                                title="Pilih Kategori Inovasi"
+                                searchPlaceholder="Cari kategori inovasi di sini..."
+                                disabled={loading || !isEditable}
+                            />
                             <Text fontWeight="400" fontSize="14px">
                                 Tahun dibuat inovasi <span style={{ color: "red" }}>*</span>
                             </Text>
@@ -438,6 +461,7 @@ const EditInnovation: React.FC = () => {
                                 placeholder="Ketik tahun"
                                 value={textInputsValue.year}
                                 onChange={onTextChange}
+                                disabled={!isEditable}
                             />
                             <Text fontWeight="400" fontSize="14px">
                                 Deskripsi <span style={{ color: "red" }}>*</span>
@@ -449,6 +473,7 @@ const EditInnovation: React.FC = () => {
                                 height="100px"
                                 value={textInputsValue.description}
                                 onChange={onTextChange}
+                                disabled={!isEditable}
                             />
                             <Stack spacing={1}>
                                 <div>
@@ -463,6 +488,7 @@ const EditInnovation: React.FC = () => {
                                     colorScheme="green"
                                     value={selectedModels as string[]}
                                     onChange={(values) => setSelectedModels(values)}
+                                    isDisabled={!isEditable}
                                 >
                                     <Flex gap={4}>
                                         {[firstColumn, secondColumn].map((column, colIndex) => (
@@ -486,6 +512,7 @@ const EditInnovation: React.FC = () => {
                                             name="otherBusinessModel"
                                             placeholder="Silahkan tulis model bisnis lainnya"
                                             value={otherBusinessModel}
+                                            disabled={!isEditable}
                                             onChange={(e) => {
                                                 const wordCount = e.target.value
                                                     .split(/\s+/)
@@ -502,9 +529,14 @@ const EditInnovation: React.FC = () => {
                                     </Flex>
                                 )}
                             </Stack>
-                            <Text fontWeight="400" fontSize="14px" mb="-2">
-                                Desa yang menerapkan <span style={{ color: "red" }}>*</span>
-                            </Text>
+                            <div>
+                                <Text fontWeight="400" fontSize="14px">
+                                    Desa yang menerapkan <span style={{ color: "red" }}>*</span>
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" color="#9CA3AF">
+                                    Contoh: Desa A, Desa B, Desa C, dan 50 desa linnya
+                                </Text>
+                            </div>
                             <Flex direction="column" alignItems="flex-start">
                                 <Textarea
                                     name="villages"
@@ -514,15 +546,21 @@ const EditInnovation: React.FC = () => {
                                     value={textInputsValue.villages}
                                     onChange={onTextChange}
                                     required
+                                    disabled={!isEditable}
                                 />
                                 <Text fontWeight="400" fontSize="10px" color="gray.500">
                                     {getVillagesWordCount()}/20 kata
                                 </Text>
                             </Flex>
 
-                            <Text fontWeight="400" fontSize="14px" mb="-2">
-                                Kisaran harga
-                            </Text>
+                            <div>
+                                <Text fontWeight="400" fontSize="14px">
+                                    Kisaran harga
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" color="#9CA3AF">
+                                    Contoh: Rp1.000.000 - Rp2.000.000
+                                </Text>
+                            </div>
                             <Flex direction="column" alignItems="flex-start">
                                 <Flex direction="row" justifyContent="center">
                                     <InputGroup>
@@ -531,7 +569,7 @@ const EditInnovation: React.FC = () => {
                                             color="gray.300"
                                             fontSize="12px"
                                         >
-                                            Rp.
+                                            Rp
                                         </InputLeftElement>
                                         <Input
                                             name="priceMin"
@@ -539,6 +577,7 @@ const EditInnovation: React.FC = () => {
                                             placeholder="Harga minimal"
                                             value={textInputsValue.priceMin}
                                             onChange={onTextChange}
+                                            disabled={!isEditable}
                                         />
                                     </InputGroup>
                                     <MinusIcon mx="2" color="#9CA3AF" mt="3" />
@@ -548,7 +587,7 @@ const EditInnovation: React.FC = () => {
                                             color="gray.300"
                                             fontSize="12px"
                                         >
-                                            Rp.
+                                            Rp
                                         </InputLeftElement>
                                         <Input
                                             name="priceMax"
@@ -557,23 +596,35 @@ const EditInnovation: React.FC = () => {
                                             value={textInputsValue.priceMax}
                                             onChange={onTextChange}
                                             required
+                                            disabled={!isEditable}
                                         />
                                     </InputGroup>
                                 </Flex>
                             </Flex>
-                            <Text fontWeight="400" fontSize="14px">
+                            <Text fontWeight="400" fontSize="14px" mb="-2">
                                 Foto inovasi <span style={{ color: "red" }}>*</span>
                             </Text>
-                            <ImageUpload
-                                selectedFile={selectedFiles}
-                                setSelectedFile={setSelectedFiles}
-                                selectFileRef={selectFileRef}
-                                onSelectImage={onSelectImage}
-                                maxFiles={5}
-                            />
-                            <Text fontWeight="700" fontSize="16px" mb="-2" mt="2">
-                                Manfaat Inovasi <span style={{ color: "red", fontSize: "14px", fontWeight: "400" }}>*</span>
-                            </Text>
+                            <Flex direction="column" alignItems="flex-start">
+                                <Text fontWeight="400" fontSize="10px" color="#9CA3AF" mb="0">
+                                    Maks 5 foto, format: png, jpg.
+                                </Text>
+                                <ImageUpload
+                                    selectedFile={selectedFiles}
+                                    setSelectedFile={setSelectedFiles}
+                                    selectFileRef={selectFileRef}
+                                    onSelectImage={onSelectImage}
+                                    maxFiles={5}
+                                    disabled={!isEditable}
+                                />
+                            </Flex>
+                            <div>
+                                <Text fontWeight="700" fontSize="16px" mt="2">
+                                    Manfaat Inovasi <span style={{ color: "red", fontSize: "14px", fontWeight: "400" }}>*</span>
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" color="#9CA3AF">
+                                    Contoh: Pencatatan data otomatis
+                                </Text>
+                            </div>
 
                             {benefit.map((item, index) => (
                                 <Flex key={index} direction="column" mb={2}>
@@ -586,6 +637,7 @@ const EditInnovation: React.FC = () => {
                                             placeholder="Masukkan manfaat singkat inovasi"
                                             value={item.benefit}
                                             required
+                                            disabled={!isEditable}
                                             onChange={(e) => {
                                                 const updatedBenefits = [...benefit];
                                                 updatedBenefits[index].benefit = e.target.value;
@@ -595,6 +647,7 @@ const EditInnovation: React.FC = () => {
                                         {benefit.length > 1 && (
                                             <Button
                                                 variant="none"
+                                                isDisabled={!isEditable}
                                                 onClick={() => {
                                                     setBenefit((prev) =>
                                                         prev.filter((_, i) => i !== index)
@@ -615,6 +668,7 @@ const EditInnovation: React.FC = () => {
                                             placeholder="Masukkan deskripsi manfaat"
                                             value={item.description}
                                             required
+                                            disabled={!isEditable}
                                             onChange={(e) => {
                                                 const updatedBenefits = [...benefit];
                                                 updatedBenefits[index].description = e.target.value;
@@ -629,6 +683,7 @@ const EditInnovation: React.FC = () => {
                                 mt={-3}
                                 variant="outline"
                                 leftIcon={<AddIcon />}
+                                isDisabled={!isEditable}
                                 onClick={() => {
                                     setBenefit([...benefit, { benefit: "", description: "" }]);
                                 }}
@@ -636,27 +691,34 @@ const EditInnovation: React.FC = () => {
                                 Tambah Manfaat Lain
                             </Button>
 
-                            <Text fontWeight="700" fontSize="16px" mb="-2" mt="2">
-                                Persiapan Infrastruktur <span style={{ color: "red" }}>*</span>
-                            </Text>
+                            <div>
+                                <Text fontWeight="700" fontSize="16px" mt="2">
+                                    Persiapan Infrastruktur <span style={{ color: "red" }}>*</span>
+                                </Text>
+                                <Text fontWeight="400" fontSize="10px" color="#9CA3AF">
+                                    Contoh: Mempunyai listrik
+                                </Text>
+                            </div>
 
                             <Flex direction="column" mt={0}>
                                 {requirements.map((requirement, index) => (
-                                    <Flex key={index} direction="column" mb={3}>
+                                    <Flex key={index} direction="column" mb={2}>
                                         <Flex alignItems="center" position="relative" gap={2}>
                                             <Input
                                                 fontSize="14px"
+                                                placeholder="Masukkan persiapan infrastruktur"
                                                 value={requirement}
-                                                required
+                                                disabled={!isEditable}
                                                 onChange={(e) => {
                                                     const updatedRequirements = [...requirements];
                                                     updatedRequirements[index] = e.target.value;
                                                     setRequirements(updatedRequirements);
                                                 }}
                                             />
-                                            {requirements.length >= 1 && (
+                                            {requirements.length > 1 && (
                                                 <Button
                                                     variant="none"
+                                                    isDisabled={!isEditable}
                                                     onClick={() => {
                                                         setRequirements((prev) =>
                                                             prev.filter((_, i) => i !== index)
@@ -669,30 +731,28 @@ const EditInnovation: React.FC = () => {
                                         </Flex>
                                     </Flex>
                                 ))}
-
-                                <Flex direction="column" mt={2}>
-                                    <Input
-                                        name="newRequirement"
-                                        fontSize="14px"
-                                        placeholder="Masukkan persiapan infrastruktur"
-                                        value={newRequirement}
-                                        onChange={(e) => setNewRequirement(e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") {
-                                                e.preventDefault();
-                                                onAddRequirement();
-                                            }
-                                        }}
-                                    />
-                                    <Button
-                                        variant="outline"
-                                        onClick={onAddRequirement}
-                                        leftIcon={<AddIcon />}
-                                        mt={2}
-                                    >
-                                        Tambah Infrastruktur Lain
-                                    </Button>
-                                </Flex>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const lastReq = requirements[requirements.length - 1];
+                                        if (lastReq.trim() === "") {
+                                            toast({
+                                                title: "Harap isi infrastruktur!",
+                                                status: "warning",
+                                                duration: 3000,
+                                                position: "top",
+                                                isClosable: true,
+                                            });
+                                            return;
+                                        }
+                                        onAddRequirement();
+                                    }}
+                                    leftIcon={<AddIcon />}
+                                    isDisabled={!isEditable}
+                                    mt={1}
+                                >
+                                    Tambah Infrastruktur Lain
+                                </Button>
                             </Flex>
                         </Stack>
                     </Flex>
@@ -703,43 +763,98 @@ const EditInnovation: React.FC = () => {
                     {error}
                 </Text>
             )}
-            <NavbarButton>
-                <Button
-                    type="submit"
-                    form="UpdateInnovation"
-                    width="80%"
-                    isLoading={loading}>
-                    Update Inovasi
-                </Button>
-                <Button
-                    type="button"
-                    width="80%"
-                    bg="red.500"
-                    color="white"
-                    _hover={{ bg: "red.600" }}
-                    onClick={handleDeleteClick}
+            {status === "Menunggu" ? (
+                <StatusCard status={status} />
+            ) : (
+                <Box
+                    position="fixed"
+                    bottom="0"
+                    left="0"
+                    right="0"
+                    zIndex="1001"
+                    bg="white"
+                    px="16px"
+                    pb="12px"
+                    pt="8px"
+                    boxShadow="0px -2px 4px rgba(0,0,0,0.1)"
+                    maxWidth="360px"
+                    mx="auto"
                 >
-                    Delete Inovasi
-                </Button>
-            </NavbarButton>
+                    <Stack spacing={3}>
+                        {status === "Ditolak" && (
+                            <Flex bg="#FEE2E2" p={2} borderRadius="8px" align="center" justify="center" direction="column">
+                                <Flex align="center">
+                                    <CloseIcon fontSize="10px" color="#EF4444" mr="8px" />
+                                    <Text fontSize="12px" fontWeight="700" color="#EF4444">
+                                        Pengajuan ditolak
+                                    </Text>
+                                </Flex>
+                                {catatanAdmin && (
+                                    <Text fontSize="10px" fontWeight="500" color="#EF4444" textAlign="center" mt={1}>
+                                        Catatan: {catatanAdmin}
+                                    </Text>
+                                )}
+                            </Flex>
+                        )}
+                        <Flex gap={2} width="100%">
+                            <Button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    onUpdateInnovation();
+                                }}
+                                flex={1}
+                                isLoading={loading}
+                                colorScheme="green"
+                                fontSize="14px"
+                            >
+                                {status === "Ditolak" ? "Ajukan Ulang" : "Update Inovasi"}
+                            </Button>
+                            {(status === "Ditolak" || status === "Terverifikasi") && (
+                                <Button
+                                    type="button"
+                                    flex={1}
+                                    bg="red.500"
+                                    color="white"
+                                    _hover={{ bg: "red.600" }}
+                                    onClick={handleDeleteClick}
+                                    fontSize="14px"
+                                >
+                                    Delete Inovasi
+                                </Button>
+                            )}
+                        </Flex>
+                    </Stack>
+                </Box>
+            )}
+            <Box height="100px" />
             <AlertDialog
                 isOpen={isOpen}
                 leastDestructiveRef={cancelRef}
                 onClose={handleClose}
+                isCentered
             >
                 <AlertDialogOverlay>
-                    <AlertDialogContent>
-                        <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                    <AlertDialogContent w="90%" maxW="320px" borderRadius="xl" p={2}>
+                        <AlertDialogHeader fontSize="lg" fontWeight="bold" pb={2}>
                             Hapus Inovasi
                         </AlertDialogHeader>
 
-                        <AlertDialogBody>
+                        <AlertDialogBody fontSize="14px" color="gray.600">
                             Apakah Anda yakin? Anda tidak dapat membatalkan tindakan ini
                             setelah inovasi dihapus.
                         </AlertDialogBody>
 
                         <AlertDialogFooter>
-                            <Button ref={cancelRef} onClick={handleClose}>
+                            <Button 
+                                ref={cancelRef} 
+                                onClick={handleClose}
+                                bg="#347357"
+                                color="white"
+                                _hover={{ bg: "#275942" }}
+                                size="sm"
+                                px={4}
+                            >
                                 Batal
                             </Button>
                             <Button
@@ -748,6 +863,8 @@ const EditInnovation: React.FC = () => {
                                 ml={3}
                                 bg="red.500"
                                 _hover={{ bg: "red.600" }}
+                                size="sm"
+                                px={4}
                             >
                                 Hapus
                             </Button>
@@ -759,17 +876,26 @@ const EditInnovation: React.FC = () => {
                 isOpen={isSuccessOpen}
                 leastDestructiveRef={cancelRef}
                 onClose={handleSuccessClose}
+                isCentered
             >
                 <AlertDialogOverlay>
-                    <AlertDialogContent>
-                        <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                    <AlertDialogContent w="90%" maxW="320px" borderRadius="xl" p={2}>
+                        <AlertDialogHeader fontSize="lg" fontWeight="bold" pb={2}>
                             Sukses
                         </AlertDialogHeader>
-                        <AlertDialogBody>
+                        <AlertDialogBody fontSize="14px" color="gray.600">
                             Inovasi telah berhasil diperbarui.
                         </AlertDialogBody>
                         <AlertDialogFooter>
-                            <Button ref={cancelRef} onClick={handleSuccessClose}>
+                            <Button 
+                                ref={cancelRef} 
+                                onClick={handleSuccessClose}
+                                bg="#347357"
+                                color="white"
+                                _hover={{ bg: "#275942" }}
+                                size="sm"
+                                px={6}
+                            >
                                 OK
                             </Button>
                         </AlertDialogFooter>
