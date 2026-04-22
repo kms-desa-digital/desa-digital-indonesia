@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const userIdString = user._id ? user._id.toString() : uid
+    const userIdString = user?._id ? user._id.toString() : uid
 
     // Ambil info tambahan (status verifikasi inovator/desa)
     // Cek di MongoDB karena Admin sekarang hanya memverifikasi di MongoDB
@@ -84,8 +84,8 @@ export async function GET(request: NextRequest) {
       user: {
         uid: userIdString,
         firebaseUid: uid,
-        email: user.email || email,
-        role: user.role || role,
+        email: user?.email || email,
+        role: user?.role || role,
         isInnovatorVerified: innovator?.status === 'Terverifikasi',
         isVillageVerified: village?.status === 'Terverifikasi',
         isInnovationVerified: !!verifiedInno,
