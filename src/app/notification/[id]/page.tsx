@@ -121,18 +121,55 @@ const NotificationDetailPage = () => {
     const handleAction = () => {
         if (!notif) return;
 
-        const pathMap: Record<string, string> = {
-            innovation_detail: `/innovation/detail/${notif.relatedId}`,
-            claim_detail: `/village/klaimInovasi/detail/${notif.relatedId}`,
-            profile: `/village/profile/${notif.relatedId}`,
-            dashboard: `/admin/dashboard`,
-        };
+        let path = "";
 
-        const path = pathMap[notif.actionType];
+        switch (notif.actionType) {
+            case 'innovation_detail':
+                path = `/innovation/detail/${notif.relatedId}`;
+                break;
+            case 'claim_detail':
+                path = `/village/klaimInovasi/detail/${notif.relatedId}`;
+                break;
+            case 'profile':
+                // Tentukan apakah profil inovator atau desa berdasarkan kategori atau judul
+                if (notif.category === 'new_innovator' || notif.title.toLowerCase().includes('innovator')) {
+                    path = `/innovator/profile/${notif.relatedId}`;
+                } else {
+                    path = `/village/detail/${notif.relatedId}`;
+                }
+                break;
+            case 'dashboard':
+                path = `/admin/dashboard`;
+                break;
+            default:
+                if (notif.actionUrl) {
+                    window.open(notif.actionUrl, '_blank');
+                    return;
+                }
+        }
+
         if (path) {
             router.push(path);
-        } else if (notif.actionUrl) {
-            window.open(notif.actionUrl, '_blank');
+        }
+    };
+
+    const getActionLabel = () => {
+        if (!notif) return "Buka Halaman Terkait";
+
+        switch (notif.actionType) {
+            case 'innovation_detail':
+                return 'Lihat Detail Inovasi';
+            case 'claim_detail':
+                return 'Lihat Detail Klaim';
+            case 'profile':
+                if (notif.category === 'new_innovator' || notif.title.toLowerCase().includes('innovator')) {
+                    return 'Lihat Profil Innovator';
+                }
+                return 'Lihat Profil Desa';
+            case 'dashboard':
+                return 'Ke Dashboard';
+            default:
+                return 'Buka Halaman Terkait';
         }
     };
 
@@ -267,10 +304,7 @@ const NotificationDetailPage = () => {
                                             h="36px"
                                             rightIcon={<ArrowRight size={12} />}
                                         >
-                                            {notif.actionType === 'innovation_detail' ? 'Lihat Detail Inovasi' :
-                                                notif.actionType === 'profile' ? 'Lihat Profil' :
-                                                    notif.actionType === 'claim_detail' ? 'Detail Pengajuan' :
-                                                        'Buka Halaman Terkait'}
+                                            {getActionLabel()}
                                         </Button>
                                     )}
 
