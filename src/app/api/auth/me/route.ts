@@ -41,12 +41,12 @@ export async function GET(request: NextRequest) {
       }
       
       try {
-        await db.collection('users').insertOne(newUser)
-        user = newUser
+        const result = await db.collection('users').insertOne(newUser)
+        user = { ...newUser, _id: result.insertedId } as any
       } catch (insertError) {
         console.error('[Auth/Me] Failed to auto-sync user to MongoDB:', insertError)
         // Fallback: create a temporary user object so the request can continue
-        user = newUser
+        user = newUser as any
       }
     }
 
