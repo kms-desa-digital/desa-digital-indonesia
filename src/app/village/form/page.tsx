@@ -557,11 +557,6 @@ const AddVillage: React.FC = () => {
                                 setIsEditable(true);
                                 setAlertMessage(`Pengajuan ditolak dengan catatan: ${data.catatanAdmin || ""}`);
                             }
-                            /*
-                            else if (data.status === "Terverifikasi") {
-                                router.push(`/village/profile/${userId}`);
-                            }
-                            */
                             return data.status;
                         }
                         return prevStatus;

@@ -85,7 +85,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
         await notifyRole('village', {
           type: 'general',
           category: 'new_innovator',
-          title: 'Innovator Baru Terdaftar! 👤+',
+          title: 'Innovator Baru Terdaftar!+',
           description: `${innovator.namaInovator || innovator.namaInnovator || innovator.name || 'Seorang Innovator'} baru saja bergabung dan terverifikasi. Ayo cek profil mereka!`,
           actionType: 'profile',
           relatedId: innovator.userId || innovator._id.toString()

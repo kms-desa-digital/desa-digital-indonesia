@@ -159,25 +159,6 @@ export default function DetailVillagePage() {
             if (id) {
                 setLoading(true);
                 try {
-                    /*
-                    const docRef = doc(firestore, "villages", id);
-                    const docSnap = await getDoc(docRef);
-
-                    const inovationRef = collection(firestore, "innovations");
-                    const q = query(inovationRef, where("desaId", "array-contains", id));
-                    const innovationsSnapshot = await getDocs(q);
-                    const innovationsData = innovationsSnapshot.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }));
-                    setInnovations(innovationsData);
-                    console.log("Inovasi:", innovationsData);
-                    if (docSnap.exists()) {
-                        setVillage(docSnap.data());
-                    } else {
-                        console.error("No such document!");
-                    }
-                    */
                     const res: any = await getVillageById(id);
                     const villageData = res.village || res.data;
                     if (villageData) {

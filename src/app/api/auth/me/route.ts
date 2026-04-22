@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
 import { connectToDatabase } from '@/lib/db/mongodb'
+import { verifyRoleFromToken } from '@/lib/auth/verifyRole'
 import { ObjectId } from 'mongodb'
 
 export async function GET(request: NextRequest) {
@@ -10,36 +10,82 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
 
-    const token = authHeader.split(' ')[1]
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string)
+    // Verify Firebase ID Token and retrieve role (checked in Firestore fallback if missing in MongoDB)
+    const { uid, role, email } = await verifyRoleFromToken(authHeader)
+
+    if (!uid) {
+      return NextResponse.json({ message: 'Invalid or expired token' }, { status: 401 })
+    }
 
     const db = await connectToDatabase()
     
-    // Cari user detail
-    const user = await db.collection('users').findOne(
-      { _id: new ObjectId(decoded.userId) },
-      { projection: { password: 0 } }
-    )
+    // Cari user detail di MongoDB menggunakan UID dari Firebase
+    let user = await db.collection('users').findOne({
+      $or: [
+        { uid: uid },
+        { firebaseUid: uid },
+        { _id: uid as any }
+      ]
+    })
 
+    // Auto-sync: Jika user tidak ada di MongoDB tetapi token valid (berarti ada di Firebase/Firestore)
     if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 })
+      console.log(`[Auth/Me] User ${uid} not found in MongoDB. Auto-syncing from Firebase info...`)
+      const newUser = {
+        uid: uid,
+        firebaseUid: uid,
+        email: email || '',
+        role: role,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+      
+      try {
+        await db.collection('users').insertOne(newUser)
+        user = newUser
+      } catch (insertError) {
+        console.error('[Auth/Me] Failed to auto-sync user to MongoDB:', insertError)
+        // Fallback: create a temporary user object so the request can continue
+        user = newUser
+      }
     }
 
+    const userIdString = user._id ? user._id.toString() : uid
+
     // Ambil info tambahan (status verifikasi inovator/desa)
-    const innovator = await db.collection('innovators').findOne({ userId: user._id.toString() })
-    const village = await db.collection('villages').findOne({ userId: user._id.toString() })
+    // Cek di MongoDB karena Admin sekarang hanya memverifikasi di MongoDB
+    const innovator = await db.collection('innovators').findOne({ 
+      $or: [
+        { userId: userIdString },
+        { userId: uid }, // Add this to handle Firebase UID in userId field
+        { firebaseUid: uid },
+        { _id: uid as any },
+        ...(ObjectId.isValid(userIdString) ? [{ _id: new ObjectId(userIdString) }] : [])
+      ]
+    })
+    
+    const village = await db.collection('villages').findOne({ 
+      $or: [
+        { userId: userIdString },
+        { userId: uid }, // Add this to handle Firebase UID in userId field
+        { firebaseUid: uid },
+        { _id: uid as any },
+        ...(ObjectId.isValid(userIdString) ? [{ _id: new ObjectId(userIdString) }] : [])
+      ]
+    })
     
     // Cek apakah ada inovasi yang sudah terverifikasi oleh user ini
     const verifiedInno = await db.collection('innovations').findOne({ 
-      innovatorId: user._id.toString(), 
+      innovatorId: { $in: [userIdString, uid] }, 
       status: 'Terverifikasi' 
     })
 
     return NextResponse.json({
       user: {
-        uid: user._id.toString(),
-        email: user.email,
-        role: user.role,
+        uid: userIdString,
+        firebaseUid: uid,
+        email: user.email || email,
+        role: user.role || role,
         isInnovatorVerified: innovator?.status === 'Terverifikasi',
         isVillageVerified: village?.status === 'Terverifikasi',
         isInnovationVerified: !!verifiedInno,
@@ -48,6 +94,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Auth verification error:', error)
-    return NextResponse.json({ message: 'Invalid token' }, { status: 401 })
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
