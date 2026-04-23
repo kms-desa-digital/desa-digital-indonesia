@@ -6,6 +6,54 @@ import { requireRole } from '@/lib/auth/apiAuth'
 type Params = Promise<{ id: string }>
 
 // =========================================================
+// GET /api/notifications/:id
+// Fetch a single notification by ID
+// =========================================================
+export async function GET(request: NextRequest, { params }: { params: Params }) {
+  try {
+    const auth = await requireRole(request, ["innovator", "village", "admin", "kementerian"]);
+    if (auth instanceof NextResponse) return auth;
+
+    const { id } = await params
+
+    if (!id) {
+      return NextResponse.json({ message: 'Notification ID is required' }, { status: 400 })
+    }
+
+    const db = await connectToDatabase()
+
+    let query: any = {}
+    if (ObjectId.isValid(id)) {
+      query = { $and: [{ _id: new ObjectId(id) }, { userId: auth.uid }] }
+    } else {
+      query = { $and: [{ _id: id }, { userId: auth.uid }] }
+    }
+
+    const notification = await db.collection('notifications').findOne(query)
+    if (!notification) {
+      return NextResponse.json(
+        { message: 'Notifikasi tidak ditemukan atau Anda tidak memiliki akses' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        notification: {
+          ...notification,
+          id: notification._id.toString(),
+          _id: notification._id.toString()
+        }
+      },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error('Error fetching notification:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// =========================================================
 // PATCH /api/notifications/:id
 // Mark notification as read
 // =========================================================

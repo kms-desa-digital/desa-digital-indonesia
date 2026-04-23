@@ -113,7 +113,7 @@ const InnovatorAssistedVillages = () => {
                                 cursor="pointer"
                                 shadow="sm"
                                 _hover={{ shadow: 'md', borderColor: '#347357' }}
-                                onClick={() => router.push(`/village/profile/${village.id}`)}
+                                onClick={() => router.push(`/village/detail/${village.id}`)}
                             >
                                 <Flex alignItems="center">
                                     <Image

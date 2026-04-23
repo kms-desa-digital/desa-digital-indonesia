@@ -27,15 +27,15 @@ export type ValidRole = (typeof VALID_ROLES)[number];
 
 export async function verifyRoleFromToken(
   authHeader: string | null
-): Promise<{ uid: string | null; role: ValidRole }> {
+): Promise<{ uid: string | null; role: ValidRole; email: string | null }> {
   // Jika tidak ada token, return guest
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return { uid: null, role: "guest" };
+    return { uid: null, role: "guest", email: null };
   }
 
   const idToken = authHeader.replace("Bearer ", "").trim();
   if (!idToken) {
-    return { uid: null, role: "guest" };
+    return { uid: null, role: "guest", email: null };
   }
 
   try {
@@ -43,9 +43,10 @@ export async function verifyRoleFromToken(
     const adminAuth = getFirebaseAdminAuth();
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
+    const email = decodedToken.email || null;
 
     if (!uid) {
-      return { uid: null, role: "guest" };
+      return { uid: null, role: "guest", email: null };
     }
 
     // Cari role user di MongoDB terlebih dahulu
@@ -83,7 +84,7 @@ export async function verifyRoleFromToken(
       }
     }
 
-    return { uid, role };
+    return { uid, role, email };
   } catch (error: any) {
     // Token expired, invalid, atau Firebase Admin belum dikonfigurasi
     if (error?.code === "auth/id-token-expired") {
@@ -96,7 +97,7 @@ export async function verifyRoleFromToken(
       console.error("[verifyRoleFromToken] Token verification failed:", error?.message ?? error);
     }
 
-    return { uid: null, role: "guest" };
+    return { uid: null, role: "guest", email: null };
   }
 }
 

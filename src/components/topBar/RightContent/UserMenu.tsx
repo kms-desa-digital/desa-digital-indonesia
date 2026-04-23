@@ -297,11 +297,18 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
               {(userRole?.toLowerCase() === "admin" ||
                 tokenRole?.toLowerCase() === "admin" ||
                 contextRole?.toLowerCase() === "admin") && (
-                  <MenuItem
-                    onClick={() => router.push(paths.CHATBOT_INGEST)}
-                  >
-                    Chatbot Data
-                  </MenuItem>
+                  <>
+                    <MenuItem
+                      onClick={() => router.push("/admin/notifications")}
+                    >
+                      Pengumuman
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => router.push(paths.CHATBOT_INGEST)}
+                    >
+                      Chatbot Data
+                    </MenuItem>
+                  </>
                 )}
 
               <MenuItem onClick={handleLogout}>Logout</MenuItem>
