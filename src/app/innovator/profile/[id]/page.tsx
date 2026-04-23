@@ -12,6 +12,7 @@ import {
     Text,
     useDisclosure,
 } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import TopBar from "Components/topBar/index";
 import { paths } from "Consts/path";
 import { getInnovatorById, updateInnovator, getAssistedVillages } from "Services/innovatorServices";
@@ -66,6 +67,7 @@ import { useAdminStatus } from "Hooks/useAdminStatus";
 
 
 const ProfileInnovator: React.FC = () => {
+    const t = useTranslations("Innovation");
     const [isExpanded, setIsExpanded] = useState(false);
     const router = useRouter();
     const params = useParams();
@@ -497,7 +499,7 @@ const ProfileInnovator: React.FC = () => {
                                  </Flex>
                                  <Box borderTop="1px" borderColor="gray.100" pt={2} mt={2}>
                                      <Text fontSize="10px" fontWeight="400" mb={1} color="#9CA3AF">
-                                         Inovasi diterapkan
+                                         {t("appliedInnovations")}
                                      </Text>
                                      <Flex direction="row" gap={2} flexWrap="wrap">
                                          {Array.isArray(village.inovasiDiterapkan) && village.inovasiDiterapkan.length > 0 ? (

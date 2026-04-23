@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
 import CardInnovation from "Components/card/innovation";
@@ -14,6 +15,7 @@ import { getVillageInnovations, getVillageById } from "Services/villageServices"
 import { Image as ChakraImage } from "@chakra-ui/react";
 
 export default function VillageAppliedInnovationsPage() {
+    const t = useTranslations("Innovation");
     const router = useRouter();
     const params = useParams();
     const id = params.id as string;
@@ -46,7 +48,7 @@ export default function VillageAppliedInnovationsPage() {
 
     return (
         <Container page>
-            <TopBar title={`Inovasi Diterapkan - ${villageName}`} onBack={() => router.back()} />
+            <TopBar title={`${t("appliedInnovations")} - ${villageName}`} onBack={() => router.back()} />
             <CategoryContainer>
                 {loading ? (
                    <DetailContainer>

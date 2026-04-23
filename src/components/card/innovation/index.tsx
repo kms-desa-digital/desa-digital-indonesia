@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslations } from "next-intl";
 import {
   Applied,
   Background,
@@ -28,6 +29,7 @@ type CardInnovationProps = {
 };
 
 function CardInnovation(props: CardInnovationProps) {
+  const t = useTranslations("Innovation");
   const { images, namaInovasi, kategori, deskripsi, tahunDibuat, innovatorLogo, innovatorName, onClick, highlightQuery, jumlahDesa } = props;
 
   const renderHighlightedText = (value?: string | React.ReactNode) => {
@@ -85,7 +87,7 @@ function CardInnovation(props: CardInnovationProps) {
               <div>{innovatorName}</div>
             )}
           </CompanyContainer>
-          <Applied>Diterapkan {jumlahDesa || 0} desa</Applied>
+          <Applied>{t("appliedInnovationsVillages", { count: jumlahDesa || 0 })}</Applied>
         </div>
       </Content>
     </Container>

@@ -67,6 +67,8 @@
         "searchPlaceholder": "Cari Inovator...",
         "showAll": "Menampilkan semua inovator untuk",
         "allCategory": "Semua Kategori",
+        "companionVillages": "Desa Dampingan",
+        "innovations": "Inovasi",
         "categories": {
             "startup": "Start-up",
             "govUnder": "Di bawah Pemerintah",
@@ -111,7 +113,9 @@
     },
     "Innovation": {
         "title": "Kategori Inovasi",
-        "notFound": "Inovasi tidak ditemukan"
+        "notFound": "Inovasi tidak ditemukan",
+        "appliedInnovations": "Inovasi diterapkan",
+        "appliedInnovationsVillages": "Inovasi diterapkan {count} desa"
     },
     "Chatbot": {
         "title": "Asisten Desa Digital",

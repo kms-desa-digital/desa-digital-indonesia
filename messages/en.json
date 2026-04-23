@@ -67,6 +67,8 @@
         "searchPlaceholder": "Search Innovators...",
         "showAll": "Showing all innovators for",
         "allCategory": "All Categories",
+        "companionVillages": "Companion Villages",
+        "innovations": "Innovations",
         "categories": {
             "startup": "Start-up",
             "govUnder": "Under Government",
@@ -111,7 +113,9 @@
     },
     "Innovation": {
         "title": "Innovation Categories",
-        "notFound": "Innovation not found"
+        "notFound": "Innovation not found",
+        "appliedInnovations": "Applied Innovations",
+        "appliedInnovationsVillages": "Applied in {count} villages"
     },
     "Chatbot": {
         "title": "Digital Village Assistant",
