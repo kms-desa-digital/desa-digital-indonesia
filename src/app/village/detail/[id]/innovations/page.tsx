@@ -57,7 +57,7 @@ export default function VillageAppliedInnovationsPage() {
                        ))}
                    </DetailContainer>
                 ) : data.length === 0 ? (
-                    <p>Belum ada inovasi yang diterapkan</p>
+                    <p>{t("noInnovations")}</p>
                 ) : (
                     <DetailContainer>
                         {data.map((item, idx) => (
