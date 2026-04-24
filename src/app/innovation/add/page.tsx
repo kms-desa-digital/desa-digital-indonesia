@@ -445,6 +445,11 @@ const AddInnovation: React.FC = () => {
             setIsEditable(false);
             setLoading(false);
             setAlertStatus("info");
+            
+            // Redirect to innovation list after 2 seconds
+            setTimeout(() => {
+                router.push("/innovation");
+            }, 2000);
         } catch (error) {
             console.error("Submission error:", error);
             setError("Gagal menyimpan data inovasi ke database.");

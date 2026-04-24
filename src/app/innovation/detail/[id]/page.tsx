@@ -53,6 +53,7 @@ import {
     Text2,
     Title
 } from "./_styles";
+import { verifyInnovation } from "@/services/adminServices";
 
 
 
@@ -189,17 +190,30 @@ function DetailInnovation() {
                 return;
             }
             // Update innovation status via API
-            await updateInnovation(id, {
-                status: "Terverifikasi",
-                catatanAdmin: ""
-            });
-            setData({ ...data, status: "Terverifikasi" });
+            try {
+                const updateResponse = await verifyInnovation(id, {
+                    status: "Terverifikasi",
+                    catatanAdmin: ""
+                });
+                console.log("updateInnovation berhasil:", updateResponse?.data);
+            } catch (error) {
+                console.error("updateInnovation gagal:", error);
+                throw error;
+            }
 
+            console.log("hahahahah:",data);
+            setData({ ...data, status: "Terverifikasi" });
+            
+            const innovator = await getInnovatorById(data.innovatorId);
             // Update innovator's innovation count via API
             if (data.innovatorId) {
                 const currentCount = innovatorData.jumlahInovasi || 0;
                 await updateInnovator(data.innovatorId, {
-                    jumlahInovasi: currentCount + 1
+                    jumlahInovasi: currentCount + 1,
+                    namaInovator: innovator.innovator.namaInovator,
+                    deskripsi: innovator.innovator.deskripsi,
+                    kategori: innovator.innovator.kategori,
+                    whatsapp: innovator.innovator.whatsapp,
                 });
             }
 
@@ -312,7 +326,7 @@ function DetailInnovation() {
             : text;
     };
 
-
+    console.log("Innovation Detail Data:", data);
     if (error || !data || !data.namaInovasi) {
         return (
             <Box>

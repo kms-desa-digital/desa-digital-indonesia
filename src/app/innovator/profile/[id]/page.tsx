@@ -279,7 +279,7 @@ const ProfileInnovator: React.FC = () => {
                         {owner && (
                             <Button
                                 leftIcon={<Image src="/icons/send.svg" alt="send" />}
-                                onClick={() => router.push("/innovator/pengajuan/" + id)} // Updated to point to new pengajuan inovasi page
+                                onClick={() => router.push(paths.ADD_INNOVATION)}
                                 fontSize="12px"
                                 fontWeight="500"
                                 height="29px"

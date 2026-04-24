@@ -4,6 +4,7 @@
 import CardInnovation from "Components/card/innovation";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import EnlargedImage from "Components/village/Image";
@@ -91,6 +92,7 @@ export default function ProfileVillage() {
                     ...prev,
                     status: "Terverifikasi",
                 }));
+                toast.success("Profil desa berhasil diverifikasi");
             } else {
                 throw new Error("Village ID is undefined");
             }
