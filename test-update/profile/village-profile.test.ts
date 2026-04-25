@@ -41,13 +41,13 @@ describe("Village Profile Basis Path Testing", () => {
 
     // Path 3: 1-2-3-5-6-8 (Buat profil desa baru)
     test("Path 3: Should create new village profile", async () => {
-        const status = "";
+        const status: any = "";
         const isFormValid = true;
         (createVillage as jest.Mock).mockResolvedValue({ success: true });
 
         if (isFormValid) {
             if (status !== "Ditolak") {
-                await createVillage("vid-456", { name: "Village B" });
+                await createVillage({ vid: "vid-456", name: "Village B" });
                 toast({ status: "success" });
             }
         }

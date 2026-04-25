@@ -48,7 +48,7 @@ describe("Add Innovation Basis Path Testing", () => {
 
     // Path 3: 1-2-3-4-6-7-9 (Add Mode Success)
     test("Path 3: Should create new innovation", async () => {
-        const status = "";
+        const status: any = "";
         (addInnovation as jest.Mock).mockResolvedValue({ innovationId: "new-inno" });
 
         if (status !== "Ditolak") {

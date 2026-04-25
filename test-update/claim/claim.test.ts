@@ -1,8 +1,7 @@
-import { postClaimStandard, postClaimManual } from "../../src/services/villageServices";
+import { claimInnovation } from "../../src/services/villageServices";
 
 jest.mock("../../src/services/villageServices", () => ({
-    postClaimStandard: jest.fn(),
-    postClaimManual: jest.fn()
+    claimInnovation: jest.fn()
 }));
 
 describe("Claim Innovations Basis Path Testing", () => {
@@ -36,38 +35,38 @@ describe("Claim Innovations Basis Path Testing", () => {
 
     // Path 3: 1-2-3-4-5-6-8-10 (Klaim Manual Berhasil)
     test("Path 3: Should succeed in manual claim", async () => {
-        (postClaimManual as jest.Mock).mockResolvedValue({ success: true });
+        (claimInnovation as jest.Mock).mockResolvedValue({ success: true });
         const isManual = true;
         const isConfirmed = true;
 
         if (isConfirmed && isManual) {
-            await postClaimManual({ data: "manual" });
+            await claimInnovation({ data: "manual" });
             mockPush("/success");
         }
-        expect(postClaimManual).toHaveBeenCalled();
+        expect(claimInnovation).toHaveBeenCalled();
         expect(mockPush).toHaveBeenCalledWith("/success");
     });
 
     // Path 4: 1-2-3-4-5-7-8-10 (Klaim Standard Berhasil)
     test("Path 4: Should succeed in standard claim", async () => {
-        (postClaimStandard as jest.Mock).mockResolvedValue({ success: true });
+        (claimInnovation as jest.Mock).mockResolvedValue({ success: true });
         const isManual = false;
         const isConfirmed = true;
 
         if (isConfirmed && !isManual) {
-            await postClaimStandard({ id: "123" });
+            await claimInnovation({ id: "123" });
             mockPush("/success");
         }
-        expect(postClaimStandard).toHaveBeenCalled();
+        expect(claimInnovation).toHaveBeenCalled();
         expect(mockPush).toHaveBeenCalledWith("/success");
     });
 
     // Path 5: 1-2-3-4-5-7-9-10 (Catch Error)
     test("Path 5: Should handle API errors during claim", async () => {
-        (postClaimStandard as jest.Mock).mockRejectedValue(new Error("Fail"));
+        (claimInnovation as jest.Mock).mockRejectedValue(new Error("Fail"));
         
         try {
-            await postClaimStandard({ id: "123" });
+            await claimInnovation({ id: "123" });
         } catch (e) {
             toast({ status: "error" });
         }

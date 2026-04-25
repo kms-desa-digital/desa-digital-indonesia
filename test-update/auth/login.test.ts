@@ -78,7 +78,7 @@ describe("Login Basis Path Testing", () => {
 
         const userCred = await signInWithEmailAndPassword(auth, "admin@e.com", "pass");
         const docSnap = await getDoc(doc(firestore, "users", userCred.user.uid));
-        const role = docSnap.data().role;
+        const role = docSnap.data()?.role;
 
         if (role === "admin") {
             mockPush("/admin");
@@ -96,7 +96,7 @@ describe("Login Basis Path Testing", () => {
 
         const userCred = await signInWithEmailAndPassword(auth, "min@e.com", "pass");
         const docSnap = await getDoc(doc(firestore, "users", userCred.user.uid));
-        const role = docSnap.data().role;
+        const role = docSnap.data()?.role;
 
         if (role !== "admin" && role === "ministry") {
             mockPush("/dashboard/ministry");

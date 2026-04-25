@@ -54,7 +54,7 @@ describe("Register Basis Path Testing", () => {
     // Path 3: 1-2-3-5-10 (Password mismatch)
     test("Path 3: Should fail if passwords do not match", () => {
         const password = "password123";
-        const confirmPassword = "differentPassword";
+        const confirmPassword: any = "differentPassword";
         if (password !== confirmPassword) {
             setError("konfirmasi kata sandi tidak cocok");
         }

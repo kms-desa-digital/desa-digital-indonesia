@@ -32,7 +32,7 @@ describe("Admin Verification Basis Path Testing (API)", () => {
 
     // Path 2: 1-3-4-5-6-8 (Admin menolak pengajuan)
     test("Path 2: Admin rejects with reason", async () => {
-        const action = "reject";
+        const action: any = "reject";
         let success = false;
 
         if (action !== "verify") {
@@ -53,7 +53,7 @@ describe("Admin Verification Basis Path Testing (API)", () => {
     // Path 3: 1-3-4-5-8 (Failure Path)
     test("Path 3: Admin update fails", async () => {
         mockUpdate.mockRejectedValue(new Error("DB Error"));
-        const action = "reject";
+        const action: any = "reject";
         let success = false;
 
         try {

@@ -15,7 +15,7 @@ describe("Innovator Profile Basis Path Testing", () => {
 
     // Path 1: 1-2-3-4-6-8 (Update Profil Berhasil)
     test("Path 1: Should update existing innovator profile", async () => {
-        const status = "Menunggu";
+        const status: any = "Menunggu";
         (updateInnovator as jest.Mock).mockResolvedValue({ success: true });
 
         if (status !== "") {
