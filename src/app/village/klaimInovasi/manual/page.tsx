@@ -1,8 +1,10 @@
 "use client";
 
 import {
-    Box, Button, Collapse, Flex, Text, Textarea, Input, useDisclosure,
+    Box, Button, Collapse, Flex, Text, Textarea, Input, useDisclosure, IconButton,
 } from "@chakra-ui/react";
+import { CloseIcon } from "@chakra-ui/icons";
+
 import TopBar from "Components/topBar";
 import React, { useEffect, useRef, useState, Suspense } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -12,7 +14,8 @@ import DocUpload from "src/components/form/DocUpload";
 import ImageUpload from "src/components/form/ImageUpload";
 import VidUpload from "src/components/form/VideoUpload";
 import { auth } from "src/firebase/clientApp";
-import { getVillageById, claimInnovation, updateVillage, getClaimById, updateClaim } from "Services/villageServices";
+import { getVillageById, claimInnovation, updateVillage, getClaimById, updateClaim, deleteClaim } from "Services/villageServices";
+
 import {
     CheckboxGroup, Container, Field, JenisKlaim, Label, NavbarButton, Text1, Text2,
 } from "../_styles";
@@ -66,8 +69,10 @@ const KlaimInovasiManualContent: React.FC = () => {
         logo: false,
         innovation: false
     });
+    const [isRejectionVisible, setIsRejectionVisible] = useState(true);
 
     const editId = searchParams.get("editId");
+
     const inovasiId = searchParams.get("inovasiId");
 
     const { role } = useUser();
@@ -77,7 +82,7 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     const handleCheckboxChange = (checkbox: string) => {
         if (isUploading[checkbox as keyof typeof isUploading]) return;
-        
+
         if (selectedCheckboxes.includes(checkbox)) {
             setSelectedCheckboxes(selectedCheckboxes.filter((item) => item !== checkbox));
         } else {
@@ -88,17 +93,17 @@ const KlaimInovasiManualContent: React.FC = () => {
     const isFormValid = () => {
         // Required basic info
         if (!textInputsValue.inovationName.trim() || !textInputsValue.inovatorName.trim() || !textInputsValue.description.trim() || logoFiles.length === 0 || innovationFiles.length === 0) return false;
-        
+
         // Checklist must be selected
         if (selectedCheckboxes.length === 0) return false;
-        
+
         // Checklist items must have content
         for (const item of selectedCheckboxes) {
             if (item === "foto" && buktiFoto.length === 0) return false;
             if (item === "video" && !selectedVid) return false;
             if (item === "dokumen" && selectedDoc.length === 0) return false;
         }
-        
+
         return true;
     };
 
@@ -244,16 +249,16 @@ const KlaimInovasiManualContent: React.FC = () => {
                 status: "Menunggu"
             };
 
-            const response: any = editId 
+            const response: any = editId
                 ? await updateClaim(editId as string, formData)
                 : await claimInnovation(formData);
 
             setIsModal2Open(true);
             toast.success(editId ? "Klaim manual berhasil diperbarui" : "Klaim inovasi manual berhasil diajukan", {
-                position: "top-center", 
+                position: "top-center",
                 autoClose: 3000
             });
-            
+
             setTimeout(() => {
                 if (!isModal2Open) {
                     handleSuccessRedirect(response);
@@ -290,11 +295,29 @@ const KlaimInovasiManualContent: React.FC = () => {
         setIsModal1Open(false);
         await submitClaim();
     };
-    
+
     const handleModal2Close = () => {
         setIsModal2Open(false);
         handleSuccessRedirect();
     };
+
+    const handleDeleteClaim = async () => {
+        if (!editId) return;
+        if (!confirm("Apakah Anda yakin ingin menghapus klaim ini?")) return;
+        
+        setLoading(true);
+        try {
+            await deleteClaim(editId as string);
+            toast.success("Klaim manual berhasil dihapus");
+            router.push(`/village/pengajuan/${user?.uid}`);
+        } catch (err) {
+            console.error("Error deleting manual claim:", err);
+            toast.error("Gagal menghapus klaim manual");
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     const getDescriptionWordCount = () => {
         return textInputsValue.description.split(/\s+/).filter((word) => word !== "").length;
@@ -322,8 +345,9 @@ const KlaimInovasiManualContent: React.FC = () => {
                     const claimData = response.data;
                     if (claimData) {
                         setClaimData(claimData);
-                        setEditable(claimData.status === "Ditolak" || !claimData.status);
+                        setEditable(true);
                         setSelectedCheckboxes(claimData.jenisDokumen || claimData.buktiJenis || []);
+
                         setLogoFiles(claimData.logoInovator ? [claimData.logoInovator] : []);
                         setInnovationFiles(claimData.fotoInovasi ? [claimData.fotoInovasi] : []);
                         setBuktiFoto((claimData.buktiFiles?.foto || claimData.images || []));
@@ -460,8 +484,8 @@ const KlaimInovasiManualContent: React.FC = () => {
                         {["foto", "video", "dokumen"].map((type) => (
                             <JenisKlaim key={type}>
                                 <input
-                                    style={{ 
-                                        transform: "scale(1.3)", 
+                                    style={{
+                                        transform: "scale(1.3)",
                                         marginRight: "8px",
                                         cursor: (isUploading[type as keyof typeof isUploading] || !editable || loading || disabled) ? "not-allowed" : "pointer"
                                     }}
@@ -515,7 +539,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                     </Collapse>
                     {!editable && claimData?.status === "Menunggu" && (
                         <Box mt={4}>
-                             <StatusCard status="Menunggu" />
+                            <StatusCard status="Menunggu" />
                         </Box>
                     )}
                     <Box height="100px" />
@@ -533,11 +557,60 @@ const KlaimInovasiManualContent: React.FC = () => {
                         )
                     ) : (
                         <NavbarButton>
-                            <Button width="100%" isLoading={loading} onClick={handleAjukanKlaim} type="button" disabled={disabled || !isFormValid()}>
-                                Ajukan Klaim
-                            </Button>
+                            <Flex direction="column" w="100%" gap={2}>
+                                {claimData?.status === "Ditolak" && isRejectionVisible && (
+                                    <Box bg="#FEE2E2" p={2} borderRadius="8px" mb={1} position="relative">
+                                        <Flex align="center" justify='center'>
+                                            <CloseIcon fontSize="10px" color="#EF4444" mr="8px" />
+                                            <Text fontSize="12px" fontWeight="700" color="#EF4444">
+                                                Pengajuan ditolak
+                                            </Text>
+                                        </Flex>
+                                        {claimData.catatanAdmin && (
+                                            <Text fontSize="10px" fontWeight="500" color="#EF4444" textAlign="center" mt={1}>
+                                                Catatan: {claimData.catatanAdmin}
+                                            </Text>
+                                        )}
+                                        <IconButton
+                                            aria-label="Close"
+                                            icon={<CloseIcon fontSize="8px" />}
+                                            size="xs"
+                                            position="absolute"
+                                            right="4px"
+                                            top="4px"
+                                            variant="ghost"
+                                            color="#EF4444"
+                                            onClick={() => setIsRejectionVisible(false)}
+                                        />
+                                    </Box>
+                                )}
+                                <Flex gap={2}>
+                                    <Button
+                                        flex={1}
+                                        isLoading={loading}
+                                        onClick={handleAjukanKlaim}
+                                        type="button"
+                                        disabled={disabled || !isFormValid()}
+                                        colorScheme="green"
+                                    >
+                                        {claimData?.status === "Ditolak" ? "Ajukan Ulang" : editId ? "Perbarui Klaim" : "Ajukan Klaim"}
+                                    </Button>
+                                    {editId && (
+                                        <Button
+                                            isLoading={loading}
+                                            onClick={handleDeleteClaim}
+                                            type="button"
+                                            colorScheme="red"
+                                            disabled={disabled}
+                                        >
+                                            Hapus Klaim
+                                        </Button>
+                                    )}
+                                </Flex>
+                            </Flex>
                         </NavbarButton>
                     )}
+
                     <ConfModal isOpen={isModal1Open} onClose={closeModal} modalTitle="" modalBody1={modalBody1} onYes={handleModal1Yes} isLoading={loading} />
                     <SecConfModal isOpen={isModal2Open} onClose={handleModal2Close} modalBody2={modalBody2} />
                     <RejectionModal isOpen={openModal} onClose={() => setOpenModal(false)} onConfirm={handleReject} message={modalInput} setMessage={setModalInput} loading={loading} />

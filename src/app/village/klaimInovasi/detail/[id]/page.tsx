@@ -23,17 +23,21 @@ import TopBar from "Components/topBar";
 import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "src/firebase/clientApp";
-import { getClaimById, updateVillage, updateClaim, getVillageById } from "Services/villageServices";
+import { getClaimById, updateVillage, updateClaim, getVillageById, deleteClaim } from "Services/villageServices";
+
 import { getInnovationById } from "Services/innovationServices";
 
 import {
-    Container,
+    Container as LocalContainer,
     Title,
     NavbarButton,
     Label,
     Text1,
     Text2,
 } from "../../_styles";
+
+import Container from "Components/container";
+
 
 import StatusCard from "Components/card/status/StatusCard";
 import RejectionModal from "Components/confirmModal/RejectionModal";
@@ -147,6 +151,22 @@ const KlaimInovasiDetail: React.FC = () => {
         }
     };
 
+    const handleDelete = async () => {
+        if (confirm("Apakah Anda yakin ingin menghapus klaim ini?")) {
+            setLoading(true);
+            try {
+                await deleteClaim(id);
+                toast.success("Klaim berhasil dihapus");
+                router.push(`/village/pengajuan/${claimData?.desaId || user?.uid}`);
+            } catch (error) {
+                console.error("Failed to delete claim:", error);
+                toast.error("Gagal menghapus klaim");
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
     if (fetchLoading) return <Loading />;
     if (!claimData) return null;
 
@@ -157,13 +177,26 @@ const KlaimInovasiDetail: React.FC = () => {
 
     return (
         <Box bg="#F9FAFB" minH="100vh">
-            <TopBar
-                title="Detail Klaim Inovasi"
-                onBack={() => router.back()}
-            />
+            <Container page>
+                <TopBar
+                    title="Detail Klaim Inovasi"
+                    onBack={() => router.back()}
+                />
 
-            <Container style={{ paddingLeft: 0, paddingRight: 0, paddingTop: 0, paddingBottom: "120px" }}>
+                {/* Rejection Alert at the top for User */}
+                {!isAdmin && claimData.status === "Ditolak" && (
+                    <Box mt="60px" px={4} mb={-10}>
+                        <StatusCard status="Ditolak" message={claimData.catatanAdmin} />
+                    </Box>
+                )}
+
+                <Box
+                    padding={4}
+                    paddingTop={!isAdmin && claimData.status === "Ditolak" ? "0px" : "60px"}
+                    paddingBottom="180px"
+                >
                 {/* Header Profile Section */}
+
                 <Box position="relative" w="full" h="280px">
                     <Image
                         src={claimData.fotoInovasi || (fotos.length > 0 ? fotos[0] : "/images/default-innovation.jpg")}
@@ -172,6 +205,7 @@ const KlaimInovasiDetail: React.FC = () => {
                         h="full"
                         objectFit="cover"
                     />
+
                     <Box
                         position="absolute"
                         top="0"
@@ -389,9 +423,11 @@ const KlaimInovasiDetail: React.FC = () => {
                         </Box>
                     )}
                 </Box>
-            </Container>
+            </Box>
+
 
             {/* Fixed Action Bar at the Bottom */}
+
             <Box
                 position="fixed"
                 bottom="0"
@@ -424,25 +460,48 @@ const KlaimInovasiDetail: React.FC = () => {
                         <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
                     )
                 ) : (
-                    <>
-                        <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
-                        {claimData.status === "Ditolak" && (
-                            <Button
-                                mt={3}
-                                w="full"
-                                h="48px"
-                                borderRadius="lg"
-                                colorScheme="green"
-                                onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?editId=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
-                                fontWeight="800"
-                                fontSize="15px"
-                            >
-                                Perbaiki & Ajukan Kembali
-                            </Button>
+                    <Stack spacing={3} w="full">
+                        {/* Status Card only for Waiting status for User (Rejection is shown at top) */}
+                        {claimData.status === "Menunggu" && (
+                            <StatusCard status="Menunggu" />
                         )}
-                    </>
+
+                        {user?.uid === claimData.desaId && (
+                            <Flex gap={3} w="full">
+                                {claimData.status === "Ditolak" && (
+                                    <Button
+                                        flex={1}
+                                        h="48px"
+                                        borderRadius="lg"
+                                        colorScheme="red"
+                                        onClick={handleDelete}
+                                        isLoading={loading}
+                                        fontWeight="800"
+                                        fontSize="15px"
+                                    >
+                                        Delete Inovasi
+                                    </Button>
+                                )}
+                                <Button
+                                    flex={1}
+                                    h="48px"
+                                    borderRadius="lg"
+                                    colorScheme="green"
+                                    onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?editId=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
+                                    fontWeight="800"
+                                    fontSize="15px"
+                                    display={claimData.status === "Menunggu" ? "none" : "flex"}
+                                >
+                                    {claimData.status === "Ditolak" ? "Update Inovasi" : "Edit Klaim"}
+                                </Button>
+                            </Flex>
+                        )}
+                    </Stack>
                 )}
             </Box>
+
+
+
 
             <RejectionModal
                 isOpen={openModal}
@@ -494,8 +553,12 @@ const KlaimInovasiDetail: React.FC = () => {
                     </ModalBody>
                 </ModalContent>
             </Modal>
-        </Box>
+        </Container>
+    </Box>
     );
 };
+
+
+
 
 export default KlaimInovasiDetail;

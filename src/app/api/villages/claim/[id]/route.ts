@@ -133,3 +133,45 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
+
+// =========================================================
+// DELETE /api/villages/claim/[id]
+// =========================================================
+export async function DELETE(request: NextRequest, { params }: { params: Params }) {
+  try {
+    const auth = await requireRole(request, ["village", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
+    const { id } = await params
+    const db = await connectToDatabase()
+
+    let query: any = {}
+    if (ObjectId.isValid(id)) {
+        query._id = new ObjectId(id)
+    } else {
+        query = { $or: [{ _id: id as any }, { id: id as any }] }
+    }
+
+    const claim = await db.collection('claimInnovations').findOne(query)
+    if (!claim) {
+      return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
+    }
+
+    // Only owner or admin can delete
+    if (auth.role !== 'admin' && claim.desaId !== auth.uid) {
+        return NextResponse.json({ message: 'Tidak memiliki izin' }, { status: 403 })
+    }
+
+    const result = await db.collection('claimInnovations').deleteOne(query)
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ message: 'Gagal menghapus klaim' }, { status: 500 })
+    }
+
+    return NextResponse.json({ message: 'Klaim berhasil dihapus' })
+
+  } catch (error) {
+    console.error('Error deleting claim:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}

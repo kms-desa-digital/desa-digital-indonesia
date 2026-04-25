@@ -308,6 +308,12 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
                     >
                       Chatbot Data
                     </MenuItem>
+                    <MenuItem
+                      onClick={() => router.push(paths.ADMIN_USER_MANAGEMENT)}
+                    >
+                      User Management
+                    </MenuItem>
+
                   </>
                 )}
 
