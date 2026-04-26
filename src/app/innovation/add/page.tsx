@@ -519,11 +519,6 @@ const AddInnovation: React.FC = () => {
                         setAlertMessage(
                             `Pengajuan ditolak dengan catatan: ${data.catatanAdmin || ""}`
                         );
-                    } else if (data.status === "Terverifikasi") {
-                        // Backend usually handles this, but if we need to track locally:
-                        if (user?.uid) {
-                            // await updateInnovator(user.uid, { jumlahInovasi: ... });
-                        }
                     }
                 }
             } catch (err) {

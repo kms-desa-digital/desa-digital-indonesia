@@ -29,6 +29,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     const auth = await requireRole(request, ["innovator", "admin"]);
     if (auth instanceof NextResponse) return auth;
 
+    const isAdmin = auth.role === 'admin'
     const { id } = await params
 
     if (!id) {
@@ -87,16 +88,34 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
         typeof jumlahDesaDampingan === 'number'
           ? jumlahDesaDampingan
           : existingDoc.jumlahDesaDampingan ?? 0,
-      status: status ?? existingDoc.status ?? 'Menunggu',
+      status: status ?? (existingDoc.status === 'Ditolak' ? 'Menunggu' : existingDoc.status ?? 'Menunggu'),
       catatanAdmin:
         existingDoc.status === 'Ditolak' && status === undefined
           ? ''
           : existingDoc.catatanAdmin ?? '',
       editedAt: now,
-      createdAt: existingDoc.createdAt ?? existingDoc._id,
+      createdAt: existingDoc.createdAt ?? now,
     }
 
+    const isResubmission = !isAdmin && existingDoc.status === 'Ditolak'
     await innovatorCollection.updateOne(filter, { $set: updatedProfile })
+
+    // Notify admins about update/resubmission
+    try {
+        const { notifyAllAdmins } = await import('@/services/notificationServices')
+        if (isResubmission) {
+            await notifyAllAdmins({
+                type: 'personal',
+                category: 'profile_submission',
+                title: `Pengajuan Ulang Profil Innovator: ${namaInovator}`,
+                description: `Innovator ${namaInovator} telah memperbarui profil yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+                actionType: 'profile',
+                relatedId: id,
+            })
+        }
+    } catch (notifErr) {
+        console.error('Error notifying admins about innovator profile update:', notifErr)
+    }
 
     return NextResponse.json(
       {

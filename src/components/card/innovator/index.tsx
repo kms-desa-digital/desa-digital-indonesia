@@ -9,7 +9,7 @@ import {
 } from "./_cardInnovatorStyle";
 
 import React from "react";
-
+import { useTranslations } from "next-intl";
 import { Flex } from "@chakra-ui/react";
 
 
@@ -26,6 +26,7 @@ type CardInnovatorProps = {
 };
 
 function CardInnovator(props: CardInnovatorProps) {
+  const t = useTranslations("Innovator");
   const {
     header,
     logo,
@@ -82,8 +83,8 @@ function CardInnovator(props: CardInnovatorProps) {
         </ContBadge>
         <Title>{renderHighlightedText(namaInovator)}</Title>
         <Flex direction="column" marginTop="auto">
-          <Description>{jumlahDesaDampingan} Desa Dampingan</Description>
-          <Description>{jumlahInovasi} Inovasi</Description>
+          <Description>{jumlahDesaDampingan} {t("companionVillages")}</Description>
+          <Description>{jumlahInovasi} {t("innovations")}</Description>
         </Flex>
       </CardContent>
     </Container>

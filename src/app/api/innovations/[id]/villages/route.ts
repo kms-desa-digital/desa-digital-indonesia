@@ -14,31 +14,37 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
 
     const db = await connectToDatabase()
     
-    // 1. Cari inovasi untuk mendapatkan array desaId
-    const query: any = ObjectId.isValid(id) 
+    // 1. Ambil desaId dari koleksi 'claimInnovations' (Reguler)
+    const claims = await db.collection('claimInnovations')
+      .find({
+        inovasiId: id,
+        status: 'Terverifikasi'
+      }, { projection: { desaId: 1 } })
+      .toArray()
+
+    const claimDesaIds = claims.map(c => c.desaId);
+
+    // 2. Cari inovasi untuk mendapatkan array desaId (Direct Assignment/Legacy)
+    const innovQuery: any = ObjectId.isValid(id) 
       ? { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
       : { _id: id };
 
-    const innovation = await db.collection('innovations').findOne(query)
+    const innovation = await db.collection('innovations').findOne(innovQuery)
+    const directDesaIds = innovation?.desaId || []
 
-    if (!innovation) {
-      return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
-    }
+    // Gabungkan dan hilangkan duplikasi
+    const allDesaIds = Array.from(new Set([...claimDesaIds, ...directDesaIds]));
 
-    const desaIds = innovation.desaId || []
-
-    if (desaIds.length === 0) {
+    if (allDesaIds.length === 0) {
       return NextResponse.json({ villages: [] }, { status: 200 })
     }
 
-    // 2. Cari detail desa dari koleksi 'villages' atau 'users'
-    // Mengasumsikan ada koleksi 'villages' yang menyimpan profil desa
-    // Jika tidak ada, kita fallback ke 'users' dengan filter role: village
+    // 3. Cari detail desa dari koleksi 'villages'
     const villageDocs = await db.collection('villages')
       .find({
         $or: [
-          { _id: { $in: desaIds.map((did: string) => ObjectId.isValid(did) ? new ObjectId(did) : did) } },
-          { userId: { $in: desaIds } } // Kadang disimpan berdasarkan userId string
+          { _id: { $in: allDesaIds.map((did: string) => ObjectId.isValid(did) ? new ObjectId(did) : did) as any[] } },
+          { userId: { $in: allDesaIds } }
         ]
       })
       .toArray()

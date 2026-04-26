@@ -56,6 +56,10 @@ export const updateClaim = async (id: string, data: any) => {
   return api.put(`/villages/claim/${id}`, data);
 };
 
+export const deleteClaim = async (id: string) => {
+  return api.delete(`/villages/claim/${id}`);
+};
+
 export const getVillageInnovations = async (id: string, status?: string) => {
   const params: any = {};
   if (status) params.status = status;
