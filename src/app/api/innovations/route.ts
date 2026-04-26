@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { notifyAllAdmins } from '@/services/notificationServices'
 
 // =========================================================
 // GET /api/innovations
@@ -98,10 +99,27 @@ export async function POST(request: NextRequest) {
 
     const result = await db.collection('innovations').insertOne(newInnovation)
 
+    const innovationId = result.insertedId.toString()
+
+    // Notify admins about new innovation (innovator tidak perlu notif untuk aksi sendiri)
+    try {
+      await notifyAllAdmins({
+        type: 'personal',
+        category: 'innovation_submission',
+        title: `Inovasi Baru: ${namaInovasi}`,
+        description: `Innovator ${newInnovation.namaInnovator || 'unknown'} telah menambahkan inovasi baru. Silakan verifikasi pengajuan ini.`,
+        actionType: 'innovation_detail',
+        relatedId: innovationId,
+      })
+    } catch (notifError) {
+      // Log notification error but don't fail the innovation creation
+      console.error('Error creating notifications for innovation:', notifError)
+    }
+
     return NextResponse.json(
       {
         message:      'Inovasi berhasil ditambahkan, menunggu verifikasi admin',
-        innovationId: result.insertedId.toString(),
+        innovationId: innovationId,
       },
       { status: 201 }
     )

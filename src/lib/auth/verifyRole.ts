@@ -6,23 +6,25 @@ export type ValidRole = (typeof VALID_ROLES)[number];
 
 export async function verifyRoleFromToken(
   authHeader: string | null
-): Promise<{ uid: string | null; role: ValidRole }> {
+): Promise<{ uid: string | null; role: ValidRole; email: string | null }> {
+  // Jika tidak ada token, return guest
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return { uid: null, role: "guest" };
+    return { uid: null, role: "guest", email: null };
   }
 
   const idToken = authHeader.replace("Bearer ", "").trim();
   if (!idToken) {
-    return { uid: null, role: "guest" };
+    return { uid: null, role: "guest", email: null };
   }
 
   try {
     const adminAuth = getFirebaseAdminAuth();
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
+    const email = decodedToken.email || null;
 
     if (!uid) {
-      return { uid: null, role: "guest" };
+      return { uid: null, role: "guest", email: null };
     }
 
     let role: ValidRole = "guest";
@@ -32,7 +34,7 @@ export async function verifyRoleFromToken(
     try {
       const  db  = await connectToDatabase(); // ✅ properly initialize db
       const user = await db.collection("users").findOne({
-        $or: [{ uid }, { firebaseUid: uid }, { _id: uid as any }],
+        $or: [{ uid: uid }, { firebaseUid: uid }, { id: uid }, { _id: uid as any }],
       });
 
       if (user && typeof user.role === "string") {
@@ -57,7 +59,7 @@ export async function verifyRoleFromToken(
       }
     }
 
-    return { uid, role };
+    return { uid, role, email };
   } catch (error: any) {
     if (error?.code === "auth/id-token-expired") {
       console.warn("[verifyRoleFromToken] Token expired");
@@ -67,7 +69,7 @@ export async function verifyRoleFromToken(
       console.error("[verifyRoleFromToken] Token verification failed:", error?.message ?? error);
     }
 
-    return { uid: null, role: "guest" };
+    return { uid: null, role: "guest", email: null };
   }
 }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
 
 // =========================================================
 // GET /api/villages
@@ -98,6 +99,9 @@ export async function GET(request: NextRequest) {
 // =========================================================
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireRole(request, ["village", "admin"])
+    if (auth instanceof NextResponse) return auth
+
     const body = await request.json()
     const { userId, namaDesa } = body
 
@@ -122,11 +126,27 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await db.collection('villages').insertOne(newVillage)
+    const villageId = result.insertedId.toString()
+
+    // Notify all admins about new registered village profile
+    try {
+      const { notifyAllAdmins } = await import('@/services/notificationServices')
+      await notifyAllAdmins({
+        type: 'personal',
+        category: 'profile_submission',
+        title: `Pendaftaran Desa Baru: ${namaDesa}`,
+        description: `Sebuah desa baru telah mendaftar: ${namaDesa}. Silakan verifikasi profil desa ini.`,
+        actionType: 'profile',
+        relatedId: userId,
+      })
+    } catch (notifErr) {
+      console.error('Error notifying admins about new village profile:', notifErr)
+    }
 
     return new NextResponse(
       JSON.stringify({ 
         message: 'Profil desa berhasil dibuat', 
-        villageId: result.insertedId.toString() 
+        villageId: villageId 
       }, null, 2),
       {
         status: 201,

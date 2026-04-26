@@ -8,6 +8,8 @@ import {
   MenuButton,
   MenuItem,
   MenuList,
+  Badge,
+  Box,
 } from "@chakra-ui/react";
 import notification from "@public/icons/bell.svg";
 import profileIcon from "@public/icons/profile.svg";
@@ -49,6 +51,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
   const [profileExists, setProfileExists] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Ambil role dari token atau context
   useEffect(() => {
@@ -94,6 +97,32 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
 
     fetchProfileStatus();
   }, [tokenRole, contextRole]);
+
+  // Fetch unread notifications count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      if (!token) return;
+      try {
+        const headers = {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        };
+        const res = await fetch(`/api/notifications?limit=1`, { headers });
+        if (res.ok) {
+          const data = await res.json();
+          // Gunakan unreadCount dari API (sudah dihitung di server untuk semua notif)
+          setUnreadCount(data.unreadCount || 0);
+        }
+      } catch (err) {
+        console.error("Error fetching unread count:", err);
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, [token]);
 
   /*
   useEffect(() => {
@@ -195,24 +224,44 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
   return (
     <Flex justify="center" align="center" height="56px">
       <Menu placement="bottom-end">
-        <Button
-          padding={1}
-          as={IconButton}
-          aria-label="Notification"
-          variant="ghost"
-          _hover={{ bg: "whiteAlpha.200" }}
-          icon={
-            <Image
-              src={notification}
-              alt="Bell"
-              width={24}
-              height={24}
-              style={{ width: "24px", height: "24px", filter: "brightness(0) invert(1)" }}
-            />
-          }
-          height="40px"
-          onClick={() => router.push("/notification")}
-        />
+        <Box position="relative">
+          <Badge
+            position="absolute"
+            top="0px"
+            right="0px"
+            borderRadius="full"
+            bg="yellow.400"
+            color="gray.800"
+            fontSize="10px"
+            fontWeight="bold"
+            display={unreadCount > 0 ? "flex" : "none"}
+            alignItems="center"
+            justifyContent="center"
+            w="18px"
+            h="18px"
+            zIndex="2"
+          >
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </Badge>
+          <Button
+            padding={1}
+            as={IconButton}
+            aria-label="Notification"
+            variant="ghost"
+            _hover={{ bg: "whiteAlpha.200" }}
+            icon={
+              <Image
+                src={notification}
+                alt="Bell"
+                width={24}
+                height={24}
+                style={{ width: "24px", height: "24px", filter: "brightness(0) invert(1)" }}
+              />
+            }
+            height="40px"
+            onClick={() => router.push("/notification")}
+          />
+        </Box>
 
         <MenuButton
           as={IconButton}
@@ -248,11 +297,24 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
               {(userRole?.toLowerCase() === "admin" ||
                 tokenRole?.toLowerCase() === "admin" ||
                 contextRole?.toLowerCase() === "admin") && (
-                  <MenuItem
-                    onClick={() => router.push(paths.CHATBOT_INGEST)}
-                  >
-                    Chatbot Data
-                  </MenuItem>
+                  <>
+                    <MenuItem
+                      onClick={() => router.push("/admin/notifications")}
+                    >
+                      Pengumuman
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => router.push(paths.CHATBOT_INGEST)}
+                    >
+                      Chatbot Data
+                    </MenuItem>
+                    <MenuItem
+                      onClick={() => router.push(paths.ADMIN_USER_MANAGEMENT)}
+                    >
+                      User Management
+                    </MenuItem>
+
+                  </>
                 )}
 
               <MenuItem onClick={handleLogout}>Logout</MenuItem>

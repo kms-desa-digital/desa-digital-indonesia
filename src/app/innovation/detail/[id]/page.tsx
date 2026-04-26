@@ -76,7 +76,11 @@ function DetailInnovation() {
     const [claimId, setClaimId] = useState("");
     const [claimStatus, setClaimStatus] = useState("");
 
-    const { isAdmin } = useAdminStatus();
+    const getApiErrorInfo = (err: any) => {
+        const status = err?.status || err?.response?.status;
+        const message = err?.message || err?.data?.message || "Terjadi kesalahan";
+        return { status, message };
+    };
 
     const villageSafe = Array.isArray(village) ? village : [];
     const villageMap = new Map();
@@ -90,11 +94,19 @@ function DetailInnovation() {
                     const innovationData = res.innovation || res.data || res;
                     if (innovationData) {
                         setData(innovationData);
+                        setError("");
+                    } else {
+                        setError("Inovasi tidak ditemukan atau sudah dihapus");
                     }
                 })
                 .catch((error) => {
-                    console.error("Error fetching innovation details:", error);
-                    setError("Gagal memuat detail inovasi");
+                    const { status, message } = getApiErrorInfo(error);
+                    if (status === 404) {
+                        setError("Inovasi tidak ditemukan atau sudah dihapus");
+                    } else {
+                        console.error("Error fetching innovation details:", { status, message });
+                        setError("Gagal memuat detail inovasi");
+                    }
                 })
                 .finally(() => {
                     setLoading(false);
@@ -122,16 +134,22 @@ function DetailInnovation() {
 
     useEffect(() => {
         const fetchVillages = async () => {
-            if (!id) return;
+            if (!id || !data?.id) return;
             try {
                 const res: any = await getAppliedVillages(id);
                 setVillage(res.villages || res.data || []);
             } catch (error) {
-                console.error("Error fetching related villages:", error);
+                const { status, message } = getApiErrorInfo(error);
+                if (status === 404) {
+                    setVillage([]);
+                    return;
+                }
+                console.error("Error fetching related villages:", { status, message });
+                setVillage([]);
             }
         };
         fetchVillages();
-    }, [id]);
+    }, [id, data?.id]);
 
     useEffect(() => {
         const checkClaimStatus = async () => {
@@ -329,13 +347,18 @@ function DetailInnovation() {
     console.log("Innovation Detail Data:", data);
     if (error || !data || !data.namaInovasi) {
         return (
-            <Box>
+            <Box minH="100vh">
                 <TopBar title="Detail Inovasi" onBack={() => router.back()} />
-                <ContentContainer>
-                    <Box mt="40px" textAlign="center">
-                        <Text fontSize="16px" color="gray.500">Inovasi tidak ditemukan di database</Text>
+                <Flex minH="calc(100vh - 70px)" align="center" justify="center" px={4}>
+                    <Box textAlign="center" maxW="320px">
+                        <Text fontSize="16px" color="gray.500">
+                            {error || "Inovasi tidak ditemukan atau sudah dihapus"}
+                        </Text>
+                        <Button mt={4} size="sm" onClick={() => router.push(paths.INNOVATION_PAGE)}>
+                            Kembali ke Daftar Inovasi
+                        </Button>
                     </Box>
-                </ContentContainer>
+                </Flex>
             </Box>
         );
     }

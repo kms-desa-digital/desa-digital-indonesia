@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Box, Flex, Text, Image, Spinner, Stack } from "@chakra-ui/react";
 import { ChevronRightIcon, ChevronLeftIcon } from "@chakra-ui/icons";
 import { getInnovatorById, getAssistedVillages } from "Services/innovatorServices";
@@ -17,6 +18,7 @@ type VillageData = {
 };
 
 const InnovatorAssistedVillages = () => {
+    const t = useTranslations("Innovation");
     const params = useParams();
     const router = useRouter();
     const id = params.id as string;
@@ -111,7 +113,7 @@ const InnovatorAssistedVillages = () => {
                                 cursor="pointer"
                                 shadow="sm"
                                 _hover={{ shadow: 'md', borderColor: '#347357' }}
-                                onClick={() => router.push(`/village/profile/${village.id}`)}
+                                onClick={() => router.push(`/village/detail/${village.id}`)}
                             >
                                 <Flex alignItems="center">
                                     <Image
@@ -140,7 +142,7 @@ const InnovatorAssistedVillages = () => {
                                 {/* Perubahan: Menambahkan Inovasi Diterapkan Tags */}
                                 <Box borderTop="1px" borderColor="gray.100" pt={3} mt={3}>
                                     <Text fontSize="10px" fontWeight="400" mb={1.5} color="#9CA3AF">
-                                        Inovasi diterapkan
+                                        {t("appliedInnovations")}
                                     </Text>
                                     <Flex direction="row" gap={1.5} flexWrap="wrap">
                                         {(village as any).inovasiDiterapkan && (village as any).inovasiDiterapkan.length > 0 ? (

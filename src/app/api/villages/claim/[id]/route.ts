@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { createNotification } from '@/services/notificationServices'
 
 type Params = Promise<{ id: string }>
 
@@ -70,9 +71,25 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
         query = { $or: [{ _id: id as any }, { id: id as any }] }
     }
 
+    const claim = await db.collection('claimInnovations').findOne(query)
+    if (!claim) {
+      return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
+    }
+
+    const isAdmin = auth.role === 'admin'
+
     const updateData: any = { ...body, updatedAt: new Date() }
     delete updateData._id
     delete updateData.id
+
+    // Jika village mengedit, paksa status kembali ke Menunggu
+    if (!isAdmin) {
+        updateData.status = 'Menunggu'
+        updateData.catatanAdmin = null
+    }
+
+    const nextStatus = updateData.status || body.status
+    const nextCatatanAdmin = updateData.catatanAdmin || body.catatanAdmin || null
 
     const result = await db.collection('claimInnovations').updateOne(
       query,
@@ -83,10 +100,140 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
     }
 
+    // Sync data if status changed FROM Terverifikasi TO Menunggu
+    if (claim.status === 'Terverifikasi' && nextStatus === 'Menunggu') {
+        try {
+            // 1. Decrement Village implementation count
+            await db.collection('villages').updateOne(
+                { $or: [{ userId: claim.desaId }, { desaId: claim.desaId }] },
+                { $inc: { jumlahInovasiDiterapkan: -1 } }
+            ).catch(err => console.error("Failed to decrement village count:", err));
+
+            // 2. If regular claim, update Innovation document
+            if (claim.inovasiId) {
+                let innovQuery: any = {};
+                if (ObjectId.isValid(claim.inovasiId)) {
+                    innovQuery._id = new ObjectId(claim.inovasiId);
+                } else {
+                    innovQuery._id = claim.inovasiId;
+                }
+
+                await db.collection('innovations').updateOne(
+                    innovQuery,
+                    { 
+                        $pull: { desaId: claim.desaId },
+                        $inc: { jumlahPenerapan: -1 } 
+                    }
+                ).catch(err => console.error("Failed to decrement innovation stats:", err));
+            }
+        } catch (syncError) {
+            console.error("Error during data desynchronization:", syncError);
+        }
+    }
+
+    // Restore Notification Logic
+    try {
+        if (isAdmin && nextStatus && nextStatus !== claim?.status) {
+            const villageId = claim.desaId
+            if (villageId) {
+                const notifTitle = nextStatus === 'Terverifikasi'
+                    ? 'Klaim Inovasi Disetujui!'
+                    : 'Klaim Inovasi Ditolak'
+                const notifDescription = nextStatus === 'Terverifikasi'
+                    ? `Selamat! Klaim Anda untuk "${claim.namaInovasi}" telah disetujui oleh admin.`
+                    : `Klaim Anda untuk "${claim.namaInovasi}" ditolak. Alasan: ${nextCatatanAdmin || claim.catatanAdmin || 'Tidak ada catatan'}`
+
+                await createNotification({
+                    userId: villageId,
+                    type: 'personal',
+                    title: notifTitle,
+                    description: notifDescription,
+                    actionType: 'claim_detail',
+                    relatedId: claim._id.toString(),
+                })
+            }
+        }
+    } catch (notifError) {
+        console.error("Failed to send notification:", notifError);
+    }
+
     return NextResponse.json({ message: 'Klaim berhasil diperbarui' })
 
   } catch (error) {
     console.error('Error updating claim:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// =========================================================
+// DELETE /api/villages/claim/[id]
+// =========================================================
+export async function DELETE(request: NextRequest, { params }: { params: Params }) {
+  try {
+    const auth = await requireRole(request, ["village", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
+    const { id } = await params
+    const db = await connectToDatabase()
+
+    let query: any = {}
+    if (ObjectId.isValid(id)) {
+        query._id = new ObjectId(id)
+    } else {
+        query = { $or: [{ _id: id as any }, { id: id as any }] }
+    }
+
+    const claim = await db.collection('claimInnovations').findOne(query)
+    if (!claim) {
+      return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
+    }
+
+    // Only owner or admin can delete
+    if (auth.role !== 'admin' && claim.desaId !== auth.uid) {
+        return NextResponse.json({ message: 'Tidak memiliki izin' }, { status: 403 })
+    }
+
+    const result = await db.collection('claimInnovations').deleteOne(query)
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ message: 'Gagal menghapus klaim' }, { status: 500 })
+    }
+
+    // Sync data if DELETED claim was Terverifikasi
+    if (claim.status === 'Terverifikasi') {
+        try {
+            // 1. Decrement Village implementation count
+            await db.collection('villages').updateOne(
+                { $or: [{ userId: claim.desaId }, { desaId: claim.desaId }] },
+                { $inc: { jumlahInovasiDiterapkan: -1 } }
+            ).catch(err => console.error("Failed to decrement village count on delete:", err));
+
+            // 2. If regular claim, update Innovation document
+            if (claim.inovasiId) {
+                let innovQuery: any = {};
+                if (ObjectId.isValid(claim.inovasiId)) {
+                    innovQuery._id = new ObjectId(claim.inovasiId);
+                } else {
+                    innovQuery._id = claim.inovasiId;
+                }
+
+                await db.collection('innovations').updateOne(
+                    innovQuery,
+                    { 
+                        $pull: { desaId: claim.desaId },
+                        $inc: { jumlahPenerapan: -1 } 
+                    }
+                ).catch(err => console.error("Failed to decrement innovation stats on delete:", err));
+            }
+        } catch (syncError) {
+            console.error("Error during data desynchronization on delete:", syncError);
+        }
+    }
+
+    return NextResponse.json({ message: 'Klaim berhasil dihapus' })
+
+  } catch (error) {
+    console.error('Error deleting claim:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }

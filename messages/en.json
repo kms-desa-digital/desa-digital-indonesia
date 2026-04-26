@@ -67,6 +67,8 @@
         "searchPlaceholder": "Search Innovators...",
         "showAll": "Showing all innovators for",
         "allCategory": "All Categories",
+        "companionVillages": "Companion Villages",
+        "innovations": "Innovations",
         "categories": {
             "startup": "Start-up",
             "govUnder": "Under Government",
@@ -84,7 +86,30 @@
         "selectRegency": "Select Regency/City",
         "searchPlaceholder": "Search village name...",
         "showAll": "Showing all villages for",
-        "allProvince": "All Provinces"
+        "allProvince": "All Provinces",
+        "detailTitle": "Village Detail",
+        "about": "About",
+        "readMore": "Read More",
+        "readLess": "Read Less",
+        "villagePotential": "Village Potential",
+        "villageCharacteristics": "Village Characteristics",
+        "geography": "Geography",
+        "infrastructure": "Infrastructure",
+        "roadCondition": "Road Condition:",
+        "internetNetwork": "Internet Network:",
+        "electricityAvailability": "Electricity Availability:",
+        "others": "Others:",
+        "digitalReadiness": "Digital Readiness",
+        "digitalTechnologyDevelopment": "Digital Technology Development:",
+        "technologyCapability": "Technology Capability:",
+        "socialCulture": "Social and Culture",
+        "naturalResources": "Natural Resources",
+        "villageGallery": "Village Gallery",
+        "noImages": "No images available",
+        "appliedInnovations": "Applied Innovations",
+        "noInnovations": "No innovations applied yet",
+        "viewAll": "View All",
+        "villageContact": "Village Contact"
     },
     "FAQ": {
         "title": "Help and FAQ",
@@ -111,7 +136,9 @@
     },
     "Innovation": {
         "title": "Innovation Categories",
-        "notFound": "Innovation not found"
+        "notFound": "Innovation not found",
+        "appliedInnovations": "Applied Innovations",
+        "appliedInnovationsVillages": "Applied in {count} villages"
     },
     "Chatbot": {
         "title": "Digital Village Assistant",

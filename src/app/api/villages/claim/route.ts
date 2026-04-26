@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { createNotification, notifyAllAdmins } from '@/services/notificationServices'
 
 // =========================================================
 // POST /api/villages/claim
@@ -80,10 +81,38 @@ export async function POST(request: NextRequest) {
 
     const result = await db.collection('claimInnovations').insertOne(newClaim)
 
+    const claimId = result.insertedId.toString()
+
+    // Create notifications for admins and village
+    try {
+      // Notify all admins about new claim
+      await notifyAllAdmins({
+        type: 'personal',
+        category: 'claim_submission',
+        title: `Klaim Inovasi Baru: ${namaInovasi}`,
+        description: `${namaDesa} telah mengajukan klaim untuk inovasi "${namaInovasi}". Silakan verifikasi pengajuan ini.`,
+        actionType: 'claim_detail',
+        relatedId: claimId,
+      })
+
+      // Notify village about submission — gunakan auth.uid (Firebase UID terverifikasi)
+      await createNotification({
+        userId: auth.uid,  // Firebase UID user desa yang sedang login
+        type: 'personal',
+        title: 'Klaim Inovasi Berhasil Diajukan',
+        description: `Klaim Anda untuk "${namaInovasi}" telah diajukan dan menunggu verifikasi admin.`,
+        actionType: 'claim_detail',
+        relatedId: claimId,
+      })
+    } catch (notifError) {
+      // Log notification error but don't fail the claim creation
+      console.error('Error creating notifications for claim:', notifError)
+    }
+
     return new NextResponse(
       JSON.stringify({ 
         message: 'Permohonan klaim inovasi berhasil diajukan', 
-        claimId: result.insertedId.toString() 
+        claimId: claimId
       }, null, 2),
       {
         status: 201,

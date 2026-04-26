@@ -79,8 +79,8 @@ const RegisterContent: React.FC = () => {
                     role,
                 });
 
-                const idToken = await currentUser.getIdToken();
-                localStorage.setItem("token", idToken);
+                // Simpan role ke localStorage (bukan data sensitif)
+                // Token dikelola otomatis oleh Firebase SDK via onIdTokenChanged
                 localStorage.setItem("userRole", role);
                 window.dispatchEvent(new Event("auth:tokenChanged"));
                 router.refresh();

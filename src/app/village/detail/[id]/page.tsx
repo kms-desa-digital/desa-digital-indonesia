@@ -6,6 +6,7 @@ import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import EnlargedImage from "src/components/village/Image";
 import Loading from "Components/loading";
 
@@ -61,6 +62,7 @@ import ActionDrawer from "Components/drawer/ActionDrawer";
 
 export default function DetailVillagePage() {
     const router = useRouter();
+    const t = useTranslations("Village");
     const [userLogin] = useAuthState(auth);
     const { role } = useUser();
     const [innovations, setInnovations] = useState<DocumentData[]>([]);
@@ -137,25 +139,6 @@ const handleReject = async () => {
             if (id) {
                 setLoading(true);
                 try {
-                    /*
-                    const docRef = doc(firestore, "villages", id);
-                    const docSnap = await getDoc(docRef);
-
-                    const inovationRef = collection(firestore, "innovations");
-                    const q = query(inovationRef, where("desaId", "array-contains", id));
-                    const innovationsSnapshot = await getDocs(q);
-                    const innovationsData = innovationsSnapshot.docs.map((doc) => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    }));
-                    setInnovations(innovationsData);
-                    console.log("Inovasi:", innovationsData);
-                    if (docSnap.exists()) {
-                        setVillage(docSnap.data());
-                    } else {
-                        console.error("No such document!");
-                    }
-                    */
                     const res: any = await getVillageById(id);
                     const villageData = res.village || res.data;
                     if (villageData) {
@@ -190,7 +173,7 @@ const handleReject = async () => {
 
     return (
         <Box paddingBottom={0}>
-            <TopBar title="Detail Desa" onBack={() => router.back()} />
+            <TopBar title={t("detailTitle")} onBack={() => router.back()} />
             <div style={{ position: "relative", width: "100%" }}>
                 <Background src={village?.header || "/images/default-header.svg"} alt="background" />
                 <Logo src={village?.logo || "/images/default-logo.svg"} alt="logo" />
@@ -203,7 +186,7 @@ const handleReject = async () => {
                         <Description>{formatLocation(village?.lokasi)}</Description>
                     </ActionContainer>
                     <div>
-                        <SubText margin-bottom={16}>Tentang</SubText>
+                        <SubText margin-bottom={16}>{t("about")}</SubText>
                         <Description>
                             {isExpanded ? (
                                 <>
@@ -219,7 +202,7 @@ const handleReject = async () => {
                                             onClick={() => setIsExpanded(!isExpanded)}
                                         >
                                             {" "}
-                                            Lebih Sedikit
+                                            {t("readLess")}
                                         </Text>
                                     )}
                                 </>
@@ -237,7 +220,7 @@ const handleReject = async () => {
                                             onClick={() => setIsExpanded(!isExpanded)}
                                         >
                                             {" "}
-                                            Selengkapnya
+                                            {t("readMore")}
                                         </Text>
                                     )}
                                 </>
@@ -245,7 +228,7 @@ const handleReject = async () => {
                         </Description>
                     </div>
                     <div>
-                        <SubText>Potensi Desa</SubText>
+                        <SubText>{t("villagePotential")}</SubText>
                         <ContPotensiDesa>
                             {village?.potensiDesa?.map((potensi: string, index: number) => (
                                 <ChipContainer key={index}>
@@ -255,7 +238,7 @@ const handleReject = async () => {
                         </ContPotensiDesa>
                     </div>
                     <div>
-                        <SubText>Karakteristik Desa</SubText>
+                        <SubText>{t("villageCharacteristics")}</SubText>
                         <Accordion defaultIndex={[0]} allowMultiple>
                             <AccordionItem>
                                 <h2>
@@ -268,7 +251,7 @@ const handleReject = async () => {
                                             fontWeight="700"
                                             gap={2}
                                         >
-                                            <Icon src="/icons/geography.svg" alt="geo" /> Geografis
+                                            <Icon src="/icons/geography.svg" alt="geo" /> {t("geography")}
                                         </Flex>
                                         <AccordionIcon color="#347357" />
                                     </AccordionButton>
@@ -294,7 +277,7 @@ const handleReject = async () => {
                                             gap={2}
                                         >
                                             <Icon src="/icons/infrastructure.svg" alt="Infrastrusture" />{" "}
-                                            Infrastruktur
+                                            {t("infrastructure")}
                                         </Flex>
                                         <AccordionIcon color="#347357" />
                                     </AccordionButton>
@@ -306,19 +289,19 @@ const handleReject = async () => {
                                     paddingRight="4px"
                                 >
                                     <Box>
-                                        <Text fontWeight="bold">Kondisi Jalan:</Text>
+                                        <Text fontWeight="bold">{t("roadCondition")}</Text>
                                         <Text>{village?.kondisijalan || "Tidak tersedia"}</Text>
                                     </Box>
                                     <Box mt={2}>
-                                        <Text fontWeight="bold">Jaringan Internet:</Text>
+                                        <Text fontWeight="bold">{t("internetNetwork")}</Text>
                                         <Text>{village?.jaringan || "Tidak tersedia"}</Text>
                                     </Box>
                                     <Box mt={2}>
-                                        <Text fontWeight="bold">Ketersediaan Listrik:</Text>
+                                        <Text fontWeight="bold">{t("electricityAvailability")}</Text>
                                         <Text>{village?.listrik || "Tidak tersedia"}</Text>
                                     </Box>
                                     <Box mt={2}>
-                                        <Text fontWeight="bold">Lain-lain:</Text>
+                                        <Text fontWeight="bold">{t("others")}</Text>
                                         <Text>
                                             {village?.infrastrukturDesa || "Tidak tersedia"}
                                         </Text>
@@ -336,7 +319,7 @@ const handleReject = async () => {
                                             fontWeight="700"
                                             gap={2}
                                         >
-                                            <Icon src="/icons/digital-readiness.svg" alt="DigR" /> Kesiapan Digital
+                                            <Icon src="/icons/digital-readiness.svg" alt="DigR" /> {t("digitalReadiness")}
                                         </Flex>
                                         <AccordionIcon color="#347357" />
                                     </AccordionButton>
@@ -349,12 +332,12 @@ const handleReject = async () => {
                                 >
                                     <Box>
                                         <Text fontWeight="bold">
-                                            Perkembangan Teknologi Digital:
+                                            {t("digitalTechnologyDevelopment")}
                                         </Text>
                                         <Text>{village?.teknologi || "Tidak tersedia"}</Text>
                                     </Box>
                                     <Box mt={2}>
-                                        <Text fontWeight="bold">Kemampuan Teknologi:</Text>
+                                        <Text fontWeight="bold">{t("technologyCapability")}</Text>
                                         <Text>{village?.kemampuan || "Tidak tersedia"}</Text>
                                     </Box>
                                 </AccordionPanel>
@@ -370,7 +353,7 @@ const handleReject = async () => {
                                             fontWeight="700"
                                             gap={2}
                                         >
-                                            <Icon src="/icons/socio-cultural.svg" alt="SocCul" /> Sosial dan Budaya
+                                            <Icon src="/icons/socio-cultural.svg" alt="SocCul" /> {t("socialCulture")}
                                         </Flex>
                                         <AccordionIcon color="#347357" />
                                     </AccordionButton>
@@ -395,7 +378,7 @@ const handleReject = async () => {
                                             fontWeight="700"
                                             gap={2}
                                         >
-                                            <Icon src="/icons/resource-village.svg" alt="Resource" /> Sumber Daya Alam
+                                            <Icon src="/icons/resource-village.svg" alt="Resource" /> {t("naturalResources")}
                                         </Flex>
                                         <AccordionIcon color="#347357" />
                                     </AccordionButton>
@@ -412,7 +395,7 @@ const handleReject = async () => {
                         </Accordion>
                     </div>
                     <div>
-                        <SubText>Galeri Desa</SubText>
+                        <SubText>{t("villageGallery")}</SubText>
                         <CardContainer>
                             {village?.images && Object.values(village.images).length > 0 ? (
                                 <Horizontal>
@@ -424,7 +407,7 @@ const handleReject = async () => {
                                 </Horizontal>
                             ) : (
                                 <Text color="gray.400" fontSize={12}>
-                                    Tidak ada gambar
+                                    {t("noImages")}
                                 </Text>
                             )}
                         </CardContainer>
@@ -435,7 +418,7 @@ const handleReject = async () => {
                             alignItems="flex-end"
                             align-self="stretch"
                         >
-                            <SubText>Inovasi yang Diterapkan</SubText>
+                            <SubText>{t("appliedInnovations")}</SubText>
                             <Text
                                 onClick={() => router.push(`/village/detail/${id}/innovations`)} // Redirect to innovations list page
                                 cursor="pointer"
@@ -446,7 +429,7 @@ const handleReject = async () => {
                                 paddingBottom="12px"
                             >
                                 {" "}
-                                Lihat Semua{" "}
+                                {t("viewAll")}{" "}
                             </Text>
                         </Flex>
                         {village?.status === "Terverifikasi" && (
@@ -454,7 +437,7 @@ const handleReject = async () => {
                                 <Horizontal>
                                     {innovations.length === 0 ? (
                                         <Text color="gray.400" fontSize={12}>
-                                            Belum ada inovasi yang diterapkan
+                                            {t("noInnovations")}
                                         </Text>
                                     ) : (
                                         innovations.slice(0, 5).map((innovation, idx) => (
@@ -510,7 +493,7 @@ const handleReject = async () => {
                             // Logika untuk Non-Admin
                             <Flex>
                                 <Button width="100%" onClick={onOpen}>
-                                    Kontak Desa
+                                    {t("villageContact")}
                                 </Button>
                             </Flex>
                         )}

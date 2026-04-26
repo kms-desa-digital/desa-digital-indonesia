@@ -11,6 +11,7 @@ import {
     Text,
     useDisclosure,
 } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import Send from "@public/icons/send.svg";
 import RejectionModal from "Components/confirmModal/RejectionModal";
 import Container from "Components/container";
@@ -41,6 +42,7 @@ import {
 } from "./_styles";
 
 const DetailInnovator: React.FC = () => {
+    const t = useTranslations("Innovation");
     const [isExpanded, setIsExpanded] = useState(false);
     const router = useRouter();
     const params = useParams();
@@ -414,7 +416,7 @@ const DetailInnovator: React.FC = () => {
                             </Flex>
                             <Box borderTop="1px" borderColor="gray.100" pt={2} mt={2}>
                                 <Text fontSize="10px" fontWeight="400" mb={1} color="#9CA3AF">
-                                    Inovasi diterapkan
+                                    {t("appliedInnovations")}
                                 </Text>
                                 <Flex direction="row" gap={1.5} flexWrap="wrap">
                                     {Array.isArray(village.inovasiDiterapkan) && village.inovasiDiterapkan.length > 0 ? (

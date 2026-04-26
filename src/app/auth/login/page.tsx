@@ -75,7 +75,8 @@ const Login: React.FC = () => {
             const userRole = (userData?.role || "").toLowerCase();
             const idToken = await userCredential.user.getIdToken();
 
-            localStorage.setItem("token", idToken);
+            // Simpan role ke localStorage (bukan data sensitif)
+            // Token dikelola otomatis oleh Firebase SDK via onIdTokenChanged
             localStorage.setItem("userRole", userRole);
             window.dispatchEvent(new Event("auth:tokenChanged"));
             router.refresh();
@@ -148,7 +149,8 @@ const Login: React.FC = () => {
                 return;
             }
 
-            localStorage.setItem("token", idToken);
+            // Simpan role ke localStorage (bukan data sensitif)
+            // Token dikelola otomatis oleh Firebase SDK via onIdTokenChanged
             localStorage.setItem("userRole", userRole);
             window.dispatchEvent(new Event("auth:tokenChanged"));
             router.refresh();
