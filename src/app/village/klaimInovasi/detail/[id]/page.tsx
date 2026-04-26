@@ -76,6 +76,14 @@ const KlaimInovasiDetail: React.FC = () => {
                     const res: any = await getClaimById(id);
                     const data = res.data;
                     if (data) {
+                        if (data.status === "Ditolak") {
+                            router.replace(data.inovasiId 
+                                ? `/village/klaimInovasi?inovasiId=${data.inovasiId}&editId=${id}` 
+                                : `/village/klaimInovasi/manual?editId=${id}`
+                            );
+                            return;
+                        }
+
                         setClaimData(data);
                         setIsManual(!data.inovasiId);
 

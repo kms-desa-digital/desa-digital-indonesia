@@ -23,9 +23,48 @@ export async function GET(req: NextRequest) {
     const db = await connectToDatabase();
     const usersInDb = await db.collection("users").find({}).toArray();
 
-    // Map Firebase users with MongoDB roles
-    let users = listUsersResult.users.map((fbUser) => {
-      const dbUser = usersInDb.find(u => u.uid === fbUser.uid || u.firebaseUid === fbUser.uid || u.id === fbUser.uid || String(u._id) === fbUser.uid);
+    // Identify missing users to potentially sync from Firestore
+    const missingUids = listUsersResult.users
+      .filter(fbUser => !usersInDb.find(u => u.uid === fbUser.uid || u.firebaseUid === fbUser.uid || u.id === fbUser.uid || String(u._id) === fbUser.uid))
+      .map(u => u.uid);
+
+    let firestoreUsers: any[] = [];
+    if (missingUids.length > 0) {
+      try {
+        const firestore = getFirestore();
+        const fsSnap = await firestore.collection("users").get();
+        firestoreUsers = fsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      } catch (fsErr) {
+        console.error("Failed to fetch Firestore users for sync:", fsErr);
+      }
+    }
+
+    // Map Firebase users with MongoDB roles and auto-sync missing ones
+    let users = await Promise.all(listUsersResult.users.map(async (fbUser) => {
+      let dbUser = usersInDb.find(u => u.uid === fbUser.uid || u.firebaseUid === fbUser.uid || u.id === fbUser.uid || String(u._id) === fbUser.uid);
+      
+      // If not in MongoDB, check if they are in our Firestore snapshot
+      if (!dbUser && firestoreUsers.length > 0) {
+        const fsUser = firestoreUsers.find(u => u.id === fbUser.uid || u.uid === fbUser.uid);
+        if (fsUser) {
+          // Auto-sync to MongoDB
+          const newUser = {
+            uid: fbUser.uid,
+            firebaseUid: fbUser.uid,
+            email: fbUser.email || "",
+            role: fsUser.role || "guest",
+            status: fsUser.status || "Terverifikasi",
+            createdAt: new Date(fbUser.metadata.creationTime),
+            updatedAt: new Date()
+          };
+          try {
+            await db.collection("users").insertOne(newUser);
+            dbUser = newUser as any; // Use the newly synced data
+          } catch (syncErr) {
+            console.error(`Failed to auto-sync user ${fbUser.uid} to MongoDB:`, syncErr);
+          }
+        }
+      }
 
       return {
         uid: fbUser.uid,
@@ -35,7 +74,7 @@ export async function GET(req: NextRequest) {
         status: dbUser?.status || "Terverifikasi",
         createdAt: fbUser.metadata.creationTime,
       };
-    });
+    }));
 
     // Apply filters
     if (search) {
