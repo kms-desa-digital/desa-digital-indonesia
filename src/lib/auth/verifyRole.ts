@@ -59,7 +59,7 @@ export async function verifyRoleFromToken(
       // Cari berdasarkan Firebase UID
       // Field bisa berupa `uid`, `firebaseUid`, atau langsung `_id`
       const user = await db.collection("users").findOne({
-        $or: [{ uid: uid }, { firebaseUid: uid }, { _id: uid as any }],
+        $or: [{ uid: uid }, { firebaseUid: uid }, { id: uid }, { _id: uid as any }],
       });
 
       if (user && typeof user.role === "string") {

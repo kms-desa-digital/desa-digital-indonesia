@@ -23,7 +23,9 @@ import {
     Text,
     Textarea,
     useToast,
+    IconButton,
 } from "@chakra-ui/react";
+
 import BottomSheetSelector from "Components/form/BottomSheetSelector";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
@@ -104,6 +106,30 @@ const EditInnovation: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const cancelRef = useRef<HTMLButtonElement>(null);
     const [isSuccessOpen, setIsSuccessOpen] = useState(false);
+    const [isRejectionVisible, setIsRejectionVisible] = useState(true);
+
+    const isFormValid = () => {
+        const { name, year, description, villages } = textInputsValue;
+        if (!name.trim() || !year.trim() || !description.trim() || !category || !villages.trim()) return false;
+        if (selectedFiles.length === 0) return false;
+        if (selectedModels.length === 0) return false;
+        if (selectedModels.includes("Lain-lain") && !otherBusinessModel.trim()) return false;
+        
+        // Benefit check
+        if (benefit.length === 0) return false;
+        for (const b of benefit) {
+            if (!b.benefit.trim() || !b.description.trim()) return false;
+        }
+        
+        // Requirements check
+        if (requirements.length === 0) return false;
+        for (const r of requirements) {
+            if (!r.trim()) return false;
+        }
+        
+        return true;
+    };
+
 
     useEffect(() => {
         const fetchInnovation = async () => {
@@ -781,8 +807,8 @@ const EditInnovation: React.FC = () => {
                     mx="auto"
                 >
                     <Stack spacing={3}>
-                        {status === "Ditolak" && (
-                            <Flex bg="#FEE2E2" p={2} borderRadius="8px" align="center" justify="center" direction="column">
+                        {status === "Ditolak" && isRejectionVisible && (
+                            <Flex bg="#FEE2E2" p={2} borderRadius="8px" align="center" justify="center" direction="column" position="relative">
                                 <Flex align="center">
                                     <CloseIcon fontSize="10px" color="#EF4444" mr="8px" />
                                     <Text fontSize="12px" fontWeight="700" color="#EF4444">
@@ -794,6 +820,17 @@ const EditInnovation: React.FC = () => {
                                         Catatan: {catatanAdmin}
                                     </Text>
                                 )}
+                                <IconButton
+                                    aria-label="Close"
+                                    icon={<CloseIcon fontSize="8px" />}
+                                    size="xs"
+                                    position="absolute"
+                                    right="4px"
+                                    top="4px"
+                                    variant="ghost"
+                                    color="#EF4444"
+                                    onClick={() => setIsRejectionVisible(false)}
+                                />
                             </Flex>
                         )}
                         <Flex gap={2} width="100%">
@@ -807,9 +844,11 @@ const EditInnovation: React.FC = () => {
                                 isLoading={loading}
                                 colorScheme="green"
                                 fontSize="14px"
+                                isDisabled={!isFormValid() || loading}
                             >
                                 {status === "Ditolak" ? "Ajukan Ulang" : "Update Inovasi"}
                             </Button>
+
                             {(status === "Ditolak" || status === "Terverifikasi") && (
                                 <Button
                                     type="button"
@@ -846,8 +885,8 @@ const EditInnovation: React.FC = () => {
                         </AlertDialogBody>
 
                         <AlertDialogFooter>
-                            <Button 
-                                ref={cancelRef} 
+                            <Button
+                                ref={cancelRef}
                                 onClick={handleClose}
                                 bg="#347357"
                                 color="white"
@@ -887,8 +926,8 @@ const EditInnovation: React.FC = () => {
                             Inovasi telah berhasil diperbarui.
                         </AlertDialogBody>
                         <AlertDialogFooter>
-                            <Button 
-                                ref={cancelRef} 
+                            <Button
+                                ref={cancelRef}
                                 onClick={handleSuccessClose}
                                 bg="#347357"
                                 color="white"
