@@ -28,8 +28,23 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
     }
 
+    // Hitung jumlah inovasi yang benar-benar terverifikasi untuk desa ini
+    // Ini membantu jika field static 'jumlahInovasiDiterapkan' belum tersinkronisasi
+    const desaId = village.userId || village._id.toString();
+    const verifiedCount = await db.collection('claimInnovations').countDocuments({
+      desaId: desaId,
+      status: 'Terverifikasi'
+    });
+
     return NextResponse.json(
-      { village: { ...village, id: village._id.toString(), _id: village._id.toString() } },
+      { 
+        village: { 
+          ...village, 
+          id: village._id.toString(), 
+          _id: village._id.toString(),
+          jumlahInovasiDiterapkan: Math.max(village.jumlahInovasiDiterapkan || 0, verifiedCount)
+        } 
+      },
       { status: 200 }
     )
 

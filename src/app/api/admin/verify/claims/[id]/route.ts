@@ -57,6 +57,37 @@ export async function POST(request: NextRequest, { params }: { params: Params })
       return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
     }
 
+    // Sync data if verified
+    if (desiredStatus === 'Terverifikasi') {
+      try {
+        // 1. Update Village implementation count
+        await db.collection('villages').updateOne(
+          { $or: [{ userId: claim.desaId }, { desaId: claim.desaId }] },
+          { $inc: { jumlahInovasiDiterapkan: 1 } }
+        ).catch(err => console.error("Failed to update village count:", err));
+
+        // 2. If it's a regular claim, update the Innovation document
+        if (claim.inovasiId) {
+          let innovQuery: any = {};
+          if (ObjectId.isValid(claim.inovasiId)) {
+            innovQuery._id = new ObjectId(claim.inovasiId);
+          } else {
+            innovQuery._id = claim.inovasiId;
+          }
+
+          await db.collection('innovations').updateOne(
+            innovQuery,
+            { 
+              $addToSet: { desaId: claim.desaId },
+              $inc: { jumlahPenerapan: 1 } 
+            }
+          ).catch(err => console.error("Failed to update innovation stats:", err));
+        }
+      } catch (syncError) {
+        console.error("Critical error during data synchronization:", syncError);
+      }
+    }
+
     // Create notification for village
     try {
       const villageDesaId = claim.desaId

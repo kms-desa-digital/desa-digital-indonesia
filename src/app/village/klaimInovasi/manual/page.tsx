@@ -474,9 +474,6 @@ const KlaimInovasiManualContent: React.FC = () => {
                         <Label>Jenis Dokumen Bukti Klaim <span style={{ color: "red" }}>*</span></Label>
                         <Text2>Dapat lebih dari 1</Text2>
                     </Flex>
-                    {claimData?.status === "Ditolak" && (
-                        <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
-                    )}
                     {claimData?.status === "Menunggu" && (
                         <StatusCard status={claimData.status} />
                     )}
@@ -542,7 +539,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                             <StatusCard status="Menunggu" />
                         </Box>
                     )}
-                    <Box height="100px" />
+                    <Box height="150px" />
                 </Container>
                 <div>
                     {isAdmin ? (

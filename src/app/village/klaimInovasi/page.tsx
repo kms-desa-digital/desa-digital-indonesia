@@ -393,9 +393,6 @@ const KlaimInovasiContent: React.FC = () => {
                         </Label>
                         <Text2> Dapat lebih dari 1 </Text2>
                     </Flex>
-                    {claimData?.status === "Ditolak" && (
-                        <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
-                    )}
                     <CheckboxGroup>
                         <JenisKlaim>
                             <input
@@ -502,11 +499,12 @@ const KlaimInovasiContent: React.FC = () => {
                         isOpen={isRecOpen}
                         onClose={() => onRecClose()}
                     />
+                    <Box height="150px" />
                 </Container>
                 <div>
                     {isAdmin ? (
                         claimData?.status === "Terverifikasi" ||
-                            claimData?.status === "Ditolak" ? (
+                        claimData?.status === "Ditolak" ? (
                             <StatusCard
                                 status={claimData.status}
                                 message={claimData.catatanAdmin}
