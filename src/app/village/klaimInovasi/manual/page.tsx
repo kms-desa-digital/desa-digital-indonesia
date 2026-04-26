@@ -75,6 +75,18 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     const inovasiId = searchParams.get("inovasiId");
 
+    const [isModal1Open, setIsModal1Open] = useState(false);
+    const [isModal2Open, setIsModal2Open] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+    const getDynamicModalBody = () => {
+        if (editId && claimData?.status === "Terverifikasi") {
+            return "Klaim ini sudah terverifikasi. Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu' dan memerlukan persetujuan ulang dari Admin. Apakah Anda yakin?";
+        }
+        return modalBody1;
+    };
+
     const { role } = useUser();
     useEffect(() => {
         setIsAdmin(role === "admin");
@@ -117,6 +129,28 @@ const KlaimInovasiManualContent: React.FC = () => {
 
         setIsModal1Open(true);
         setDisabled(true);
+    };
+
+    const handleDeleteClaim = () => {
+        if (!editId) return;
+        setItemToDelete(editId);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDeleteClaim = async () => {
+        if (!itemToDelete) return;
+        setLoading(true);
+        try {
+            await deleteClaim(itemToDelete);
+            toast.success("Klaim berhasil dihapus");
+            router.replace("/village/pengajuan/saya");
+        } catch (err) {
+            console.error("Error deleting manual claim:", err);
+            toast.error("Gagal menghapus klaim");
+        } finally {
+            setLoading(false);
+            setIsDeleteModalOpen(false);
+        }
     };
 
     const onSelectLogo = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,13 +309,6 @@ const KlaimInovasiManualContent: React.FC = () => {
         }
     };
 
-    const [isModal1Open, setIsModal1Open] = useState(false);
-    const [isModal2Open, setIsModal2Open] = useState(false);
-    const closeModal = () => {
-        setIsModal1Open(false);
-        setIsModal2Open(false);
-    };
-
     const handleSuccessRedirect = (response?: any) => {
         const newClaimId = editId || response?.claimId || response?.data?.claimId || (typeof response === 'string' ? response : "");
         if (newClaimId) {
@@ -291,31 +318,9 @@ const KlaimInovasiManualContent: React.FC = () => {
         }
     };
 
-    const handleModal1Yes = async () => {
-        setIsModal1Open(false);
-        await submitClaim();
-    };
-
     const handleModal2Close = () => {
         setIsModal2Open(false);
         handleSuccessRedirect();
-    };
-
-    const handleDeleteClaim = async () => {
-        if (!editId) return;
-        if (!confirm("Apakah Anda yakin ingin menghapus klaim ini?")) return;
-
-        setLoading(true);
-        try {
-            await deleteClaim(editId as string);
-            toast.success("Klaim manual berhasil dihapus");
-            router.push(`/village/pengajuan/${user?.uid}`);
-        } catch (err) {
-            console.error("Error deleting manual claim:", err);
-            toast.error("Gagal menghapus klaim manual");
-        } finally {
-            setLoading(false);
-        }
     };
 
 
@@ -582,17 +587,36 @@ const KlaimInovasiManualContent: React.FC = () => {
                                     </Box>
                                 )}
                                 <Flex gap={2} w="100%">
-                                    <Button
-                                        flex={1}
-                                        isLoading={loading}
-                                        onClick={handleAjukanKlaim}
-                                        type="button"
-                                        disabled={disabled}
-                                        colorScheme="green"
-                                        fontSize="14px"
-                                    >
+                                        <Button
+                                            flex={1}
+                                            isLoading={loading}
+                                            onClick={handleAjukanKlaim}
+                                            type="button"
+                                            isDisabled={!isFormValid() || disabled || Object.values(isUploading).some(v => v)}
+                                            colorScheme="green"
+                                            fontSize="14px"
+                                        >
                                         {claimData?.status === "Ditolak" ? "Ajukan Ulang" : editId ? "Perbarui Klaim" : "Ajukan Klaim"}
                                     </Button>
+                                    <ConfModal
+                                        isOpen={isModal1Open}
+                                        onClose={() => {
+                                            setIsModal1Open(false);
+                                            setDisabled(false);
+                                        }}
+                                        onYes={submitClaim}
+                                        modalBody1={getDynamicModalBody()}
+                                        modalTitle="Konfirmasi Klaim"
+                                        isLoading={loading}
+                                    />
+                                    <ConfModal
+                                        isOpen={isDeleteModalOpen}
+                                        onClose={() => setIsDeleteModalOpen(false)}
+                                        onYes={confirmDeleteClaim}
+                                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini? Data yang sudah dihapus tidak dapat dikembalikan."
+                                        modalTitle="Hapus Klaim"
+                                        isLoading={loading}
+                                    />
                                     {editId && (
                                         <Button
                                             flex={1}
@@ -613,10 +637,28 @@ const KlaimInovasiManualContent: React.FC = () => {
                         </NavbarButton>
                     )}
 
-                    <ConfModal isOpen={isModal1Open} onClose={closeModal} modalTitle="" modalBody1={modalBody1} onYes={handleModal1Yes} isLoading={loading} />
-                    <SecConfModal isOpen={isModal2Open} onClose={handleModal2Close} modalBody2={modalBody2} />
-                    <RejectionModal isOpen={openModal} onClose={() => setOpenModal(false)} onConfirm={handleReject} message={modalInput} setMessage={setModalInput} loading={loading} />
-                    <ActionDrawer isOpen={isOpen} onClose={onClose} setOpenModal={setOpenModal} isAdmin={isAdmin} loading={loading} onVerify={handleVerify} role="admin" />
+                    <SecConfModal
+                        isOpen={isModal2Open}
+                        onClose={handleModal2Close}
+                        modalBody2={modalBody2}
+                    />
+                    <RejectionModal
+                        isOpen={openModal}
+                        onClose={() => setOpenModal(false)}
+                        onConfirm={handleReject}
+                        message={modalInput}
+                        setMessage={setModalInput}
+                        loading={loading}
+                    />
+                    <ActionDrawer
+                        isOpen={isOpen}
+                        onClose={onClose}
+                        setOpenModal={setOpenModal}
+                        isAdmin={isAdmin}
+                        loading={loading}
+                        onVerify={handleVerify}
+                        role="admin"
+                    />
                 </div>
             </form>
         </Box>

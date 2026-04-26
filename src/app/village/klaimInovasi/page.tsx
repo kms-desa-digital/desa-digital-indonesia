@@ -162,6 +162,27 @@ const KlaimInovasiContent: React.FC = () => {
         setDisabled(true);
     };
 
+    const handleDeleteClaim = (id: string) => {
+        setItemToDelete(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDeleteClaim = async () => {
+        if (!itemToDelete) return;
+        setLoading(true);
+        try {
+            await deleteClaim(itemToDelete);
+            toast.success("Klaim berhasil dihapus");
+            router.replace("/village/pengajuan/saya");
+        } catch (err) {
+            console.error("Error deleting claim:", err);
+            toast.error("Gagal menghapus klaim");
+        } finally {
+            setLoading(false);
+            setIsDeleteModalOpen(false);
+        }
+    };
+
     const onSelectImage = (event: React.ChangeEvent<HTMLInputElement>, maxFiles: number) => {
         const files = event.target.files;
         if (files) {
@@ -307,25 +328,17 @@ const KlaimInovasiContent: React.FC = () => {
         }
     };
 
-    const handleDeleteClaim = async () => {
-        if (!editId) return;
-        if (!confirm("Apakah Anda yakin ingin menghapus klaim ini?")) return;
-
-        setLoading(true);
-        try {
-            await deleteClaim(editId);
-            toast.success("Klaim berhasil dihapus");
-            router.push(`/village/pengajuan/${user?.uid}`);
-        } catch (error) {
-            console.error("Error deleting claim:", error);
-            toast.error("Gagal menghapus klaim");
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const [isModal1Open, setIsModal1Open] = useState(false);
     const [isModal2Open, setIsModal2Open] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+    const getDynamicModalBody = () => {
+        if (editId && claimData?.status === "Terverifikasi") {
+            return "Klaim ini sudah terverifikasi. Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu' dan memerlukan persetujuan ulang dari Admin. Apakah Anda yakin?";
+        }
+        return modalBody1;
+    };
     const closeModal = () => {
         setIsModal1Open(false);
         setIsModal2Open(false);
@@ -557,7 +570,7 @@ const KlaimInovasiContent: React.FC = () => {
                                         isLoading={loading}
                                         onClick={handleAjukanKlaim}
                                         type="button"
-                                        disabled={disabled}
+                                        isDisabled={!isFormValid() || disabled || Object.values(isUploading).some(v => v)}
                                         colorScheme="green"
                                         fontSize="14px"
                                     >
@@ -567,7 +580,10 @@ const KlaimInovasiContent: React.FC = () => {
                                         <Button
                                             flex={1}
                                             isLoading={loading}
-                                            onClick={handleDeleteClaim}
+                                            onClick={() => {
+                                                setItemToDelete(editId);
+                                                setIsDeleteModalOpen(true);
+                                            }}
                                             type="button"
                                             bg="red.500"
                                             color="white"
@@ -585,10 +601,21 @@ const KlaimInovasiContent: React.FC = () => {
 
                     <ConfModal
                         isOpen={isModal1Open}
-                        onClose={closeModal}
-                        modalTitle=""
-                        modalBody1={modalBody1}
-                        onYes={handleModal1Yes}
+                        onClose={() => {
+                            setIsModal1Open(false);
+                            setDisabled(false);
+                        }}
+                        onYes={submitClaim}
+                        modalBody1={getDynamicModalBody()}
+                        modalTitle="Konfirmasi Klaim"
+                        isLoading={loading}
+                    />
+                    <ConfModal
+                        isOpen={isDeleteModalOpen}
+                        onClose={() => setIsDeleteModalOpen(false)}
+                        onYes={confirmDeleteClaim}
+                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini? Data yang sudah dihapus tidak dapat dikembalikan."
+                        modalTitle="Hapus Klaim"
                         isLoading={loading}
                     />
                     <SecConfModal
