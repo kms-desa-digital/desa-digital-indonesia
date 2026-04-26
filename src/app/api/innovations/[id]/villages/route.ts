@@ -43,7 +43,7 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     const villageDocs = await db.collection('villages')
       .find({
         $or: [
-          { _id: { $in: allDesaIds.map((did: string) => ObjectId.isValid(did) ? new ObjectId(did) : did) } },
+          { _id: { $in: allDesaIds.map((did: string) => ObjectId.isValid(did) ? new ObjectId(did) : did) as any[] } },
           { userId: { $in: allDesaIds } }
         ]
       })
