@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
     
     const db = await connectToDatabase();
     const dbUser = await db.collection("users").findOne({
-      $or: [{ uid: id }, { firebaseUid: id }, { _id: id as any }]
+      $or: [{ uid: id }, { firebaseUid: id }, { id: id }, { _id: id as any }]
     });
 
     return NextResponse.json({
@@ -55,15 +55,24 @@ export async function PUT(req: NextRequest, { params }: { params: Params }) {
       await adminAuth.updateUser(id, fbUpdateData);
     }
 
-    // 2. Update in MongoDB
+    // 2. Update in MongoDB (with upsert to handle users registered on client-side)
     const db = await connectToDatabase();
     const dbUpdateData: any = { updatedAt: new Date() };
     if (email) dbUpdateData.email = email;
     if (role) dbUpdateData.role = role;
 
     await db.collection("users").updateOne(
-      { $or: [{ uid: id }, { firebaseUid: id }, { _id: id as any }] },
-      { $set: dbUpdateData }
+      { $or: [{ uid: id }, { firebaseUid: id }, { id: id }, { _id: id as any }] },
+      { 
+        $set: dbUpdateData,
+        $setOnInsert: {
+          uid: id,
+          firebaseUid: id,
+          createdAt: new Date(),
+          status: "Terverifikasi"
+        }
+      },
+      { upsert: true }
     );
 
     // 3. Update in Firestore
@@ -117,7 +126,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
     const db = await connectToDatabase();
     
     const user = await db.collection("users").findOne({
-      $or: [{ uid: id }, { firebaseUid: id }, { _id: id as any }]
+      $or: [{ uid: id }, { firebaseUid: id }, { id: id }, { _id: id as any }]
     });
 
     if (user) {
@@ -133,7 +142,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
     }
 
     await db.collection("users").deleteOne({
-      $or: [{ uid: id }, { firebaseUid: id }, { _id: id as any }]
+      $or: [{ uid: id }, { firebaseUid: id }, { id: id }, { _id: id as any }]
     });
 
     return NextResponse.json({ message: "User deleted successfully" });

@@ -185,62 +185,45 @@ const KlaimInovasiDetail: React.FC = () => {
 
                 {/* Rejection Alert at the top for User */}
                 {!isAdmin && claimData.status === "Ditolak" && (
-                    <Box mt="60px" px={4} mb={-10}>
+                    <Box px={4}>
                         <StatusCard status="Ditolak" message={claimData.catatanAdmin} />
                     </Box>
                 )}
 
                 <Box
-                    padding={4}
-                    paddingTop={!isAdmin && claimData.status === "Ditolak" ? "0px" : "60px"}
-                    paddingBottom="180px"
+                    paddingBottom="40px"
                 >
-                {/* Header Profile Section */}
+                    {/* Header Profile Section */}
 
-                <Box position="relative" w="full" h="280px">
-                    <Image
-                        src={claimData.fotoInovasi || (fotos.length > 0 ? fotos[0] : "/images/default-innovation.jpg")}
-                        alt="Header"
-                        w="full"
-                        h="full"
-                        objectFit="cover"
-                    />
+                    <Box position="relative" w="full" h="280px">
+                        <Image
+                            src={claimData.fotoInovasi || (fotos.length > 0 ? fotos[0] : "/images/default-innovation.jpg")}
+                            alt="Header"
+                            w="full"
+                            h="full"
+                            objectFit="cover"
+                        />
 
-                    <Box
-                        position="absolute"
-                        top="0"
-                        left="0"
-                        w="full"
-                        h="full"
-                        bgGradient="linear(to-b, rgba(0,0,0,0.4), transparent)"
-                    />
-                </Box>
+                        <Box
+                            position="absolute"
+                            top="0"
+                            left="0"
+                            w="full"
+                            h="full"
+                            bgGradient="linear(to-b, rgba(0,0,0,0.4), transparent)"
+                        />
+                    </Box>
 
-                <Box px={5} mt="-24px" position="relative" zIndex={1}>
-                    <Box bg="white" p={5} borderRadius="10px" shadow="xl">
-                        <Stack spacing={4}>
-                            <Box>
-                                <Title>
-                                    {claimData.namaInovasi}
-                                </Title>
-                                <Flex gap={2} wrap="wrap">
-                                    <Tag
-                                        colorScheme={isManual ? "blue" : "green"}
-                                        variant="subtle"
-                                        borderRadius="full"
-                                        mt={1}
-                                        px={4}
-                                        py={1}
-                                        fontSize="10px"
-                                        fontWeight="700"
-                                        bg={isManual ? "blue.50" : "green.50"}
-                                        color={isManual ? "blue.600" : "green.600"}
-                                    >
-                                        {isManual ? "Manual" : "Klaim"}
-                                    </Tag>
-                                    {!isManual && claimData.kategoriInovasi && (
+                    <Box px={5} mt="-24px" position="relative" zIndex={1}>
+                        <Box bg="white" p={5} borderRadius="10px" shadow="xl">
+                            <Stack spacing={4}>
+                                <Box>
+                                    <Title>
+                                        {claimData.namaInovasi}
+                                    </Title>
+                                    <Flex gap={2} wrap="wrap">
                                         <Tag
-                                            colorScheme="gray"
+                                            colorScheme={isManual ? "blue" : "green"}
                                             variant="subtle"
                                             borderRadius="full"
                                             mt={1}
@@ -248,313 +231,309 @@ const KlaimInovasiDetail: React.FC = () => {
                                             py={1}
                                             fontSize="10px"
                                             fontWeight="700"
-                                            bg="gray.100"
-                                            color="gray.600"
+                                            bg={isManual ? "blue.50" : "green.50"}
+                                            color={isManual ? "blue.600" : "green.600"}
                                         >
-                                            {claimData.kategoriInovasi}
+                                            {isManual ? "Manual" : "Klaim"}
                                         </Tag>
-                                    )}
-                                </Flex>
-                            </Box>
-
-                            <Flex
-                                align="center"
-                                gap={3}
-                                p={3}
-                                borderRadius="20px"
-                                borderWidth="1px"
-                                borderColor="gray.100"
-                                bg="gray.50"
-                            >
-                                <Avatar
-                                    src={claimData.logoInovator}
-                                    name={claimData.namaInovator}
-                                    size="sm"
-                                    borderRadius="lg"
-                                />
-                                <Box>
-                                    <Text fontSize="10px" color="gray.500" fontWeight="600">Inovator</Text>
-                                    <Text fontSize="12px" fontWeight="800" color="gray.800">{claimData.namaInovator}</Text>
+                                        {!isManual && claimData.kategoriInovasi && (
+                                            <Tag
+                                                colorScheme="gray"
+                                                variant="subtle"
+                                                borderRadius="full"
+                                                mt={1}
+                                                px={4}
+                                                py={1}
+                                                fontSize="10px"
+                                                fontWeight="700"
+                                                bg="gray.100"
+                                                color="gray.600"
+                                            >
+                                                {claimData.kategoriInovasi}
+                                            </Tag>
+                                        )}
+                                    </Flex>
                                 </Box>
-                            </Flex>
 
-                            <Box>
-                                <Text fontWeight="700" fontSize="14px" color="gray.800" mb={2}>Deskripsi</Text>
-                                <Text
-                                    fontSize="12px"
-                                    color="gray.600"
-                                    lineHeight="1.6"
-                                    noOfLines={isExpanded ? undefined : 3}
+                                <Flex
+                                    align="center"
+                                    gap={3}
+                                    p={3}
+                                    borderRadius="20px"
+                                    borderWidth="1px"
+                                    borderColor="gray.100"
+                                    bg="gray.50"
                                 >
-                                    {claimData.deskripsiInovasi || "Tidak ada deskripsi tersedia untuk klaim ini."}
-                                </Text>
-                                {(claimData.deskripsiInovasi?.length > 160) && (
-                                    <Button
-                                        variant="link"
-                                        color="green.700"
+                                    <Avatar
+                                        src={claimData.logoInovator}
+                                        name={claimData.namaInovator}
+                                        size="sm"
+                                        borderRadius="lg"
+                                    />
+                                    <Box>
+                                        <Text fontSize="10px" color="gray.500" fontWeight="600">Inovator</Text>
+                                        <Text fontSize="12px" fontWeight="800" color="gray.800">{claimData.namaInovator}</Text>
+                                    </Box>
+                                </Flex>
+
+                                <Box>
+                                    <Text fontWeight="700" fontSize="14px" color="gray.800" mb={2}>Deskripsi</Text>
+                                    <Text
                                         fontSize="12px"
-                                        onClick={() => setIsExpanded(!isExpanded)}
-                                        mt={1}
-                                        fontWeight="700"
-                                        textDecoration="underline"
+                                        color="gray.600"
+                                        lineHeight="1.6"
+                                        noOfLines={isExpanded ? undefined : 3}
                                     >
-                                        {isExpanded ? "Sembunyikan" : "Selengkapnya"}
+                                        {claimData.deskripsiInovasi || "Tidak ada deskripsi tersedia untuk klaim ini."}
+                                    </Text>
+                                    {(claimData.deskripsiInovasi?.length > 160) && (
+                                        <Button
+                                            variant="link"
+                                            color="green.700"
+                                            fontSize="12px"
+                                            onClick={() => setIsExpanded(!isExpanded)}
+                                            mt={1}
+                                            fontWeight="700"
+                                            textDecoration="underline"
+                                        >
+                                            {isExpanded ? "Sembunyikan" : "Selengkapnya"}
+                                        </Button>
+                                    )}
+                                </Box>
+
+                                {!isManual && (
+                                    <Button
+                                        w="full"
+                                        h="36px"
+                                        bg="green.700"
+                                        color="white"
+                                        borderRadius="10px"
+                                        fontSize="14px"
+                                        fontWeight="700"
+                                        _hover={{ bg: "green.800" }}
+                                        onClick={() => router.push(`/innovation/detail/${claimData.inovasiId}`)}
+                                    >
+                                        Lihat Detail
                                     </Button>
                                 )}
-                            </Box>
+                            </Stack>
+                        </Box>
+                    </Box>
 
-                            {!isManual && (
-                                <Button
-                                    w="full"
-                                    h="36px"
-                                    bg="green.700"
-                                    color="white"
-                                    borderRadius="10px"
-                                    fontSize="14px"
-                                    fontWeight="700"
-                                    _hover={{ bg: "green.800" }}
-                                    onClick={() => router.push(`/innovation/detail/${claimData.inovasiId}`)}
-                                >
-                                    Lihat Detail
-                                </Button>
-                            )}
-                        </Stack>
+                    {/* Evidence Section */}
+                    <Box px={8} mt={6}>
+                        <Text fontWeight="700" fontSize="14px" color="gray.700" mb={2}>Dokumen Bukti Klaim</Text>
+
+                        {/* Photo Proofs */}
+                        {fotos.length > 0 && (
+                            <Box mb={6}>
+                                <Text fontWeight="400" fontSize="12px" color="gray.500" mb={2}>Foto Inovasi</Text>
+                                <SimpleGrid columns={2} spacing={3}>
+                                    {fotos.map((src: string, i: number) => (
+                                        <Box
+                                            key={i}
+                                            borderRadius="10px"
+                                            overflow="hidden"
+                                            height="160px"
+                                            bg="gray.100"
+                                            cursor="pointer"
+                                            onClick={() => window.open(src, '_blank')}
+                                            transition="transform 0.2s"
+                                            _hover={{ transform: "scale(1.02)" }}
+                                        >
+                                            <Image src={src} boxSize="full" objectFit="cover" alt={`Bukti Foto ${i + 1}`} />
+                                        </Box>
+                                    ))}
+                                </SimpleGrid>
+                            </Box>
+                        )}
+
+                        {/* Video Proof */}
+                        {video && (Array.isArray(video) ? video.length > 0 : (video && video !== "" && video !== "undefined")) && (
+                            <Box mb={6}>
+                                <Text fontWeight="400" fontSize="12px" color="gray.500" mb={2}>Video Inovasi</Text>
+                                <Box borderRadius="10px" overflow="hidden" bg="black" shadow="lg">
+                                    <video src={Array.isArray(video) ? video[0] : video} controls style={{ width: "100%", maxHeight: "300px" }} />
+                                </Box>
+                            </Box>
+                        )}
+
+                        {/* Document Proofs */}
+                        {docs.length > 0 && (
+                            <Box mb={6}>
+                                <Text fontWeight="400" fontSize="12px" color="gray.500" mb={2}>Dokumen Pendukung</Text>
+                                <Stack spacing={3}>
+                                    {docs.map((src: string, i: number) => {
+                                        const fileName = (() => {
+                                            try {
+                                                const decoded = decodeURIComponent(src);
+                                                const nameWithQuery = decoded.split('/').pop() || "";
+                                                const name = nameWithQuery.split('?')[0];
+                                                const rawName = name.split('/').pop() || name;
+
+                                                // Remove timestamp prefix (e.g., 1776098288873_)
+                                                if (rawName.includes('_')) {
+                                                    const parts = rawName.split('_');
+                                                    if (parts.length > 1 && !isNaN(Number(parts[0]))) {
+                                                        return parts.slice(1).join('_');
+                                                    }
+                                                }
+                                                return rawName;
+                                            } catch (e) {
+                                                return `Dokumen ${i + 1}`;
+                                            }
+                                        })();
+
+                                        const fileExt = fileName.split('.').pop()?.toUpperCase() || "DOC";
+                                        const isPdf = fileExt === "PDF";
+
+                                        return (
+                                            <Flex
+                                                key={i}
+                                                p={4}
+                                                bg="white"
+                                                borderRadius="10px"
+                                                align="center"
+                                                justify="space-between"
+                                                borderWidth="1px"
+                                                borderColor="gray.100"
+                                                cursor="pointer"
+                                                onClick={() => setPreviewUrl(src)}
+                                                _hover={{ bg: "gray.50", borderColor: "green.200" }}
+                                                transition="all 0.2s"
+                                                overflow="hidden"
+                                            >
+                                                <Flex align="center" gap={2} flex={1} minW={0}>
+                                                    <Box p={2} px={3} bg={isPdf ? "red.50" : "blue.50"} borderRadius="10px" flexShrink={0}>
+                                                        <Text fontSize="10px" fontWeight="700" color={isPdf ? "red.500" : "blue.500"}>{fileExt.length > 4 ? "DOC" : fileExt}</Text>
+                                                    </Box>
+                                                    <Box flex={1} minW={0}>
+                                                        <Text fontSize="12px" fontWeight="400" noOfLines={1} color="gray.700">
+                                                            {fileName}
+                                                        </Text>
+                                                        <Text fontSize="10px" color="gray.400">Ketuk untuk melihat dokumen</Text>
+                                                    </Box>
+                                                </Flex>
+                                            </Flex>
+                                        );
+                                    })}
+                                </Stack>
+                            </Box>
+                        )}
                     </Box>
                 </Box>
 
-                {/* Evidence Section */}
-                <Box px={8} mt={6}>
-                    <Text fontWeight="700" fontSize="14px" color="gray.700" mb={2}>Dokumen Bukti Klaim</Text>
 
-                    {/* Photo Proofs */}
-                    {fotos.length > 0 && (
-                        <Box mb={6}>
-                            <Text fontWeight="400" fontSize="12px" color="gray.500" mb={2}>Foto Inovasi</Text>
-                            <SimpleGrid columns={2} spacing={3}>
-                                {fotos.map((src: string, i: number) => (
-                                    <Box
-                                        key={i}
-                                        borderRadius="10px"
-                                        overflow="hidden"
-                                        height="160px"
-                                        bg="gray.100"
-                                        cursor="pointer"
-                                        onClick={() => window.open(src, '_blank')}
-                                        transition="transform 0.2s"
-                                        _hover={{ transform: "scale(1.02)" }}
-                                    >
-                                        <Image src={src} boxSize="full" objectFit="cover" alt={`Bukti Foto ${i + 1}`} />
-                                    </Box>
-                                ))}
-                            </SimpleGrid>
-                        </Box>
-                    )}
+                {/* Fixed Action Bar at the Bottom */}
 
-                    {/* Video Proof */}
-                    {video && (Array.isArray(video) ? video.length > 0 : (video && video !== "" && video !== "undefined")) && (
-                        <Box mb={6}>
-                            <Text fontWeight="400" fontSize="12px" color="gray.500" mb={2}>Video Inovasi</Text>
-                            <Box borderRadius="10px" overflow="hidden" bg="black" shadow="lg">
-                                <video src={Array.isArray(video) ? video[0] : video} controls style={{ width: "100%", maxHeight: "300px" }} />
-                            </Box>
-                        </Box>
-                    )}
+                <Box
+                    position="fixed"
+                    bottom="0"
+                    left="50%"
+                    transform="translateX(-50%)"
+                    width="100%"
+                    maxW="363px"
+                    bg="white"
+                    p={4}
+                    pb="24px"
+                    zIndex="20"
+                    shadow="0px -4px 10px rgba(0,0,0,0.05)"
+                    borderTopWidth="1px"
+                >
+                    {isAdmin ? (
+                        claimData.status === "Menunggu" ? (
+                            <Button
+                                w="full"
+                                h="48px"
+                                borderRadius="lg"
+                                colorScheme="green"
+                                isLoading={loading}
+                                onClick={onOpen}
+                                fontWeight="800"
+                                fontSize="15px"
+                            >
+                                Verifikasi Klaim
+                            </Button>
+                        ) : (
+                            <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
+                        )
+                    ) : (
+                        <Stack spacing={3} w="full">
+                            {/* Status Card only for Waiting status for User (Rejection is shown at top) */}
+                            {claimData.status === "Menunggu" && (
+                                <StatusCard status="Menunggu" />
+                            )}
 
-                    {/* Document Proofs */}
-                    {docs.length > 0 && (
-                        <Box mb={6}>
-                            <Text fontWeight="400" fontSize="12px" color="gray.500" mb={2}>Dokumen Pendukung</Text>
-                            <Stack spacing={3}>
-                                {docs.map((src: string, i: number) => {
-                                    const fileName = (() => {
-                                        try {
-                                            const decoded = decodeURIComponent(src);
-                                            const nameWithQuery = decoded.split('/').pop() || "";
-                                            const name = nameWithQuery.split('?')[0];
-                                            const rawName = name.split('/').pop() || name;
-
-                                            // Remove timestamp prefix (e.g., 1776098288873_)
-                                            if (rawName.includes('_')) {
-                                                const parts = rawName.split('_');
-                                                if (parts.length > 1 && !isNaN(Number(parts[0]))) {
-                                                    return parts.slice(1).join('_');
-                                                }
-                                            }
-                                            return rawName;
-                                        } catch (e) {
-                                            return `Dokumen ${i + 1}`;
-                                        }
-                                    })();
-
-                                    const fileExt = fileName.split('.').pop()?.toUpperCase() || "DOC";
-                                    const isPdf = fileExt === "PDF";
-
-                                    return (
-                                        <Flex
-                                            key={i}
-                                            p={4}
-                                            bg="white"
-                                            borderRadius="10px"
-                                            align="center"
-                                            justify="space-between"
-                                            borderWidth="1px"
-                                            borderColor="gray.100"
-                                            cursor="pointer"
-                                            onClick={() => setPreviewUrl(src)}
-                                            _hover={{ bg: "gray.50", borderColor: "green.200" }}
-                                            transition="all 0.2s"
-                                            overflow="hidden"
-                                        >
-                                            <Flex align="center" gap={2} flex={1} minW={0}>
-                                                <Box p={2} px={3} bg={isPdf ? "red.50" : "blue.50"} borderRadius="10px" flexShrink={0}>
-                                                    <Text fontSize="10px" fontWeight="700" color={isPdf ? "red.500" : "blue.500"}>{fileExt.length > 4 ? "DOC" : fileExt}</Text>
-                                                </Box>
-                                                <Box flex={1} minW={0}>
-                                                    <Text fontSize="12px" fontWeight="400" noOfLines={1} color="gray.700">
-                                                        {fileName}
-                                                    </Text>
-                                                    <Text fontSize="10px" color="gray.400">Ketuk untuk melihat dokumen</Text>
-                                                </Box>
-                                            </Flex>
-                                        </Flex>
-                                    );
-                                })}
-                            </Stack>
-                        </Box>
+                            {user?.uid === claimData.desaId && (
+                                <Button
+                                    width="100%"
+                                    onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?editId=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
+                                    fontSize="16px"
+                                    display={claimData.status === "Menunggu" ? "none" : "flex"}
+                                    mt={2}
+                                >
+                                    {claimData.status === "Ditolak" ? "Ajukan Ulang" : "Edit Klaim"}
+                                </Button>
+                            )}
+                        </Stack>
                     )}
                 </Box>
-            </Box>
 
 
-            {/* Fixed Action Bar at the Bottom */}
 
-            <Box
-                position="fixed"
-                bottom="0"
-                left="50%"
-                transform="translateX(-50%)"
-                width="100%"
-                maxW="363px"
-                bg="white"
-                p={4}
-                pb="24px"
-                zIndex="20"
-                shadow="0px -4px 10px rgba(0,0,0,0.05)"
-                borderTopWidth="1px"
-            >
-                {isAdmin ? (
-                    claimData.status === "Menunggu" ? (
-                        <Button
-                            w="full"
-                            h="48px"
-                            borderRadius="lg"
-                            colorScheme="green"
-                            isLoading={loading}
-                            onClick={onOpen}
-                            fontWeight="800"
-                            fontSize="15px"
-                        >
-                            Verifikasi Klaim
-                        </Button>
-                    ) : (
-                        <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
-                    )
-                ) : (
-                    <Stack spacing={3} w="full">
-                        {/* Status Card only for Waiting status for User (Rejection is shown at top) */}
-                        {claimData.status === "Menunggu" && (
-                            <StatusCard status="Menunggu" />
-                        )}
 
-                        {user?.uid === claimData.desaId && (
-                            <Flex gap={3} w="full">
-                                {claimData.status === "Ditolak" && (
-                                    <Button
-                                        flex={1}
-                                        h="48px"
-                                        borderRadius="lg"
-                                        colorScheme="red"
-                                        onClick={handleDelete}
-                                        isLoading={loading}
-                                        fontWeight="800"
-                                        fontSize="15px"
-                                    >
-                                        Delete Inovasi
-                                    </Button>
-                                )}
-                                <Button
-                                    flex={1}
-                                    h="48px"
-                                    borderRadius="lg"
-                                    colorScheme="green"
-                                    onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?editId=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
-                                    fontWeight="800"
-                                    fontSize="15px"
-                                    display={claimData.status === "Menunggu" ? "none" : "flex"}
-                                >
-                                    {claimData.status === "Ditolak" ? "Update Inovasi" : "Edit Klaim"}
-                                </Button>
+                <RejectionModal
+                    isOpen={openModal}
+                    onClose={() => setOpenModal(false)}
+                    onConfirm={handleReject}
+                    message={modalInput}
+                    setMessage={setModalInput}
+                    loading={loading}
+                />
+                <ActionDrawer
+                    isOpen={isOpen}
+                    onClose={onClose}
+                    setOpenModal={setOpenModal}
+                    isAdmin={isAdmin}
+                    loading={loading}
+                    onVerify={handleVerify}
+                    role="admin"
+                />
+
+                {/* Document Preview Modal */}
+                <Modal isOpen={!!previewUrl} onClose={() => setPreviewUrl(null)} isCentered>
+                    <ModalOverlay bg="blackAlpha.500" />
+                    <ModalContent
+                        maxW="340px"
+                        w="85%"
+                        h="80vh"
+                        borderRadius="xl"
+                        overflow="hidden"
+                        mx="auto"
+                    >
+                        <ModalHeader bg="green.700" color="white" py={3} fontSize="14px">
+                            <Flex justify="space-between" align="center">
+                                <Text fontWeight="700">Pratinjau Dokumen</Text>
+                                <ModalCloseButton position="static" size="sm" />
                             </Flex>
-                        )}
-                    </Stack>
-                )}
-            </Box>
-
-
-
-
-            <RejectionModal
-                isOpen={openModal}
-                onClose={() => setOpenModal(false)}
-                onConfirm={handleReject}
-                message={modalInput}
-                setMessage={setModalInput}
-                loading={loading}
-            />
-            <ActionDrawer
-                isOpen={isOpen}
-                onClose={onClose}
-                setOpenModal={setOpenModal}
-                isAdmin={isAdmin}
-                loading={loading}
-                onVerify={handleVerify}
-                role="admin"
-            />
-
-            {/* Document Preview Modal */}
-            <Modal isOpen={!!previewUrl} onClose={() => setPreviewUrl(null)} isCentered>
-                <ModalOverlay bg="blackAlpha.500" />
-                <ModalContent
-                    maxW="340px"
-                    w="85%"
-                    h="80vh"
-                    borderRadius="xl"
-                    overflow="hidden"
-                    mx="auto"
-                >
-                    <ModalHeader bg="green.700" color="white" py={3} fontSize="14px">
-                        <Flex justify="space-between" align="center">
-                            <Text fontWeight="700">Pratinjau Dokumen</Text>
-                            <ModalCloseButton position="static" size="sm" />
-                        </Flex>
-                    </ModalHeader>
-                    <ModalBody p={0} bg="white">
-                        {previewUrl && (
-                            <iframe
-                                src={`${previewUrl}#view=FitH&toolbar=0`}
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    border: "none",
-                                }}
-                                title="Pratinjau Dokumen"
-                            />
-                        )}
-                    </ModalBody>
-                </ModalContent>
-            </Modal>
-        </Container>
-    </Box>
+                        </ModalHeader>
+                        <ModalBody p={0} bg="white">
+                            {previewUrl && (
+                                <iframe
+                                    src={`${previewUrl}#view=FitH&toolbar=0`}
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        border: "none",
+                                    }}
+                                    title="Pratinjau Dokumen"
+                                />
+                            )}
+                        </ModalBody>
+                    </ModalContent>
+                </Modal>
+            </Container>
+        </Box>
     );
 };
 

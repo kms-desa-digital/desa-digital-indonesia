@@ -41,10 +41,16 @@ import {
     FormControl,
     FormLabel,
     Select,
+    AlertDialog,
+    AlertDialogBody,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogContent,
+    AlertDialogOverlay,
 } from "@chakra-ui/react";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getUsers, deleteUser, createUser, updateUser } from "Services/adminServices";
 
@@ -70,12 +76,17 @@ const UserManagementPage: React.FC = () => {
         role: "village"
     });
 
+    // Delete confirmation state
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+    const [userToDelete, setUserToDelete] = useState<string | null>(null);
+    const cancelRef = useRef<any>(null);
+
     const roleOptions = [
-        { label: "Semua Role", value: "all" },
+        { label: "Semua", value: "all" },
         { label: "Admin", value: "admin" },
         { label: "Desa", value: "village" },
         { label: "Inovator", value: "innovator" },
-        { label: "Kementerian", value: "kementerian" },
+        { label: "Kementerian", value: "ministry" },
     ];
 
     const fetchUsers = async () => {
@@ -125,12 +136,12 @@ const UserManagementPage: React.FC = () => {
         try {
             if (modalMode === "add") {
                 await createUser(formData);
-                toast({ title: "User berhasil ditambahkan", status: "success", position: "top" });
+                toast({ title: "Pengguna berhasil ditambahkan", status: "success", position: "top" });
             } else {
                 const updateData: any = { email: formData.email, role: formData.role };
                 if (formData.password) updateData.password = formData.password;
                 await updateUser(selectedUserId!, updateData);
-                toast({ title: "User berhasil diperbarui", status: "success", position: "top" });
+                toast({ title: "Pengguna berhasil diperbarui", status: "success", position: "top" });
             }
             onClose();
             fetchUsers();
@@ -141,15 +152,23 @@ const UserManagementPage: React.FC = () => {
         }
     };
 
-    const handleDeleteUser = async (id: string) => {
-        if (confirm("Apakah Anda yakin ingin menghapus user ini? Semua profil terkait (Desa/Inovator) juga akan dihapus.")) {
-            try {
-                await deleteUser(id);
-                toast({ title: "User berhasil dihapus", status: "success", position: "top" });
-                fetchUsers();
-            } catch (error: any) {
-                toast({ title: "Gagal menghapus user", description: error.message, status: "error", position: "top" });
-            }
+    const handleDeleteClick = (id: string) => {
+        setUserToDelete(id);
+        setIsDeleteOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!userToDelete) return;
+        
+        try {
+            await deleteUser(userToDelete);
+            toast({ title: "Pengguna berhasil dihapus", status: "success", position: "top" });
+            fetchUsers();
+        } catch (error: any) {
+            toast({ title: "Gagal menghapus pengguna", description: error.message, status: "error", position: "top" });
+        } finally {
+            setIsDeleteOpen(false);
+            setUserToDelete(null);
         }
     };
 
@@ -194,7 +213,7 @@ const UserManagementPage: React.FC = () => {
                             fontWeight="normal"
                             minW="100px"
                         >
-                            {roleOptions.find(opt => opt.value === roleFilter)?.label.split(" ")[1] || "Filter"}
+                            {roleOptions.find(opt => opt.value === roleFilter)?.label || "Filter"}
                         </MenuButton>
                         <MenuList>
                             {roleOptions.map((opt) => (
@@ -224,7 +243,7 @@ const UserManagementPage: React.FC = () => {
                         _hover={{ backgroundColor: "#2a5c46" }}
                         onClick={handleAddClick}
                     >
-                        Tambah User
+                        Tambah Pengguna
                     </Button>
                 </Flex>
 
@@ -263,7 +282,7 @@ const UserManagementPage: React.FC = () => {
                                                     size="xs"
                                                     colorScheme="red"
                                                     variant="ghost"
-                                                    onClick={() => handleDeleteUser(user.uid)}
+                                                    onClick={() => handleDeleteClick(user.uid)}
                                                 />
                                             </Flex>
                                         </Td>
@@ -314,7 +333,7 @@ const UserManagementPage: React.FC = () => {
             <Modal isOpen={isOpen} onClose={onClose} isCentered>
                 <ModalOverlay />
                 <ModalContent mx="16px" maxWidth="328px">
-                    <ModalHeader fontSize="16px">{modalMode === "add" ? "Tambah User Baru" : "Edit User"}</ModalHeader>
+                    <ModalHeader fontSize="16px">{modalMode === "add" ? "Tambah Pengguna Baru" : "Edit Pengguna"}</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <Stack spacing={4}>
@@ -354,7 +373,7 @@ const UserManagementPage: React.FC = () => {
                                     <option value="village">Desa</option>
                                     <option value="innovator">Inovator</option>
                                     <option value="admin">Admin</option>
-                                    <option value="kementerian">Kementerian</option>
+                                    <option value="ministry">Kementerian</option>
                                 </Select>
                             </FormControl>
                         </Stack>
@@ -373,6 +392,42 @@ const UserManagementPage: React.FC = () => {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog
+                isOpen={isDeleteOpen}
+                leastDestructiveRef={cancelRef}
+                onClose={() => setIsDeleteOpen(false)}
+                isCentered
+            >
+                <AlertDialogOverlay>
+                    <AlertDialogContent mx="16px" maxWidth="328px" borderRadius="xl">
+                        <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                            Hapus Pengguna
+                        </AlertDialogHeader>
+
+                        <AlertDialogBody fontSize="14px">
+                            Apakah Anda yakin ingin menghapus pengguna ini? Profil Desa/Inovator yang terhubung dengan akun ini juga akan ikut terhapus secara permanen.
+                        </AlertDialogBody>
+
+                        <AlertDialogFooter>
+                            <Button ref={cancelRef} onClick={() => setIsDeleteOpen(false)} size="sm">
+                                Batal
+                            </Button>
+                            <Button
+                                colorScheme="red"
+                                onClick={confirmDelete}
+                                ml={3}
+                                size="sm"
+                                bg="red.500"
+                                _hover={{ bg: "red.600" }}
+                            >
+                                Hapus
+                            </Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialogOverlay>
+            </AlertDialog>
         </Container>
     );
 };

@@ -304,7 +304,7 @@ const KlaimInovasiManualContent: React.FC = () => {
     const handleDeleteClaim = async () => {
         if (!editId) return;
         if (!confirm("Apakah Anda yakin ingin menghapus klaim ini?")) return;
-        
+
         setLoading(true);
         try {
             await deleteClaim(editId as string);
@@ -584,26 +584,31 @@ const KlaimInovasiManualContent: React.FC = () => {
                                         />
                                     </Box>
                                 )}
-                                <Flex gap={2}>
+                                <Flex gap={2} w="100%">
                                     <Button
                                         flex={1}
                                         isLoading={loading}
                                         onClick={handleAjukanKlaim}
                                         type="button"
-                                        disabled={disabled || !isFormValid()}
+                                        disabled={disabled}
                                         colorScheme="green"
+                                        fontSize="14px"
                                     >
                                         {claimData?.status === "Ditolak" ? "Ajukan Ulang" : editId ? "Perbarui Klaim" : "Ajukan Klaim"}
                                     </Button>
                                     {editId && (
                                         <Button
+                                            flex={1}
                                             isLoading={loading}
                                             onClick={handleDeleteClaim}
                                             type="button"
-                                            colorScheme="red"
+                                            bg="red.500"
+                                            color="white"
+                                            _hover={{ bg: "red.600" }}
+                                            fontSize="14px"
                                             disabled={disabled}
                                         >
-                                            Hapus Klaim
+                                            Delete Klaim
                                         </Button>
                                     )}
                                 </Flex>

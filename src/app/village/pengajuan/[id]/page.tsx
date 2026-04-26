@@ -67,13 +67,13 @@ const PengajuanKlaim: React.FC = () => {
 
         try {
             const response: any = await getClaims(
-              id, 
-              selectedFilter && selectedFilter !== "Semua" ? selectedFilter : undefined,
-              itemsPerPage,
-              skipValue,
-              searchTerm || undefined
+                id,
+                selectedFilter && selectedFilter !== "Semua" ? selectedFilter : undefined,
+                itemsPerPage,
+                skipValue,
+                searchTerm || undefined
             );
-            
+
             const claimsData = response.claims || response.data?.claims || [];
             const pagination = response.pagination || response.data?.pagination || {};
 
@@ -96,7 +96,7 @@ const PengajuanKlaim: React.FC = () => {
         }
     }, [id, selectedFilter, searchTerm]); // Tambah searchTerm ke dependency
 
-// Client side UI filtering removed in favor of server side search/filter
+    // Client side UI filtering removed in favor of server side search/filter
 
     const handleNextPage = async () => {
         if (hasMore) {
@@ -134,7 +134,7 @@ const PengajuanKlaim: React.FC = () => {
                 <Flex
                     flexDirection="column"
                     mb={2}
-                    mt={0}
+                    mt="-4px"
                     backgroundColor="#DCFCE7"
                     alignItems="center"
                     ml="-16px" // Netralisir padding dari Stack

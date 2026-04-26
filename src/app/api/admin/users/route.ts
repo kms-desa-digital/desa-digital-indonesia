@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
     // Map Firebase users with MongoDB roles
     let users = listUsersResult.users.map((fbUser) => {
-      const dbUser = usersInDb.find(u => u.uid === fbUser.uid || u.firebaseUid === fbUser.uid || String(u._id) === fbUser.uid);
+      const dbUser = usersInDb.find(u => u.uid === fbUser.uid || u.firebaseUid === fbUser.uid || u.id === fbUser.uid || String(u._id) === fbUser.uid);
 
       return {
         uid: fbUser.uid,

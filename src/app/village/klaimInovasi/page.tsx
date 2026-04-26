@@ -19,7 +19,7 @@ import SecConfModal from "src/components/confirmModal/secConfModal";
 import DocUpload from "src/components/form/DocUpload";
 import ImageUpload from "src/components/form/ImageUpload";
 import VidUpload from "src/components/form/VideoUpload";
-import { getVillageById, claimInnovation, getClaimById, updateClaim } from "Services/villageServices";
+import { getVillageById, claimInnovation, getClaimById, updateClaim, deleteClaim } from "Services/villageServices";
 import { getInnovationById } from "Services/innovationServices";
 
 import {
@@ -307,6 +307,23 @@ const KlaimInovasiContent: React.FC = () => {
         }
     };
 
+    const handleDeleteClaim = async () => {
+        if (!editId) return;
+        if (!confirm("Apakah Anda yakin ingin menghapus klaim ini?")) return;
+
+        setLoading(true);
+        try {
+            await deleteClaim(editId);
+            toast.success("Klaim berhasil dihapus");
+            router.push(`/village/pengajuan/${user?.uid}`);
+        } catch (error) {
+            console.error("Error deleting claim:", error);
+            toast.error("Gagal menghapus klaim");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const [isModal1Open, setIsModal1Open] = useState(false);
     const [isModal2Open, setIsModal2Open] = useState(false);
     const closeModal = () => {
@@ -536,16 +553,34 @@ const KlaimInovasiContent: React.FC = () => {
                                         />
                                     </Box>
                                 )}
-                                <Button
-                                    width="100%"
-                                    isLoading={loading}
-                                    onClick={handleAjukanKlaim}
-                                    type="button"
-                                    disabled={disabled || !isFormValid()}
-                                    colorScheme="green"
-                                >
-                                    {claimData?.status === "Ditolak" ? "Ajukan Ulang" : editId ? "Perbarui Klaim" : "Ajukan Klaim"}
-                                </Button>
+                                <Flex gap={2} w="100%">
+                                    <Button
+                                        flex={1}
+                                        isLoading={loading}
+                                        onClick={handleAjukanKlaim}
+                                        type="button"
+                                        disabled={disabled}
+                                        colorScheme="green"
+                                        fontSize="14px"
+                                    >
+                                        {claimData?.status === "Ditolak" ? "Ajukan Ulang" : editId ? "Perbarui Klaim" : "Ajukan Klaim"}
+                                    </Button>
+                                    {editId && (
+                                        <Button
+                                            flex={1}
+                                            isLoading={loading}
+                                            onClick={handleDeleteClaim}
+                                            type="button"
+                                            bg="red.500"
+                                            color="white"
+                                            _hover={{ bg: "red.600" }}
+                                            fontSize="14px"
+                                            disabled={disabled}
+                                        >
+                                            Delete Klaim
+                                        </Button>
+                                    )}
+                                </Flex>
                             </Flex>
                         </NavbarButton>
                     )}
