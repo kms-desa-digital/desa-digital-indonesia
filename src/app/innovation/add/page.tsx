@@ -118,7 +118,7 @@ const AddInnovation: React.FC = () => {
     const [alertStatus, setAlertStatus] = useState<"info" | "warning" | "error">(
         "warning"
     );
-    const [alertMessage, setAlertMessage] = useState(
+    const [alertMessage, setAlertMessage] = useState<any>(
         "Profil masih kosong. Silahkan isi data di bawah terlebih dahulu."
     );
     const [selectedStatus, setSelectedStatus] = useState("Masih diproduksi");
@@ -141,7 +141,6 @@ const AddInnovation: React.FC = () => {
     };
 
     const handleModal1Yes = () => {
-        setIsModal2Open(true);
         setIsModal1Open(false);
         setConfirmedSubmit(true);
         onSubmitForm();
@@ -150,7 +149,6 @@ const AddInnovation: React.FC = () => {
     useEffect(() => {
         if (confirmedSubmit) {
             setIsFormLocked(true);
-            setIsModal2Open(true);
             setConfirmedSubmit(false);
         }
     }, [confirmedSubmit]);
@@ -446,10 +444,7 @@ const AddInnovation: React.FC = () => {
             setLoading(false);
             setAlertStatus("info");
             
-            // Redirect to innovation list after 2 seconds
-            setTimeout(() => {
-                router.push("/innovation");
-            }, 2000);
+            setIsModal2Open(true);
         } catch (error) {
             console.error("Submission error:", error);
             setError("Gagal menyimpan data inovasi ke database.");
@@ -515,7 +510,18 @@ const AddInnovation: React.FC = () => {
                         setStatus("Menunggu");
                         setAlertStatus("warning");
                         setAlertMessage(
-                            `Inovasi sudah didaftarkan. Menunggu verifikasi admin.`
+                            <span>
+                                Pengajuan sedang diverifikasi admin. Pengajuan ini akan disimpan pada halaman{" "}
+                                <Text
+                                    as="span"
+                                    color="#347357"
+                                    textDecoration="underline"
+                                    cursor="pointer"
+                                    onClick={() => router.push(`/innovator/pengajuan/${user?.uid}`)}
+                                >
+                                    Pengajuan inovasi
+                                </Text>.
+                            </span>
                         );
                     } else if (data.status === "Ditolak") {
                         setIsEditable(true);
@@ -1018,20 +1024,20 @@ const AddInnovation: React.FC = () => {
                             {status === "Ditolak" ? "Ajukan Ulang" : "Ajukan Inovasi"}
                         </Button>
                     </NavbarButton>
-                    <ConfModal
-                        isOpen={isModal1Open}
-                        onClose={closeModal}
-                        modalTitle=""
-                        modalBody1={modalBody1}
-                        onYes={handleModal1Yes}
-                    />
-                    <SecConfModal
-                        isOpen={isModal2Open}
-                        onClose={closeModal}
-                        modalBody2={modalBody2}
-                    />
                 </>
             )}
+            <ConfModal
+                isOpen={isModal1Open}
+                onClose={closeModal}
+                modalTitle=""
+                modalBody1={modalBody1}
+                onYes={handleModal1Yes}
+            />
+            <SecConfModal
+                isOpen={isModal2Open}
+                onClose={closeModal}
+                modalBody2={modalBody2}
+            />
         </>
     );
 };

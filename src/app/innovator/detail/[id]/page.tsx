@@ -24,6 +24,7 @@ import { verifyInnovator } from "Services/adminServices";
 import { getInnovation } from "Services/innovationServices";
 import { DocumentData } from "firebase/firestore"; // Still used for type
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { FaWandMagicSparkles } from "react-icons/fa6";
 import { LuDot } from "react-icons/lu";
@@ -76,6 +77,7 @@ const DetailInnovator: React.FC = () => {
             */
             await verifyInnovator(id, { status: "Terverifikasi", catatanAdmin: "" });
             setInnovatorData((prev) => (prev ? { ...prev, status: "Terverifikasi" } : null));
+            toast.success("Profil Inovator berhasil diverifikasi");
         } catch (error) {
             console.error("Error verifying innovator via API:", error);
             setError("Error verifying innovator.");

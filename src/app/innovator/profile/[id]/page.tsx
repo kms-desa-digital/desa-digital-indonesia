@@ -19,6 +19,7 @@ import { getInnovatorById, getAssistedVillages } from "Services/innovatorService
 import { verifyInnovator } from "Services/adminServices";
 import { getInnovation } from "Services/innovationServices";
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 type InnovatorData = {
     id: string;
@@ -95,6 +96,7 @@ const ProfileInnovator: React.FC = () => {
                 setInnovatorData((prev) =>
                     prev ? ({ ...prev, status: "Terverifikasi" }) : null
                 );
+                toast.success("Profil Inovator berhasil diverifikasi");
             }
         } catch (error) {
             console.error("Error verifying user via API:", error);
