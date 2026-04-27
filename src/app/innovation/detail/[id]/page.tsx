@@ -62,6 +62,7 @@ function DetailInnovation() {
     const params = useParams();
     const id = params.id as string;
     const { role, isVillageVerified } = useUser();
+    const { isAdmin } = useAdminStatus();
     const [isExpanded, setIsExpanded] = useState(false);
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [user] = useAuthState(auth);
@@ -222,16 +223,17 @@ function DetailInnovation() {
             console.log("hahahahah:",data);
             setData({ ...data, status: "Terverifikasi" });
             
-            const innovator = await getInnovatorById(data.innovatorId);
+            const innovatorRes: any = await getInnovatorById(data.innovatorId);
+            const invData = innovatorRes?.innovator ?? innovatorRes?.data?.innovator ?? innovatorRes?.data ?? innovatorRes;
             // Update innovator's innovation count via API
             if (data.innovatorId) {
-                const currentCount = innovatorData.jumlahInovasi || 0;
+                const currentCount = invData?.jumlahInovasi ?? innovatorData.jumlahInovasi ?? 0;
                 await updateInnovator(data.innovatorId, {
                     jumlahInovasi: currentCount + 1,
-                    namaInovator: innovator.innovator.namaInovator,
-                    deskripsi: innovator.innovator.deskripsi,
-                    kategori: innovator.innovator.kategori,
-                    whatsapp: innovator.innovator.whatsapp,
+                    namaInovator: invData?.namaInovator,
+                    deskripsi: invData?.deskripsi,
+                    kategori: invData?.kategori,
+                    whatsapp: invData?.whatsapp,
                 });
             }
 
