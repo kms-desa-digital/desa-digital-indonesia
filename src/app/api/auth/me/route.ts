@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       $or: [
         { uid: uid },
         { firebaseUid: uid },
+        { id: uid },
         { _id: uid as any }
       ]
     })

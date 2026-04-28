@@ -13,43 +13,47 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     const { id } = await params
     const db = await connectToDatabase()
 
-    // 1. Ambil inovasi dari koleksi 'innovations' yang memiliki desaId ini
-    const innovations = await db.collection('innovations')
+    // 1. Ambil inovasi dari koleksi 'innovations' yang memiliki desaId ini (penugasan langsung)
+    const directInnovations = await db.collection('innovations')
       .find({
         desaId: { $in: [id] },
         status: 'Terverifikasi'
       })
       .toArray()
 
-    // 2. Ambil klaim manual dari koleksi 'claimInnovations' yang terverifikasi dan tidak punya inovasiId
-    // (Jika punya inovasiId, seharusnya sudah ada di list di atas melalui desaId)
-    const manualClaims = await db.collection('claimInnovations')
+    // 2. Ambil SEMUA klaim dari koleksi 'claimInnovations' yang terverifikasi (Manual & Reguler)
+    const verifiedClaims = await db.collection('claimInnovations')
       .find({
         desaId: id,
-        status: 'Terverifikasi',
-        inovasiId: { $in: [null, ""] }
+        status: 'Terverifikasi'
       })
       .toArray()
 
-    // Gabungkan hasil
-    const result_innovations = innovations.map(doc => ({
+    // Map dan Gabungkan hasil
+    const result_direct = directInnovations.map(doc => ({
       ...doc,
       id: doc._id.toString(),
       _id: doc._id.toString(),
     }))
 
-    const result_claims = manualClaims.map(doc => ({
-      ...doc,
-      id: doc._id.toString(),
-      _id: doc._id.toString(),
-      namaInovasi: doc.namaInovasi,
-      namaInnovator: doc.namaInovator,
-      deskripsi: doc.deskripsiInovasi,
-      images: doc.fotoInovasi ? [doc.fotoInovasi] : (doc.buktiFiles?.foto || []),
-      status: 'Terverifikasi'
-    }))
+    // Untuk klaim, kita gunakan data dari dokumen klaim (snapshot)
+    // Hindari duplikasi jika inovasiId sudah ada di result_direct
+    const existingInnovIds = new Set(result_direct.map(i => i.id));
+    
+    const result_claims = verifiedClaims
+      .filter(doc => !doc.inovasiId || !existingInnovIds.has(doc.inovasiId.toString()))
+      .map(doc => ({
+        ...doc,
+        id: doc._id.toString(),
+        _id: doc._id.toString(),
+        namaInovasi: doc.namaInovasi,
+        namaInnovator: doc.namaInovator || doc.namaInovator,
+        deskripsi: doc.deskripsiInovasi || doc.deskripsi,
+        images: doc.fotoInovasi ? [doc.fotoInovasi] : (doc.buktiFiles?.foto || []),
+        status: 'Terverifikasi'
+      }))
 
-    const finalResult = [...result_innovations, ...result_claims]
+    const finalResult = [...result_direct, ...result_claims]
 
     return new NextResponse(
       JSON.stringify({ innovations: finalResult, total: finalResult.length }, null, 2),

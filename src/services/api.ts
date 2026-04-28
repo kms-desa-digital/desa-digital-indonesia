@@ -1,5 +1,9 @@
 import { BASE_URL } from "Consts/url";
-import axios, { AxiosError, AxiosResponse } from "axios";
+import axios, {
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from "axios";
 import { auth } from "src/firebase/clientApp";
 
 /**
@@ -13,20 +17,44 @@ const api = axios.create({
   },
 });
 
+const onRequest = async (config: InternalAxiosRequestConfig) => {
+  if (typeof window !== "undefined") {
+    if (
+      typeof config.url === "string" &&
+      config.url.startsWith("/") &&
+      !config.url.startsWith("/api/")
+    ) {
+      config.url = config.url.replace(/^\//, "");
+    }
+
+    let authToken = localStorage.getItem("token");
+
+    if (auth.currentUser) {
+      try {
+        const currentToken = await auth.currentUser.getIdToken();
+        if (currentToken) {
+          authToken = currentToken;
+          localStorage.setItem("token", currentToken);
+        }
+      } catch (tokenError) {
+        console.warn("Failed to refresh auth token:", tokenError);
+      }
+    }
+
+    if (authToken) {
+      config.headers = config.headers || {};
+      (config.headers as Record<string, string>)["Authorization"] =
+        `Bearer ${authToken}`;
+    }
+  }
+
+  return config;
+};
+
 /**
  * Request interceptor
  */
-const onRequest = async (config: any) => {
-  if (typeof window !== "undefined") {
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      const idToken = await currentUser.getIdToken();
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${idToken}`;
-    }
-  }
-  return config;
-};
+
 
 /**
  * Response interceptor

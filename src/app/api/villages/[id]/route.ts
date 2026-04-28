@@ -28,8 +28,23 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
     }
 
+    // Hitung jumlah inovasi yang benar-benar terverifikasi untuk desa ini
+    // Ini membantu jika field static 'jumlahInovasiDiterapkan' belum tersinkronisasi
+    const desaId = village.userId || village._id.toString();
+    const verifiedCount = await db.collection('claimInnovations').countDocuments({
+      desaId: desaId,
+      status: 'Terverifikasi'
+    });
+
     return NextResponse.json(
-      { village: { ...village, id: village._id.toString(), _id: village._id.toString() } },
+      { 
+        village: { 
+          ...village, 
+          id: village._id.toString(), 
+          _id: village._id.toString(),
+          jumlahInovasiDiterapkan: Math.max(village.jumlahInovasiDiterapkan || 0, verifiedCount)
+        } 
+      },
       { status: 200 }
     )
 
@@ -48,6 +63,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     const auth = await requireRole(request, ["village", "admin"]);
     if (auth instanceof NextResponse) return auth;
 
+    const isAdmin = auth.role === 'admin'
     const { id } = await params
     const body = await request.json()
     
@@ -67,6 +83,15 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       query = { userId: id }
     }
 
+    const existing = await db.collection('villages').findOne(query)
+    
+    // Reset status if resubmitting rejected profile
+    const isResubmission = !isAdmin && existing?.status === 'Ditolak'
+    if (isResubmission) {
+        body.status = 'Menunggu'
+        body.catatanAdmin = null
+    }
+
     const result = await db.collection('villages').updateOne(
       query,
       { $set: body }
@@ -74,6 +99,23 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
+    }
+
+    // Notify admins about update/resubmission
+    try {
+        const { notifyAllAdmins } = await import('@/services/notificationServices')
+        if (isResubmission) {
+            await notifyAllAdmins({
+                type: 'personal',
+                category: 'profile_submission',
+                title: `Pengajuan Ulang Profil Desa: ${body.namaDesa || existing?.namaDesa}`,
+                description: `Desa ${body.namaDesa || existing?.namaDesa} telah memperbarui profil yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+                actionType: 'profile',
+                relatedId: id,
+            })
+        }
+    } catch (notifErr) {
+        console.error('Error notifying admins about village profile update:', notifErr)
     }
 
     return NextResponse.json({ message: 'Profil desa berhasil diperbarui' }, { status: 200 })

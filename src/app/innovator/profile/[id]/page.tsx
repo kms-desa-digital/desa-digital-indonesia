@@ -15,9 +15,11 @@ import {
 import { useTranslations } from "next-intl";
 import TopBar from "Components/topBar/index";
 import { paths } from "Consts/path";
-import { getInnovatorById, updateInnovator, getAssistedVillages } from "Services/innovatorServices";
+import { getInnovatorById, getAssistedVillages } from "Services/innovatorServices";
+import { verifyInnovator } from "Services/adminServices";
 import { getInnovation } from "Services/innovationServices";
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 type InnovatorData = {
     id: string;
@@ -91,17 +93,11 @@ const ProfileInnovator: React.FC = () => {
         setLoading(true);
         try {
             if (id) {
-                /*
-                const innovatorRef = doc(firestore, "innovators", id);
-                await updateDoc(innovatorRef, {
-                    status: "Terverifikasi",
-                    catatanAdmin: "",
-                });
-                */
-                await updateInnovator(id, { status: "Terverifikasi", catatanAdmin: "" });
+                await verifyInnovator(id, { status: "Terverifikasi", catatanAdmin: "" });
                 setInnovatorData((prev) =>
                     prev ? ({ ...prev, status: "Terverifikasi" }) : null
                 );
+                toast.success("Profil Inovator berhasil diverifikasi");
             }
         } catch (error) {
             console.error("Error verifying user via API:", error);
@@ -119,14 +115,7 @@ const ProfileInnovator: React.FC = () => {
         setLoading(true);
         try {
             if (id) {
-                /*
-                const innovatorRef = doc(firestore, "innovators", id);
-                await updateDoc(innovatorRef, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput,
-                });
-                */
-                await updateInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
+                await verifyInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
                 setInnovatorData((prev) =>
                     prev ? ({
                         ...prev,
@@ -295,7 +284,7 @@ const ProfileInnovator: React.FC = () => {
                         {owner && (
                             <Button
                                 leftIcon={<Image src="/icons/send.svg" alt="send" />}
-                                onClick={() => router.push("/innovator/pengajuan/" + id)} // Updated to point to new pengajuan inovasi page
+                                onClick={() => router.push(paths.ADD_INNOVATION)}
                                 fontSize="12px"
                                 fontWeight="500"
                                 height="29px"

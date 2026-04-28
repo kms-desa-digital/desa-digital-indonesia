@@ -5,20 +5,22 @@ import { Box, Button, Flex, Input, Stack, Text } from "@chakra-ui/react";
 import Container from "Components/container";
 import LogoUpload from "Components/form/LogoUpload";
 import TopBar from "Components/topBar";
-import { doc } from "firebase/firestore";
 import React, { useRef, useState } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
-import { auth, firestore } from "@/firebase/clientApp";
+import { createAd } from "../../../../services/adminServices";
 
 const MakeAds: React.FC = () => {
     const router = useRouter();
-    const [user] = useAuthState(auth);
-    // TODO: Buat backend untuk upload gambar
     const [selectedImg, setSelectedImg] = useState<string>("");
     const ImgRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<{
+        name?: string;
+        minDate?: string;
+        maxDate?: string;
+        link?: string;
+    }>({});
     const [textInputsValue, setTextInputsValue] = useState({
         name: "",
         minDate: "",
@@ -41,22 +43,67 @@ const MakeAds: React.FC = () => {
     }: React.ChangeEvent<HTMLInputElement>) =>
         setTextInputsValue({ ...textInputsValue, [name]: value });
 
-    // TODO: Benerin fungsi onSubmitForm
-
     const onSubmitForm = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setLoading(true);
         setError("");
+        setFieldErrors({});
+
+        const trimmedName = textInputsValue.name.trim();
+        const trimmedLink = textInputsValue.link.trim();
+        const nextFieldErrors: typeof fieldErrors = {};
+
+        if (!trimmedName) nextFieldErrors.name = "Nama pemesan iklan wajib diisi.";
+        if (!textInputsValue.minDate) nextFieldErrors.minDate = "Tanggal mulai wajib diisi.";
+        if (!textInputsValue.maxDate) nextFieldErrors.maxDate = "Tanggal selesai wajib diisi.";
+        if (!trimmedLink) nextFieldErrors.link = "Link iklan wajib diisi.";
+
+        if (textInputsValue.minDate && textInputsValue.maxDate) {
+            const minDate = new Date(textInputsValue.minDate);
+            const maxDate = new Date(textInputsValue.maxDate);
+            if (minDate >= maxDate) {
+                nextFieldErrors.minDate = "Tanggal awal harus sebelum tanggal akhir.";
+                nextFieldErrors.maxDate = "Tanggal akhir harus lebih besar dari tanggal awal.";
+            }
+        }
+
+        if (trimmedLink) {
+            try {
+                new URL(trimmedLink);
+            } catch {
+                nextFieldErrors.link = "Format link tidak valid.";
+            }
+        }
+
+        if (Object.keys(nextFieldErrors).length > 0) {
+            setFieldErrors(nextFieldErrors);
+            setLoading(false);
+            return;
+        }
+
         try {
-            const docRef = doc(firestore, "ads");
-        } catch (error) {
-            console.error("Error adding document: ", error);
+            await createAd({
+                name: trimmedName,
+                minDate: textInputsValue.minDate,
+                maxDate: textInputsValue.maxDate,
+                link: trimmedLink,
+                image: selectedImg || undefined,
+            });
+
+            router.push("/admin/ads");
+        } catch (submitError: any) {
+            console.error("Error adding ad: ", submitError);
+            setError(
+                submitError?.message || "Terjadi kesalahan saat mengirim iklan."
+            );
+        } finally {
+            setLoading(false);
         }
     };
     return (
         <Container page>
             <TopBar title="Tambah Iklan" onBack={() => router.back()} />
-            <form>
+            <form onSubmit={onSubmitForm}>
                 <Stack padding="0 14px" direction="column" mt={4} gap={4}>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
@@ -128,11 +175,24 @@ const MakeAds: React.FC = () => {
                             fontSize="10pt"
                             _placeholder={{ color: "gray.500" }}
                             mt={2}
-                            type="link"
+                            type="url"
                             value={textInputsValue.link}
                             onChange={onTextChange}
+                            isInvalid={!!fieldErrors.link}
                         />
+                        {fieldErrors.link ? (
+                            <Text color="red.500" fontSize="12px" mt={2}>
+                                {fieldErrors.link}
+                            </Text>
+                        ) : null}
                     </Box>
+                    {error ? (
+                        <Box px="14px">
+                            <Text color="red.500" fontSize="12px">
+                                {error}
+                            </Text>
+                        </Box>
+                    ) : null}
                 </Stack>
                 <Flex
                     align="center"
@@ -147,7 +207,7 @@ const MakeAds: React.FC = () => {
                     boxShadow="0px -2px 4px 0px rgba(0, 0, 0, 0.06), 0px -4px 6px 0px rgba(0, 0, 0, 0.10)"
                     bg="white"
                 >
-                    <Button width="100%" type="submit">
+                    <Button width="100%" type="submit" isLoading={loading}>
                         Kirim Iklan
                     </Button>
                 </Flex>

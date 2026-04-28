@@ -27,6 +27,7 @@ import "slick-carousel/slick/slick.css";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useUser } from "src/contexts/UserContext";
+import { useAdminStatus } from "Hooks/useAdminStatus";
 
 import StatusCard from "Components/card/status/StatusCard";
 import RejectionModal from "Components/confirmModal/RejectionModal";
@@ -53,6 +54,7 @@ import {
     Text2,
     Title
 } from "./_styles";
+import { verifyInnovation } from "@/services/adminServices";
 
 
 
@@ -62,13 +64,13 @@ function DetailInnovation() {
     const params = useParams();
     const id = params.id as string;
     const { role, isVillageVerified } = useUser();
+    const { isAdmin } = useAdminStatus();
     const [isExpanded, setIsExpanded] = useState(false);
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [user] = useAuthState(auth);
     const [data, setData] = useState<any>({});
     const [innovatorData, setDatainnovator] = useState<any>({});
     const [village, setVillage] = useState<any[]>([]);
-    const [admin, setAdmin] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
     const [loading, setLoading] = useState(true);
@@ -86,10 +88,7 @@ function DetailInnovation() {
     const villageSafe = Array.isArray(village) ? village : [];
     const villageMap = new Map();
 
-    useEffect(() => {
-        setAdmin(role === "admin");
-    }, [role]);
-
+   
     useEffect(() => {
         if (id) {
             setLoading(true);
@@ -212,17 +211,31 @@ function DetailInnovation() {
                 return;
             }
             // Update innovation status via API
-            await updateInnovation(id, {
-                status: "Terverifikasi",
-                catatanAdmin: ""
-            });
-            setData({ ...data, status: "Terverifikasi" });
+            try {
+                const updateResponse = await verifyInnovation(id, {
+                    status: "Terverifikasi",
+                    catatanAdmin: ""
+                });
+                console.log("updateInnovation berhasil:", updateResponse?.data);
+            } catch (error) {
+                console.error("updateInnovation gagal:", error);
+                throw error;
+            }
 
+            console.log("hahahahah:",data);
+            setData({ ...data, status: "Terverifikasi" });
+            
+            const innovatorRes: any = await getInnovatorById(data.innovatorId);
+            const invData = innovatorRes?.innovator ?? innovatorRes?.data?.innovator ?? innovatorRes?.data ?? innovatorRes;
             // Update innovator's innovation count via API
             if (data.innovatorId) {
-                const currentCount = innovatorData.jumlahInovasi || 0;
+                const currentCount = invData?.jumlahInovasi ?? innovatorData.jumlahInovasi ?? 0;
                 await updateInnovator(data.innovatorId, {
-                    jumlahInovasi: currentCount + 1
+                    jumlahInovasi: currentCount + 1,
+                    namaInovator: invData?.namaInovator,
+                    deskripsi: invData?.deskripsi,
+                    kategori: invData?.kategori,
+                    whatsapp: invData?.whatsapp,
                 });
             }
 
@@ -335,7 +348,7 @@ function DetailInnovation() {
             : text;
     };
 
-
+    console.log("Innovation Detail Data:", data);
     if (error || !data || !data.namaInovasi) {
         return (
             <Box minH="100vh">
@@ -738,7 +751,7 @@ function DetailInnovation() {
                         zIndex="999"
                         boxShadow="0px -6px 12px rgba(0, 0, 0, 0.1)"
                     >
-                        {admin ? (
+                        {isAdmin ? (
                             data.status === "Terverifikasi" || data.status === "Ditolak" ? (
                                 <StatusCard message={data.catatanAdmin} status={data.status} />
                             ) : (
@@ -764,7 +777,7 @@ function DetailInnovation() {
                 <ActionDrawer
                     isOpen={isOpen}
                     onClose={onClose}
-                    isAdmin={admin}
+                    isAdmin={isAdmin}
                     loading={loading}
                     onVerify={handleVerify}
                     setOpenModal={setOpenModal}

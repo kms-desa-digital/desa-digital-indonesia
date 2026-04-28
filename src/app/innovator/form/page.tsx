@@ -317,8 +317,10 @@ const InnovatorForm: React.FC = () => {
                             );
                         }
                     }
-                } catch (err) {
-                    console.error("Error fetching data from API:", err);
+                } catch (err: any) {
+                    if (err?.response?.status !== 404) {
+                        console.error("Error fetching data from API:", err);
+                    }
                 }
             }
         };
@@ -353,8 +355,10 @@ const InnovatorForm: React.FC = () => {
                         return prevStatus;
                     });
                 }
-            } catch (err) {
-                console.error("Polling error: ", err);
+            } catch (err: any) {
+                if (err?.response?.status !== 404) {
+                    console.error("Polling error: ", err);
+                }
             }
         }, 3000);
 
@@ -372,7 +376,10 @@ const InnovatorForm: React.FC = () => {
                     } else {
                         setOwner(false);
                     }
-                } catch (err) {
+                } catch (err: any) {
+                    if (err?.response?.status !== 404) {
+                        console.error("Error checking owner status:", err);
+                    }
                     setOwner(false);
                 }
             }
