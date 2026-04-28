@@ -127,7 +127,7 @@ const PengajuanInovasi: React.FC = () => {
 
     return (
         <Container page>
-            <TopBar title="Verifikasi Tambah Inovasi" onBack={() => router.back()} />
+            <TopBar title="Pengajuan Inovasi" onBack={() => router.back()} />
             <Stack padding="0 16px" gap={4} mt={6}>
                 <Flex gap={2} mb={2}>
                     <InputGroup flex={1}>

@@ -99,14 +99,15 @@ const VerificationPage: React.FC = () => {
         "Verifikasi Klaim Inovasi": paths.DETAIL_KLAIM_INOVASI_PAGE,
     };
 
+    const decodedCategory = decodeURIComponent(category || "");
+
     const handleCardClick = (id: string) => {
-        const decodedCategory = decodeURIComponent(category || "");
         const pathTemplate = categoryToPathMap[decodedCategory];
         if (pathTemplate) {
             const path = pathTemplate.replace(":id", id);
             router.push(path);
         } else {
-            console.error("Unknown category or path mapping missing");
+            console.error("Unknown category or path mapping missing", decodedCategory);
         }
     };
 

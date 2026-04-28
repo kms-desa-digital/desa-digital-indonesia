@@ -16,10 +16,13 @@ const normalizeArray = (value: unknown) => {
 }
 
 const buildFilter = (id: string): MongoFilter => {
+  const conditions: any[] = [{ _id: id }, { userId: id }]
+
   if (ObjectId.isValid(id)) {
-    return { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
+    conditions.unshift({ _id: new ObjectId(id) })
   }
-  return { _id: id }
+
+  return { $or: conditions }
 }
 
 // PUT /api/innovator/edit/:id

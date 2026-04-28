@@ -4,6 +4,7 @@
 import CardInnovation from "Components/card/innovation";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import EnlargedImage from "Components/village/Image";
@@ -45,6 +46,7 @@ import {
 import StatusCard from "Components/card/status/StatusCard";
 import RejectionModal from "Components/confirmModal/RejectionModal";
 import ActionDrawer from "Components/drawer/ActionDrawer";
+import { useAdminStatus } from "Hooks/useAdminStatus";
 
 export default function ProfileVillage() {
     const router = useRouter();
@@ -53,13 +55,14 @@ export default function ProfileVillage() {
     const [innovations, setInnovations] = useState<any[]>([]);
     const [village, setVillage] = useState<any | undefined>(undefined);
     const [owner, setOwner] = useState(false);
-    const [admin, setAdmin] = useState(false);
     const [loading, setLoading] = useState(false);
     const params = useParams();
     const id = params.id as string;
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
+
+    const { isAdmin } = useAdminStatus();
 
     const formatLocation = (villageData: any) => {
         if (!villageData) return "No Location";
@@ -89,6 +92,7 @@ export default function ProfileVillage() {
                     ...prev,
                     status: "Terverifikasi",
                 }));
+                toast.success("Profil desa berhasil diverifikasi");
             } else {
                 throw new Error("Village ID is undefined");
             }
@@ -133,23 +137,6 @@ export default function ProfileVillage() {
         setOpenModal(false); // Tutup modal setelah menyimpan
     };
 
-    useEffect(() => {
-        /*
-        const fetchUser = async () => {
-            if (userLogin?.uid) {
-                const userRef = doc(firestore, "users", userLogin.uid);
-                const userDoc = await getDoc(userRef);
-                if (userDoc.exists()) {
-                    const user = userDoc.data();
-                    setAdmin(user?.role === "admin");
-                }
-            }
-        };
-        fetchUser();
-        */
-        // Note: Admin status should ideally come from auth context or a /me endpoint
-        // For now, assuming userLogin reflects the user's state
-    }, [userLogin]);
 
     useEffect(() => {
         const fetchVillageData = async () => {
@@ -161,7 +148,7 @@ export default function ProfileVillage() {
                     if (data) {
                         setVillage(data);
                         const uid = userLogin?.uid;
-                        const isOwner = data?.userId === uid || id === uid;
+                        const isOwner = data?.userId === uid;
                         if (uid) {
                             setOwner(isOwner);
                         }
@@ -199,7 +186,7 @@ export default function ProfileVillage() {
                     setVillage((prev: any) => {
                         if (prev && prev.status !== data.status) {
                             const uid = userLogin?.uid;
-                            const isOwner = data?.userId === uid || id === uid;
+                            const isOwner = data?.userId === uid;
                             if (isOwner && data.status === "Ditolak") {
                                 router.push(paths.VILLAGE_FORM || "/village/form");
                             }
@@ -542,7 +529,7 @@ export default function ProfileVillage() {
             </div>
 
 
-            {admin ? (
+            {isAdmin ? (
                 village?.status === "Terverifikasi" || village?.status === "Ditolak" ? (
                     <StatusCard
                         status={village?.status}
@@ -590,7 +577,7 @@ export default function ProfileVillage() {
                 isOpen={isOpen}
                 onClose={onClose}
                 onVerify={handleVerify}
-                isAdmin={admin}
+                isAdmin={isAdmin}
                 role="Desa"
                 loading={loading}
                 setOpenModal={setOpenModal}

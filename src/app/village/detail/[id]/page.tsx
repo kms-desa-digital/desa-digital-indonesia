@@ -95,62 +95,40 @@ export default function DetailVillagePage() {
     };
 
     const handleVerify = async () => {
-        setLoading(true);
-        try {
-            if (id) {
-                /*
-                const docRef = doc(firestore, "villages", id);
-                await updateDoc(docRef, {
-                    status: "Terverifikasi",
-                });
-                */
-                await updateVillage(id, { status: "Terverifikasi" });
-                setVillage((prev: any) =>
-                    prev ? ({
-                        ...prev,
-                        status: "Terverifikasi",
-                    }) : undefined);
-            } else {
-                throw new Error("Village ID is undefined");
-            }
-        } catch (error) {
-            console.error("Error verifying village via API:", error);
+    setLoading(true);
+    try {
+        if (id) {
+            await updateVillage(id, { status: "Terverifikasi", catatanAdmin: "" });
+            setVillage((prev: any) =>
+                prev ? { ...prev, status: "Terverifikasi" } : undefined
+            );
+        } else {
+            throw new Error("Village ID is undefined");
         }
-        setLoading(false);
-        onClose();
-    };
+    } catch (error) {
+        console.error("Error verifying village via API:", error);
+    }
+    setLoading(false);
+    onClose();
+};
 
-    const handleReject = async () => {
-        setLoading(true);
-        try {
-            if (id) {
-                /*
-                const docRef = doc(firestore, "villages", id);
-                await updateDoc(docRef, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput, // Simpan alasan penolakan ke Firestore
-                });
-                */
-                await updateVillage(id, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput,
-                });
-                setVillage((prev: any) =>
-                    prev ? ({
-                        ...prev,
-                        status: "Ditolak",
-                        catatanAdmin: modalInput,
-                    }) : undefined);
-            } else {
-                throw new Error("Village ID is undefined");
-            }
-        } catch (error) {
-            console.error("Error during rejection via API:", error);
+const handleReject = async () => {
+    setLoading(true);
+    try {
+        if (id) {
+            await updateVillage(id, { status: "Ditolak", catatanAdmin: modalInput });
+            setVillage((prev: any) =>
+                prev ? { ...prev, status: "Ditolak", catatanAdmin: modalInput } : undefined
+            );
+        } else {
+            throw new Error("Village ID is undefined");
         }
-        setLoading(false);
-        setOpenModal(false); // Tutup modal setelah menyimpan
-    };
-
+    } catch (error) {
+        console.error("Error during rejection via API:", error);
+    }
+    setLoading(false);
+    setOpenModal(false);
+};
     useEffect(() => {
         setAdmin(role === "admin");
     }, [role]);
