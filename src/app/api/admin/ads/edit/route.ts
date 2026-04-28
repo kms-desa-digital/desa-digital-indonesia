@@ -112,7 +112,10 @@ export async function PUT(request: NextRequest) {
       { returnDocument: 'after' }
     )
 
-    if (!result || !result.value) {
+    // Handle perbedaan struktur return dari driver MongoDB versi lama (.value) vs versi baru (langsung document)
+    const updatedAd = result?.value || result;
+
+    if (!updatedAd || !updatedAd._id) {
       return NextResponse.json(
         { message: 'Iklan tidak ditemukan' },
         { status: 404 }
@@ -123,7 +126,7 @@ export async function PUT(request: NextRequest) {
       {
         message: 'Iklan berhasil diperbarui',
         adId: body.id,
-        ad: result.value,
+        ad: updatedAd,
       },
       { status: 200 }
     )
