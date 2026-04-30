@@ -62,6 +62,22 @@
         },
         "toastVillageNotVerified": "Your account is not registered or verified as a digital village"
     },
+    "Admin": {
+        "title": "Digital Village Indonesia",
+        "heroDescription": "Village Innovation Admin",
+        "heroText": "Digital Indonesia",
+        "searchPlaceholder": "Search innovations, innovators, or villages...",
+        "trackInnovations": "Track Innovations Now",
+        "viewMore": "View More",
+        "villageCountLabel": "Digital Village",
+        "innovatorCountLabel": "Innovator"
+    },
+    "StatusCard": {
+        "verified": "Submission has been verified by admin",
+        "rejected": "Submission rejected",
+        "pending": "Submission is waiting for admin verification",
+        "note": "Note: {message}"
+    },
     "Innovator": {
         "selectInnovator": "Select Innovator",
         "searchPlaceholder": "Search Innovators...",
@@ -129,6 +145,7 @@
         "villageGallery": "Village Gallery",
         "noImages": "No images available",
         "appliedInnovations": "Applied Innovations",
+        "appliedInnovationsCount": "{count} Applied Innovations",
         "noInnovations": "No innovations applied yet",
         "viewAll": "View All",
         "villageContact": "Village Contact"
@@ -155,6 +172,25 @@
                 "description": "You can claim an innovation that is not yet registered on the website by making a manual claim. Manual claims can be done through the claim application page. You need to enter proof of claim, innovation information, and innovator details."
             }
         ]
+    },
+    "UserMenu": {
+        "profile": "Profile",
+        "fillProfile": "Complete Profile",
+        "announcement": "Announcements",
+        "chatbotData": "Chatbot Data",
+        "userManagement": "User Management",
+        "logout": "Logout",
+        "helpFaq": "Help & FAQ",
+        "login": "Login"
+    },
+    "NotificationPage": {
+        "notificationTitle": "Notifications",
+        "markAllRead": "Mark all as read",
+        "clearAll": "Clear all",
+        "generalTab": "General",
+        "submissionTab": "Submissions",
+        "emptyTitle": "No notifications yet",
+        "emptyDescription": "All notifications about your activity and submissions will appear here."
     },
     "Innovation": {
         "title": "Innovation Categories",

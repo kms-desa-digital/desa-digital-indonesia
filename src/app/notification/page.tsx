@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
     Box,
     Flex,
@@ -84,6 +85,7 @@ const NotificationPage = () => {
     const [isDeleteSingleOpen, setIsDeleteSingleOpen] = useState(false);
     const [selectedNotifId, setSelectedNotifId] = useState<string | null>(null);
     const cancelRef = React.useRef<HTMLButtonElement>(null);
+    const t = useTranslations("NotificationPage");
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -373,7 +375,7 @@ const NotificationPage = () => {
     return (
         <Box bg={pageBgColor} minH="100vh" pb={10}>
             <TopBar
-                title="Notifikasi"
+                title={t("notificationTitle")}
                 onBack={() => router.back()}
                 rightElement={
                     <Menu placement="bottom-end">
@@ -387,10 +389,10 @@ const NotificationPage = () => {
                         />
                         <MenuList minW="200px" shadow="lg" borderRadius="xl">
                             <MenuItem icon={<CheckCircle size={16} />} onClick={handleMarkAllAsRead}>
-                                <Text fontSize="14px" fontWeight="500">Tandai semua dibaca</Text>
+                                <Text fontSize="14px" fontWeight="500">{t("markAllRead")}</Text>
                             </MenuItem>
                             <MenuItem icon={<Trash2 size={16} color="red" />} onClick={handleDeleteAllClick}>
-                                <Text fontSize="14px" fontWeight="500" color="red.500">Bersihkan semua</Text>
+                                <Text fontSize="14px" fontWeight="500" color="red.500">{t("clearAll")}</Text>
                             </MenuItem>
                         </MenuList>
                     </Menu>
@@ -427,7 +429,7 @@ const NotificationPage = () => {
                                 fontWeight="700"
                                 _selected={{ bg: "green.600", color: "white", shadow: "md" }}
                             >
-                                Umum {generalUnread > 0 && <Badge ml={2} bg="yellow.400" color="gray.800" borderRadius="full">{generalUnread}</Badge>}
+                                {t("generalTab")} {generalUnread > 0 && <Badge ml={2} bg="yellow.400" color="gray.800" borderRadius="full">{generalUnread}</Badge>}
                             </Tab>
                             <Tab
                                 borderRadius="full"
@@ -435,7 +437,7 @@ const NotificationPage = () => {
                                 fontWeight="700"
                                 _selected={{ bg: "green.600", color: "white", shadow: "md" }}
                             >
-                                Pengajuan {personalUnread > 0 && <Badge ml={2} bg="yellow.400" color="gray.800" borderRadius="full">{personalUnread}</Badge>}
+                                {t("submissionTab")} {personalUnread > 0 && <Badge ml={2} bg="yellow.400" color="gray.800" borderRadius="full">{personalUnread}</Badge>}
                             </Tab>
                         </TabList>
 
@@ -575,16 +577,20 @@ const NotificationPage = () => {
     );
 };
 
-const EmptyState = () => (
-    <Flex direction="column" align="center" justify="center" py={20} px={10} textAlign="center">
-        <Box bg="white" p={6} borderRadius="full" shadow="lg" mb={6}>
-            <Bell size={48} color="#E2E8F0" />
-        </Box>
-        <Heading fontSize="xl" mb={2}>Belum ada notifikasi</Heading>
-        <Text color="gray.500" fontSize="sm">
-            Semua pemberitahuan tentang aktivitas dan pengajuan Anda akan muncul di sini.
-        </Text>
-    </Flex>
-);
+const EmptyState = () => {
+    const t = useTranslations("NotificationPage");
+
+    return (
+        <Flex direction="column" align="center" justify="center" py={20} px={10} textAlign="center">
+            <Box bg="white" p={6} borderRadius="full" shadow="lg" mb={6}>
+                <Bell size={48} color="#E2E8F0" />
+            </Box>
+            <Heading fontSize="xl" mb={2}>{t("emptyTitle")}</Heading>
+            <Text color="gray.500" fontSize="sm">
+                {t("emptyDescription")}
+            </Text>
+        </Flex>
+    );
+};
 
 export default NotificationPage;

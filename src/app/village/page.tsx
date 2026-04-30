@@ -240,6 +240,7 @@ const Village: React.FC = () => {
                                 logo={item.logo || defaultLogo}
                                 header={item.header || defaultHeader}
                                 id={item.userId}
+                                jumlahInovasiDiterapkan={item.jumlahInovasiDiterapkan}
                                 isHome={false}
                                 highlightQuery={searchTerm}
                                 onClick={() => {

@@ -62,6 +62,22 @@
         },
         "toastVillageNotVerified": "Akun anda belum terdaftar atau terverifikasi sebagai desa digital"
     },
+    "Admin": {
+        "title": "Desa Digital Indonesia",
+        "heroDescription": "Admin Inovasi Desa",
+        "heroText": "Digital Indonesia",
+        "searchPlaceholder": "Cari inovasi, inovator, atau desa...",
+        "trackInnovations": "Pantau Inovasi Sekarang",
+        "viewMore": "Selengkapnya",
+        "villageCountLabel": "Desa Digital",
+        "innovatorCountLabel": "Inovator"
+    },
+    "StatusCard": {
+        "verified": "Pengajuan telah diverifikasi oleh admin",
+        "rejected": "Pengajuan ditolak",
+        "pending": "Pengajuan sedang menunggu verifikasi admin",
+        "note": "Catatan: {message}"
+    },
     "Innovator": {
         "selectInnovator": "Pilih Inovator",
         "searchPlaceholder": "Cari Inovator...",
@@ -129,6 +145,7 @@
         "villageGallery": "Galeri Desa",
         "noImages": "Tidak ada gambar",
         "appliedInnovations": "Inovasi yang Diterapkan",
+        "appliedInnovationsCount": "{count} Inovasi diterapkan",
         "noInnovations": "Belum ada inovasi yang diterapkan",
         "viewAll": "Lihat Semua",
         "villageContact": "Kontak Desa"
@@ -155,6 +172,25 @@
                 "description": "Anda dapat mengklaim inovasi yang belum terdaftar pada website dengan melakukan klaim manual. Klaim manual dapat dilakukan melalui halaman pengajuan klaim. Anda perlu memasukkan bukti klaim, informasi inovasi dan inovator."
             }
         ]
+    },
+    "UserMenu": {
+        "profile": "Profile",
+        "fillProfile": "Isi Profil",
+        "announcement": "Pengumuman",
+        "chatbotData": "Data Chatbot",
+        "userManagement": "Manajemen Pengguna",
+        "logout": "Logout",
+        "helpFaq": "Bantuan dan FAQ",
+        "login": "Masuk"
+    },
+    "NotificationPage": {
+        "notificationTitle": "Notifikasi",
+        "markAllRead": "Tandai semua dibaca",
+        "clearAll": "Bersihkan semua",
+        "generalTab": "Umum",
+        "submissionTab": "Pengajuan",
+        "emptyTitle": "Belum ada notifikasi",
+        "emptyDescription": "Semua pemberitahuan tentang aktivitas dan pengajuan Anda akan muncul di sini."
     },
     "Innovation": {
         "title": "Kategori Inovasi",
