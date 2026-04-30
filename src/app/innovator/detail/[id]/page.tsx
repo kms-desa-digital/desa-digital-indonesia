@@ -240,7 +240,7 @@ const DetailInnovator: React.FC = () => {
                     {owner && (
                         <Button
                             leftIcon={<Image src={Send.src} alt="send" />}
-                            onClick={onOpen}
+                            onClick={() => router.push(`/innovator/pengajuan/${id}`)}
                             fontSize="12px"
                             fontWeight="500"
                             height="29px"
