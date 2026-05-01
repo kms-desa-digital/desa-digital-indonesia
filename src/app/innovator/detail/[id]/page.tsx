@@ -11,6 +11,7 @@ import {
     Text,
     useDisclosure,
 } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import Send from "@public/icons/send.svg";
 import RejectionModal from "Components/confirmModal/RejectionModal";
 import Container from "Components/container";
@@ -18,10 +19,12 @@ import ActionDrawer from "Components/drawer/ActionDrawer";
 import TopBar from "Components/topBar/index";
 import { paths } from "Consts/path";
 // import { DocumentData, collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { getInnovatorById, updateInnovator, getAssistedVillages } from "Services/innovatorServices";
+import { getInnovatorById, getAssistedVillages } from "Services/innovatorServices";
+import { verifyInnovator } from "Services/adminServices";
 import { getInnovation } from "Services/innovationServices";
 import { DocumentData } from "firebase/firestore"; // Still used for type
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { FaWandMagicSparkles } from "react-icons/fa6";
 import { LuDot } from "react-icons/lu";
@@ -40,6 +43,7 @@ import {
 } from "./_styles";
 
 const DetailInnovator: React.FC = () => {
+    const t = useTranslations("Innovation");
     const [isExpanded, setIsExpanded] = useState(false);
     const router = useRouter();
     const params = useParams();
@@ -71,8 +75,9 @@ const DetailInnovator: React.FC = () => {
                 status: "Terverifikasi",
             });
             */
-            await updateInnovator(id, { status: "Terverifikasi" });
+            await verifyInnovator(id, { status: "Terverifikasi", catatanAdmin: "" });
             setInnovatorData((prev) => (prev ? { ...prev, status: "Terverifikasi" } : null));
+            toast.success("Profil Inovator berhasil diverifikasi");
         } catch (error) {
             console.error("Error verifying innovator via API:", error);
             setError("Error verifying innovator.");
@@ -95,7 +100,7 @@ const DetailInnovator: React.FC = () => {
                 catatanAdmin: modalInput,
             });
             */
-            await updateInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
+            await verifyInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
             setInnovatorData((prev) => (prev ? {
                 ...prev,
                 status: "Ditolak",
@@ -413,7 +418,7 @@ const DetailInnovator: React.FC = () => {
                             </Flex>
                             <Box borderTop="1px" borderColor="gray.100" pt={2} mt={2}>
                                 <Text fontSize="10px" fontWeight="400" mb={1} color="#9CA3AF">
-                                    Inovasi diterapkan
+                                    {t("appliedInnovations")}
                                 </Text>
                                 <Flex direction="row" gap={1.5} flexWrap="wrap">
                                     {Array.isArray(village.inovasiDiterapkan) && village.inovasiDiterapkan.length > 0 ? (

@@ -1,5 +1,6 @@
 import { Flex } from "@chakra-ui/react";
 import React from "react";
+import { useTranslations } from "next-intl";
 import {
   Container,
   Background,
@@ -28,6 +29,7 @@ type CardVillageProps = {
 };
 
 function CardVillage(props: CardVillageProps) {
+  const t = useTranslations("Village");
   const { provinsi, kabupatenKota, logo, header, namaDesa, onClick, ranking, jumlahInovasiDiterapkan, isHome, highlightQuery } = props;
 
   const renderHighlightedText = (value?: string) => {
@@ -74,7 +76,7 @@ function CardVillage(props: CardVillageProps) {
           {ranking == 3 && <img src="/icons/badge-3.svg" alt="badge" />}
         </ContBadge>
         <Title $isHome={isHome}>{renderHighlightedText(namaDesa)}</Title>
-        <Description>{jumlahInovasiDiterapkan} Inovasi diterapkan</Description>
+        <Description>{t("appliedInnovationsCount", { count: jumlahInovasiDiterapkan ?? 0 })}</Description>
         <Flex direction="column" marginTop="auto">
           <Location>
             <img src="/icons/location.svg" alt="loc" />

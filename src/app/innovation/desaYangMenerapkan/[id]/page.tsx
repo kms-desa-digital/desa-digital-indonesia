@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Box, Flex, Text, Image, Spinner, Stack, Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
 import { ChevronRightIcon, ChevronLeftIcon, SearchIcon } from "@chakra-ui/icons";
 import { getAppliedVillages, getInnovationById } from "Services/innovationServices";
@@ -17,6 +18,7 @@ type VillageData = {
 };
 
 const InovasiDesaYangMenerapkan = () => {
+    const t = useTranslations("Innovation");
     const params = useParams();
     const router = useRouter();
     const id = params.id as string;
@@ -90,18 +92,18 @@ const InovasiDesaYangMenerapkan = () => {
                     onClick={() => router.back()}
                 />
                 <Text fontSize="16px" fontWeight="bold">
-                    Desa yang Menerapkan
+                    {t("appliedVillages")}
                 </Text>
             </Flex>
 
             {/* Title & Search */}
             <Box px={5} pt={6} pb={2}>
                 <Text fontSize="16px" fontWeight="700" color="#1F2937">
-                    Desa yang Menerapkan Inovasi
+                    {t("villagesApplyingInnovation")}
                 </Text>
                 {innovationName && (
                     <Text fontSize="14px" color="#347357" fontWeight="600" mt={1}>
-                        Inovasi: {innovationName}
+                        {t("innovationLabel", { name: innovationName })}
                     </Text>
                 )}
 
@@ -110,7 +112,7 @@ const InovasiDesaYangMenerapkan = () => {
                         <SearchIcon color="gray.400" />
                     </InputLeftElement>
                     <Input
-                        placeholder="Cari desa..."
+                        placeholder={t("searchVillage")}
                         size="md"
                         borderRadius="xl"
                         value={searchTerm}
@@ -176,7 +178,7 @@ const InovasiDesaYangMenerapkan = () => {
                     </Stack>
                 ) : (
                     <Text textAlign="center" mt={10} color="#9CA3AF" fontSize="14px">
-                        {searchTerm ? "Tidak ada desa yang cocok dengan pencarian." : "Belum ada desa yang menerapkan inovasi ini."}
+                        {searchTerm ? t("noMatchingVillages") : t("noAppliedVillages")}
                     </Text>
                 )}
             </Box>

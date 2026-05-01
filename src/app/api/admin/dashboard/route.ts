@@ -10,10 +10,25 @@ export async function GET(request: NextRequest) {
 
     const db = await connectToDatabase()
 
-    // Cari user dan cek role admin
-    const user = await db.collection('users').findOne(
-      { _id: new ObjectId(auth.uid) }
-    )
+    // Cari user dengan aman (menghindari error jika auth.uid adalah Firebase UID)
+    let userQuery: any = { 
+      $or: [
+        { firebaseUid: auth.uid }, 
+        { uid: auth.uid }, 
+        { id: auth.uid },
+        { _id: auth.uid }
+      ] 
+    };
+
+    if (ObjectId.isValid(auth.uid)) {
+      try {
+        userQuery.$or.push({ _id: new ObjectId(auth.uid) });
+      } catch (e) {
+        // Abaikan jika ternyata gagal diparsing sebagai ObjectId
+      }
+    }
+
+    const user = await db.collection('users').findOne(userQuery)
 
     if (!user) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 })

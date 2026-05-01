@@ -28,6 +28,7 @@ import {
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 // import { useAuthState } from "react-firebase-hooks/auth";
 import { toast } from "react-toastify";
 import { auth, firestore } from "../../../firebase/clientApp";
@@ -41,6 +42,7 @@ type UserMenuProps = {
 };
 
 const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
+  const t = useTranslations("UserMenu");
   const router = useRouter();
 
   // const [userLogin] = useAuthState(auth); 
@@ -288,7 +290,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
                 contextRole?.toLowerCase() === "village" ||
                 contextRole?.toLowerCase() === "innovator") && (
                   <MenuItem onClick={handleProfileClick}>
-                    {status === "Terverifikasi" ? "Profile" : "Isi Profile"}
+                    {status === "Terverifikasi" ? t("profile") : t("fillProfile")}
                   </MenuItem>
                 )}
 
@@ -301,27 +303,33 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
                     <MenuItem
                       onClick={() => router.push("/admin/notifications")}
                     >
-                      Pengumuman
+                      {t("announcement")}
                     </MenuItem>
                     <MenuItem
                       onClick={() => router.push(paths.CHATBOT_INGEST)}
                     >
-                      Chatbot Data
+                      {t("chatbotData")}
                     </MenuItem>
+                    <MenuItem
+                      onClick={() => router.push(paths.ADMIN_USER_MANAGEMENT)}
+                    >
+                      {t("userManagement")}
+                    </MenuItem>
+
                   </>
                 )}
 
-              <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              <MenuItem onClick={handleLogout}>{t("logout")}</MenuItem>
 
               <MenuItem
                 onClick={() => router.push(paths.BANTUAN_FAQ_PAGE)}
               >
-                Bantuan dan FAQ
+                {t("helpFaq")}
               </MenuItem>
             </>
           ) : (
             <MenuItem onClick={() => router.push(paths.LOGIN_PAGE)}>
-              Login
+              {t("login")}
             </MenuItem>
           )}
         </MenuList>

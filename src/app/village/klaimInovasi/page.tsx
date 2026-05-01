@@ -7,7 +7,10 @@ import {
     Flex,
     Text,
     useDisclosure,
+    IconButton,
 } from "@chakra-ui/react";
+import { CloseIcon } from "@chakra-ui/icons";
+
 import TopBar from "Components/topBar";
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
@@ -16,7 +19,7 @@ import SecConfModal from "src/components/confirmModal/secConfModal";
 import DocUpload from "src/components/form/DocUpload";
 import ImageUpload from "src/components/form/ImageUpload";
 import VidUpload from "src/components/form/VideoUpload";
-import { getVillageById, claimInnovation, getClaimById, updateClaim } from "Services/villageServices";
+import { getVillageById, claimInnovation, getClaimById, updateClaim, deleteClaim } from "Services/villageServices";
 import { getInnovationById } from "Services/innovationServices";
 
 import {
@@ -77,6 +80,9 @@ const KlaimInovasiContent: React.FC = () => {
         onClose: onRecClose,
     } = useDisclosure();
 
+    const [isRejectionVisible, setIsRejectionVisible] = useState(true);
+
+
     //   const location = useLocation();
     //   const inovasiId = location.state?.id;
     const inovasiId = searchParams.get("inovasiId");
@@ -104,8 +110,9 @@ const KlaimInovasiContent: React.FC = () => {
                         setSelectedFiles(files.foto || data.images || []);
                         setSelectedVid(files.video?.[0] || data.video || "");
                         setSelectedDoc(files.dokumen || data.dokumen || []);
-                        setEditable(data.status === "Ditolak");
+                        setEditable(true);
                     }
+
                 } catch (err) {
                     console.error("Error fetching edit data:", err);
                 } finally {
@@ -120,7 +127,7 @@ const KlaimInovasiContent: React.FC = () => {
 
     const handleCheckboxChange = (checkbox: string) => {
         if (isUploading[checkbox as keyof typeof isUploading]) return;
-        
+
         if (selectedCheckboxes.includes(checkbox)) {
             setSelectedCheckboxes(
                 selectedCheckboxes.filter((item) => item !== checkbox)
@@ -132,13 +139,13 @@ const KlaimInovasiContent: React.FC = () => {
 
     const isFormValid = () => {
         if (selectedCheckboxes.length === 0) return false;
-        
+
         for (const item of selectedCheckboxes) {
             if (item === "foto" && selectedFiles.length === 0) return false;
             if (item === "video" && !selectedVid) return false;
             if (item === "dokumen" && selectedDoc.length === 0) return false;
         }
-        
+
         return true;
     };
 
@@ -153,6 +160,27 @@ const KlaimInovasiContent: React.FC = () => {
         }
         setIsModal1Open(true);
         setDisabled(true);
+    };
+
+    const handleDeleteClaim = (id: string) => {
+        setItemToDelete(id);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDeleteClaim = async () => {
+        if (!itemToDelete) return;
+        setLoading(true);
+        try {
+            await deleteClaim(itemToDelete);
+            toast.success("Klaim berhasil dihapus");
+            router.replace("/village/pengajuan/saya");
+        } catch (err) {
+            console.error("Error deleting claim:", err);
+            toast.error("Gagal menghapus klaim");
+        } finally {
+            setLoading(false);
+            setIsDeleteModalOpen(false);
+        }
     };
 
     const onSelectImage = (event: React.ChangeEvent<HTMLInputElement>, maxFiles: number) => {
@@ -231,14 +259,14 @@ const KlaimInovasiContent: React.FC = () => {
         console.log("Submitting claim via API...");
         setLoading(true);
         setDisabled(true); // Disable buttons immediately
-        
+
         if (!user?.uid || !inovasiId) {
             setError("User atau ID inovasi tidak ditemukan");
             setLoading(false);
             setDisabled(false);
             return;
         }
-        
+
         try {
             // Fetch names first for metadata
             const [villageRes, innovationRes]: any = await Promise.all([
@@ -267,20 +295,20 @@ const KlaimInovasiContent: React.FC = () => {
                 status: "Menunggu"
             };
 
-            const response: any = editId 
+            const response: any = editId
                 ? await updateClaim(editId, formData)
                 : await claimInnovation(formData);
 
             console.log("Response from server:", response);
 
             setIsModal2Open(true);
-            
+
             // Still keep toast as backup or secondary confirmation
-            toast.success(editId ? "Klaim berhasil diperbarui" : "Klaim inovasi berhasil diajukan", { 
+            toast.success(editId ? "Klaim berhasil diperbarui" : "Klaim inovasi berhasil diajukan", {
                 position: "top-center",
                 autoClose: 3000
             });
-            
+
             // The actual redirect will happen when user closes SecConfModal or clicks OK
             // But we can also set a timeout if they don't click anything
             setTimeout(() => {
@@ -288,7 +316,7 @@ const KlaimInovasiContent: React.FC = () => {
                     handleSuccessRedirect(response);
                 }
             }, 5000);
-            
+
         } catch (error: any) {
             console.error("Error submitting claim:", error);
             const errMsg = error?.message || "Gagal mengajukan klaim. Inovasi ini mungkin sudah diajukan sebelumnya.";
@@ -302,6 +330,15 @@ const KlaimInovasiContent: React.FC = () => {
 
     const [isModal1Open, setIsModal1Open] = useState(false);
     const [isModal2Open, setIsModal2Open] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+    const getDynamicModalBody = () => {
+        if (editId && claimData?.status === "Terverifikasi") {
+            return "Klaim ini sudah terverifikasi. Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu' dan memerlukan persetujuan ulang dari Admin. Apakah Anda yakin?";
+        }
+        return modalBody1;
+    };
     const closeModal = () => {
         setIsModal1Open(false);
         setIsModal2Open(false);
@@ -320,7 +357,7 @@ const KlaimInovasiContent: React.FC = () => {
         setIsModal1Open(false);
         await submitClaim();
     };
-    
+
     const handleModal2Close = () => {
         setIsModal2Open(false);
         handleSuccessRedirect();
@@ -369,9 +406,6 @@ const KlaimInovasiContent: React.FC = () => {
                         </Label>
                         <Text2> Dapat lebih dari 1 </Text2>
                     </Flex>
-                    {claimData?.status === "Ditolak" && (
-                        <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
-                    )}
                     <CheckboxGroup>
                         <JenisKlaim>
                             <input
@@ -478,11 +512,12 @@ const KlaimInovasiContent: React.FC = () => {
                         isOpen={isRecOpen}
                         onClose={() => onRecClose()}
                     />
+                    <Box height="150px" />
                 </Container>
                 <div>
                     {isAdmin ? (
                         claimData?.status === "Terverifikasi" ||
-                            claimData?.status === "Ditolak" ? (
+                        claimData?.status === "Ditolak" ? (
                             <StatusCard
                                 status={claimData.status}
                                 message={claimData.catatanAdmin}
@@ -502,23 +537,85 @@ const KlaimInovasiContent: React.FC = () => {
                         )
                     ) : (
                         <NavbarButton>
-                            <Button
-                                width="100%"
-                                isLoading={loading}
-                                onClick={handleAjukanKlaim}
-                                type="button"
-                                disabled={disabled || !isFormValid()}
-                            >
-                                Ajukan Klaim
-                            </Button>
+                            <Flex direction="column" w="100%" gap={2}>
+                                {claimData?.status === "Ditolak" && isRejectionVisible && (
+                                    <Box bg="#FEE2E2" p={2} borderRadius="8px" mb={1} position="relative">
+                                        <Flex align="center" justify='center'>
+                                            <CloseIcon fontSize="10px" color="#EF4444" mr="8px" />
+                                            <Text fontSize="12px" fontWeight="700" color="#EF4444">
+                                                Pengajuan ditolak
+                                            </Text>
+                                        </Flex>
+                                        {claimData.catatanAdmin && (
+                                            <Text fontSize="10px" fontWeight="500" color="#EF4444" textAlign="center" mt={1}>
+                                                Catatan: {claimData.catatanAdmin}
+                                            </Text>
+                                        )}
+                                        <IconButton
+                                            aria-label="Close"
+                                            icon={<CloseIcon fontSize="8px" />}
+                                            size="xs"
+                                            position="absolute"
+                                            right="4px"
+                                            top="4px"
+                                            variant="ghost"
+                                            color="#EF4444"
+                                            onClick={() => setIsRejectionVisible(false)}
+                                        />
+                                    </Box>
+                                )}
+                                <Flex gap={2} w="100%">
+                                    <Button
+                                        flex={1}
+                                        isLoading={loading}
+                                        onClick={handleAjukanKlaim}
+                                        type="button"
+                                        isDisabled={!isFormValid() || disabled || Object.values(isUploading).some(v => v)}
+                                        colorScheme="green"
+                                        fontSize="14px"
+                                    >
+                                        {claimData?.status === "Ditolak" ? "Ajukan Ulang" : editId ? "Perbarui Klaim" : "Ajukan Klaim"}
+                                    </Button>
+                                    {editId && (
+                                        <Button
+                                            flex={1}
+                                            isLoading={loading}
+                                            onClick={() => {
+                                                setItemToDelete(editId);
+                                                setIsDeleteModalOpen(true);
+                                            }}
+                                            type="button"
+                                            bg="red.500"
+                                            color="white"
+                                            _hover={{ bg: "red.600" }}
+                                            fontSize="14px"
+                                            disabled={disabled}
+                                        >
+                                            Delete Klaim
+                                        </Button>
+                                    )}
+                                </Flex>
+                            </Flex>
                         </NavbarButton>
                     )}
+
                     <ConfModal
                         isOpen={isModal1Open}
-                        onClose={closeModal}
-                        modalTitle=""
-                        modalBody1={modalBody1}
-                        onYes={handleModal1Yes}
+                        onClose={() => {
+                            setIsModal1Open(false);
+                            setDisabled(false);
+                        }}
+                        onYes={submitClaim}
+                        modalBody1={getDynamicModalBody()}
+                        modalTitle="Konfirmasi Klaim"
+                        isLoading={loading}
+                    />
+                    <ConfModal
+                        isOpen={isDeleteModalOpen}
+                        onClose={() => setIsDeleteModalOpen(false)}
+                        onYes={confirmDeleteClaim}
+                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini? Data yang sudah dihapus tidak dapat dikembalikan."
+                        modalTitle="Hapus Klaim"
                         isLoading={loading}
                     />
                     <SecConfModal

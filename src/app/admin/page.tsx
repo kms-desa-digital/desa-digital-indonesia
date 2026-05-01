@@ -14,11 +14,13 @@ import Innovator from "src/components/home/innovator";
 import Menu from "src/components/home/menu";
 import Villages from "src/components/home/villages";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import LanguageSwitcher from "Components/topBar/LanguageSwitcher";
 import { getInnovation } from "src/services/innovationServices";
 import { paths } from "src/consts/path";
 
 export default function AdminPage() {
+    const t = useTranslations("Admin");
     const router = useRouter();
     const [searchValue, setSearchValue] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -121,15 +123,15 @@ export default function AdminPage() {
 
     return (
         <Container page>
-            <TopBar title="Desa Digital Indonesia" rightElement={<LanguageSwitcher />} />
+            <TopBar title={t("title")} rightElement={<LanguageSwitcher />} />
             <Hero
-                description="Admin Inovasi Desa"
-                text="Digital Indonesia"
+                description={t("heroDescription")}
+                text={t("heroText")}
                 isAdmin={true}
             />
             <Stack direction="column" gap={2}>
                 <SearchBarLink
-                    placeholderText="Cari inovasi, inovator, atau desa..."
+                    placeholderText={t("searchPlaceholder")}
                     value={searchValue}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchValue(e.target.value)}
                     onKeyDown={handleSearchKeyDown}

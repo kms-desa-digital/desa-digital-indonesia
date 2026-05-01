@@ -12,11 +12,14 @@ import {
     Text,
     useDisclosure,
 } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import TopBar from "Components/topBar/index";
 import { paths } from "Consts/path";
-import { getInnovatorById, updateInnovator, getAssistedVillages } from "Services/innovatorServices";
+import { getInnovatorById, getAssistedVillages } from "Services/innovatorServices";
+import { verifyInnovator } from "Services/adminServices";
 import { getInnovation } from "Services/innovationServices";
 import React, { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 type InnovatorData = {
     id: string;
@@ -66,6 +69,8 @@ import { useAdminStatus } from "Hooks/useAdminStatus";
 
 
 const ProfileInnovator: React.FC = () => {
+    const t = useTranslations("Innovator");
+    const tInnovation = useTranslations("Innovation");
     const [isExpanded, setIsExpanded] = useState(false);
     const router = useRouter();
     const params = useParams();
@@ -88,17 +93,11 @@ const ProfileInnovator: React.FC = () => {
         setLoading(true);
         try {
             if (id) {
-                /*
-                const innovatorRef = doc(firestore, "innovators", id);
-                await updateDoc(innovatorRef, {
-                    status: "Terverifikasi",
-                    catatanAdmin: "",
-                });
-                */
-                await updateInnovator(id, { status: "Terverifikasi", catatanAdmin: "" });
+                await verifyInnovator(id, { status: "Terverifikasi", catatanAdmin: "" });
                 setInnovatorData((prev) =>
                     prev ? ({ ...prev, status: "Terverifikasi" }) : null
                 );
+                toast.success("Profil Inovator berhasil diverifikasi");
             }
         } catch (error) {
             console.error("Error verifying user via API:", error);
@@ -116,14 +115,7 @@ const ProfileInnovator: React.FC = () => {
         setLoading(true);
         try {
             if (id) {
-                /*
-                const innovatorRef = doc(firestore, "innovators", id);
-                await updateDoc(innovatorRef, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput,
-                });
-                */
-                await updateInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
+                await verifyInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
                 setInnovatorData((prev) =>
                     prev ? ({
                         ...prev,
@@ -274,7 +266,7 @@ const ProfileInnovator: React.FC = () => {
     return (
         <>
             <TopBar
-                title={owner ? "Profile Saya" : "Detail Inovator"}
+                title={owner ? t("myProfile") : t("detailTitle")}
                 onBack={() => router.back()}
             />
             <div style={{ position: "relative", width: "100%" }}>
@@ -292,7 +284,7 @@ const ProfileInnovator: React.FC = () => {
                         {owner && (
                             <Button
                                 leftIcon={<Image src="/icons/send.svg" alt="send" />}
-                                onClick={() => router.push("/innovator/pengajuan/" + id)} // Updated to point to new pengajuan inovasi page
+                                onClick={() => router.push(paths.ADD_INNOVATION)}
                                 fontSize="12px"
                                 fontWeight="500"
                                 height="29px"
@@ -309,19 +301,19 @@ const ProfileInnovator: React.FC = () => {
                     <Flex direction="row" gap={3} mt={1} alignItems="center">
                         <Icon as={FaWandMagicSparkles} color="#4B5563" />
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
-                            {innovatorData.jumlahInovasi} Inovasi
+                            {t("innovationsCount", { count: innovatorData.jumlahInovasi })}
                         </Text>
                         <Icon as={LuDot} color="#4B5563" />
                         <Icon as={TbPlant2} color="#4B5563" />
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
-                            {totalVillagesCount > 0 ? totalVillagesCount : innovatorData.jumlahDesaDampingan} Desa Dampingan
+                            {t("companionVillagesCount", { count: totalVillagesCount > 0 ? totalVillagesCount : innovatorData.jumlahDesaDampingan })}
                         </Text>
                     </Flex>
                 </Stack>
                 <Flex>
                     <Stack direction="column" gap={0}>
                         <Text fontSize="16px" fontWeight="700">
-                            Tentang
+                            {t("about")}
                         </Text>
                         <Flex flexDirection="column" alignItems="flex-start">
                             {owner && (
@@ -389,7 +381,7 @@ const ProfileInnovator: React.FC = () => {
                                             textDecoration="underline"
                                             onClick={() => setIsExpanded(!isExpanded)} // Toggle state
                                         >
-                                            Lebih Sedikit
+                                            {t("readLess")}
                                         </Text>
                                     )}
                                 </>
@@ -408,7 +400,7 @@ const ProfileInnovator: React.FC = () => {
                                             onClick={() => setIsExpanded(!isExpanded)} // Toggle state
                                         >
                                             {" "}
-                                            Selengkapnya
+                                            {t("readMore")}
                                         </Text>
                                     )}
                                 </>
@@ -423,7 +415,7 @@ const ProfileInnovator: React.FC = () => {
                         alignSelf="stretch"
                     >
                         <Text fontSize="16px" fontWeight="700">
-                            Produk Inovasi
+                            {t("innovationProducts")}
                         </Text>
                         <Text
                             fontSize="12px"
@@ -433,7 +425,7 @@ const ProfileInnovator: React.FC = () => {
                             textDecoration="underline"
                             onClick={() => router.push(`/innovator/products/${id}`)}
                         >
-                            Lihat Semua
+                            {t("viewAll")}
                         </Text>
                     </Flex>
                     <CardContainer>
@@ -442,7 +434,7 @@ const ProfileInnovator: React.FC = () => {
                                 <InnovationPreview innovations={innovations} innovatorId={id} />
                             ) : (
                                 <Text fontSize="12px" color="#9CA3AF" textAlign="center" mt={2}>
-                                    Inovator belum memiliki inovasi
+                                    {t("noInnovations")}
                                 </Text>
                             )}
                         </Horizontal>
@@ -451,7 +443,7 @@ const ProfileInnovator: React.FC = () => {
                 <Flex direction="column">
                     <Flex justify="space-between" align="center">
                         <Text fontSize="16px" fontWeight="700">
-                            Desa Dampingan
+                            {t("companionVillages")}
                         </Text>
                         <Text
                             fontSize="12px"
@@ -461,7 +453,7 @@ const ProfileInnovator: React.FC = () => {
                             textDecoration="underline"
                             onClick={() => router.push(`/innovator/villages/${id}`)}
                         >
-                            Lihat Semua
+                            {t("viewAll")}
                         </Text>
                     </Flex>
                     {villages.length > 0 ? (
@@ -497,7 +489,7 @@ const ProfileInnovator: React.FC = () => {
                                  </Flex>
                                  <Box borderTop="1px" borderColor="gray.100" pt={2} mt={2}>
                                      <Text fontSize="10px" fontWeight="400" mb={1} color="#9CA3AF">
-                                         Inovasi diterapkan
+                                         {tInnovation("appliedInnovations")}
                                      </Text>
                                      <Flex direction="row" gap={2} flexWrap="wrap">
                                          {Array.isArray(village.inovasiDiterapkan) && village.inovasiDiterapkan.length > 0 ? (
@@ -525,7 +517,7 @@ const ProfileInnovator: React.FC = () => {
                         ))
                     ) : (
                         <Text fontSize="12px" color="#9CA3AF" textAlign="left" mt={2}>
-                            Belum memiliki desa dampingan
+                            {t("noCompanionVillages")}
                         </Text>
                     )}
                 </Flex>
@@ -566,7 +558,7 @@ const ProfileInnovator: React.FC = () => {
                                 }
                             }}
                         >
-                            {owner ? "Edit Profile" : "Kontak"}
+                            {owner ? t("editProfile") : t("contact")}
                         </Button>
                     </NavbarButton>
                     )
