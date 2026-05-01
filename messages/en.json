@@ -49,6 +49,7 @@
     },
     "Common": {
         "login": "Login",
+        "uploadPhoto": "Add photo",
         "navbar": {
             "home": "Home",
             "village": "Digital Village",
@@ -70,7 +71,25 @@
         "trackInnovations": "Track Innovations Now",
         "viewMore": "View More",
         "villageCountLabel": "Digital Village",
-        "innovatorCountLabel": "Innovator"
+        "innovatorCountLabel": "Innovator",
+        "adsTitle": "Ads Creation",
+        "adsSearchPlaceholder": "Search ads here",
+        "adsAdd": "Add Ad",
+        "adsOrderer": "Ad Requestor",
+        "adsOrdererNamePlaceholder": "Ad Requestor Name",
+        "adsDate": "Ad Date",
+        "adsImage": "Ad Image",
+        "adsImageFormat": "Image format: .jpg, .jpeg, .png",
+        "adsLink": "Ad Link",
+        "adsSubmit": "Submit Ad",
+        "adsErrorOrdererNameRequired": "Ad requestor name is required.",
+        "adsErrorStartDateRequired": "Start date is required.",
+        "adsErrorEndDateRequired": "End date is required.",
+        "adsErrorDateRangeStart": "Start date must be before end date.",
+        "adsErrorDateRangeEnd": "End date must be after start date.",
+        "adsErrorLinkRequired": "Ad link is required.",
+        "adsErrorInvalidLink": "Invalid link format.",
+        "adsErrorSubmit": "An error occurred while submitting the ad."
     },
     "StatusCard": {
         "verified": "Submission has been verified by admin",

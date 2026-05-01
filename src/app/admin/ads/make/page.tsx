@@ -8,8 +8,10 @@ import TopBar from "Components/topBar";
 import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createAd } from "../../../../services/adminServices";
+import { useTranslations } from "next-intl";
 
 const MakeAds: React.FC = () => {
+    const t = useTranslations("Admin");
     const router = useRouter();
     const [selectedImg, setSelectedImg] = useState<string>("");
     const ImgRef = useRef<HTMLInputElement>(null);
@@ -53,17 +55,17 @@ const MakeAds: React.FC = () => {
         const trimmedLink = textInputsValue.link.trim();
         const nextFieldErrors: typeof fieldErrors = {};
 
-        if (!trimmedName) nextFieldErrors.name = "Nama pemesan iklan wajib diisi.";
-        if (!textInputsValue.minDate) nextFieldErrors.minDate = "Tanggal mulai wajib diisi.";
-        if (!textInputsValue.maxDate) nextFieldErrors.maxDate = "Tanggal selesai wajib diisi.";
-        if (!trimmedLink) nextFieldErrors.link = "Link iklan wajib diisi.";
+        if (!trimmedName) nextFieldErrors.name = t("adsErrorOrdererNameRequired");
+        if (!textInputsValue.minDate) nextFieldErrors.minDate = t("adsErrorStartDateRequired");
+        if (!textInputsValue.maxDate) nextFieldErrors.maxDate = t("adsErrorEndDateRequired");
+        if (!trimmedLink) nextFieldErrors.link = t("adsErrorLinkRequired");
 
         if (textInputsValue.minDate && textInputsValue.maxDate) {
             const minDate = new Date(textInputsValue.minDate);
             const maxDate = new Date(textInputsValue.maxDate);
             if (minDate >= maxDate) {
-                nextFieldErrors.minDate = "Tanggal awal harus sebelum tanggal akhir.";
-                nextFieldErrors.maxDate = "Tanggal akhir harus lebih besar dari tanggal awal.";
+                nextFieldErrors.minDate = t("adsErrorDateRangeStart");
+                nextFieldErrors.maxDate = t("adsErrorDateRangeEnd");
             }
         }
 
@@ -71,7 +73,7 @@ const MakeAds: React.FC = () => {
             try {
                 new URL(trimmedLink);
             } catch {
-                nextFieldErrors.link = "Format link tidak valid.";
+                nextFieldErrors.link = t("adsErrorInvalidLink");
             }
         }
 
@@ -94,7 +96,7 @@ const MakeAds: React.FC = () => {
         } catch (submitError: any) {
             console.error("Error adding ad: ", submitError);
             setError(
-                submitError?.message || "Terjadi kesalahan saat mengirim iklan."
+                submitError?.message || t("adsErrorSubmit")
             );
         } finally {
             setLoading(false);
@@ -102,15 +104,15 @@ const MakeAds: React.FC = () => {
     };
     return (
         <Container page>
-            <TopBar title="Tambah Iklan" onBack={() => router.back()} />
+            <TopBar title={t("adsAdd")} onBack={() => router.back()} />
             <form onSubmit={onSubmitForm}>
                 <Stack padding="0 14px" direction="column" mt={4} gap={4}>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
-                            Pemesan Iklan <span style={{ color: "red" }}>*</span>
+                            {t("adsOrderer")} <span style={{ color: "red" }}>*</span>
                         </Text>
                         <Input
-                            placeholder="Nama Pemesan Iklan"
+                            placeholder={t("adsOrdererNamePlaceholder")}
                             name="name"
                             fontSize="10pt"
                             _placeholder={{ color: "gray.500" }}
@@ -121,7 +123,7 @@ const MakeAds: React.FC = () => {
                     </Box>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
-                            Tanggal Iklan <span style={{ color: "red" }}>*</span>
+                            {t("adsDate")} <span style={{ color: "red" }}>*</span>
                         </Text>
                         <Flex align="center" justify="space-between">
                             <Input
@@ -151,10 +153,10 @@ const MakeAds: React.FC = () => {
                     </Box>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
-                            Gambar Iklan <span style={{ color: "red" }}>*</span>
+                            {t("adsImage")} <span style={{ color: "red" }}>*</span>
                         </Text>
                         <Text fontSize="10pt" color="gray.400">
-                            Format gambar: .jpg, .jpeg, .png
+                            {t("adsImageFormat")}
                         </Text>
                         <Flex>
                             <LogoUpload
@@ -167,7 +169,7 @@ const MakeAds: React.FC = () => {
                     </Box>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
-                            Link Iklan <span style={{ color: "red" }}>*</span>
+                            {t("adsLink")} <span style={{ color: "red" }}>*</span>
                         </Text>
                         <Input
                             placeholder="https://example.com"
@@ -208,7 +210,7 @@ const MakeAds: React.FC = () => {
                     bg="white"
                 >
                     <Button width="100%" type="submit" isLoading={loading}>
-                        Kirim Iklan
+                        {t("adsSubmit")}
                     </Button>
                 </Flex>
             </form>
