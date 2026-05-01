@@ -180,7 +180,10 @@
         "appliedInnovationsCount": "{count} Applied Innovations",
         "noInnovations": "No innovations applied yet",
         "viewAll": "View All",
-        "villageContact": "Village Contact"
+        "villageContact": "Village Contact",
+        "whatsappNumber": "WhatsApp Number",
+        "instagramLink": "Instagram Link",
+        "websiteLink": "Website Link"
     },
     "FAQ": {
         "title": "Help and FAQ",

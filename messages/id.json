@@ -169,7 +169,7 @@
         "internetNetwork": "Jaringan Internet:",
         "electricityAvailability": "Ketersediaan Listrik:",
         "others": "Lain-lain:",
-        "digitalReadiness": "Kesiapa Digital",
+        "digitalReadiness": "Kesiapan Digital",
         "digitalTechnologyDevelopment": "Perkembangan Teknologi Digital:",
         "technologyCapability": "Kemampuan Teknologi:",
         "socialCulture": "Sosial dan Budaya",
@@ -180,7 +180,10 @@
         "appliedInnovationsCount": "{count} Inovasi diterapkan",
         "noInnovations": "Belum ada inovasi yang diterapkan",
         "viewAll": "Lihat Semua",
-        "villageContact": "Kontak Desa"
+        "villageContact": "Kontak Desa",
+        "whatsappNumber": "Nomor WhatsApp",
+        "instagramLink": "Link Instagram",
+        "websiteLink": "Link Website"
     },
     "FAQ": {
         "title": "Bantuan dan FAQ",
