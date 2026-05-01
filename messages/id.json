@@ -62,6 +62,22 @@
         },
         "toastVillageNotVerified": "Akun anda belum terdaftar atau terverifikasi sebagai desa digital"
     },
+    "Admin": {
+        "title": "Desa Digital Indonesia",
+        "heroDescription": "Admin Inovasi Desa",
+        "heroText": "Digital Indonesia",
+        "searchPlaceholder": "Cari inovasi, inovator, atau desa...",
+        "trackInnovations": "Pantau Inovasi Sekarang",
+        "viewMore": "Selengkapnya",
+        "villageCountLabel": "Desa Digital",
+        "innovatorCountLabel": "Inovator"
+    },
+    "StatusCard": {
+        "verified": "Pengajuan telah diverifikasi oleh admin",
+        "rejected": "Pengajuan ditolak",
+        "pending": "Pengajuan sedang menunggu verifikasi admin",
+        "note": "Catatan: {message}"
+    },
     "Innovator": {
         "selectInnovator": "Pilih Inovator",
         "searchPlaceholder": "Cari Inovator...",
@@ -69,6 +85,28 @@
         "allCategory": "Semua Kategori",
         "companionVillages": "Desa Dampingan",
         "innovations": "Inovasi",
+        "contactRole": "Kontak {role}",
+        "contactDescription": "Terapkan produk inovasi desa digital dengan cara menghubungi {role} melalui saluran di bawah ini:",
+        "role": {
+            "innovator": "Inovator",
+            "village": "Desa"
+        },
+        "allCompanionVillages": "Semua Desa Dampingan",
+        "byInnovator": "Oleh Inovator: {name}",
+        "productsTitle": "Produk Inovasi - {name}",
+        "detailTitle": "Detail Inovator",
+        "myProfile": "Profile Saya",
+        "innovationsCount": "{count} Inovasi",
+        "companionVillagesCount": "{count} Desa Dampingan",
+        "about": "Tentang",
+        "readMore": "Selengkapnya",
+        "readLess": "Lebih Sedikit",
+        "innovationProducts": "Produk Inovasi",
+        "viewAll": "Lihat Semua",
+        "noInnovations": "Inovator belum memiliki inovasi",
+        "noCompanionVillages": "Belum memiliki desa dampingan",
+        "contact": "Kontak",
+        "editProfile": "Edit Profil",
         "categories": {
             "startup": "Start-up",
             "govUnder": "Di bawah Pemerintah",
@@ -107,6 +145,7 @@
         "villageGallery": "Galeri Desa",
         "noImages": "Tidak ada gambar",
         "appliedInnovations": "Inovasi yang Diterapkan",
+        "appliedInnovationsCount": "{count} Inovasi diterapkan",
         "noInnovations": "Belum ada inovasi yang diterapkan",
         "viewAll": "Lihat Semua",
         "villageContact": "Kontak Desa"
@@ -134,11 +173,48 @@
             }
         ]
     },
+    "UserMenu": {
+        "profile": "Profile",
+        "fillProfile": "Isi Profil",
+        "announcement": "Pengumuman",
+        "chatbotData": "Data Chatbot",
+        "userManagement": "Manajemen Pengguna",
+        "logout": "Logout",
+        "helpFaq": "Bantuan dan FAQ",
+        "login": "Masuk"
+    },
+    "NotificationPage": {
+        "notificationTitle": "Notifikasi",
+        "markAllRead": "Tandai semua dibaca",
+        "clearAll": "Bersihkan semua",
+        "generalTab": "Umum",
+        "submissionTab": "Pengajuan",
+        "emptyTitle": "Belum ada notifikasi",
+        "emptyDescription": "Semua pemberitahuan tentang aktivitas dan pengajuan Anda akan muncul di sini."
+    },
     "Innovation": {
         "title": "Kategori Inovasi",
         "notFound": "Inovasi tidak ditemukan",
         "appliedInnovations": "Inovasi diterapkan",
-        "appliedInnovationsVillages": "Inovasi diterapkan {count} desa"
+        "appliedInnovationsVillages": "Inovasi diterapkan {count} desa",
+        "detailTitle": "Detail Inovasi",
+        "innovator": "Inovator",
+        "createdYear": "Dibuat tahun {year}",
+        "description": "Deskripsi",
+        "readMore": "Selengkapnya",
+        "readLess": "Lebih Sedikit",
+        "businessModel": "Model Bisnis",
+        "appliedVillages": "Desa yang Menerapkan",
+        "villagesApplyingInnovation": "Desa yang Menerapkan Inovasi",
+        "innovationLabel": "Inovasi: {name}",
+        "searchVillage": "Cari desa...",
+        "noAppliedVillages": "Belum ada desa yang menerapkan inovasi ini.",
+        "noMatchingVillages": "Belum ada desa yang cocok dengan pencarian.",
+        "priceRange": "Kisaran Harga",
+        "benefits": "Manfaat",
+        "preparation": "Perlu Disiapkan",
+        "viewAll": "Lihat Semua",
+        "knowMore": "Ketahui lebih lanjut"
     },
     "Chatbot": {
         "title": "Asisten Desa Digital",

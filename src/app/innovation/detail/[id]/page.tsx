@@ -19,6 +19,7 @@ import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { FaCircle } from "react-icons/fa";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Slider from "react-slick";
 import { toast } from "react-toastify";
 import "slick-carousel/slick/slick-theme.css";
@@ -58,6 +59,7 @@ import { verifyInnovation } from "@/services/adminServices";
 
 
 function DetailInnovation() {
+    const t = useTranslations("Innovation");
     const router = useRouter();
     const params = useParams();
     const id = params.id as string;
@@ -310,7 +312,7 @@ function DetailInnovation() {
     if (loading) {
         return (
             <Box>
-                <TopBar title="Detail Inovasi" onBack={() => router.back()} />
+                <TopBar title={t("detailTitle")} onBack={() => router.back()} />
                 <ContentContainer>
                     <Skeleton height="200px" borderRadius="12px" />
                     <Box mt="20px">
@@ -350,7 +352,7 @@ function DetailInnovation() {
     if (error || !data || !data.namaInovasi) {
         return (
             <Box minH="100vh">
-                <TopBar title="Detail Inovasi" onBack={() => router.back()} />
+                <TopBar title={t("detailTitle")} onBack={() => router.back()} />
                 <Flex minH="calc(100vh - 70px)" align="center" justify="center" px={4}>
                     <Box textAlign="center" maxW="320px">
                         <Text fontSize="16px" color="gray.500">
@@ -412,7 +414,7 @@ function DetailInnovation() {
 
     return (
         <Box>
-            <TopBar title="Detail Inovasi" onBack={() => router.back()} rightElement={claimElement} />
+            <TopBar title={t("detailTitle")} onBack={() => router.back()} rightElement={claimElement} />
             {data.images && data.images.length > 1 ? (
                 <Slider {...settings}>
                     {data.images.map((image: string, index: number) => (
@@ -475,7 +477,7 @@ function DetailInnovation() {
                         >
                             {data.kategori}
                         </Label>
-                        <Description2>Dibuat tahun {year}</Description2>
+                        <Description2>{t("createdYear", { year })}</Description2>
                     </ChipContainer>
                 </div>
                 <ActionContainer
@@ -485,14 +487,14 @@ function DetailInnovation() {
                 >
                     <Logo src={innovatorData.logo || "/images/default-logo.svg"} alt="logo" />
                     <div>
-                        <Text2>Inovator</Text2>
+                        <Text2>{t("innovator")}</Text2>
                         <Text1>{innovatorData.namaInovator}</Text1>
                     </div>
                 </ActionContainer>
                 <Stack spacing="8px">
                     <div>
                         <Text fontSize="16px" fontWeight="700" lineHeight="140%" mb="12px">
-                            Deskripsi
+                            {t("description")}
                         </Text>
                         <Box fontSize="12px" fontWeight="400" color="#4B5563">
                             {isExpanded ? (
@@ -509,7 +511,7 @@ function DetailInnovation() {
                                             textDecoration="underline"
                                             onClick={() => setIsExpanded(!isExpanded)} // Toggle state
                                         >
-                                            Lebih Sedikit
+                                            {t("readLess")}
                                         </Text>
                                     )}
                                 </>
@@ -528,7 +530,7 @@ function DetailInnovation() {
                                                 onClick={() => setIsExpanded(!isExpanded)} // Toggle state
                                             >
                                                 {" "}
-                                                Selengkapnya
+                                                {t("readMore")}
                                             </Text>
                                         )}
                                 </>
@@ -538,7 +540,7 @@ function DetailInnovation() {
 
                     <div>
                         <Text fontSize="12px" fontWeight="600">
-                            Model Bisnis
+                            {t("businessModel")}
                         </Text>
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
                             {data.modelBisnis?.join(", ")}
@@ -547,7 +549,7 @@ function DetailInnovation() {
 
                     <div>
                         <Text fontSize="12px" fontWeight="600">
-                            Desa yang Menerapkan
+                            {t("appliedVillages")}
                         </Text>
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
                             {data.inputDesaMenerapkan}
@@ -555,7 +557,7 @@ function DetailInnovation() {
                     </div>
                     <div>
                         <Text fontSize="12px" fontWeight="600">
-                            Kisaran Harga
+                            {t("priceRange")}
                         </Text>
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
                             {data.hargaMinimal
@@ -574,7 +576,7 @@ function DetailInnovation() {
 
                 <div>
                     <Text fontSize="16px" fontWeight="700" lineHeight="140%">
-                        Manfaat
+                        {t("benefits")}
                     </Text>
                     <Flex>
                         <Accordion width="360px" allowMultiple>
@@ -641,7 +643,7 @@ function DetailInnovation() {
 
                 <Flex direction="column" mb={14}>
                     <Text fontSize="16px" fontWeight="700" lineHeight="140%" mb="12px">
-                        Perlu Disiapkan
+                        {t("preparation")}
                     </Text>
                     {Array.isArray(data.infrastruktur) &&
                         data.infrastruktur.length > 0 ? (
@@ -661,7 +663,7 @@ function DetailInnovation() {
                         alignItems="flex-end"
                         align-self="stretch"
                     >
-                        <SubText>Desa yang Menerapkan</SubText>
+                        <SubText>{t("appliedVillages")}</SubText>
                         <Text
                             onClick={() =>
                                 router.push(`/innovation/desaYangMenerapkan/${data.id}`)
@@ -674,7 +676,7 @@ function DetailInnovation() {
                             paddingBottom="12px"
                         >
                             {" "}
-                            Lihat Semua{" "}
+                            {t("viewAll")}{" "}
                         </Text>
                     </Flex>
                     {village.map((desa: any, index: number) => (
@@ -759,7 +761,7 @@ function DetailInnovation() {
                             )
                         ) : (
                             <Button width="100%" fontSize="16px" onClick={onOpen}>
-                                Ketahui lebih lanjut
+                                {t("knowMore")}
                             </Button>
                         )}
                     </Box>

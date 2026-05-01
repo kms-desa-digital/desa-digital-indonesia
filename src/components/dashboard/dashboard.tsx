@@ -19,6 +19,7 @@ import { getFirestore, collection, getDocs, doc, getDoc } from "firebase/firesto
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
+import { useTranslations } from "next-intl";
 import { paths } from "Consts/path";
 import { getAuth } from "firebase/auth";
 import { firestore } from "../../firebase/clientApp";
@@ -29,6 +30,7 @@ const Dashboard = () => {
   const [totalVillage, setTotalVillage] = useState(0);
   const [totalInnovators, setTotalInnovators] = useState(0);
 
+  const t = useTranslations("Admin");
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const onOpen = () => setIsOpen(true);
@@ -89,7 +91,7 @@ const Dashboard = () => {
 
   const data = [
     {
-      label: "Desa Digital",
+      label: t("villageCountLabel"),
       value: totalVillage,
       icon: (
         <Box bg="#C6D8D0" borderRadius="full" p={2}>
@@ -98,7 +100,7 @@ const Dashboard = () => {
       )
     },
     {
-      label: "Inovator",
+      label: t("innovatorCountLabel"),
       value: totalInnovators,
       icon: (
         <Box bg="#C6D8D0" borderRadius="full" p={2}>
@@ -112,7 +114,7 @@ const Dashboard = () => {
     <Box p={4}>
       <Flex justifyContent="space-between" alignItems="center" mb={4}>
         <Text fontSize="17" fontWeight="bold" color="gray.700">
-          Pantau Inovasi Sekarang
+          {t("trackInnovations")}
         </Text>
         <Link
           as={NextLink}
@@ -127,7 +129,7 @@ const Dashboard = () => {
           color="gray.500"
           textDecoration="underline"
         >
-          Selengkapnya
+          {t("viewMore")}
         </Link>
       </Flex>
 
