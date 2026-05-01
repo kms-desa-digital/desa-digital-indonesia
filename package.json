@@ -9,7 +9,10 @@
     "lint": "eslint",
     "api": "json-server --watch api/db.json --port 3001",
     "ingest:documents": "tsx src/scripts/ingest-documents.ts",
-    "ingest:database": "tsx src/scripts/ingest-database.ts"
+    "ingest:database": "tsx src/scripts/ingest-database.ts",
+    "test": "jest",
+    "test:path": "jest test-path",
+    "test:coverage": "jest test-path --coverage"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.15",
@@ -77,6 +80,9 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/file-saver": "^2.0.7",
     "@types/jest": "^30.0.0",
@@ -96,6 +102,7 @@
     "eslint": "^8",
     "eslint-config-next": "15.1.6",
     "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
     "node-mocks-http": "^1.17.2",
     "ts-jest": "^29.4.9",
     "tsx": "^4.21.0",
