@@ -20,6 +20,7 @@ import {
     Image,
 } from "@chakra-ui/react";
 import { ChevronDownIcon, SearchIcon } from "@chakra-ui/icons";
+import { useTranslations } from "next-intl";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
 import { auth } from "src/firebase/clientApp";
@@ -55,6 +56,7 @@ const PengajuanKlaim: React.FC = () => {
     // Pencarian dan filter
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+    const t = useTranslations("Village");
 
     // Pagination Status
     const [currentPage, setCurrentPage] = useState(1);
@@ -127,9 +129,16 @@ const PengajuanKlaim: React.FC = () => {
         }
     };
 
+    const statusLabels: Record<string, string> = {
+        Semua: t("filterAll"),
+        Menunggu: t("filterPending"),
+        Terverifikasi: t("filterVerified"),
+        Ditolak: t("filterRejected"),
+    };
+
     return (
         <Container page>
-            <TopBar title="Pengajuan Klaim" onBack={() => router.back()} />
+            <TopBar title={t("claimSubmission")} onBack={() => router.back()} />
             <Stack padding="0 16px" gap={4} mt={4}>
                 <Flex
                     flexDirection="column"
@@ -145,7 +154,7 @@ const PengajuanKlaim: React.FC = () => {
                         mt={3}
                         textAlign={"center"}
                         color={"#347357"}>
-                        Inovasi belum terdaftar pada sistem ?
+                        {t("claimNotRegistered")}
                     </Text>
                     <Button
                         mb={3}
@@ -160,7 +169,7 @@ const PengajuanKlaim: React.FC = () => {
                             color: "#FFFFFF"
                         }}
                         onClick={() => router.push("/village/klaimInovasi/manual")}>
-                        Klaim manual di sini
+                        {t("manualClaimHere")}
                     </Button>
                 </Flex>
                 <Flex gap={2} mb={2}>
@@ -169,7 +178,7 @@ const PengajuanKlaim: React.FC = () => {
                             <SearchIcon color="gray.400" />
                         </InputLeftElement>
                         <Input
-                            placeholder="Cari pengajuan di sini"
+                            placeholder={t("searchClaimPlaceholder")}
                             size="md"
                             borderRadius="full"
                             value={searchTerm}
@@ -192,7 +201,7 @@ const PengajuanKlaim: React.FC = () => {
                             fontSize="12px"
                             fontWeight="normal"
                         >
-                            {selectedFilter || "Filter"}
+                            {selectedFilter ? statusLabels[selectedFilter] : t("filter")}
                         </MenuButton>
                         <MenuList>
                             {["Semua", "Menunggu", "Terverifikasi", "Ditolak"].map(
@@ -204,7 +213,7 @@ const PengajuanKlaim: React.FC = () => {
                                             setSelectedFilter(status === "Semua" ? null : status)
                                         }
                                     >
-                                        {status}
+                                        {statusLabels[status]}
                                     </MenuItem>
                                 )
                             )}
@@ -242,7 +251,7 @@ const PengajuanKlaim: React.FC = () => {
                     >
                     </Button>
                     <Text textAlign="center" fontSize="10pt">
-                        Halaman {currentPage}
+                        {t("pageLabel", { page: currentPage })}
                     </Text>
                     <Button
                         rightIcon={<Image src={Right.src} alt="back" />}

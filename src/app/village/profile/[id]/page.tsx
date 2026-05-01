@@ -241,7 +241,7 @@ export default function ProfileVillage() {
                                 borderRadius="4px"
                                 leftIcon={<Image src="/icons/send.svg" alt="send" />}
                             >
-                                Pengajuan Klaim
+                                {t("claimSubmission")}
                             </Button>
                         )}
                     </Flex>
