@@ -94,7 +94,15 @@
         "adsErrorDateRangeEnd": "Tanggal akhir harus lebih besar dari tanggal awal.",
         "adsErrorLinkRequired": "Link iklan wajib diisi.",
         "adsErrorInvalidLink": "Format link tidak valid.",
-        "adsErrorSubmit": "Terjadi kesalahan saat mengirim iklan."
+        "adsErrorSubmit": "Terjadi kesalahan saat mengirim iklan.",
+        "verificationTitle": "Verifikasi",
+        "verificationSearchPlaceholder": "Cari di sini...",
+        "verificationFilterAll": "Semua",
+        "verificationFilterPending": "Menunggu",
+        "verificationFilterVerified": "Terverifikasi",
+        "verificationFilterRejected": "Ditolak",
+        "verificationNoData": "Tidak ada data untuk ditampilkan",
+        "verificationPage": "Halaman {page}"
     },
     "StatusCard": {
         "verified": "Pengajuan telah diverifikasi oleh admin",

@@ -94,7 +94,15 @@
         "adsErrorDateRangeEnd": "End date must be after start date.",
         "adsErrorLinkRequired": "Ad link is required.",
         "adsErrorInvalidLink": "Invalid link format.",
-        "adsErrorSubmit": "An error occurred while submitting the ad."
+        "adsErrorSubmit": "An error occurred while submitting the ad.",
+        "verificationTitle": "Verification",
+        "verificationSearchPlaceholder": "Search here...",
+        "verificationFilterAll": "All",
+        "verificationFilterPending": "Pending",
+        "verificationFilterVerified": "Verified",
+        "verificationFilterRejected": "Rejected",
+        "verificationNoData": "No data to display",
+        "verificationPage": "Page {page}"
     },
     "StatusCard": {
         "verified": "Submission has been verified by admin",
