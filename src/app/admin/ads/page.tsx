@@ -60,13 +60,13 @@ const AdminAdsPage: React.FC = () => {
                             fontSize="12px"
                             fontWeight="normal"
                         >
-                            Filter
+                            {t("adsFilter")}
                         </MenuButton>
                         <MenuList>
-                            <MenuItem>Semua</MenuItem>
-                            <MenuItem>Menunggu</MenuItem>
-                            <MenuItem>Ditampilkan</MenuItem>
-                            <MenuItem>Selesai</MenuItem>
+                            <MenuItem>{t("adsFilterAll")}</MenuItem>
+                            <MenuItem>{t("adsFilterPending")}</MenuItem>
+                            <MenuItem>{t("adsFilterPublished")}</MenuItem>
+                            <MenuItem>{t("adsFilterCompleted")}</MenuItem>
                         </MenuList>
                     </Menu>
                 </Flex>
