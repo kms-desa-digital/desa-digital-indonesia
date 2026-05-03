@@ -149,7 +149,12 @@
             "financial": "Layanan Finansial",
             "ngo": "Lembaga Swadaya Masyarakat (LSM)",
             "academic": "Akademisi"
-        }
+        },
+        "InnovationSubmission": "Pengajuan Inovasi",
+        "whatsappNumber": "Nomor WhatsApp",
+        "instagramLink": "Link Instagram",
+        "websiteLink": "Link Website"
+
     },
     "Village": {
         "selectProvince": "Pilih Provinsi",

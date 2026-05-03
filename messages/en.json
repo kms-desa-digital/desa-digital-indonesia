@@ -149,7 +149,11 @@
             "financial": "Financial Services",
             "ngo": "Non-Governmental Organization (NGO)",
             "academic": "Academia"
-        }
+        },
+        "InnovationSubmission": "Submit Innovation",
+        "whatsappNumber": "WhatsApp Number",
+        "instagramLink": "Instagram Link",
+        "websiteLink": "Website Link"
     },
     "Village": {
         "selectProvince": "Select Province",
