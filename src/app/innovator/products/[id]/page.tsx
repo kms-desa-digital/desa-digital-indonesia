@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Flex, SimpleGrid, Spinner, Box } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import CardInnovation from "Components/card/innovation";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
@@ -10,6 +11,7 @@ import { getInnovation } from "Services/innovationServices";
 import { getInnovatorById } from "Services/innovatorServices";
 
 const InnovatorProductsPage = () => {
+    const t = useTranslations("Innovator");
     const router = useRouter();
     const params = useParams();
     const id = params.id as string;
@@ -47,7 +49,7 @@ const InnovatorProductsPage = () => {
 
     return (
         <Container page>
-            <TopBar title={`Produk Inovasi - ${innovatorName}`} onBack={() => router.back()} />
+            <TopBar title={t("productsTitle", { name: innovatorName })} onBack={() => router.back()} />
             <Flex direction="column" p={4}>
                 {loading ? (
                     <Flex justify="center" align="center" minH="200px">
@@ -55,7 +57,7 @@ const InnovatorProductsPage = () => {
                     </Flex>
                 ) : innovations.length === 0 ? (
                     <Box textAlign="center" mt={10} color="gray.500">
-                        Tidak ada inovasi.
+                        {t("noInnovations")}
                     </Box>
                 ) : (
                     <SimpleGrid columns={[1, 2]} spacing={4}>
