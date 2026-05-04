@@ -73,6 +73,7 @@ const Login: React.FC = () => {
 
             const userData = userDoc.data();
             const userRole = (userData?.role || "").toLowerCase();
+            const idToken = await userCredential.user.getIdToken();
 
             // Simpan role ke localStorage (bukan data sensitif)
             // Token dikelola otomatis oleh Firebase SDK via onIdTokenChanged
@@ -133,6 +134,7 @@ const Login: React.FC = () => {
 
             const userData = userDoc.data();
             const userRole = (userData?.role || "").toLowerCase();
+            const idToken = await user.getIdToken();
 
             if (!userRole) {
                 router.push(`${paths.REGISTER_PAGE}?google=1`);

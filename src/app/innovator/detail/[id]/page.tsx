@@ -19,10 +19,13 @@ import ActionDrawer from "Components/drawer/ActionDrawer";
 import TopBar from "Components/topBar/index";
 import { paths } from "Consts/path";
 // import { DocumentData, collection, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
-import { getInnovatorById, updateInnovator, getAssistedVillages } from "Services/innovatorServices";
+import { getInnovatorById, getAssistedVillages } from "Services/innovatorServices";
+import { verifyInnovator } from "Services/adminServices";
 import { getInnovation } from "Services/innovationServices";
 import { DocumentData } from "firebase/firestore"; // Still used for type
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+
 import { useAuthState } from "react-firebase-hooks/auth";
 import { FaWandMagicSparkles } from "react-icons/fa6";
 import { LuDot } from "react-icons/lu";
@@ -58,6 +61,12 @@ const DetailInnovator: React.FC = () => {
     const { role } = useUser();
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
+    const [notif, setNotif] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+
+    const showNotif = (msg: string, type: "success" | "error") => {
+        setNotif({ msg, type });
+        setTimeout(() => setNotif(null), 3000);
+    };
 
     const handleVerify = async () => {
         setLoading(true);
@@ -73,11 +82,12 @@ const DetailInnovator: React.FC = () => {
                 status: "Terverifikasi",
             });
             */
-            await updateInnovator(id, { status: "Terverifikasi" });
+            await verifyInnovator(id, { status: "Terverifikasi", catatanAdmin: "" });
             setInnovatorData((prev) => (prev ? { ...prev, status: "Terverifikasi" } : null));
+            showNotif("Profil Inovator berhasil diverifikasi", "success");
         } catch (error) {
             console.error("Error verifying innovator via API:", error);
-            setError("Error verifying innovator.");
+            showNotif("Gagal memverifikasi profil inovator", "error");
         }
         setLoading(false);
         onClose();
@@ -86,29 +96,21 @@ const DetailInnovator: React.FC = () => {
     const handleReject = async () => {
         try {
             if (!id) {
-                setError("Invalid innovator ID.");
-                setLoading(false);
                 return;
             }
-            /*
-            const docRef = doc(firestore, "innovators", id);
-            await updateDoc(docRef, {
-                status: "Ditolak",
-                catatanAdmin: modalInput,
-            });
-            */
-            await updateInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
+            await verifyInnovator(id, { status: "Ditolak", catatanAdmin: modalInput });
             setInnovatorData((prev) => (prev ? {
                 ...prev,
                 status: "Ditolak",
                 catatanAdmin: modalInput,
             } : null));
+            showNotif("Profil Inovator berhasil ditolak", "success");
         } catch (error) {
             console.error("Error rejecting innovator via API:", error);
-            setError("Error rejecting innovator.");
+            showNotif("Gagal menolak profil inovator", "error");
+        } finally {
+            setOpenModal(false);
         }
-        setLoading(false);
-        setOpenModal(false);
     };
 
     useEffect(() => {
@@ -225,6 +227,28 @@ const DetailInnovator: React.FC = () => {
     return (
         <Container page>
             <TopBar title="Profil Inovator" onBack={() => router.back()} />
+            {notif && typeof window !== "undefined" && createPortal(
+                <div style={{
+                    position: "fixed",
+                    top: "72px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    zIndex: 99999,
+                    maxWidth: "340px",
+                    width: "90%",
+                    backgroundColor: notif.type === "success" ? "#22c55e" : "#ef4444",
+                    color: "white",
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    textAlign: "center",
+                }}>
+                    {notif.msg}
+                </div>,
+                document.body
+            )}
             <Flex position="relative">
                 <Background src={innovatorData.header} alt="header" />
                 <Logo src={innovatorData.logo} alt="logo" />
@@ -237,7 +261,7 @@ const DetailInnovator: React.FC = () => {
                     {owner && (
                         <Button
                             leftIcon={<Image src={Send.src} alt="send" />}
-                            onClick={onOpen}
+                            onClick={() => router.push(`/innovator/pengajuan/${id}`)}
                             fontSize="12px"
                             fontWeight="500"
                             height="29px"

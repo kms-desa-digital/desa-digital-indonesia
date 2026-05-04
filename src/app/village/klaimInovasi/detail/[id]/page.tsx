@@ -122,8 +122,8 @@ const KlaimInovasiDetail: React.FC = () => {
                     const newValue = (Number(vData?.jumlahInovasiDiterapkan) || 0) + 1;
                     await updateVillage(claimData.desaId, { jumlahInovasiDiterapkan: newValue });
                 }
+                setClaimData((prev: any) => ({ ...prev, status: "Terverifikasi" }));
                 toast.success("Klaim berhasil diverifikasi!");
-                router.push(`/village/pengajuan/${claimData.desaId || user?.uid}`);
             }
         } catch (error) {
             console.error("Failed to verify claim via API:", error);
@@ -146,8 +146,12 @@ const KlaimInovasiDetail: React.FC = () => {
                     status: "Ditolak",
                     catatanAdmin: modalInput
                 });
+                setClaimData((prev: any) => ({
+                    ...prev,
+                    status: "Ditolak",
+                    catatanAdmin: modalInput
+                }));
                 toast.success("Klaim ditolak");
-                router.push(`/village/pengajuan/${claimData?.desaId || user?.uid}`);
             }
         } catch (error) {
             console.error("Failed to reject claim via API:", error);

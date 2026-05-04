@@ -19,6 +19,7 @@ import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { FaCircle } from "react-icons/fa";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Slider from "react-slick";
 import { toast } from "react-toastify";
 import "slick-carousel/slick/slick-theme.css";
@@ -26,6 +27,7 @@ import "slick-carousel/slick/slick.css";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { useUser } from "src/contexts/UserContext";
+import { useAdminStatus } from "Hooks/useAdminStatus";
 
 import StatusCard from "Components/card/status/StatusCard";
 import RejectionModal from "Components/confirmModal/RejectionModal";
@@ -52,21 +54,23 @@ import {
     Text2,
     Title
 } from "./_styles";
+import { verifyInnovation } from "@/services/adminServices";
 
 
 
 function DetailInnovation() {
+    const t = useTranslations("Innovation");
     const router = useRouter();
     const params = useParams();
     const id = params.id as string;
     const { role, isVillageVerified } = useUser();
+    const { isAdmin } = useAdminStatus();
     const [isExpanded, setIsExpanded] = useState(false);
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [user] = useAuthState(auth);
     const [data, setData] = useState<any>({});
     const [innovatorData, setDatainnovator] = useState<any>({});
     const [village, setVillage] = useState<any[]>([]);
-    const [admin, setAdmin] = useState(false);
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
     const [loading, setLoading] = useState(true);
@@ -84,10 +88,7 @@ function DetailInnovation() {
     const villageSafe = Array.isArray(village) ? village : [];
     const villageMap = new Map();
 
-    useEffect(() => {
-        setAdmin(role === "admin");
-    }, [role]);
-
+   
     useEffect(() => {
         if (id) {
             setLoading(true);
@@ -210,17 +211,31 @@ function DetailInnovation() {
                 return;
             }
             // Update innovation status via API
-            await updateInnovation(id, {
-                status: "Terverifikasi",
-                catatanAdmin: ""
-            });
-            setData({ ...data, status: "Terverifikasi" });
+            try {
+                const updateResponse = await verifyInnovation(id, {
+                    status: "Terverifikasi",
+                    catatanAdmin: ""
+                });
+                console.log("updateInnovation berhasil:", updateResponse?.data);
+            } catch (error) {
+                console.error("updateInnovation gagal:", error);
+                throw error;
+            }
 
+            console.log("hahahahah:",data);
+            setData({ ...data, status: "Terverifikasi" });
+            
+            const innovatorRes: any = await getInnovatorById(data.innovatorId);
+            const invData = innovatorRes?.innovator ?? innovatorRes?.data?.innovator ?? innovatorRes?.data ?? innovatorRes;
             // Update innovator's innovation count via API
             if (data.innovatorId) {
-                const currentCount = innovatorData.jumlahInovasi || 0;
+                const currentCount = invData?.jumlahInovasi ?? innovatorData.jumlahInovasi ?? 0;
                 await updateInnovator(data.innovatorId, {
-                    jumlahInovasi: currentCount + 1
+                    jumlahInovasi: currentCount + 1,
+                    namaInovator: invData?.namaInovator,
+                    deskripsi: invData?.deskripsi,
+                    kategori: invData?.kategori,
+                    whatsapp: invData?.whatsapp,
                 });
             }
 
@@ -257,7 +272,7 @@ function DetailInnovation() {
                 setLoading(false);
                 return;
             }
-            await updateInnovation(id, {
+            await verifyInnovation(id, {
                 status: "Ditolak",
                 catatanAdmin: modalInput,
             });
@@ -266,6 +281,7 @@ function DetailInnovation() {
                 status: "Ditolak",
                 catatanAdmin: modalInput,
             }));
+            toast.success("Penolakan berhasil");
         } catch (error) {
             console.error("Error rejecting innovation via API:", error);
             setError("Error rejecting innovation");
@@ -297,7 +313,7 @@ function DetailInnovation() {
     if (loading) {
         return (
             <Box>
-                <TopBar title="Detail Inovasi" onBack={() => router.back()} />
+                <TopBar title={t("detailTitle")} onBack={() => router.back()} />
                 <ContentContainer>
                     <Skeleton height="200px" borderRadius="12px" />
                     <Box mt="20px">
@@ -333,11 +349,11 @@ function DetailInnovation() {
             : text;
     };
 
-
+    console.log("Innovation Detail Data:", data);
     if (error || !data || !data.namaInovasi) {
         return (
             <Box minH="100vh">
-                <TopBar title="Detail Inovasi" onBack={() => router.back()} />
+                <TopBar title={t("detailTitle")} onBack={() => router.back()} />
                 <Flex minH="calc(100vh - 70px)" align="center" justify="center" px={4}>
                     <Box textAlign="center" maxW="320px">
                         <Text fontSize="16px" color="gray.500">
@@ -399,7 +415,7 @@ function DetailInnovation() {
 
     return (
         <Box>
-            <TopBar title="Detail Inovasi" onBack={() => router.back()} rightElement={claimElement} />
+            <TopBar title={t("detailTitle")} onBack={() => router.back()} rightElement={claimElement} />
             {data.images && data.images.length > 1 ? (
                 <Slider {...settings}>
                     {data.images.map((image: string, index: number) => (
@@ -462,7 +478,7 @@ function DetailInnovation() {
                         >
                             {data.kategori}
                         </Label>
-                        <Description2>Dibuat tahun {year}</Description2>
+                        <Description2>{t("createdYear", { year })}</Description2>
                     </ChipContainer>
                 </div>
                 <ActionContainer
@@ -472,14 +488,14 @@ function DetailInnovation() {
                 >
                     <Logo src={innovatorData.logo || "/images/default-logo.svg"} alt="logo" />
                     <div>
-                        <Text2>Inovator</Text2>
+                        <Text2>{t("innovator")}</Text2>
                         <Text1>{innovatorData.namaInovator}</Text1>
                     </div>
                 </ActionContainer>
                 <Stack spacing="8px">
                     <div>
                         <Text fontSize="16px" fontWeight="700" lineHeight="140%" mb="12px">
-                            Deskripsi
+                            {t("description")}
                         </Text>
                         <Box fontSize="12px" fontWeight="400" color="#4B5563">
                             {isExpanded ? (
@@ -496,7 +512,7 @@ function DetailInnovation() {
                                             textDecoration="underline"
                                             onClick={() => setIsExpanded(!isExpanded)} // Toggle state
                                         >
-                                            Lebih Sedikit
+                                            {t("readLess")}
                                         </Text>
                                     )}
                                 </>
@@ -515,7 +531,7 @@ function DetailInnovation() {
                                                 onClick={() => setIsExpanded(!isExpanded)} // Toggle state
                                             >
                                                 {" "}
-                                                Selengkapnya
+                                                {t("readMore")}
                                             </Text>
                                         )}
                                 </>
@@ -525,7 +541,7 @@ function DetailInnovation() {
 
                     <div>
                         <Text fontSize="12px" fontWeight="600">
-                            Model Bisnis
+                            {t("businessModel")}
                         </Text>
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
                             {data.modelBisnis?.join(", ")}
@@ -534,7 +550,7 @@ function DetailInnovation() {
 
                     <div>
                         <Text fontSize="12px" fontWeight="600">
-                            Desa yang Menerapkan
+                            {t("appliedVillages")}
                         </Text>
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
                             {data.inputDesaMenerapkan}
@@ -542,7 +558,7 @@ function DetailInnovation() {
                     </div>
                     <div>
                         <Text fontSize="12px" fontWeight="600">
-                            Kisaran Harga
+                            {t("priceRange")}
                         </Text>
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
                             {data.hargaMinimal
@@ -561,7 +577,7 @@ function DetailInnovation() {
 
                 <div>
                     <Text fontSize="16px" fontWeight="700" lineHeight="140%">
-                        Manfaat
+                        {t("benefits")}
                     </Text>
                     <Flex>
                         <Accordion width="360px" allowMultiple>
@@ -628,7 +644,7 @@ function DetailInnovation() {
 
                 <Flex direction="column" mb={14}>
                     <Text fontSize="16px" fontWeight="700" lineHeight="140%" mb="12px">
-                        Perlu Disiapkan
+                        {t("preparation")}
                     </Text>
                     {Array.isArray(data.infrastruktur) &&
                         data.infrastruktur.length > 0 ? (
@@ -648,7 +664,7 @@ function DetailInnovation() {
                         alignItems="flex-end"
                         align-self="stretch"
                     >
-                        <SubText>Desa yang Menerapkan</SubText>
+                        <SubText>{t("appliedVillages")}</SubText>
                         <Text
                             onClick={() =>
                                 router.push(`/innovation/desaYangMenerapkan/${data.id}`)
@@ -661,7 +677,7 @@ function DetailInnovation() {
                             paddingBottom="12px"
                         >
                             {" "}
-                            Lihat Semua{" "}
+                            {t("viewAll")}{" "}
                         </Text>
                     </Flex>
                     {village.map((desa: any, index: number) => (
@@ -736,7 +752,7 @@ function DetailInnovation() {
                         zIndex="999"
                         boxShadow="0px -6px 12px rgba(0, 0, 0, 0.1)"
                     >
-                        {admin ? (
+                        {isAdmin ? (
                             data.status === "Terverifikasi" || data.status === "Ditolak" ? (
                                 <StatusCard message={data.catatanAdmin} status={data.status} />
                             ) : (
@@ -746,7 +762,7 @@ function DetailInnovation() {
                             )
                         ) : (
                             <Button width="100%" fontSize="16px" onClick={onOpen}>
-                                Ketahui lebih lanjut
+                                {t("knowMore")}
                             </Button>
                         )}
                     </Box>
@@ -762,7 +778,7 @@ function DetailInnovation() {
                 <ActionDrawer
                     isOpen={isOpen}
                     onClose={onClose}
-                    isAdmin={admin}
+                    isAdmin={isAdmin}
                     loading={loading}
                     onVerify={handleVerify}
                     setOpenModal={setOpenModal}

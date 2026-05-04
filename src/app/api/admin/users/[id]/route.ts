@@ -16,7 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: Params }) {
     const { id } = await params;
     const adminAuth = getFirebaseAdminAuth();
     const fbUser = await adminAuth.getUser(id);
-    
+
     const db = await connectToDatabase();
     const dbUser = await db.collection("users").findOne({
       $or: [{ uid: id }, { firebaseUid: id }, { id: id }, { _id: id as any }]
@@ -63,7 +63,7 @@ export async function PUT(req: NextRequest, { params }: { params: Params }) {
 
     await db.collection("users").updateOne(
       { $or: [{ uid: id }, { firebaseUid: id }, { id: id }, { _id: id as any }] },
-      { 
+      {
         $set: dbUpdateData,
         $setOnInsert: {
           uid: id,
@@ -81,7 +81,7 @@ export async function PUT(req: NextRequest, { params }: { params: Params }) {
       const fsUpdateData: any = { updatedAt: new Date().toISOString() };
       if (email) fsUpdateData.email = email;
       if (role) fsUpdateData.role = role;
-      
+
       await adminDb.collection("users").doc(id).set(fsUpdateData, { merge: true });
     } catch (fsError) {
       console.error("Firestore sync update failed:", fsError);
@@ -106,11 +106,11 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
 
     // 1. Delete from Firebase Auth
     try {
-        await adminAuth.deleteUser(id);
+      await adminAuth.deleteUser(id);
     } catch (fbError: any) {
-        if (fbError.code !== 'auth/user-not-found') {
-            throw fbError;
-        }
+      if (fbError.code !== 'auth/user-not-found') {
+        throw fbError;
+      }
     }
 
     // 1.1 Delete from Firestore
@@ -124,19 +124,19 @@ export async function DELETE(req: NextRequest, { params }: { params: Params }) {
     // 2. Delete from MongoDB
 
     const db = await connectToDatabase();
-    
+
     const user = await db.collection("users").findOne({
       $or: [{ uid: id }, { firebaseUid: id }, { id: id }, { _id: id as any }]
     });
 
     if (user) {
       if (user.role === "village") {
-        await db.collection("villages").deleteOne({ 
-           $or: [{ userId: id }, { _id: id as any }, { id: id }] 
+        await db.collection("villages").deleteOne({
+          $or: [{ userId: id }, { _id: id as any }, { id: id }]
         });
       } else if (user.role === "innovator") {
-        await db.collection("innovators").deleteOne({ 
-           $or: [{ userId: id }, { _id: id as any }, { id: id }] 
+        await db.collection("innovators").deleteOne({
+          $or: [{ userId: id }, { _id: id as any }, { id: id }]
         });
       }
     }

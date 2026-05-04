@@ -127,8 +127,20 @@ const PengajuanInovasi: React.FC = () => {
 
     return (
         <Container page>
-            <TopBar title="Verifikasi Tambah Inovasi" onBack={() => router.back()} />
+            <TopBar title="Pengajuan Inovasi" onBack={() => router.back()} />
             <Stack padding="0 16px" gap={4} mt={6}>
+                <Flex justify="flex-end">
+                    <Button 
+                        backgroundColor="#347357"
+                        color="white"
+                        _hover={{ backgroundColor: "#2d634b" }}
+                        size="sm" 
+                        onClick={() => router.push("/innovation/add")}
+                        borderRadius="md"
+                    >
+                        + Tambah Inovasi
+                    </Button>
+                </Flex>
                 <Flex gap={2} mb={2}>
                     <InputGroup flex={1}>
                         <InputLeftElement pointerEvents="none">

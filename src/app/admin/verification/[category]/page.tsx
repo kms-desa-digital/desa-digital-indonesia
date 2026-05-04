@@ -27,6 +27,7 @@ import Container from "Components/container";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
 import React, { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
 import { getVillages, getClaims } from "Services/villageServices";
 import { getInnovators } from "Services/innovatorServices";
@@ -49,6 +50,8 @@ const SkeletonCard = () => {
 
 const VerificationPage: React.FC = () => {
     const router = useRouter();
+    const t = useTranslations("Admin");
+    const tc = useTranslations("Categories");
     const params = useParams() as { category: string };
     const { category } = params;
     const [verifData, setVerifData] = useState<any[]>([]);
@@ -99,14 +102,37 @@ const VerificationPage: React.FC = () => {
         "Verifikasi Klaim Inovasi": paths.DETAIL_KLAIM_INOVASI_PAGE,
     };
 
+    const decodedCategory = decodeURIComponent(category || "");
+
+    const statusLabels: Record<string, string> = {
+        Semua: t("verificationFilterAll"),
+        Menunggu: t("verificationFilterPending"),
+        Terverifikasi: t("verificationFilterVerified"),
+        Ditolak: t("verificationFilterRejected"),
+    };
+
+    const categoryTitle = (() => {
+        switch (decodedCategory) {
+            case "Verifikasi Desa":
+                return tc("verifDesa");
+            case "Verifikasi Inovator":
+                return tc("verifInno");
+            case "Verifikasi Tambah Inovasi":
+                return tc("verifAddInno");
+            case "Verifikasi Klaim Inovasi":
+                return tc("verifClaim");
+            default:
+                return t("verificationTitle");
+        }
+    })();
+
     const handleCardClick = (id: string) => {
-        const decodedCategory = decodeURIComponent(category || "");
         const pathTemplate = categoryToPathMap[decodedCategory];
         if (pathTemplate) {
             const path = pathTemplate.replace(":id", id);
             router.push(path);
         } else {
-            console.error("Unknown category or path mapping missing");
+            console.error("Unknown category or path mapping missing", decodedCategory);
         }
     };
 
@@ -197,8 +223,7 @@ const VerificationPage: React.FC = () => {
 
     return (
         <Container page>
-            <TopBar title={decodeURIComponent(category || "Verification")} onBack={() => router.back()} />
-
+            <TopBar title={categoryTitle} onBack={() => router.back()} />
             <Stack padding="0 16px" gap={2} marginBottom={4}>
                     <Flex gap={2} mb={2} mt={8}>
                         <InputGroup flex={1}>
@@ -206,7 +231,7 @@ const VerificationPage: React.FC = () => {
                                 <SearchIcon color="gray.400" />
                             </InputLeftElement>
                             <Input
-                                placeholder="Cari di sini..."
+                                placeholder={t("verificationSearchPlaceholder")}
                                 size="md"
                                 borderRadius="full"
                                 value={searchTerm}
@@ -228,7 +253,7 @@ const VerificationPage: React.FC = () => {
                                 fontSize="12px"
                                 fontWeight="normal"
                             >
-                                {selectedFilter}
+                                {statusLabels[selectedFilter] || selectedFilter}
                             </MenuButton>
                             <MenuList>
                                 {statusOptions.map((status) => (
@@ -237,7 +262,7 @@ const VerificationPage: React.FC = () => {
                                         onClick={() => handleFilterSelect(status)}
                                         fontWeight={selectedFilter === status ? "bold" : "normal"}
                                     >
-                                        {status}
+                                        {statusLabels[status] || status}
                                     </MenuItem>
                                 ))}
                             </MenuList>
@@ -271,7 +296,7 @@ const VerificationPage: React.FC = () => {
                         })
                     ) : (
                         <Text textAlign="center" mt={4}>
-                            Tidak ada data untuk ditampilkan
+                            {t("verificationNoData")}
                         </Text>
                     )}
                     
@@ -296,7 +321,7 @@ const VerificationPage: React.FC = () => {
                             </Button>
                             
                             <Text textAlign="center" fontWeight="500" fontSize="14px" color="gray.700">
-                                Halaman {currentPage}
+                                {t("verificationPage", { page: currentPage })}
                             </Text>
                             
                             <Button

@@ -9,7 +9,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import EnlargedImage from "src/components/village/Image";
 import Loading from "Components/loading";
-
+import { toast } from "react-toastify";
 
 import {
     Accordion,
@@ -40,7 +40,8 @@ import { DocumentData } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 // import { auth, firestore } from "src/firebase/clientApp";
 import { auth } from "src/firebase/clientApp";
-import { getVillageById, updateVillage, getVillageInnovations } from "Services/villageServices";
+import { getVillageById, getVillageInnovations } from "Services/villageServices";
+import api from "Services/api";
 import { useUser } from "src/contexts/UserContext";
 import {
     ActionContainer,
@@ -98,59 +99,44 @@ export default function DetailVillagePage() {
         setLoading(true);
         try {
             if (id) {
-                /*
-                const docRef = doc(firestore, "villages", id);
-                await updateDoc(docRef, {
-                    status: "Terverifikasi",
-                });
-                */
-                await updateVillage(id, { status: "Terverifikasi" });
+                await api.post(`/admin/verify/village/${id}`, { status: "Terverifikasi", catatanAdmin: "" });
                 setVillage((prev: any) =>
-                    prev ? ({
-                        ...prev,
-                        status: "Terverifikasi",
-                    }) : undefined);
+                    prev ? { ...prev, status: "Terverifikasi" } : undefined
+                );
+                toast.success("Profil Desa berhasil diverifikasi");
             } else {
                 throw new Error("Village ID is undefined");
             }
         } catch (error) {
             console.error("Error verifying village via API:", error);
+            toast.error("Gagal memverifikasi profil desa");
+        } finally {
+            setLoading(false);
+            onClose();
         }
-        setLoading(false);
-        onClose();
     };
 
     const handleReject = async () => {
         setLoading(true);
         try {
             if (id) {
-                /*
-                const docRef = doc(firestore, "villages", id);
-                await updateDoc(docRef, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput, // Simpan alasan penolakan ke Firestore
-                });
-                */
-                await updateVillage(id, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput,
-                });
+                await api.post(`/admin/verify/village/${id}`, { status: "Ditolak", catatanAdmin: modalInput });
                 setVillage((prev: any) =>
-                    prev ? ({
-                        ...prev,
-                        status: "Ditolak",
-                        catatanAdmin: modalInput,
-                    }) : undefined);
+                    prev ? { ...prev, status: "Ditolak", catatanAdmin: modalInput } : undefined
+                );
+                toast.success("Profil Desa berhasil ditolak");
             } else {
                 throw new Error("Village ID is undefined");
             }
         } catch (error) {
             console.error("Error during rejection via API:", error);
+            toast.error("Gagal menolak profil desa");
+        } finally {
+            setLoading(false);
+            setOpenModal(false);
+            onClose();
         }
-        setLoading(false);
-        setOpenModal(false); // Tutup modal setelah menyimpan
     };
-
     useEffect(() => {
         setAdmin(role === "admin");
     }, [role]);

@@ -1,5 +1,6 @@
 import { CheckIcon, CloseIcon, InfoIcon } from "@chakra-ui/icons";
 import { Flex, Box, Text } from "@chakra-ui/react";
+import { useTranslations } from "next-intl";
 import React from "react";
 
 type StatusCardProps = {
@@ -8,6 +9,8 @@ type StatusCardProps = {
 };
 
 const StatusCard: React.FC<StatusCardProps> = ({ message, status }) => {
+  const t = useTranslations("StatusCard");
+
   return (
     <Flex justify="center">
       <Flex
@@ -29,7 +32,7 @@ const StatusCard: React.FC<StatusCardProps> = ({ message, status }) => {
           <Flex align="center" bg="#DCFCE7" p={3} borderRadius="8px" width="100%" justify="center">
             <CheckIcon fontSize="14px" color="#347357" mr="8px" />
             <Text fontSize="14px" fontWeight="700" color="#347357">
-              Pengajuan telah diverifikasi oleh admin
+              {t("verified")}
             </Text>
           </Flex>
         ) : status === "Ditolak" ? (
@@ -37,7 +40,7 @@ const StatusCard: React.FC<StatusCardProps> = ({ message, status }) => {
             <Flex align="center" justify='center'>
               <CloseIcon fontSize="12px" color="#EF4444" mr="8px" />
               <Text fontSize="14px" fontWeight="700" color="#EF4444">
-                Pengajuan ditolak
+                {t("rejected")}
               </Text>
             </Flex>
             {message && (
@@ -48,7 +51,7 @@ const StatusCard: React.FC<StatusCardProps> = ({ message, status }) => {
                 textAlign="center"
                 mt={1}
               >
-                Catatan: {message}
+                {t("note", { message })}
               </Text>
             )}
           </Box>
@@ -56,7 +59,7 @@ const StatusCard: React.FC<StatusCardProps> = ({ message, status }) => {
           <Flex align="center" bg="#FEF9C3" p={3} borderRadius="8px" width="100%" justify="center">
             <InfoIcon fontSize="14px" color="#854D0E" mr="8px" />
             <Text fontSize="14px" fontWeight="700" color="#854D0E">
-              Pengajuan sedang menunggu verifikasi admin
+              {t("pending")}
             </Text>
           </Flex>
         ) : null}

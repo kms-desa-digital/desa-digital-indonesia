@@ -16,15 +16,17 @@ import {
 import Container from "Components/container";
 import TopBar from "Components/topBar";
 import React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { paths } from "Consts/path";
 
 const AdminAdsPage: React.FC = () => {
+    const t = useTranslations("Admin");
     const router = useRouter();
 
     return (
         <Container page>
-            <TopBar title="Pembuatan Iklan" onBack={() => router.back()} />
+            <TopBar title={t("adsTitle")} onBack={() => router.back()} />
             
             <Box padding="0 16px">
                 <Flex justify="space-between" align="center" mt={8} gap={2}>
@@ -36,7 +38,7 @@ const AdminAdsPage: React.FC = () => {
                                 <SearchIcon color="gray.400" />
                             </InputLeftElement>
                             <Input
-                                placeholder="Cari iklan disini"
+                                placeholder={t("adsSearchPlaceholder")}
                                 size="md"
                                 bg="white"
                                 borderRadius="full"
@@ -58,13 +60,13 @@ const AdminAdsPage: React.FC = () => {
                             fontSize="12px"
                             fontWeight="normal"
                         >
-                            Filter
+                            {t("adsFilter")}
                         </MenuButton>
                         <MenuList>
-                            <MenuItem>Semua</MenuItem>
-                            <MenuItem>Menunggu</MenuItem>
-                            <MenuItem>Ditampilkan</MenuItem>
-                            <MenuItem>Selesai</MenuItem>
+                            <MenuItem>{t("adsFilterAll")}</MenuItem>
+                            <MenuItem>{t("adsFilterPending")}</MenuItem>
+                            <MenuItem>{t("adsFilterPublished")}</MenuItem>
+                            <MenuItem>{t("adsFilterCompleted")}</MenuItem>
                         </MenuList>
                     </Menu>
                 </Flex>
@@ -81,7 +83,7 @@ const AdminAdsPage: React.FC = () => {
                         _hover={{ backgroundColor: "#2a5c46" }}
                         onClick={() => router.push(paths.MAKE_ADS)}
                     >
-                        Tambah Iklan
+                        {t("adsAdd")}
                     </Button>
                 </Flex>
             </Box>

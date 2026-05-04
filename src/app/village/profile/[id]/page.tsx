@@ -4,8 +4,10 @@
 import CardInnovation from "Components/card/innovation";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
+import { toast } from "react-toastify";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import EnlargedImage from "Components/village/Image";
 import { useAuthState } from "react-firebase-hooks/auth";
 
@@ -25,7 +27,7 @@ import {
 } from "@chakra-ui/react";
 import { auth } from "src/firebase/clientApp";
 // import { auth, firestore } from "src/firebase/clientApp";
-import { getVillageById, updateVillage, getVillageInnovations } from "Services/villageServices";
+import { getVillageById, updateVillage, getVillageInnovations, verifyVillage } from "Services/villageServices";
 import {
     ActionContainer,
     Background,
@@ -45,6 +47,7 @@ import {
 import StatusCard from "Components/card/status/StatusCard";
 import RejectionModal from "Components/confirmModal/RejectionModal";
 import ActionDrawer from "Components/drawer/ActionDrawer";
+import { useAdminStatus } from "Hooks/useAdminStatus";
 
 export default function ProfileVillage() {
     const router = useRouter();
@@ -53,13 +56,15 @@ export default function ProfileVillage() {
     const [innovations, setInnovations] = useState<any[]>([]);
     const [village, setVillage] = useState<any | undefined>(undefined);
     const [owner, setOwner] = useState(false);
-    const [admin, setAdmin] = useState(false);
     const [loading, setLoading] = useState(false);
     const params = useParams();
     const id = params.id as string;
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
+
+    const { isAdmin } = useAdminStatus();
+    const t = useTranslations("Village");
 
     const formatLocation = (villageData: any) => {
         if (!villageData) return "No Location";
@@ -84,11 +89,12 @@ export default function ProfileVillage() {
                     status: "Terverifikasi",
                 });
                 */
-                await updateVillage(id, { status: "Terverifikasi" });
+                await verifyVillage(id, "Terverifikasi");
                 setVillage((prev: any) => ({
                     ...prev,
                     status: "Terverifikasi",
                 }));
+                toast.success("Profil desa berhasil diverifikasi");
             } else {
                 throw new Error("Village ID is undefined");
             }
@@ -114,15 +120,13 @@ export default function ProfileVillage() {
                     catatanAdmin: modalInput, // Simpan alasan penolakan ke Firestore
                 });
                 */
-                await updateVillage(id, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput,
-                });
+                await verifyVillage(id, "Ditolak", modalInput);
                 setVillage((prev: any) => ({
                     ...prev,
                     status: "Ditolak",
                     catatanAdmin: modalInput,
                 }));
+                toast.success("Penolakan berhasil");
             } else {
                 throw new Error("Village ID is undefined");
             }
@@ -133,23 +137,6 @@ export default function ProfileVillage() {
         setOpenModal(false); // Tutup modal setelah menyimpan
     };
 
-    useEffect(() => {
-        /*
-        const fetchUser = async () => {
-            if (userLogin?.uid) {
-                const userRef = doc(firestore, "users", userLogin.uid);
-                const userDoc = await getDoc(userRef);
-                if (userDoc.exists()) {
-                    const user = userDoc.data();
-                    setAdmin(user?.role === "admin");
-                }
-            }
-        };
-        fetchUser();
-        */
-        // Note: Admin status should ideally come from auth context or a /me endpoint
-        // For now, assuming userLogin reflects the user's state
-    }, [userLogin]);
 
     useEffect(() => {
         const fetchVillageData = async () => {
@@ -161,7 +148,7 @@ export default function ProfileVillage() {
                     if (data) {
                         setVillage(data);
                         const uid = userLogin?.uid;
-                        const isOwner = data?.userId === uid || id === uid;
+                        const isOwner = data?.userId === uid;
                         if (uid) {
                             setOwner(isOwner);
                         }
@@ -199,7 +186,7 @@ export default function ProfileVillage() {
                     setVillage((prev: any) => {
                         if (prev && prev.status !== data.status) {
                             const uid = userLogin?.uid;
-                            const isOwner = data?.userId === uid || id === uid;
+                            const isOwner = data?.userId === uid;
                             if (isOwner && data.status === "Ditolak") {
                                 router.push(paths.VILLAGE_FORM || "/village/form");
                             }
@@ -232,7 +219,7 @@ export default function ProfileVillage() {
 
     return (
         <>
-            <TopBar title="Profil Desa" onBack={() => router.back()} />
+            <TopBar title={t("detailTitle")} onBack={() => router.back()} />
             <div style={{ position: "relative", width: "100%" }}>
                 <Background src={village?.header || "/images/default-header.svg"} alt="background" />
                 <Logo src={village?.logo || "/images/default-logo.svg"} alt="logo" />
@@ -252,7 +239,7 @@ export default function ProfileVillage() {
                                 borderRadius="4px"
                                 leftIcon={<Image src="/icons/send.svg" alt="send" />}
                             >
-                                Pengajuan Klaim
+                                {t("claimSubmission")}
                             </Button>
                         )}
                     </Flex>
@@ -263,10 +250,10 @@ export default function ProfileVillage() {
                         <Description>{formatLocation(village)}</Description>
                     </ActionContainer>
                     <div>
-                        <SubText margin-bottom={16}>Tentang</SubText>
+                        <SubText margin-bottom={16}>{t("about")}</SubText>
                         <Description>{village?.deskripsi}</Description>
                     </div>
-                    <SubText>Kontak Desa</SubText>
+                    <SubText>{t("villageContact")}</SubText>
                     <Flex flexDirection="column" alignItems="flex-start" gap="12px">
                         <Flex
                             width="100%"
@@ -276,7 +263,7 @@ export default function ProfileVillage() {
                             paddingBottom="12px"
                         >
                             <Box color="#4B5563" fontSize="12px" minWidth="110px">
-                                Nomor WhatsApp
+                                {t("whatsappNumber")}
                             </Box>
                             <Description>{village?.whatsapp}</Description>
                         </Flex>
@@ -288,7 +275,7 @@ export default function ProfileVillage() {
                             paddingBottom="12px"
                         >
                             <Box color="#4B5563" fontSize="12px" minWidth="110px">
-                                Link Instagram
+                                {t("instagramLink")}
                             </Box>
                             <Description>{village?.instagram || "-"}</Description>
                         </Flex>
@@ -300,13 +287,13 @@ export default function ProfileVillage() {
                             paddingBottom="12px"
                         >
                             <Box color="#4B5563" fontSize="12px" minWidth="110px">
-                                Link Website
+                                {t("websiteLink")}
                             </Box>
                             <Description>{village?.website || "-"}</Description>
                         </Flex>
                     </Flex>
                     <div>
-                        <SubText>Potensi Desa</SubText>
+                        <SubText>{t("villagePotential")}</SubText>
                         <ContPotensiDesa>
                             {village?.potensiDesa?.map((potensi: string, index: number) => (
                                 <ChipContainer key={index}>
@@ -316,7 +303,7 @@ export default function ProfileVillage() {
                         </ContPotensiDesa>
                     </div>
                     <div>
-                        <SubText>Karakteristik Desa</SubText>
+                        <SubText>{t("villageCharacteristics")}</SubText>
                         <Accordion defaultIndex={[0]} allowMultiple>
                             <AccordionItem>
                                 <h2>
@@ -329,7 +316,7 @@ export default function ProfileVillage() {
                                             fontWeight="700"
                                             gap={2}
                                         >
-                                            <Icon src="/icons/geography.svg" alt="geo" /> Geografis
+                                            <Icon src="/icons/geography.svg" alt="geo" /> {t("geography")}
                                         </Flex>
                                         <AccordionIcon color="#347357" />
                                     </AccordionButton>
@@ -355,7 +342,7 @@ export default function ProfileVillage() {
                                             gap={2}
                                         >
                                             <Icon src="/icons/infrastructure.svg" alt="Infrastrusture" />{" "}
-                                            Infrastruktur
+                                            {t("infrastructure")}
                                         </Flex>
                                         <AccordionIcon color="#347357" />
                                     </AccordionButton>
@@ -367,19 +354,19 @@ export default function ProfileVillage() {
                                     paddingRight="4px"
                                 >
                                     <Box>
-                                        <Text fontWeight="bold">Kondisi Jalan:</Text>
+                                        <Text fontWeight="bold">{t("roadCondition")}</Text>
                                         <Text>{village?.kondisijalan || "Tidak tersedia"}</Text>
                                     </Box>
                                     <Box mt={2}>
-                                        <Text fontWeight="bold">Jaringan Internet:</Text>
+                                        <Text fontWeight="bold">{t("internetNetwork")}</Text>
                                         <Text>{village?.jaringan || "Tidak tersedia"}</Text>
                                     </Box>
                                     <Box mt={2}>
-                                        <Text fontWeight="bold">Ketersediaan Listrik:</Text>
+                                        <Text fontWeight="bold">{t("electricityAvailability")}</Text>
                                         <Text>{village?.listrik || "Tidak tersedia"}</Text>
                                     </Box>
                                     <Box mt={2}>
-                                        <Text fontWeight="bold">Lain-lain:</Text>
+                                        <Text fontWeight="bold">{t("others")}</Text>
                                         <Text>{village?.infrastrukturDesa || "Tidak tersedia"}</Text>
                                     </Box>
                                 </AccordionPanel>
@@ -395,7 +382,7 @@ export default function ProfileVillage() {
                                             fontWeight="700"
                                             gap={2}
                                         >
-                                            <Icon src="/icons/digital-readiness.svg" alt="DigR" /> Kesiapan Digital
+                                            <Icon src="/icons/digital-readiness.svg" alt="DigR" /> {t("digitalReadiness")}
                                         </Flex>
                                         <AccordionIcon color="#347357" />
                                     </AccordionButton>
@@ -407,11 +394,11 @@ export default function ProfileVillage() {
                                     paddingRight="4px"
                                 >
                                     <Box>
-                                        <Text fontWeight="bold">Perkembangan Teknologi Digital:</Text>
+                                        <Text fontWeight="bold">{t("digitalTechnologyDevelopment")}</Text>
                                         <Text>{village?.teknologi || "Tidak tersedia"}</Text>
                                     </Box>
                                     <Box mt={2}>
-                                        <Text fontWeight="bold">Kemampuan Teknologi:</Text>
+                                        <Text fontWeight="bold">{t("technologyCapability")}</Text>
                                         <Text>{village?.kemampuan || "Tidak tersedia"}</Text>
                                     </Box>
                                     {/* <Box mt={2}>
@@ -431,7 +418,7 @@ export default function ProfileVillage() {
                                             fontWeight="700"
                                             gap={2}
                                         >
-                                            <Icon src="/icons/socio-cultural.svg" alt="SocCul" /> Sosial dan Budaya
+                                            <Icon src="/icons/socio-cultural.svg" alt="SocCul" /> {t("socialCulture")}
                                         </Flex>
                                         <AccordionIcon color="#347357" />
                                     </AccordionButton>
@@ -456,7 +443,7 @@ export default function ProfileVillage() {
                                             fontWeight="700"
                                             gap={2}
                                         >
-                                            <Icon src="/icons/resource-village.svg" alt="Resource" /> Sumber Daya Alam
+                                            <Icon src="/icons/resource-village.svg" alt="Resource" /> {t("naturalResources")}
                                         </Flex>
                                         <AccordionIcon color="#347357" />
                                     </AccordionButton>
@@ -473,7 +460,7 @@ export default function ProfileVillage() {
                         </Accordion>
                     </div>
                     <div>
-                        <SubText>Galeri Desa</SubText>
+                        <SubText>{t("villageGallery")}</SubText>
                         <CardContainer>
                             <Horizontal>
                                 {village?.images &&
@@ -485,7 +472,7 @@ export default function ProfileVillage() {
                                     )
                                 ) : (
                                     <Text fontSize={12} color="gray.400">
-                                        Gambar tidak ada
+                                        {t("noImages")}
                                     </Text>
                                 )}
                             </Horizontal>
@@ -497,7 +484,7 @@ export default function ProfileVillage() {
                             alignItems="flex-end"
                             alignSelf="stretch"
                         >
-                            <SubText>Inovasi yang Diterapkan</SubText>
+                            <SubText>{t("appliedInnovations")}</SubText>
                             <Text
                                 onClick={() => router.push(`/village/detail/${id}/innovations`)}
                                 cursor="pointer"
@@ -507,14 +494,14 @@ export default function ProfileVillage() {
                                 textDecorationLine="underline"
                                 paddingBottom="12px"
                             >
-                                Lihat Semua
+                                {t("viewAll")}
                             </Text>
                         </Flex>
                         <CardContainer>
                             <Horizontal>
                                 {innovations.length === 0 ? (
                                     <Text color="gray.400" fontSize={12}>
-                                        Belum ada inovasi yang diterapkan
+                                        {t("noInnovations")}
                                     </Text>
                                 ) : (
                                     innovations.map((innovation, idx) => (
@@ -542,7 +529,7 @@ export default function ProfileVillage() {
             </div>
 
 
-            {admin ? (
+            {isAdmin ? (
                 village?.status === "Terverifikasi" || village?.status === "Ditolak" ? (
                     <StatusCard
                         status={village?.status}
@@ -590,7 +577,7 @@ export default function ProfileVillage() {
                 isOpen={isOpen}
                 onClose={onClose}
                 onVerify={handleVerify}
-                isAdmin={admin}
+                isAdmin={isAdmin}
                 role="Desa"
                 loading={loading}
                 setOpenModal={setOpenModal}

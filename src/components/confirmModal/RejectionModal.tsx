@@ -27,7 +27,6 @@ const RejectionModal: React.FC<RejectionModalProps> = ({
   onConfirm,
   message,
   setMessage,
-  loading,
 }) => {
   return (
     <Flex maxW="360px" justifyContent="center">
@@ -41,7 +40,7 @@ const RejectionModal: React.FC<RejectionModalProps> = ({
           <ModalBody>
             <Input
               value={message}
-              onChange={(e) => setMessage(e.target.value)} // Update state saat input berubah
+              onChange={(e) => setMessage(e.target.value)}
               placeholder="Masukkan alasan penolakan"
             />
           </ModalBody>
@@ -64,7 +63,6 @@ const RejectionModal: React.FC<RejectionModalProps> = ({
               height="23px"
               width="56px"
               onClick={onConfirm}
-              isLoading={loading}
             >
               Kirim
             </Button>

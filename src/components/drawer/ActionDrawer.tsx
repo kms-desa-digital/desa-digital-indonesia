@@ -14,10 +14,18 @@ import Web from "@public/icons/web.svg";
 import Whatsapp from "@public/icons/whatsapp.svg";
 import JavascriptImage from "next/image";
 import React from "react";
+import { useTranslations } from "next-intl";
 import {
   ButtonKontak,
   Icon
 } from "src/app/village/detail/[id]/_styles";
+
+const ROLE_TRANSLATION_KEYS = {
+  inovator: "role.innovator",
+  innovator: "role.innovator",
+  desa: "role.village",
+  village: "role.village",
+} as const;
 
 interface ContactData {
   whatsapp?: string;
@@ -46,7 +54,12 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({
   role,
   contactData, // Menerima contactData
 }) => {
-  // console.log("Data Kontak yang diterima:", contactData); // Debugging
+  const t = useTranslations("Innovator");
+
+  const translatedRole = t(
+    ROLE_TRANSLATION_KEYS[role?.trim().toLowerCase() as keyof typeof ROLE_TRANSLATION_KEYS] ??
+      "role.innovator"
+  );
 
   return (
     <Drawer isOpen={isOpen} placement="bottom" onClose={onClose} variant="purple">
@@ -85,7 +98,10 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({
                 variant="outline"
                 colorScheme="green"
                 width="100%"
-                onClick={() => setOpenModal?.(true)}
+                onClick={() => {
+                  onClose();
+                  setOpenModal?.(true);
+                }}
                 _hover={{ bg: "red.500", color: "white", border: "none" }}
               >
                 Tolak
@@ -110,12 +126,11 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({
                   paddingTop: "10px",
                 }}
               />
-              Kontak {role}
+              {t("contactRole", { role: translatedRole })}
             </DrawerHeader>
             <DrawerBody fontSize={12} color="#374151" paddingX={4} pt={2} pb={6}>
               <Box mb={2}>
-                Terapkan produk inovasi desa digital dengan cara menghubungi&nbsp;
-                {role} melalui saluran di bawah ini:
+                {t("contactDescription", { role: translatedRole })}
               </Box>
 
               {/* Tombol WA */}

@@ -18,7 +18,8 @@ type VillageData = {
 };
 
 const InnovatorAssistedVillages = () => {
-    const t = useTranslations("Innovation");
+    const t = useTranslations("Innovator");
+    const tInnovation = useTranslations("Innovation");
     const params = useParams();
     const router = useRouter();
     const id = params.id as string;
@@ -74,18 +75,18 @@ const InnovatorAssistedVillages = () => {
                     onClick={() => router.back()}
                 />
                 <Text fontSize="16px" fontWeight="bold">
-                    Desa Dampingan
+                    {t("companionVillages")}
                 </Text>
             </Flex>
 
             {/* Title */}
             <Box px={5} pt={6} pb={2}>
                 <Text fontSize="16px" fontWeight="700" color="#1F2937">
-                    Semua Desa Dampingan
+                    {t("allCompanionVillages")}
                 </Text>
                 {innovatorName && (
                     <Text fontSize="14px" color="#6B7280" mt={1}>
-                        Oleh Inovator: {innovatorName}
+                        {t("byInnovator", { name: innovatorName })}
                     </Text>
                 )}
             </Box>
@@ -142,7 +143,7 @@ const InnovatorAssistedVillages = () => {
                                 {/* Perubahan: Menambahkan Inovasi Diterapkan Tags */}
                                 <Box borderTop="1px" borderColor="gray.100" pt={3} mt={3}>
                                     <Text fontSize="10px" fontWeight="400" mb={1.5} color="#9CA3AF">
-                                        {t("appliedInnovations")}
+                                        {tInnovation("appliedInnovations")}
                                     </Text>
                                     <Flex direction="row" gap={1.5} flexWrap="wrap">
                                         {(village as any).inovasiDiterapkan && (village as any).inovasiDiterapkan.length > 0 ? (
@@ -170,7 +171,7 @@ const InnovatorAssistedVillages = () => {
                     </Stack>
                 ) : (
                     <Text textAlign="center" mt={10} color="#9CA3AF" fontSize="14px">
-                        Belum ada desa dampingan yang terdaftar untuk inovator ini.
+                        {t("noCompanionVillages")}
                     </Text>
                 )}
             </Box>

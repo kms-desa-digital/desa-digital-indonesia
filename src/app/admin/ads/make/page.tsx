@@ -5,20 +5,24 @@ import { Box, Button, Flex, Input, Stack, Text } from "@chakra-ui/react";
 import Container from "Components/container";
 import LogoUpload from "Components/form/LogoUpload";
 import TopBar from "Components/topBar";
-import { doc } from "firebase/firestore";
 import React, { useRef, useState } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
-import { auth, firestore } from "@/firebase/clientApp";
+import { createAd } from "../../../../services/adminServices";
+import { useTranslations } from "next-intl";
 
 const MakeAds: React.FC = () => {
+    const t = useTranslations("Admin");
     const router = useRouter();
-    const [user] = useAuthState(auth);
-    // TODO: Buat backend untuk upload gambar
     const [selectedImg, setSelectedImg] = useState<string>("");
     const ImgRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [fieldErrors, setFieldErrors] = useState<{
+        name?: string;
+        minDate?: string;
+        maxDate?: string;
+        link?: string;
+    }>({});
     const [textInputsValue, setTextInputsValue] = useState({
         name: "",
         minDate: "",
@@ -41,29 +45,74 @@ const MakeAds: React.FC = () => {
     }: React.ChangeEvent<HTMLInputElement>) =>
         setTextInputsValue({ ...textInputsValue, [name]: value });
 
-    // TODO: Benerin fungsi onSubmitForm
-
     const onSubmitForm = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setLoading(true);
         setError("");
+        setFieldErrors({});
+
+        const trimmedName = textInputsValue.name.trim();
+        const trimmedLink = textInputsValue.link.trim();
+        const nextFieldErrors: typeof fieldErrors = {};
+
+        if (!trimmedName) nextFieldErrors.name = t("adsErrorOrdererNameRequired");
+        if (!textInputsValue.minDate) nextFieldErrors.minDate = t("adsErrorStartDateRequired");
+        if (!textInputsValue.maxDate) nextFieldErrors.maxDate = t("adsErrorEndDateRequired");
+        if (!trimmedLink) nextFieldErrors.link = t("adsErrorLinkRequired");
+
+        if (textInputsValue.minDate && textInputsValue.maxDate) {
+            const minDate = new Date(textInputsValue.minDate);
+            const maxDate = new Date(textInputsValue.maxDate);
+            if (minDate >= maxDate) {
+                nextFieldErrors.minDate = t("adsErrorDateRangeStart");
+                nextFieldErrors.maxDate = t("adsErrorDateRangeEnd");
+            }
+        }
+
+        if (trimmedLink) {
+            try {
+                new URL(trimmedLink);
+            } catch {
+                nextFieldErrors.link = t("adsErrorInvalidLink");
+            }
+        }
+
+        if (Object.keys(nextFieldErrors).length > 0) {
+            setFieldErrors(nextFieldErrors);
+            setLoading(false);
+            return;
+        }
+
         try {
-            const docRef = doc(firestore, "ads");
-        } catch (error) {
-            console.error("Error adding document: ", error);
+            await createAd({
+                name: trimmedName,
+                minDate: textInputsValue.minDate,
+                maxDate: textInputsValue.maxDate,
+                link: trimmedLink,
+                image: selectedImg || undefined,
+            });
+
+            router.push("/admin/ads");
+        } catch (submitError: any) {
+            console.error("Error adding ad: ", submitError);
+            setError(
+                submitError?.message || t("adsErrorSubmit")
+            );
+        } finally {
+            setLoading(false);
         }
     };
     return (
         <Container page>
-            <TopBar title="Tambah Iklan" onBack={() => router.back()} />
-            <form>
+            <TopBar title={t("adsAdd")} onBack={() => router.back()} />
+            <form onSubmit={onSubmitForm}>
                 <Stack padding="0 14px" direction="column" mt={4} gap={4}>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
-                            Pemesan Iklan <span style={{ color: "red" }}>*</span>
+                            {t("adsOrderer")} <span style={{ color: "red" }}>*</span>
                         </Text>
                         <Input
-                            placeholder="Nama Pemesan Iklan"
+                            placeholder={t("adsOrdererNamePlaceholder")}
                             name="name"
                             fontSize="10pt"
                             _placeholder={{ color: "gray.500" }}
@@ -74,7 +123,7 @@ const MakeAds: React.FC = () => {
                     </Box>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
-                            Tanggal Iklan <span style={{ color: "red" }}>*</span>
+                            {t("adsDate")} <span style={{ color: "red" }}>*</span>
                         </Text>
                         <Flex align="center" justify="space-between">
                             <Input
@@ -104,10 +153,10 @@ const MakeAds: React.FC = () => {
                     </Box>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
-                            Gambar Iklan <span style={{ color: "red" }}>*</span>
+                            {t("adsImage")} <span style={{ color: "red" }}>*</span>
                         </Text>
                         <Text fontSize="10pt" color="gray.400">
-                            Format gambar: .jpg, .jpeg, .png
+                            {t("adsImageFormat")}
                         </Text>
                         <Flex>
                             <LogoUpload
@@ -120,7 +169,7 @@ const MakeAds: React.FC = () => {
                     </Box>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
-                            Link Iklan <span style={{ color: "red" }}>*</span>
+                            {t("adsLink")} <span style={{ color: "red" }}>*</span>
                         </Text>
                         <Input
                             placeholder="https://example.com"
@@ -128,11 +177,24 @@ const MakeAds: React.FC = () => {
                             fontSize="10pt"
                             _placeholder={{ color: "gray.500" }}
                             mt={2}
-                            type="link"
+                            type="url"
                             value={textInputsValue.link}
                             onChange={onTextChange}
+                            isInvalid={!!fieldErrors.link}
                         />
+                        {fieldErrors.link ? (
+                            <Text color="red.500" fontSize="12px" mt={2}>
+                                {fieldErrors.link}
+                            </Text>
+                        ) : null}
                     </Box>
+                    {error ? (
+                        <Box px="14px">
+                            <Text color="red.500" fontSize="12px">
+                                {error}
+                            </Text>
+                        </Box>
+                    ) : null}
                 </Stack>
                 <Flex
                     align="center"
@@ -147,8 +209,8 @@ const MakeAds: React.FC = () => {
                     boxShadow="0px -2px 4px 0px rgba(0, 0, 0, 0.06), 0px -4px 6px 0px rgba(0, 0, 0, 0.10)"
                     bg="white"
                 >
-                    <Button width="100%" type="submit">
-                        Kirim Iklan
+                    <Button width="100%" type="submit" isLoading={loading}>
+                        {t("adsSubmit")}
                     </Button>
                 </Flex>
             </form>
