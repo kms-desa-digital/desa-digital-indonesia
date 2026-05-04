@@ -293,7 +293,7 @@ const ProfileInnovator: React.FC = () => {
                                 padding="6px 8px"
                                 borderRadius="4px"
                             >
-                                Pengajuan Inovasi
+                                {t("InnovationSubmission")}
                             </Button>
                         )}
                     </Flex>
@@ -327,7 +327,7 @@ const ProfileInnovator: React.FC = () => {
                                         paddingTop="8px"
                                     >
                                         <Box color="#4B5563" fontSize="12px" minWidth="110px">
-                                            Nomor WhatsApp
+                                            {t("whatsappNumber")}
                                         </Box>
                                         <Description>{innovatorData.whatsapp}</Description>
                                     </Flex>
@@ -339,7 +339,7 @@ const ProfileInnovator: React.FC = () => {
                                         paddingTop="12px"
                                     >
                                         <Box color="#4B5563" fontSize="12px" minWidth="110px">
-                                            Link Instagram
+                                            {t("instagramLink")}
                                         </Box>
                                         <Description>
                                             {innovatorData.instagram || "Tidak tersedia"}
@@ -353,7 +353,7 @@ const ProfileInnovator: React.FC = () => {
                                         paddingTop="12px"
                                     >
                                         <Box color="#4B5563" fontSize="12px" minWidth="110px">
-                                            Link Website
+                                            {t("websiteLink")}
                                         </Box>
                                         <Description>
                                             {innovatorData.website || "Tidak tersedia"}

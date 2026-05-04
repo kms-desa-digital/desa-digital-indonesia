@@ -1,6 +1,7 @@
 import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
 import { Button, Flex, Icon, Image, Text } from "@chakra-ui/react";
 import React from "react";
+import { useTranslations } from "next-intl";
 
 type LogoUploadProps = {
   selectedLogo: string;
@@ -17,6 +18,8 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
   disabled,
   onSelectLogo,
 }) => {
+  const t = useTranslations("Common");
+
   return (
     <Flex direction="column" width="100%" wrap="wrap">
       {selectedLogo ? (
@@ -67,7 +70,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
         >
           <Icon as={AddIcon} color="gray.300" fontSize="16px" />
           <Text fontSize="10pt" color="gray.500" mt={2}>
-            Tambahkan foto
+            {t("uploadPhoto")}
           </Text>
           <input
             id="file-upload"
