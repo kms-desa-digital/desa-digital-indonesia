@@ -26,7 +26,7 @@ import {
 } from "@chakra-ui/react";
 import { auth } from "src/firebase/clientApp";
 // import { auth, firestore } from "src/firebase/clientApp";
-import { getVillageById, updateVillage, getVillageInnovations } from "Services/villageServices";
+import { getVillageById, updateVillage, getVillageInnovations, verifyVillage } from "Services/villageServices";
 import {
     ActionContainer,
     Background,
@@ -87,7 +87,7 @@ export default function ProfileVillage() {
                     status: "Terverifikasi",
                 });
                 */
-                await updateVillage(id, { status: "Terverifikasi" });
+                await verifyVillage(id, "Terverifikasi");
                 setVillage((prev: any) => ({
                     ...prev,
                     status: "Terverifikasi",
@@ -118,15 +118,13 @@ export default function ProfileVillage() {
                     catatanAdmin: modalInput, // Simpan alasan penolakan ke Firestore
                 });
                 */
-                await updateVillage(id, {
-                    status: "Ditolak",
-                    catatanAdmin: modalInput,
-                });
+                await verifyVillage(id, "Ditolak", modalInput);
                 setVillage((prev: any) => ({
                     ...prev,
                     status: "Ditolak",
                     catatanAdmin: modalInput,
                 }));
+                toast.success("Penolakan berhasil");
             } else {
                 throw new Error("Village ID is undefined");
             }

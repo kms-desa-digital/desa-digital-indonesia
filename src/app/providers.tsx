@@ -22,10 +22,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
                                 {children}
                                 <ToastContainer
                                     position="top-center"
-                                    autoClose={2000}
+                                    autoClose={3000}
                                     theme="light"
                                     transition={Bounce}
-                                    style={{ width: "90%", maxWidth: "360px", left: "50%", transform: "translateX(-50%)" }}
+                                    style={{ width: "90%", maxWidth: "360px", left: "50%", transform: "translateX(-50%)", top: "64px" }}
                                 />
                             </div>
                         </UserProvider>

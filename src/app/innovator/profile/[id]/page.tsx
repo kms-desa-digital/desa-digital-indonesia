@@ -122,6 +122,7 @@ const ProfileInnovator: React.FC = () => {
                         status: "Ditolak",
                         catatanAdmin: modalInput,
                     }) : null);
+                toast.success("Penolakan berhasil");
             }
         } catch (error) {
             console.error("Error rejecting user via API:", error);
