@@ -21,9 +21,16 @@ const Chatbot = () => {
         '/auth/register',
         '/auth/reset-password',
         '/auth/email-reset',
+        '/village',
+        '/innovator'
     ];
 
-    const shouldHideChatbot = hiddenRoutes.some((route) => pathname?.startsWith(route));
+    const normalizedPathname = pathname?.replace(/^\/(id|en)(?=\/)/, '') || '';
+    const shouldHideChatbot = hiddenRoutes.some(
+        (route) =>
+            normalizedPathname === route ||
+            normalizedPathname.startsWith(`${route}/`)
+    );
 
     useEffect(() => {
         setMounted(true);
