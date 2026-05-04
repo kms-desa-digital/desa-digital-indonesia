@@ -98,7 +98,10 @@ const ActionDrawer: React.FC<ActionDrawerProps> = ({
                 variant="outline"
                 colorScheme="green"
                 width="100%"
-                onClick={() => setOpenModal?.(true)}
+                onClick={() => {
+                  onClose();
+                  setOpenModal?.(true);
+                }}
                 _hover={{ bg: "red.500", color: "white", border: "none" }}
               >
                 Tolak

@@ -272,7 +272,7 @@ function DetailInnovation() {
                 setLoading(false);
                 return;
             }
-            await updateInnovation(id, {
+            await verifyInnovation(id, {
                 status: "Ditolak",
                 catatanAdmin: modalInput,
             });
@@ -281,6 +281,7 @@ function DetailInnovation() {
                 status: "Ditolak",
                 catatanAdmin: modalInput,
             }));
+            toast.success("Penolakan berhasil");
         } catch (error) {
             console.error("Error rejecting innovation via API:", error);
             setError("Error rejecting innovation");
