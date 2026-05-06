@@ -70,6 +70,10 @@ export const deleteAd = async (id: string) => {
   return api.delete(`/admin/ads/${id}`);
 };
 
+export const getAdById = async (id: string) => {
+  return api.get(`/admin/ads/${id}`);
+};
+
 export const updateAd = async (id: string, body: any) => {
   return api.put("/admin/ads/edit", { id, ...body });
 };

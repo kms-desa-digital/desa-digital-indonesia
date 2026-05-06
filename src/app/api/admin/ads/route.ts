@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { ObjectId } from 'mongodb'
+
+// Compute what an ad's status SHOULD be based on its date range
+function computeStatus(minDate: Date, maxDate: Date, now: Date): string {
+  if (now < minDate) return 'Menunggu'
+  if (now > maxDate) return 'Selesai'
+  return 'Ditampilkan'
+}
 
 type QueryParams = {
   page?: string
@@ -10,7 +18,8 @@ type QueryParams = {
 }
 
 // GET /api/admin/ads/
-// Retrieve all ads with optional filtering and pagination - requires admin role
+// Retrieve all ads with optional filtering and pagination - requires admin role.
+// Also auto-syncs ad statuses based on date ranges before returning results.
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireRole(request, ['admin'])
@@ -38,6 +47,32 @@ export async function GET(request: NextRequest) {
     }
 
     const db = await connectToDatabase()
+    const now = new Date()
+
+    // ── Auto-sync statuses based on date ─────────────────────────────────
+    // Fetch all ads (no filter) to determine which need status updates
+    const allAds = await db.collection('ads').find({}).toArray()
+
+    const bulkOps: any[] = []
+    for (const ad of allAds) {
+      const minDate = ad.minDate instanceof Date ? ad.minDate : new Date(ad.minDate)
+      const maxDate = ad.maxDate instanceof Date ? ad.maxDate : new Date(ad.maxDate)
+      const correctStatus = computeStatus(minDate, maxDate, now)
+
+      if (ad.status !== correctStatus) {
+        bulkOps.push({
+          updateOne: {
+            filter: { _id: ad._id },
+            update: { $set: { status: correctStatus, updatedAt: now } },
+          },
+        })
+      }
+    }
+
+    if (bulkOps.length > 0) {
+      await db.collection('ads').bulkWrite(bulkOps)
+    }
+    // ─────────────────────────────────────────────────────────────────────
 
     // Build query filter
     const filter: any = {}
