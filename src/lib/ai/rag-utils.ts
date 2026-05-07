@@ -1,22 +1,102 @@
 // ==================================================================
-// ingest file json inovasi ke MongoDB dengan embedding vector
+// RAG Utilities: embedding generation, intent detection, role-based
+// collection filtering, dan parallel search di doc + db embeddings
 // ==================================================================
 
 import { connectToDatabase } from "@/lib/db/mongodb";
 
-// Konfigurasi Ollama
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434";
-const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL || "embeddinggemma:latest";
+// Konfigurasi via environment variables
+const OLLAMA_BASE_URL =
+  process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434";
+const OLLAMA_EMBED_MODEL =
+  process.env.OLLAMA_EMBED_MODEL || "embeddinggemma:latest";
+const VECTOR_SCORE_THRESHOLD = parseFloat(
+  process.env.VECTOR_SCORE_THRESHOLD || "0.6"
+);
+const OLLAMA_TIMEOUT_MS = parseInt(
+  process.env.OLLAMA_TIMEOUT_MS || "30000",
+  10
+);
 
-// Threshold dikonfigurasi lewat env
-const VECTOR_SCORE_THRESHOLD = parseFloat(process.env.VECTOR_SCORE_THRESHOLD || "0.6");
+// Types
 
-// Timeout Ollama dikonfigurasi lewat env
-const OLLAMA_TIMEOUT_MS = parseInt(process.env.OLLAMA_TIMEOUT_MS || "30000", 10);
+export type UserRole =
+  | "admin"
+  | "kementerian"
+  | "innovator"
+  | "village"
+  | "guest";
 
-// Fungsi untuk generate embedding
+export type QueryIntent = {
+  isVillage: boolean;
+  isInnovation: boolean;
+  isInnovator: boolean;
+  isStats: boolean;
+  primary: "village" | "innovation" | "innovator" | "stats" | "general";
+};
+
+export type SearchResult = {
+  docResults: any[];
+  dbResults: any[];
+  intent: QueryIntent | null;
+};
+
+// Role permission matrix
+// Mendefinisikan dengan jelas apa yang boleh diakses tiap role.
+// Satu tempat — mudah diaudit dan diubah.
+
+const ROLE_ALLOWED_COLLECTIONS: Record<UserRole, string[]> = {
+  admin: ["innovations", "villages", "innovators", "claimInnovations"],
+  kementerian: ["innovations", "villages"],
+  innovator: ["innovations", "innovators"],
+  village: ["innovations", "villages"],
+  guest: ["innovations", "villages", "innovators"],
+};
+
+/**
+ * Kembalikan daftar collection yang boleh diakses role tertentu,
+ * dipersempit lagi berdasarkan intent query jika memungkinkan.
+ */
+export function buildCollectionFilter(
+  intent: QueryIntent,
+  role: UserRole | string
+): string[] {
+  const normalizedRole = normalizeRole(role);
+  const allowed = ROLE_ALLOWED_COLLECTIONS[normalizedRole];
+
+  // Jika intent sudah spesifik, intersect dengan allowed collection role
+  if (intent.primary === "village") {
+    return allowed.filter((c) => ["villages"].includes(c));
+  }
+  if (intent.primary === "innovation") {
+    return allowed.filter((c) => ["innovations"].includes(c));
+  }
+  if (intent.primary === "innovator") {
+    return allowed.filter((c) => ["innovators", "innovations"].includes(c));
+  }
+  // stats atau general: kembalikan semua yang diizinkan untuk role ini
+  return allowed;
+}
+
+/**
+ * Normalisasi string role ke UserRole yang valid.
+ * Fallback ke "guest" agar aman.
+ */
+export function normalizeRole(role: string): UserRole {
+  const valid: UserRole[] = [
+    "admin",
+    "kementerian",
+    "innovator",
+    "village",
+    "guest",
+  ];
+  const lower = (role || "").toLowerCase() as UserRole;
+  return valid.includes(lower) ? lower : "guest";
+}
+
+// Embedding generation
+
 export async function generateEmbeddings(text: string): Promise<number[]> {
-  // Tambah fallback eksplisit jika Ollama gagal/timeout
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
 
@@ -33,76 +113,113 @@ export async function generateEmbeddings(text: string): Promise<number[]> {
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama Error (HTTP ${response.status})`);
+      throw new Error(`Ollama HTTP ${response.status}`);
     }
 
     const data = await response.json();
-    const vector = Array.isArray(data?.embeddings)
+    const vector: number[] | null = Array.isArray(data?.embeddings)
       ? data.embeddings[0]
       : data?.embedding ?? null;
 
-    if (!vector || !Array.isArray(vector) || vector.length === 0) {
-      throw new Error("Ollama Error: embedding kosong atau tidak valid");
+    if (!vector || vector.length === 0) {
+      throw new Error("Embedding kosong atau tidak valid dari Ollama");
     }
 
     return vector;
   } catch (error: any) {
-    // Tambahkan log yang lebih jelas untuk error timeout vs error lainnya
     if (error?.name === "AbortError") {
-      console.error(`[generateEmbeddings] Timeout setelah ${OLLAMA_TIMEOUT_MS}ms — Ollama tidak merespons.`);
+      console.error(
+        `[generateEmbeddings] Timeout setelah ${OLLAMA_TIMEOUT_MS}ms`
+      );
     } else {
       console.error("[generateEmbeddings] Gagal:", error?.message ?? error);
     }
-    // Re-throw agar caller bisa handle gracefully
     throw error;
   } finally {
     clearTimeout(timeout);
   }
 }
 
-// Intent Detection untuk query pengguna
-export type QueryIntent = {
-  isVillage: boolean;
-  isInnovation: boolean;
-  isInnovator: boolean;
-  primary: "village" | "innovation" | "innovator" | "general";
-};
+// Intent detection
 
 export function detectQueryIntent(query: string): QueryIntent {
   const q = query.toLowerCase();
 
   const villageKeywords = [
-    "desa", "village", "kelurahan", "kampung",
-    "wilayah", "lokasi desa", "profil desa",
-    "potensi desa", "mana yang menerapkan",
-    "desa mana", "desa apa", "desa yang",
-    "sudah menerapkan", "sudah menggunakan",
-    "menerapkan inovasi", "menggunakan inovasi",
+    "desa",
+    "village",
+    "kelurahan",
+    "kampung",
+    "wilayah",
+    "lokasi desa",
+    "profil desa",
+    "potensi desa",
+    "mana yang menerapkan",
+    "desa mana",
+    "desa apa",
+    "desa yang",
+    "sudah menerapkan",
+    "sudah menggunakan",
+    "menerapkan inovasi",
+    "menggunakan inovasi",
   ];
 
   const innovationKeywords = [
-    "inovasi", "innovation", "teknologi", "solusi",
-    "aplikasi", "sistem", "platform", "produk",
-    "alat", "tools", "fitur", "cara kerja",
-    "harga", "biaya", "manfaat inovasi",
-    "kategori inovasi", "rekomendasi inovasi",
+    "inovasi",
+    "innovation",
+    "teknologi",
+    "solusi",
+    "aplikasi",
+    "sistem",
+    "platform",
+    "produk",
+    "alat",
+    "tools",
+    "fitur",
+    "cara kerja",
+    "harga",
+    "biaya",
+    "manfaat inovasi",
+    "kategori inovasi",
+    "rekomendasi inovasi",
   ];
 
   const innovatorKeywords = [
-    "inovator", "innovator", "pembuat", "pengembang",
-    "siapa yang membuat", "siapa yang mengembangkan",
-    "perusahaan", "lembaga", "organisasi",
-    "kontak inovator", "profil inovator",
-    "ingin menjadi inovator", "daftar inovator",
+    "inovator",
+    "innovator",
+    "pembuat",
+    "pengembang",
+    "siapa yang membuat",
+    "siapa yang mengembangkan",
+    "perusahaan",
+    "lembaga",
+    "organisasi",
+    "kontak inovator",
+    "profil inovator",
+    "ingin menjadi inovator",
+    "daftar inovator",
+  ];
+
+  const statsKeywords = [
+    "total",
+    "jumlah",
+    "berapa banyak",
+    "peringkat",
+    "statistik",
+    "berapa desa",
+    "sejauh ini",
   ];
 
   const isVillage = villageKeywords.some((k) => q.includes(k));
   const isInnovation = innovationKeywords.some((k) => q.includes(k));
   const isInnovator = innovatorKeywords.some((k) => q.includes(k));
+  const isStats = statsKeywords.some((k) => q.includes(k));
 
   let primary: QueryIntent["primary"] = "general";
 
-  if (isVillage && isInnovation) {
+  if (isStats) {
+    primary = "stats";
+  } else if (isVillage && isInnovation) {
     primary = "innovation";
   } else if (isVillage) {
     primary = "village";
@@ -112,170 +229,167 @@ export function detectQueryIntent(query: string): QueryIntent {
     primary = "innovation";
   }
 
-  console.log(`\nIntent Detected: primary=${primary.toUpperCase()}`);
-  console.log(`  isVillage=${isVillage} | isInnovation=${isInnovation} | isInnovator=${isInnovator}`);
+  console.log(
+    `[Intent] primary=${primary.toUpperCase()} | village=${isVillage} | innovation=${isInnovation} | innovator=${isInnovator} | stats=${isStats}`
+  );
 
-  return { isVillage, isInnovation, isInnovator, primary };
+  return { isVillage, isInnovation, isInnovator, isStats, primary };
 }
 
-// Tambah parameter `role` agar filter claimInnovations dilakukan di sini,
-// bukan setelah data sensitif sudah di-fetch di route.ts
-export function buildCollectionFilter(intent: QueryIntent, role: string): string[] {
-  const isAdmin = role.toLowerCase() === "admin";
+// Search: doc_embeddings
 
-  if (intent.isVillage && intent.isInnovation) {
-    return ["villages", "innovations"];
-  }
-
-  switch (intent.primary) {
-    case "village":
-      return ["villages"];
-    case "innovation":
-      return ["innovations"];
-    case "innovator":
-      return ["innovators"];
-    default: {
-      // General search — hanya admin yang boleh lihat claimInnovations
-      const base = ["innovations", "villages", "innovators"];
-      return isAdmin ? [...base, "claimInnovations"] : base;
-    }
-  }
-}
-
-// Search doc_embeddings
 export async function searchDocEmbeddings(query: string): Promise<any[]> {
   if (!query) return [];
 
   try {
     const db = await connectToDatabase();
-    const collection = db.collection("doc_embeddings");
-
     const queryVector = await generateEmbeddings(query);
 
-    const cursor = collection.aggregate([
-      {
-        $vectorSearch: {
-          index: "vector_index",
-          path: "embedding_vector",
-          queryVector,
-          numCandidates: 100,
-          limit: 15,
+    const results = await db
+      .collection("doc_embeddings")
+      .aggregate([
+        {
+          $vectorSearch: {
+            index: "vector_index",
+            path: "embedding_vector",
+            queryVector,
+            numCandidates: 100,
+            limit: 15,
+          },
         },
-      },
-      {
-        $project: {
-          embedding_vector: 0,
-          score: { $meta: "vectorSearchScore" },
+        {
+          $project: {
+            embedding_vector: 0,
+            score: { $meta: "vectorSearchScore" },
+          },
         },
-      },
-    ]);
+      ])
+      .toArray();
 
-    const results = await cursor.toArray();
-    const validResults = results.filter((res) => res.score > VECTOR_SCORE_THRESHOLD);
-
-    if (validResults.length > 0) {
-      // Ringkas saja di level fungsi ini agar tidak duplikat dengan log detail di searchAllSources.
-      console.log(`\nPencarian doc berhasil (${validResults.length} data)`);
-    } else {
-      console.log("Tidak ada hasil doc yang cukup relevan");
-    }
-
-    return validResults;
+    const valid = results.filter((r) => r.score > VECTOR_SCORE_THRESHOLD);
+    console.log(`[searchDocEmbeddings] Ditemukan ${valid.length} hasil valid`);
+    return valid;
   } catch (error) {
     console.error("[searchDocEmbeddings] Error:", error);
-    // Return array kosong daripada null, konsisten dengan tipe return
     return [];
   }
 }
 
-// Search database embeddings
-// Tambah parameter `role` untuk filter collection sensitif sejak awal
+// Search: db_embeddings — role-aware sejak awal
+
 export async function searchDatabaseEmbeddings(
   query: string,
-  intent?: QueryIntent,
-  role: string = "guest"
+  intent: QueryIntent,
+  role: UserRole | string = "guest"
 ): Promise<any[]> {
   if (!query) return [];
 
   try {
     const db = await connectToDatabase();
-    const collection = db.collection("db_embeddings");
-
     const queryVector = await generateEmbeddings(query);
+    const collectionFilter = buildCollectionFilter(intent, role);
 
-    // Gunakan buildCollectionFilter yang sudah role-aware
-    const collectionFilter = intent
-      ? buildCollectionFilter(intent, role)
-      : (role.toLowerCase() === "admin"
-          ? ["innovations", "villages", "innovators", "claimInnovations"]
-          : ["innovations", "villages", "innovators"]);
+    // Pastikan filter tidak kosong — fallback ke innovations saja
+    if (collectionFilter.length === 0) {
+      console.warn(
+        "[searchDatabaseEmbeddings] collectionFilter kosong, fallback ke innovations"
+      );
+      collectionFilter.push("innovations");
+    }
 
-    console.log(`\nCollection filter: [${collectionFilter.join(", ")}]`);
+    console.log(
+      `[searchDatabaseEmbeddings] Role=${role} | Filter=[${collectionFilter.join(", ")}]`
+    );
 
-    const pipeline: any[] = [
-      {
-        $vectorSearch: {
-          index: "vector_index_db",
-          path: "embedding_vector",
-          queryVector,
-          numCandidates: 100,
-          limit: 15,
-          filter: {
-            source_collection: { $in: collectionFilter },
+    const results = await db
+      .collection("db_embeddings")
+      .aggregate([
+        {
+          $vectorSearch: {
+            index: "vector_index_db",
+            path: "embedding_vector",
+            queryVector,
+            numCandidates: 100,
+            limit: 15,
+            filter: {
+              source_collection: { $in: collectionFilter },
+            },
           },
         },
-      },
-      {
-        $project: {
-          embedding_vector: 0,
-          score: { $meta: "vectorSearchScore" },
+        {
+          $project: {
+            embedding_vector: 0,
+            score: { $meta: "vectorSearchScore" },
+          },
         },
-      },
-    ];
+      ])
+      .toArray();
 
-    const results = await collection.aggregate(pipeline).toArray();
-    return results.filter((res) => res.score > VECTOR_SCORE_THRESHOLD);
+    const valid = results.filter((r) => r.score > VECTOR_SCORE_THRESHOLD);
+
+    // Defense-in-depth: filter ulang di memory, meski sudah difilter di pipeline
+    const safe = enforceRoleFilter(valid, role);
+    console.log(
+      `[searchDatabaseEmbeddings] ${results.length} raw → ${valid.length} lolos threshold → ${safe.length} lolos role filter`
+    );
+    return safe;
   } catch (error) {
     console.error("[searchDatabaseEmbeddings] Error:", error);
     return [];
   }
 }
 
-// Search kedua sumber sekaligus
-// Terima parameter `role` dan teruskan ke searchDatabaseEmbeddings
+// Defense-in-depth: filter hasil di memory berdasarkan role
+// Ini lapisan kedua — memastikan data sensitif tidak bocor
+// meskipun ada bug di pipeline aggregation.
+
+export function enforceRoleFilter(
+  results: any[],
+  role: UserRole | string
+): any[] {
+  const normalizedRole = normalizeRole(role);
+  const allowed = ROLE_ALLOWED_COLLECTIONS[normalizedRole];
+  return results.filter((doc) =>
+    allowed.includes(doc?.source_collection ?? "")
+  );
+}
+
+// Entry point utama: search semua sumber secara paralel
+
 export async function searchAllSources(
   query: string,
   role: string = "guest"
-): Promise<{ docResults: any[]; dbResults: any[]; intent: QueryIntent | null }> {
+): Promise<SearchResult> {
   if (!query) return { docResults: [], dbResults: [], intent: null };
 
   try {
     const intent = detectQueryIntent(query);
 
-    // Jalankan paralel, keduanya return array (tidak ada null lagi)
     const [docResults, dbResults] = await Promise.all([
       searchDocEmbeddings(query),
       searchDatabaseEmbeddings(query, intent, role),
     ]);
 
-    console.log(`\nSearch Results: doc=${docResults.length}, db=${dbResults.length}`);
+    console.log(
+      `\n[searchAllSources] doc=${docResults.length} | db=${dbResults.length}`
+    );
 
     if (docResults.length > 0) {
-      console.log("--- Hasil dari doc_embeddings ---");
-      docResults.forEach((doc, i) => {
+      console.log("--- doc_embeddings hits ---");
+      docResults.slice(0, 5).forEach((d, i) =>
         console.log(
-          `  ${i + 1}. ${doc.judul ?? doc.content?.slice(0, 50)} (score: ${doc.score?.toFixed(3)})`
-        );
-      });
+          `  ${i + 1}. ${d.judul ?? d.content?.slice(0, 60)} (score: ${d.score?.toFixed(3)})`
+        )
+      );
     }
 
     if (dbResults.length > 0) {
-      console.log("--- Hasil dari db_embeddings ---");
-      dbResults.forEach((doc, i) => {
+      console.log("--- db_embeddings hits ---");
+      dbResults.slice(0, 5).forEach((d, i) =>
         console.log(
-          `  ${i + 1}. [${doc.source_collection}] ${doc.metadata?.label ?? "?"} (score: ${doc.score?.toFixed(3)})`
-        );
-      });
+          `  ${i + 1}. [${d.source_collection}] ${d.metadata?.label ?? "?"} (score: ${d.score?.toFixed(3)})`
+        )
+      );
     }
 
     return { docResults, dbResults, intent };

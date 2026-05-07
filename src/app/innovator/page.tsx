@@ -2,6 +2,8 @@
 
 import Hero from "Components/innovator/hero";
 import { useRouter } from "next/navigation";
+import { Box, Button, Text as ChakraText, Flex } from "@chakra-ui/react";
+import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import {
     GridContainer,
     CardContent,
@@ -34,6 +36,8 @@ type InnovatorData = {
 export default function InnovatorPage() {
     const t = useTranslations("Innovator");
     const router = useRouter();
+    const ITEMS_PER_PAGE = 20;
+    const [currentPage, setCurrentPage] = useState<number>(1);
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
     const [innovatorsShowed, setInnovatorsShowed] = useState<InnovatorData[]>([]);
@@ -80,6 +84,31 @@ export default function InnovatorPage() {
         fetchData();
     }, [debouncedSearchQuery, categoryFilter]);
 
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearchQuery, categoryFilter]);
+
+    // Calculate paginated data
+    const totalPages = Math.ceil(innovatorsShowed.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedInnovators = innovatorsShowed.slice(startIndex, endIndex);
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
     if (!isFetched) {
         return <Loading />;
     }
@@ -116,7 +145,7 @@ export default function InnovatorPage() {
                     <Texthighlight> "{currentCategoryLabel}" </Texthighlight>{" "}
                 </Text>
                 <GridContainer>
-                    {innovatorsShowed.map((item: any, idx: number) => (
+                    {paginatedInnovators.map((item: any, idx: number) => (
                         <CardInnovator
                             key={item.id}
                             {...item}
@@ -128,6 +157,35 @@ export default function InnovatorPage() {
                         />
                     ))}
                 </GridContainer>
+                {totalPages > 1 && (
+                    <Flex justify="center" mt={2} mb={2} align="center" gap={4}>
+                        <Button
+                            onClick={handlePrevPage}
+                            isDisabled={currentPage === 1}
+                            variant="outline"
+                            size="sm"
+                            borderColor="gray.200"
+                            color="#347357"
+                            _hover={{ bg: "gray.50" }}
+                        >
+                            <ChevronLeftIcon />
+                        </Button>
+                        <ChakraText fontSize="14px" fontWeight="500" color="gray.700">
+                            Halaman {currentPage} dari {totalPages}
+                        </ChakraText>
+                        <Button
+                            onClick={handleNextPage}
+                            isDisabled={currentPage === totalPages}
+                            variant="outline"
+                            size="sm"
+                            borderColor="gray.200"
+                            color="#347357"
+                            _hover={{ bg: "gray.50" }}
+                        >
+                            <ChevronRightIcon />
+                        </Button>
+                    </Flex>
+                )}
             </Containers>
         </Container>
     );

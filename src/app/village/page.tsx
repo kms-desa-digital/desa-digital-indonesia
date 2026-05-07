@@ -1,6 +1,7 @@
 "use client";
 
-import { Box } from "@chakra-ui/react";
+import { Box, Button, Text as ChakraText, Flex } from "@chakra-ui/react";
+import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import CardVillage from "Components/card/village";
 import { paths } from "Consts/path";
 import React, { useEffect, useState } from "react";
@@ -38,6 +39,9 @@ interface Location {
 const Village: React.FC = () => {
     const t = useTranslations("Village");
     const router = useRouter();
+
+    const ITEMS_PER_PAGE = 20;
+    const [currentPage, setCurrentPage] = useState<number>(1);
 
     /* 
     useEffect(() => {
@@ -180,6 +184,31 @@ const Village: React.FC = () => {
         fetchData();
     }, [debouncedSearchTerm, selectedProvince, selectedRegency]);
 
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [debouncedSearchTerm, selectedProvince, selectedRegency]);
+
+    // Calculate paginated data
+    const totalPages = Math.ceil(villages.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedVillages = villages.slice(startIndex, endIndex);
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
     if (!isFetched) {
         return <Loading />;
     }
@@ -231,7 +260,7 @@ const Village: React.FC = () => {
                 </Text>
                 <GridContainer>
                     {villages.length > 0 ? (
-                        villages.map((item: any, idx: number) => (
+                        paginatedVillages.map((item: any, idx: number) => (
                             <CardVillage
                                 key={idx}
                                 provinsi={item.provinsi}
@@ -254,6 +283,35 @@ const Village: React.FC = () => {
                         </Box>
                     )}
                 </GridContainer>
+                {totalPages > 1 && (
+                    <Flex justify="center" mt={2} mb={2} align="center" gap={4}>
+                        <Button
+                            onClick={handlePrevPage}
+                            isDisabled={currentPage === 1}
+                            variant="outline"
+                            size="sm"
+                            borderColor="gray.200"
+                            color="#347357"
+                            _hover={{ bg: "gray.50" }}
+                        >
+                            <ChevronLeftIcon />
+                        </Button>
+                        <ChakraText fontSize="14px" fontWeight="500" color="gray.700">
+                            Halaman {currentPage} dari {totalPages}
+                        </ChakraText>
+                        <Button
+                            onClick={handleNextPage}
+                            isDisabled={currentPage === totalPages}
+                            variant="outline"
+                            size="sm"
+                            borderColor="gray.200"
+                            color="#347357"
+                            _hover={{ bg: "gray.50" }}
+                        >
+                            <ChevronRightIcon />
+                        </Button>
+                    </Flex>
+                )}
             </Containers>
         </Container>
     );
