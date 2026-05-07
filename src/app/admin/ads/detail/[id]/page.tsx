@@ -8,6 +8,7 @@ import {
     Image,
     Skeleton,
     Stack,
+    Switch,
     Text,
     useDisclosure,
     useToast,
@@ -17,7 +18,7 @@ import TopBar from "Components/topBar";
 import ConfModal from "Components/confirmModal/confModal";
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { deleteAd, getAdById } from "Services/adminServices";
+import { deleteAd, getAdById, toggleAdVisibility } from "Services/adminServices";
 
 type Ad = {
     _id: string;
@@ -28,6 +29,7 @@ type Ad = {
     image?: string;
     status: string;
     createdAt: string;
+    isVisible?: boolean;
 };
 
 const statusBannerStyle: Record<
@@ -70,6 +72,8 @@ const AdminAdDetailPage: React.FC = () => {
     const [ad, setAd] = useState<Ad | null>(null);
     const [loading, setLoading] = useState(true);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
+    const [toggleLoading, setToggleLoading] = useState(false);
 
     const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -79,9 +83,10 @@ const AdminAdDetailPage: React.FC = () => {
             setLoading(true);
             try {
                 const response: any = await getAdById(id);
-                // axios interceptor returns response.data, so response = { message, data: adDoc }
                 const adDoc = response?.data ?? response;
                 setAd(adDoc);
+                // isVisible defaults to true if field doesn't exist (legacy ads)
+                setIsVisible(adDoc?.isVisible !== false);
             } catch (err) {
                 console.error("Error fetching ad:", err);
                 toast({
@@ -97,6 +102,37 @@ const AdminAdDetailPage: React.FC = () => {
         };
         fetchAd();
     }, [id]);
+
+    const handleToggleVisibility = async (newValue: boolean) => {
+        setToggleLoading(true);
+        // Optimistic update
+        setIsVisible(newValue);
+        try {
+            await toggleAdVisibility(id, newValue);
+            toast({
+                title: newValue ? "Iklan akan ditampilkan" : "Iklan disembunyikan",
+                description: newValue
+                    ? "Iklan akan muncul di banner beranda sesuai jadwal."
+                    : "Iklan tidak akan muncul di banner beranda.",
+                status: "success",
+                duration: 2500,
+                isClosable: true,
+                position: "top",
+            });
+        } catch (err) {
+            // Revert on failure
+            setIsVisible(!newValue);
+            toast({
+                title: "Gagal mengubah visibilitas iklan",
+                status: "error",
+                duration: 3000,
+                isClosable: true,
+                position: "top",
+            });
+        } finally {
+            setToggleLoading(false);
+        }
+    };
 
     const handleDeleteConfirm = async () => {
         setDeleteLoading(true);
@@ -138,6 +174,7 @@ const AdminAdDetailPage: React.FC = () => {
             {loading ? (
                 <Stack padding="0 16px" mt={4} gap={4}>
                     <Skeleton height="44px" borderRadius="md" />
+                    <Skeleton height="52px" borderRadius="md" />
                     {Array.from({ length: 4 }).map((_, i) => (
                         <Box key={i}>
                             <Skeleton height="14px" width="35%" mb={2} />
@@ -168,6 +205,36 @@ const AdminAdDetailPage: React.FC = () => {
                                 {bannerStyle.text}
                             </Box>
                         )}
+
+                        {/* ── Visibility Toggle ── */}
+                        <Flex
+                            align="center"
+                            justify="space-between"
+                            bg="white"
+                            border="1px solid"
+                            borderColor="gray.200"
+                            borderRadius="md"
+                            px={4}
+                            py={3}
+                        >
+                            <Box>
+                                <Text fontSize="14px" fontWeight="600" color="gray.700">
+                                    Tampilkan di Beranda
+                                </Text>
+                                <Text fontSize="12px" color="gray.400" mt="1px">
+                                    {isVisible
+                                        ? "Iklan aktif di slot banner beranda"
+                                        : "Iklan disembunyikan dari banner beranda"}
+                                </Text>
+                            </Box>
+                            <Switch
+                                isChecked={isVisible}
+                                isDisabled={toggleLoading}
+                                onChange={(e) => handleToggleVisibility(e.target.checked)}
+                                colorScheme="green"
+                                size="lg"
+                            />
+                        </Flex>
 
                         {/* Pemesan Iklan */}
                         <AdDetailField label="Pemesan Iklan">
@@ -285,7 +352,6 @@ const AdminAdDetailPage: React.FC = () => {
                         px={4}
                         py={3}
                     >
-                        {/* Hapus Iklan */}
                         <Button
                             flex={1}
                             leftIcon={<DeleteIcon />}
@@ -300,7 +366,6 @@ const AdminAdDetailPage: React.FC = () => {
                             Hapus Iklan
                         </Button>
 
-                        {/* Edit Iklan */}
                         <Button
                             flex={1}
                             leftIcon={<EditIcon />}
@@ -318,7 +383,6 @@ const AdminAdDetailPage: React.FC = () => {
                 </>
             )}
 
-            {/* Delete Confirmation — ConfModal */}
             <ConfModal
                 isOpen={isOpen}
                 onClose={onClose}

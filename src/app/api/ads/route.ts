@@ -9,13 +9,14 @@ export async function GET(request: NextRequest) {
     const db = await connectToDatabase()
     const now = new Date()
 
-    // Find ads whose date range covers today, regardless of stored status.
-    // This handles the case where admin hasn't manually changed status yet.
+    // Find ads whose date range covers today AND are not manually hidden.
+    // isVisible defaults to true for ads that don't have the field yet (legacy).
     const ads = await db
       .collection('ads')
       .find({
         minDate: { $lte: now },
         maxDate: { $gte: now },
+        isVisible: { $ne: false },  // exclude only if explicitly set to false
       })
       .sort({ createdAt: -1 })
       .limit(10)
