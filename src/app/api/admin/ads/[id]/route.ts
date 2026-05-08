@@ -38,18 +38,64 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
     }
 
     return NextResponse.json(
-      {
-        message: 'Ad retrieved successfully',
-        data: ad,
-      },
+      { message: 'Ad retrieved successfully', data: ad },
       { status: 200 }
     )
   } catch (error) {
     console.error('Error retrieving ad:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// PATCH /api/admin/ads/[id]
+// Toggle the isVisible field of a specific ad - requires admin role
+export async function PATCH(request: NextRequest, { params }: { params: Params }) {
+  try {
+    const auth = await requireRole(request, ['admin'])
+    if (auth instanceof NextResponse) return auth
+
+    const { id } = await params
+
+    if (!id) {
+      return NextResponse.json(
+        { message: 'Ad ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const body = await request.json()
+
+    if (typeof body.isVisible !== 'boolean') {
+      return NextResponse.json(
+        { message: 'isVisible must be a boolean' },
+        { status: 400 }
+      )
+    }
+
+    const db = await connectToDatabase()
+
+    const query: any = ObjectId.isValid(id)
+      ? { _id: new ObjectId(id) }
+      : { _id: id }
+
+    const result = await db.collection('ads').updateOne(query, {
+      $set: { isVisible: body.isVisible, updatedAt: new Date() },
+    })
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { message: 'Iklan tidak ditemukan' },
+        { status: 404 }
+      )
+    }
+
     return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
+      { message: 'Ad visibility updated', data: { isVisible: body.isVisible } },
+      { status: 200 }
     )
+  } catch (error) {
+    console.error('Error updating ad visibility:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }
 
@@ -90,9 +136,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Params 
     )
   } catch (error) {
     console.error('Error deleting ad:', error)
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
   }
 }

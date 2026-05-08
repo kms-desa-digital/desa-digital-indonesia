@@ -1,23 +1,26 @@
 "use client";
 
 import { MinusIcon } from "@chakra-ui/icons";
-import { Box, Button, Flex, Input, Stack, Text, useDisclosure, useToast } from "@chakra-ui/react";
+import { Box, Button, Flex, Input, Skeleton, Stack, Text, useToast } from "@chakra-ui/react";
 import Container from "Components/container";
 import LogoUpload from "Components/form/LogoUpload";
 import TopBar from "Components/topBar";
-import ConfModal from "Components/confirmModal/confModal";
-import React, { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createAd } from "Services/adminServices";
+import React, { useEffect, useRef, useState } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { updateAd, getAdById } from "Services/adminServices";
 import { useTranslations } from "next-intl";
 
-const MakeAds: React.FC = () => {
+const EditAds: React.FC = () => {
     const t = useTranslations("Admin");
     const router = useRouter();
+    const params = useParams();
+    const id = params.id as string;
     const toast = useToast();
+
     const [selectedImg, setSelectedImg] = useState<string>("");
     const ImgRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const [fetching, setFetching] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<{
         name?: string;
@@ -30,17 +33,36 @@ const MakeAds: React.FC = () => {
         minDate: "",
         maxDate: "",
         link: "",
+        status: "",
     });
 
-    // Confirmation modal
-    const { isOpen, onOpen, onClose } = useDisclosure();
-    const [pendingSubmit, setPendingSubmit] = useState<null | {
-        name: string;
-        minDate: string;
-        maxDate: string;
-        link: string;
-        image?: string;
-    }>(null);
+    useEffect(() => {
+        const fetchAd = async () => {
+            if (!id) return;
+            setFetching(true);
+            try {
+                const response: any = await getAdById(id);
+                // axios interceptor returns response.data, so response = { message, data: adDoc }
+                const ad = response?.data ?? response;
+                if (ad) {
+                    setTextInputsValue({
+                        name: ad.name || "",
+                        minDate: ad.minDate ? new Date(ad.minDate).toISOString().split("T")[0] : "",
+                        maxDate: ad.maxDate ? new Date(ad.maxDate).toISOString().split("T")[0] : "",
+                        link: ad.link || "",
+                        status: ad.status || "Menunggu",
+                    });
+                    if (ad.image) setSelectedImg(ad.image);
+                }
+            } catch (err) {
+                console.error("Error fetching ad:", err);
+                setError("Gagal memuat data iklan.");
+            } finally {
+                setFetching(false);
+            }
+        };
+        fetchAd();
+    }, [id]);
 
     const onSelectImg = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -58,9 +80,9 @@ const MakeAds: React.FC = () => {
     }: React.ChangeEvent<HTMLInputElement>) =>
         setTextInputsValue({ ...textInputsValue, [name]: value });
 
-    // Step 1: validate, then open confirmation modal
-    const onValidateAndConfirm = (event: React.FormEvent<HTMLFormElement>) => {
+    const onSubmitForm = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        setLoading(true);
         setError("");
         setFieldErrors({});
 
@@ -83,54 +105,65 @@ const MakeAds: React.FC = () => {
         }
 
         if (trimmedLink) {
-            try { new URL(trimmedLink); } catch {
+            try {
+                new URL(trimmedLink);
+            } catch {
                 nextFieldErrors.link = t("adsErrorInvalidLink");
             }
         }
 
         if (Object.keys(nextFieldErrors).length > 0) {
             setFieldErrors(nextFieldErrors);
+            setLoading(false);
             return;
         }
 
-        // Valid — store payload and open confirm modal
-        setPendingSubmit({
-            name: trimmedName,
-            minDate: textInputsValue.minDate,
-            maxDate: textInputsValue.maxDate,
-            link: trimmedLink,
-            image: selectedImg || undefined,
-        });
-        onOpen();
-    };
-
-    // Step 2: confirmed — do the actual API call
-    const onSubmitConfirmed = async () => {
-        if (!pendingSubmit) return;
-        setLoading(true);
-        onClose();
         try {
-            await createAd(pendingSubmit);
+            await updateAd(id, {
+                name: trimmedName,
+                minDate: textInputsValue.minDate,
+                maxDate: textInputsValue.maxDate,
+                link: trimmedLink,
+                image: selectedImg || undefined,
+            });
+
             toast({
-                title: "Iklan berhasil dikirim",
+                title: "Iklan berhasil diperbarui",
                 status: "success",
                 duration: 3000,
                 isClosable: true,
                 position: "top",
             });
+
             router.push("/admin/ads");
         } catch (submitError: any) {
-            console.error("Error adding ad: ", submitError);
-            setError(submitError?.message || t("adsErrorSubmit"));
+            console.error("Error updating ad: ", submitError);
+            setError(submitError?.message || "Gagal memperbarui iklan. Silakan coba lagi.");
         } finally {
             setLoading(false);
-            setPendingSubmit(null);
         }
     };
+
+    if (fetching) {
+        return (
+            <Container page>
+                <TopBar title="Edit Iklan" onBack={() => router.back()} />
+                <Stack padding="0 14px" mt={4} gap={4}>
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <Box key={i}>
+                            <Skeleton height="16px" width="40%" mb={2} />
+                            <Skeleton height="40px" borderRadius="md" />
+                        </Box>
+                    ))}
+                </Stack>
+            </Container>
+        );
+    }
+
     return (
         <Container page>
-            <TopBar title={t("adsAdd")} onBack={() => router.back()} />
-            <form onSubmit={onValidateAndConfirm}>
+            <TopBar title="Edit Iklan" onBack={() => router.back()} />
+            <form onSubmit={onSubmitForm}>
                 <Stack padding="0 14px" direction="column" mt={4} gap={4}>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
@@ -144,7 +177,13 @@ const MakeAds: React.FC = () => {
                             mt={2}
                             value={textInputsValue.name}
                             onChange={onTextChange}
+                            isInvalid={!!fieldErrors.name}
                         />
+                        {fieldErrors.name && (
+                            <Text color="red.500" fontSize="12px" mt={1}>
+                                {fieldErrors.name}
+                            </Text>
+                        )}
                     </Box>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
@@ -161,6 +200,7 @@ const MakeAds: React.FC = () => {
                                 maxW="150px"
                                 value={textInputsValue.minDate}
                                 onChange={onTextChange}
+                                isInvalid={!!fieldErrors.minDate}
                             />
                             <MinusIcon fontSize="8pt" />
                             <Input
@@ -173,8 +213,14 @@ const MakeAds: React.FC = () => {
                                 maxW="150px"
                                 value={textInputsValue.maxDate}
                                 onChange={onTextChange}
+                                isInvalid={!!fieldErrors.maxDate}
                             />
                         </Flex>
+                        {(fieldErrors.minDate || fieldErrors.maxDate) && (
+                            <Text color="red.500" fontSize="12px" mt={1}>
+                                {fieldErrors.minDate || fieldErrors.maxDate}
+                            </Text>
+                        )}
                     </Box>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
@@ -207,19 +253,19 @@ const MakeAds: React.FC = () => {
                             onChange={onTextChange}
                             isInvalid={!!fieldErrors.link}
                         />
-                        {fieldErrors.link ? (
+                        {fieldErrors.link && (
                             <Text color="red.500" fontSize="12px" mt={2}>
                                 {fieldErrors.link}
                             </Text>
-                        ) : null}
+                        )}
                     </Box>
-                    {error ? (
+                    {error && (
                         <Box px="14px">
                             <Text color="red.500" fontSize="12px">
                                 {error}
                             </Text>
                         </Box>
-                    ) : null}
+                    )}
                 </Stack>
                 <Flex
                     align="center"
@@ -234,22 +280,17 @@ const MakeAds: React.FC = () => {
                     boxShadow="0px -2px 4px 0px rgba(0, 0, 0, 0.06), 0px -4px 6px 0px rgba(0, 0, 0, 0.10)"
                     bg="white"
                 >
-                    <Button width="100%" type="submit" isLoading={loading}>
-                        {t("adsSubmit")}
+                    <Button width="100%" type="submit" isLoading={loading}
+                        backgroundColor="#347357"
+                        color="white"
+                        _hover={{ backgroundColor: "#2a5c46" }}
+                    >
+                        Simpan Perubahan
                     </Button>
                 </Flex>
             </form>
-
-            {/* Submit Confirmation — ConfModal */}
-            <ConfModal
-                isOpen={isOpen}
-                onClose={onClose}
-                modalTitle="Tambah Iklan"
-                modalBody1="Apakah anda yakin ingin menambah iklan?"
-                onYes={onSubmitConfirmed}
-                isLoading={loading}
-            />
         </Container>
     );
 };
-export default MakeAds;
+
+export default EditAds;
