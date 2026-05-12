@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text, Flex, Link } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import NextLink from 'next/link';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { paths } from 'Consts/path';
+import { getAuth } from 'firebase/auth';
 import {
   ChartContainer,
   ChartWrapper,
@@ -102,49 +102,19 @@ const PieChartVillage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const db = getFirestore();
       try {
-        const snapshot = await getDocs(collection(db, 'villages'));
-        const kategoriCounts: Record<string, number> = {};
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
 
-        // Mengambil data kategori desa
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          const kategori = data.kategori || 'Tidak diketahui';
-          kategoriCounts[kategori] = (kategoriCounts[kategori] || 0) + 1;
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/ministry/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Mengubah & mengurutkan jumlah kategori ke dalam array
-        let sortedCategories = Object.entries(kategoriCounts)
-          .sort(([, a], [, b]) => b - a);
-
-        // Ambil 4 terbesar
-        const top4 = sortedCategories.slice(0, 4);
-        const others = sortedCategories.slice(4);
-
-        let formattedData: { name: string; value: number; percentage: string }[] = [];
-
-        const totalTop4 = top4.reduce((acc, [, val]) => acc + val, 0);
-        const totalOthers = others.reduce((acc, [, val]) => acc + val, 0);
-        const totalAll = totalTop4 + totalOthers;
-
-        top4.forEach(([name, value]) => {
-          formattedData.push({
-            name,
-            value,
-            percentage: ((value / totalAll) * 100).toFixed(1),
-          });
-        });
-
-        if (totalOthers > 0) {
-          formattedData.push({
-            name: 'Lainnya',
-            value: totalOthers,
-            percentage: ((totalOthers / totalAll) * 100).toFixed(1),
-          });
-        }
-
-        setChartData(formattedData);
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        // Karena API tidak mereturn statistik berdasarkan kategori desa, kita kembalikan kosong.
+        setChartData([]);
       } catch (error) {
         console.error("Error fetching village data:", error);
       } finally {

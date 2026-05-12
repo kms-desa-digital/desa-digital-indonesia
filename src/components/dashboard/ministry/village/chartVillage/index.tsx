@@ -26,7 +26,7 @@ import {
 import filterIcon from "@public/icons/icon-filter.svg";
 import downloadIcon from "@public/icons/icon-download.svg";
 
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getVillages } from "Services/villageServices";
 import YearRangeFilter from "./dateFilter";
 
 import { saveAs } from "file-saver";
@@ -52,15 +52,14 @@ const ChartVillage = () => {
     async function fetchData() {
       setLoading(true);
       try {
-        const db = getFirestore();
-        const snapshot = await getDocs(collection(db, "villages"));
+        const responseData = await getVillages();
+        const villages = (responseData as any).villages || [];
 
         // Buat array [tahun]: {Maju: x, Mandiri: x, dst} untuk visualisasi data stacked bar chart
         const yearlyData: Record<number, any> = {};
         const desaData: any[] = [];
 
-        snapshot.forEach((doc) => {
-          const data = doc.data();
+        villages.forEach((data: any) => {
           const yearRaw = data.tahunData?.toString()?.trim();
           const category = data.kategori;
 

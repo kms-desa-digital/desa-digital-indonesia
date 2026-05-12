@@ -1,5 +1,4 @@
 import { Box, Flex, Text, Button, Table, Thead, Tbody, Tr, Th, Td, TableContainer } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, LabelList, Cell } from "recharts";
@@ -39,7 +38,6 @@ const Top5InovatorVillage: React.FC = () => {
   useEffect(() => {
     const fetchTopInovator = async () => {
       try {
-        const db = getFirestore();
         const auth = getAuth();
         const user = auth.currentUser;
 
@@ -48,48 +46,20 @@ const Top5InovatorVillage: React.FC = () => {
           return;
         }
 
-        // Ambil desa
-        const desaQuery = query(
-          collection(db, "villages"),
-          where("userId", "==", user.uid)
-        );
-        const desaSnap = await getDocs(desaQuery);
-        if (desaSnap.empty) return;
-
-        const desaId = desaSnap.docs[0].id;
-
-        // Claim Innovations untuk desa itu
-        const claimQuery = query(
-          collection(db, "claimInnovations"),
-          where("desaId", "==", desaId)
-        );
-        const claimSnap = await getDocs(claimQuery);
-
-        const inovatorIds = claimSnap.docs.map(doc => doc.data().inovatorId);
-        if (inovatorIds.length === 0) {
-          console.warn("Tidak ada inovasi diklaim");
-          setChartData([]);
-          return;
-        }
-
-        const inovatorQuery = query(
-          collection(db, "innovators"),
-          where("id", "in", inovatorIds)
-        );
-        const inovatorSnap = await getDocs(inovatorQuery);
-
-        const inovatorCount: Record<string, number> = {};
-        claimSnap.forEach(docClaim => {
-          const inovatorId = docClaim.data().inovatorId;
-          const inovatorDoc = inovatorSnap.docs.find(doc => doc.data().id === inovatorId);
-          if (!inovatorDoc) return;
-          const namaInovator = inovatorDoc.data().namaInovator?.trim() || "-";
-          inovatorCount[namaInovator] = (inovatorCount[namaInovator] || 0) + 1;
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        const sortedInovators = Object.entries(inovatorCount)
-          .map(([name, value]) => ({ name, value }))
-          .sort((a, b) => b.value - a.value);
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        const data = await response.json();
+        
+        const top5 = data.top5Innovators || [];
+        
+        const sortedInovators = top5.map((item: any) => ({
+          name: item.name || "-",
+          value: item.totalInovasi || 0
+        })).sort((a: any, b: any) => b.value - a.value);
 
         while (sortedInovators.length < 5) {
           sortedInovators.push({ name: "-", value: 0 });
@@ -105,7 +75,7 @@ const Top5InovatorVillage: React.FC = () => {
             value: item?.value || 0,
             valueAsli: item?.value || 0,
             rank: customRanks[rankIndex],
-            isEmpty: item?.name === ""
+            isEmpty: item?.name === "-"
           };
         });
 
@@ -122,7 +92,6 @@ const Top5InovatorVillage: React.FC = () => {
   useEffect(() => {
     const fetchInovatorData = async () => {
       try {
-        const db = getFirestore();
         const auth = getAuth();
         const user = auth.currentUser;
 
@@ -131,70 +100,20 @@ const Top5InovatorVillage: React.FC = () => {
           return;
         }
 
-        const desaQuery = query(
-          collection(db, "villages"),
-          where("userId", "==", user.uid)
-        );
-        const desaSnap = await getDocs(desaQuery);
-        if (desaSnap.empty) return;
-
-        const desaId = desaSnap.docs[0].id;
-
-        const claimQuery = query(
-          collection(db, "claimInnovations"),
-          where("desaId", "==", desaId)
-        );
-        const claimSnap = await getDocs(claimQuery);
-        if (claimSnap.empty) {
-          setInovatorData([]);
-          return;
-        }
-
-        const inovatorIds = claimSnap.docs.map(doc => doc.data().inovatorId);
-
-        const inovatorQuery = query(
-          collection(db, "innovators"),
-          where("id", "in", inovatorIds)
-        );
-        const inovatorSnap = await getDocs(inovatorQuery);
-
-        const inovatorMap = new Map<string, { namaInovator: string }>();
-        inovatorSnap.forEach(doc => {
-          const data = doc.data();
-          if (data.id) {
-            inovatorMap.set(data.id, {
-              namaInovator: data.namaInovator || "-",
-            });
-          }
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        const inovatorCount: Record<string, {
-          namaInovator: string;
-          jumlahInovasi: number;
-        }> = {};
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        const data = await response.json();
+        const top5 = data.top5Innovators || [];
 
-        claimSnap.forEach(docClaim => {
-          const inovatorId = docClaim.data().inovatorId;
-          const inovatorData = inovatorMap.get(inovatorId);
-          if (!inovatorData) return;
-
-          const namaInovator = inovatorData.namaInovator;
-
-          if (!inovatorCount[namaInovator]) {
-            inovatorCount[namaInovator] = {
-              namaInovator,
-              jumlahInovasi: 1,
-            };
-          } else {
-            inovatorCount[namaInovator].jumlahInovasi += 1;
-          }
-        });
-
-        const sortedInovators = Object.values(inovatorCount)
-          .sort((a, b) => b.jumlahInovasi - a.jumlahInovasi)
-          .map((item, index) => ({
-            ...item,
+        const sortedInovators = top5
+          .map((item: any, index: number) => ({
             no: index + 1,
+            namaInovator: item.name || "-",
+            jumlahInovasi: item.totalInovasi || 0
           }));
 
         setInovatorData(sortedInovators);

@@ -10,18 +10,8 @@ import {
 } from "@chakra-ui/react";
 import { ArrowUpRight, ArrowDownRight, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  query,
-  where,
-} from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
-import { firestore } from "../../../firebase/clientApp";
 import { FaUsers } from "react-icons/fa";
 import VillageActive from "@public/icons/village-active.svg";
 import InnovationActive from "@public/icons/innovation3.svg";
@@ -42,61 +32,33 @@ const InformasiUmum: React.FC = () => {
   const [isIncreaseInnovation, setIsIncreaseInnovation] = useState(true);
 
   useEffect(() => {
-    const fetchUserRole = async () => {
+    const fetchData = async () => {
       try {
         const auth = getAuth();
         const currentUser = auth.currentUser;
+        if (!currentUser) return;
 
-        if (currentUser) {
-          const userRef = doc(firestore, "users", currentUser.uid);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            setUserRole(userSnap.data()?.role);
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/admin/dashboard', {
+          headers: {
+            Authorization: `Bearer ${token}`
           }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTotalVillage(data.totalVillages || 0);
+          setTotalInnovators(data.totalInnovators || 0);
+          setTotalInnovation(data.totalInnovations || 0);
+        } else {
+          console.error("Failed to fetch dashboard data:", await response.text());
         }
       } catch (error) {
-        console.error("Error fetching user role:", error);
+        console.error("Error fetching dashboard data:", error);
       }
     };
 
-    const fetchInnovatorCount = async () => {
-      try {
-        const db = getFirestore();
-        const innovatorsRef = collection(db, "innovators");
-        const snapshot = await getDocs(innovatorsRef);
-        setTotalInnovators(snapshot.size);
-      } catch (error) {
-        console.error("Error fetching innovator count:", error);
-      }
-    };
-
-    const fetchVillageCount = async () => {
-      try {
-        const db = getFirestore();
-        const villageRef = collection(db, "villages");
-        const snapshot = await getDocs(villageRef);
-        setTotalVillage(snapshot.size);
-      } catch (error) {
-        console.error("Error fetching village count:", error);
-      }
-    };
-
-    const fetchInnovationCount = async () => {
-      try {
-        const db = getFirestore();
-        const innovationsRef = collection(db, "innovations");
-        const q = query(innovationsRef, where("namaInovasi", "!=", ""));
-        const snapshot = await getDocs(q);
-        setTotalInnovation(snapshot.size);
-      } catch (error) {
-        console.error("Error fetching innovation count:", error);
-      }
-    };
-
-    fetchUserRole();
-    fetchInnovatorCount();
-    fetchVillageCount();
-    fetchInnovationCount();
+    fetchData();
   }, []);
 
   const handleDownload = () => {

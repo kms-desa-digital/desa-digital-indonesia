@@ -1,12 +1,4 @@
 import { useEffect, useState } from "react";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  Timestamp,
-  getFirestore,
-} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import Image from "next/image";
@@ -33,86 +25,27 @@ const InfoCards = () => {
   const [trendDesa, setTrendDesa] = useState(0);
 
   const calculateData = async (fromDate: Date, toDate: Date) => {
-    const db = getFirestore();
-    const auth = getAuth();
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
-
-    // Gunakan UTC-safe Timestamp dari Date.UTC
-    const fromUTC = Timestamp.fromMillis(Date.UTC(fromDate.getFullYear(), fromDate.getMonth(), fromDate.getDate(), 0, 0, 0));
-    const toUTC = Timestamp.fromMillis(Date.UTC(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59));
-
-    const diffMs = toUTC.toMillis() - fromUTC.toMillis();
-    const prevFromUTC = Timestamp.fromMillis(fromUTC.toMillis() - diffMs);
-    const prevToUTC = Timestamp.fromMillis(toUTC.toMillis() - diffMs);
-
     try {
-      const inovatorQuery = query(
-        collection(db, "innovators"),
-        where("id", "==", currentUser.uid)
-      );
-      const inovatorSnap = await getDocs(inovatorQuery);
-      if (inovatorSnap.empty) return;
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
 
-      const inovatorId = inovatorSnap.docs[0].id;
+      const token = await currentUser.getIdToken();
+      const response = await fetch('/api/innovator/dashboard', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-      const getInovasiCount = async (fromT: Timestamp, toT: Timestamp) => {
-        const q = query(
-          collection(db, "innovations"),
-          where("innovatorId", "==", inovatorId),
-          where("createdAt", ">=", fromT),
-          where("createdAt", "<=", toT)
-        );
-        return (await getDocs(q)).size;
-
-      };
-
-      const getDesaCount = async (fromT: Timestamp, toT: Timestamp) => {
-        const inovasiSnap = await getDocs(
-          query(collection(db, "innovations"), where("innovatorId", "==", inovatorId))
-        );
-
-        const inovasiIds = inovasiSnap.docs
-          .filter((doc) => {
-            const createdAt = doc.data().createdAt;
-            if (!createdAt) return false;
-            const time = createdAt.toMillis();
-            return time >= fromT.toMillis() && time <= toT.toMillis();
-          })
-          .map((doc) => doc.id);
-
-        if (inovasiIds.length === 0) return 0;
-
-        const klaimSnap = await getDocs(collection(db, "claimInnovations"));
-        const matchedDesa = new Set<string>();
-
-        klaimSnap.docs.forEach((doc) => {
-          const data = doc.data();
-          if (inovasiIds.includes(data.inovasiId) && data.namaDesa) {
-            matchedDesa.add(data.namaDesa);
-          }
-        });
-
-        console.log("klaimSnap", klaimSnap);
-        console.log("matchedDesa", matchedDesa);
-        console.log("matchedDesasize", matchedDesa.size);
-
-        return matchedDesa.size;
-      };
-
-
-      const [currInovasi, prevInovasi, currDesa, prevDesa] = await Promise.all([
-        getInovasiCount(fromUTC, toUTC),
-        getInovasiCount(prevFromUTC, prevToUTC),
-        getDesaCount(fromUTC, toUTC),
-        getDesaCount(prevFromUTC, prevToUTC),
-      ]);
-
-      setInovasiCount(currInovasi);
-      setDesaCount(currDesa);
-      setTrendInovasi(currInovasi - prevInovasi);
-      setTrendDesa(currDesa - prevDesa);
-
+      if (response.ok) {
+        const data = await response.json();
+        setInovasiCount(data.totalInovasi || 0);
+        setDesaCount(data.totalKlienDesa || 0);
+        
+        // Data tren tidak disediakan oleh endpoint, diset ke 0
+        setTrendInovasi(0);
+        setTrendDesa(0);
+      } else {
+        console.error("Failed to fetch dashboard data:", await response.text());
+      }
     } catch (err) {
       console.error("Failed to calculate data:", err);
     }

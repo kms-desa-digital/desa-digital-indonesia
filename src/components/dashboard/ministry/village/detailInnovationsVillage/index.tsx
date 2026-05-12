@@ -18,7 +18,8 @@ import {
   MenuItem,
 } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from "@chakra-ui/icons";
-import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
+import { getClaims } from "Services/villageServices";
+import { getInnovation } from "Services/innovationServices";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -65,66 +66,48 @@ const DetailInnovationsVillage = ({ selectedVillage, hasRowClicked }: Props) => 
     const fetchData = async () => {
       setLoading(true);
       try {
-        const db = getFirestore();
+        // Fetch all claims and innovations concurrently
+        const [claimsRes, innovationsRes] = await Promise.all([
+          getClaims(),
+          getInnovation()
+        ]);
 
-        const menerapkanRef = collection(db, "claimInnovations");
-        const snapshot = await getDocs(menerapkanRef);
+        const allClaims = (claimsRes as any).claims || [];
+        const allInnovations = (innovationsRes as any).innovations || [];
 
-        const filteredDocs = snapshot.docs.filter(doc => {
-          const namaDesa = doc.data().namaDesa || "";
+        // Filter claims by village name
+        const filteredClaims = allClaims.filter((claim: any) => {
+          const namaDesa = claim.namaDesa || "";
           const cleanedNamaDesa = namaDesa.replace(/^Desa\s+/i, "").trim().toLowerCase();
           return cleanedNamaDesa === selectedVillage.trim().toLowerCase();
         });
 
-        console.log("selectedVillage", selectedVillage);
-
-        if (filteredDocs.length === 0) {
+        if (filteredClaims.length === 0) {
           setData([]);
           setLoading(false);
           return;
         }
 
-        // Extract unique namaInovasi
-        const inovasiNames = Array.from(
-          new Set(filteredDocs.map((doc) => doc.data().namaInovasi))
-        );
-
-        // Query inovasi collection in batches
-        const inovasiRef = collection(db, "innovations");
-        const chunks: string[][] = [];
-        for (let i = 0; i < inovasiNames.length; i += 10) {
-          chunks.push(inovasiNames.slice(i, i + 10));
-        }
-
-        const inovasiDocs: any[] = [];
-        for (const chunk of chunks) {
-          const q2 = query(inovasiRef, where("namaInovasi", "in", chunk));
-          const snap = await getDocs(q2);
-          inovasiDocs.push(...snap.docs);
-        }
-
-        // Map namaInovasi => namaInovator
+        // Map namaInovasi => namaInovator from innovations
         const inovasiMap = new Map<string, string>();
-        inovasiDocs.forEach((doc) => {
-          const d = doc.data();
-          inovasiMap.set(d.namaInovasi, d.namaInnovator || "Unknown");
+        allInnovations.forEach((inov: any) => {
+          inovasiMap.set(inov.namaInovasi, inov.namaInnovator || inov.namaInovator || "Unknown");
         });
 
         // Combine data
-        const combinedList = filteredDocs.map((doc, idx) => {
-          const d = doc.data();
+        const combinedList = filteredClaims.map((claim: any, idx: number) => {
           return {
             no: idx + 1,
-            namaDesa: d.namaDesa || "-",
-            namaInovasi: d.namaInovasi || "-",
-            namaInovator: inovasiMap.get(d.namaInovasi) || "-",
-            tahun: d.createdAt?.toDate().getFullYear() ?? "-",
+            namaDesa: claim.namaDesa || "-",
+            namaInovasi: claim.namaInovasi || "-",
+            namaInovator: inovasiMap.get(claim.namaInovasi) || claim.namaInovator || "-",
+            tahun: claim.createdAt ? new Date(claim.createdAt).getFullYear().toString() : "-",
           };
         });
 
-        combinedList.sort((a, b) => {
-          const tahunA = typeof a.tahun === "number" ? a.tahun : 0;
-          const tahunB = typeof b.tahun === "number" ? b.tahun : 0;
+        combinedList.sort((a: Implementation, b: Implementation) => {
+          const tahunA = parseInt(a.tahun) || 0;
+          const tahunB = parseInt(b.tahun) || 0;
 
           if (tahunB !== tahunA) return tahunB - tahunA; // tahun desc
           return a.namaInovasi.localeCompare(b.namaInovasi); // nama inovasi asc

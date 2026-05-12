@@ -40,13 +40,47 @@ export async function GET(request: NextRequest) {
     const totalVillages = await db.collection('villages').countDocuments()
     const totalInnovators = await db.collection('innovators').countDocuments()
 
-    // Data lainnya bisa ditambahkan sesuai kebutuhan
+    // Ambil data detail top 5
+    const top5VillagesData = await db.collection('villages').find().sort({ jumlahInovasiDiterapkan: -1 }).limit(5).toArray();
+    const top5Villages = top5VillagesData.map(v => ({
+      name: v.namaDesa || '',
+      totalInovasi: v.jumlahInovasiDiterapkan || 0,
+      lat: v.latitude || 0,
+      lng: v.longitude || 0
+    }));
+
+    const top5InnovatorsData = await db.collection('innovators').find().sort({ jumlahInovasi: -1 }).limit(5).toArray();
+    const top5Innovators = top5InnovatorsData.map(i => ({
+      name: i.namaInovator || '',
+      totalInovasi: i.jumlahInovasi || 0,
+      lat: i.latitude || 0,
+      lng: i.longitude || 0
+    }));
+
+    const top5InnovationsData = await db.collection('innovations').find().sort({ jumlahKlaim: -1 }).limit(5).toArray();
+    const top5Innovations = top5InnovationsData.map(i => ({
+      name: i.namaInovasi || '',
+      totalKlaim: i.jumlahKlaim || 0,
+      kategori: i.kategori || ''
+    }));
+
+    // Data map markers
+    const allVillages = await db.collection('villages').find({ latitude: { $exists: true } }).toArray();
+    const allInnovators = await db.collection('innovators').find({ latitude: { $exists: true } }).toArray();
+    const mapMarkers = [
+      ...allVillages.map(v => ({ name: v.namaDesa, type: 'village', lat: v.latitude, lng: v.longitude })),
+      ...allInnovators.map(i => ({ name: i.namaInovator, type: 'innovator', lat: i.latitude, lng: i.longitude }))
+    ].filter(m => m.lat && m.lng);
 
     return NextResponse.json({
       totalUsers,
       totalInnovations,
       totalVillages,
-      totalInnovators
+      totalInnovators,
+      top5Villages,
+      top5Innovators,
+      top5Innovations,
+      mapMarkers
     })
   } catch (error) {
     console.error('Error fetching admin dashboard:', error)

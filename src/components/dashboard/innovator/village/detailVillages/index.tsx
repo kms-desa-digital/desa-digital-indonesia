@@ -12,14 +12,9 @@ import {
 import Image from "next/image";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import { getAuth } from "firebase/auth";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  QueryDocumentSnapshot, DocumentData
-} from "firebase/firestore";
+import { getInnovators } from "Services/innovatorServices";
+import { getInnovation } from "Services/innovationServices";
+import { getClaims } from "Services/villageServices";
 import {
   titleStyle,
   tableHeaderStyle,
@@ -65,7 +60,6 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
   });
 
   const auth = getAuth();
-  const db = getFirestore();
   const currentUser = auth.currentUser;
 
   useEffect(() => {
@@ -88,88 +82,75 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const uid = currentUser.uid;
+        // Fetch innovator profile via MongoDB API
+        const innovatorsRes = await getInnovators();
+        const allInnovators = (innovatorsRes as any).data || [];
+        const myProfile = allInnovators.find((i: any) => i.id === currentUser.uid);
 
-        // Fetch inovator IDs for current user
-        const profilInovatorRef = collection(db, "innovators");
-        const qProfil = query(profilInovatorRef, where("id", "==", uid));
-        const profilSnap = await getDocs(qProfil);
-        if (profilSnap.empty) {
-          setImplementationData([]);
-          setLoading(false);
-          return;
-        }
-        const inovatorIds = profilSnap.docs.map((doc) => doc.id);
-
-        const inovasiRef = collection(db, "innovations");
-        const chunkSize = 10;
-        let inovasiDocs: QueryDocumentSnapshot<DocumentData>[] = [];
-        for (let i = 0; i < inovatorIds.length; i += chunkSize) {
-          const chunk = inovatorIds.slice(i, i + chunkSize);
-          const qInovasi = query(inovasiRef, where("innovatorId", "in", chunk));
-          const snapInovasi = await getDocs(qInovasi);
-          inovasiDocs = inovasiDocs.concat(snapInovasi.docs);
-        }
-        if (inovasiDocs.length === 0) {
+        if (!myProfile) {
           setImplementationData([]);
           setLoading(false);
           return;
         }
 
-        // Map inovasiId -> { namaDesa, inovatorId }
-        const inovasiMap = new Map<
-          string,
-          { namaInovasi: string; inovatorId: string }
-        >();
-        inovasiDocs.forEach((doc) => {
-          const data = doc.data();
-          inovasiMap.set(doc.id, {
-            namaInovasi: data.namaInovasi,
-            inovatorId: data.inovatorId,
+        const inovatorId = myProfile._id || myProfile.id;
+
+        // Fetch innovations by this innovator via MongoDB API
+        const innovationRes = await getInnovation();
+        const allInnovations = innovationRes.innovations || [];
+        const myInnovations = allInnovations.filter(
+          (i: any) => i.innovatorId === inovatorId
+        );
+
+        if (myInnovations.length === 0) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
+        }
+
+        // Build inovasiMap: id -> { namaInovasi, inovatorId }
+        const inovasiMap = new Map<string, { namaInovasi: string; inovatorId: string }>();
+        myInnovations.forEach((inov: any) => {
+          const id = inov._id || inov.id;
+          inovasiMap.set(id, {
+            namaInovasi: inov.namaInovasi,
+            inovatorId: inov.innovatorId,
           });
         });
 
         const inovasiIds = Array.from(inovasiMap.keys());
 
-        const produkInovator = inovasiDocs
-          .map((doc) => doc.data().namaInovasi)
+        const produkInovator = myInnovations
+          .map((i: any) => i.namaInovasi)
           .filter(Boolean)
           .join(", ");
 
-        const profileData = profilSnap.docs[0].data();
         setInovatorProfile({
-          namaInovator: profileData.namaInovator || "-",
-          kategoriInovator: profileData.kategori || "-",
-          tahunDibentuk: profileData.tahunDibentuk || "-",
-          targetPengguna: profileData.targetPengguna || "-",
-          modelBisnis: profileData.modelBisnis || "-",
+          namaInovator: myProfile.namaInovator || "-",
+          kategoriInovator: myProfile.kategori || "-",
+          tahunDibentuk: myProfile.tahunDibentuk || "-",
+          targetPengguna: myProfile.targetPengguna || "-",
+          modelBisnis: myProfile.modelBisnis || "-",
           produk: produkInovator || "-",
         });
 
-        const klaimInovasiRef = collection(db, "claimInnovations");
-        let klaimDocs: QueryDocumentSnapshot<DocumentData>[] = [];
+        // Fetch all claims via MongoDB API and filter by inovasiIds
+        const claimsRes = await getClaims();
+        const allClaims = (claimsRes as any).claims || [];
+        const relevantClaims = allClaims.filter(
+          (claim: any) => claim.inovasiId && inovasiIds.includes(claim.inovasiId)
+        );
 
-        for (let i = 0; i < inovasiIds.length; i += chunkSize) {
-          const chunk = inovasiIds.slice(i, i + chunkSize);
-          const qKlaim = query(klaimInovasiRef, where("inovasiId", "in", chunk));
-          const snapKlaim = await getDocs(qKlaim);
-          klaimDocs = klaimDocs.concat(snapKlaim.docs);
-        }
-
+        // Aggregate: count unique innovations per desaId
         const desaMap = new Map<
           string,
-          {
-            desaId: string;
-            namaDesa: string;
-            inovasiIdSet: Set<string>
-          }
+          { desaId: string; namaDesa: string; inovasiIdSet: Set<string> }
         >();
 
-        for (const docSnap of klaimDocs) {
-          const data = docSnap.data();
-          const desaId = data.desaId;
-          const namaDesa = data.namaDesa;
-          const inovasiId = data.inovasiId;
+        for (const claim of relevantClaims) {
+          const desaId = claim.desaId;
+          const namaDesa = claim.namaDesa;
+          const inovasiId = claim.inovasiId;
 
           if (!desaMap.has(desaId)) {
             desaMap.set(desaId, {
@@ -181,22 +162,18 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
           desaMap.get(desaId)!.inovasiIdSet.add(inovasiId);
         }
 
-        const result: Implementation[] = Array.from(desaMap.values()).map((data) => {
-          return {
-            namaDesa: data.namaDesa,
-            namaInovator: profileData.namaInovator || "-",
-            jumlahInovasi: data.inovasiIdSet.size,
-            villageId: data.desaId || "",
-          };
-        });
+        const result: Implementation[] = Array.from(desaMap.values()).map((data) => ({
+          namaDesa: data.namaDesa,
+          namaInovator: myProfile.namaInovator || "-",
+          jumlahInovasi: data.inovasiIdSet.size,
+          villageId: data.desaId || "",
+        }));
 
         setImplementationData(
           result.sort((a, b) => {
             if (b.jumlahInovasi === a.jumlahInovasi) {
-              // Kalau jumlahInovasi sama, urutkan berdasarkan namaDesa (A-Z)
               return a.namaDesa.localeCompare(b.namaDesa);
             }
-            // Kalau jumlahInovasi berbeda, urutkan dari nilai yang terbesar
             return b.jumlahInovasi - a.jumlahInovasi;
           })
         );

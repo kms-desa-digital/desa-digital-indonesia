@@ -8,13 +8,6 @@ import {
 } from "@chakra-ui/react";
 import { FaUsers } from "react-icons/fa";
 import InnovationActive from "@public/icons/innovation3.svg";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 interface CardItemProps {
@@ -79,70 +72,37 @@ const TwoCard: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const db = getFirestore();
-      const auth = getAuth();
-      const user = auth.currentUser;
-
-      if (!user) {
-        console.error("User belum login");
-        return;
-      }
-
       try {
-        // Ambil data desa berdasarkan userId
-        const desaQuery = query(
-          collection(db, "villages"),
-          where("userId", "==", user.uid)
-        );
-        const desaSnap = await getDocs(desaQuery);
+        const auth = getAuth();
+        const user = auth.currentUser;
 
-        if (desaSnap.empty) {
-          console.warn("Data desa tidak ditemukan.");
+        if (!user) {
+          console.error("User belum login");
           return;
         }
 
-        const desaData = desaSnap.docs[0].data();
-        const namaDesa = desaData.namaDesa || "Desa";
-        setUserDesa(namaDesa);
-
-        // Ambil data claimInnovations yang terverifikasi terkait dengan desa
-        const claimQuery = query(
-          collection(db, "claimInnovations"),
-          where("desaId", "==", user.uid)
-        );
-        const claimSnap = await getDocs(claimQuery);
-
-        // Ambil semua inovasiId terkait dengan klaim desa ini
-        const inovasiIds = claimSnap.docs.map(doc => doc.data().inovasiId); // Ambil inovasiId dari klaim
-
-        // Hitung jumlah klaim inovasi yang terverifikasi untuk desa ini
-        const totalInovasiDesa = inovasiIds.length; // Jumlah inovasi yang diklaim oleh desa ini
-
-        // Ambil total seluruh inovasi yang ada di database (tidak ada relasi)
-        const allInovasiSnap = await getDocs(collection(db, "innovations"));
-        const totalAllInovasi = allInovasiSnap.size; // Jumlah total inovasi yang ada di database
-
-        setTotalInovasi({
-          desa: totalInovasiDesa, // jumlah inovasi yang diklaim oleh desa ini
-          total: totalAllInovasi, // jumlah seluruh inovasi yang ada di database
+        const token = await user.getIdToken();
+        const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Ambil data inovator yang relevan dengan klaim inovasi
-        const inovatorIds = claimSnap.docs.map(doc => doc.data().inovatorId); // Ambil inovatorId dari klaim
-        console.log('inovator', inovatorIds);
+        if (response.ok) {
+          const data = await response.json();
+          
+          setTotalInovasi({
+            desa: data.totalInovasi || 0,
+            total: data.totalInovasi || 0, // Karena API hanya me-return totalInovasi desa, kita samakan atau kosongkan bagian total keseluruhan
+          });
 
-        const totalInovatorDesa = inovasiIds.length;
+          setTotalInovator({
+            desa: data.totalInovator || 0,
+            total: data.totalInovator || 0,
+          });
 
-
-        // Ambil total seluruh inovasi yang ada di database (tidak ada relasi)
-        const allInovatorSnap = await getDocs(collection(db, "innovators"));
-        const totalAllInovator = allInovatorSnap.size; // Jumlah total inovasi yang ada di database
-
-        setTotalInovator({
-          desa: totalInovatorDesa, // jumlah inovator yang terkait dengan desa ini
-          total: totalAllInovator, // jumlah total inovator yang ada di database
-        });
-
+          setUserDesa("Desa");
+        } else {
+          console.error("Failed to fetch dashboard data:", await response.text());
+        }
       } catch (error) {
         console.error("Gagal ambil data:", error);
       }

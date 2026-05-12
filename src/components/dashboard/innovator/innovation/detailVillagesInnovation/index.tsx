@@ -5,15 +5,9 @@ import {
 } from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import { getAuth } from "firebase/auth";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  QueryDocumentSnapshot,
-  DocumentData
-} from "firebase/firestore";
+import { getInnovators } from "Services/innovatorServices";
+import { getInnovation } from "Services/innovationServices";
+import { getClaims } from "Services/villageServices";
 import downloadIcon from "@public/icons/icon-download.svg";
 
 import jsPDF from "jspdf";
@@ -62,7 +56,6 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({
   const itemsPerPage = 5;
 
   const auth = getAuth();
-  const db = getFirestore();
   const [userName, setUserName] = useState<string | null>(null);
 
   const [inovatorProfile, setInovatorProfile] = useState({
@@ -92,78 +85,61 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({
     const fetchData = async () => {
       setLoading(true);
       try {
-        const profilInovatorRef = collection(db, "innovators");
-        const qProfil = query(profilInovatorRef, where("id", "==", user.uid));
-        const profilSnap = await getDocs(qProfil);
-        if (profilSnap.empty) {
-          setImplementationData([]);
-          setLoading(false);
-          return;
-        }
-        const inovatorIds = profilSnap.docs.map((doc) => doc.id);
+        // Fetch innovator profile
+        const innovatorsRes = await getInnovators();
+        const allInnovators = (innovatorsRes as any).data || [];
+        const myProfile = allInnovators.find((i: any) => i.id === user.uid);
 
-        const inovasiRef = collection(db, "innovations");
-        const chunkSize = 10;
-        let inovasiDocs: QueryDocumentSnapshot<DocumentData>[] = [];
-        for (let i = 0; i < inovatorIds.length; i += chunkSize) {
-          const chunk = inovatorIds.slice(i, i + chunkSize);
-          const qInovasi = query(inovasiRef, where("innovatorId", "in", chunk));
-          const snapInovasi = await getDocs(qInovasi);
-          inovasiDocs = inovasiDocs.concat(snapInovasi.docs);
-        }
-        if (inovasiDocs.length === 0) {
+        if (!myProfile) {
           setImplementationData([]);
           setLoading(false);
           return;
         }
 
-        const inovasiMap = new Map<
-          string,
-          { namaInovasi: string; inovatorId: string }
-        >();
-        inovasiDocs.forEach((doc) => {
-          const data = doc.data();
-          inovasiMap.set(doc.id, {
-            namaInovasi: data.namaInovasi,
-            inovatorId: data.innovatorId,
-          });
-        });
+        const inovatorId = myProfile._id || myProfile.id;
 
-        const inovasiIds = Array.from(inovasiMap.keys());
+        // Fetch innovations
+        const innovationRes = await getInnovation();
+        const allInnovations = innovationRes.innovations || [];
+        const myInnovations = allInnovations.filter(
+          (i: any) => i.innovatorId === inovatorId
+        );
 
-        const produkInovator = inovasiDocs
-          .map((doc) => doc.data().namaInovasi)
+        if (myInnovations.length === 0) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
+        }
+
+        const produkInovator = myInnovations
+          .map((i: any) => i.namaInovasi)
           .filter(Boolean)
           .join(", ");
 
-        const profileData = profilSnap.docs[0].data();
         setInovatorProfile({
-          namaInovator: profileData?.namaInovator || "-",
-          kategoriInovator: profileData?.kategori || "-",
-          tahunDibentuk: profileData?.tahunDibentuk || "-",
-          targetPengguna: profileData?.targetPengguna || "-",
-          modelBisnis: profileData?.modelBisnis || "-",
+          namaInovator: myProfile?.namaInovator || "-",
+          kategoriInovator: myProfile?.kategori || "-",
+          tahunDibentuk: myProfile?.tahunDibentuk || "-",
+          targetPengguna: myProfile?.targetPengguna || "-",
+          modelBisnis: myProfile?.modelBisnis || "-",
           produk: produkInovator,
         });
 
-        // Get villages that claimed the innovation
-        const villagesQuery = query(
-          collection(db, "claimInnovations"),
-          where("inovasiId", "==", innovationId)
+        // Get claims for the specific innovation
+        const claimsRes = await getClaims();
+        const allClaims = (claimsRes as any).claims || [];
+        const matchingClaims = allClaims.filter(
+          (c: any) => c.inovasiId === innovationId
         );
-        const villagesSnapshot = await getDocs(villagesQuery);
 
-        const villagesData: VillageDetail[] = villagesSnapshot.docs.map((doc) => {
-          const data = doc.data();
-          const createdAt = data.createdAt?.toDate?.();
-          const tahunKlaim =
-            createdAt instanceof Date
-              ? String(createdAt.getFullYear())
-              : "Tidak tersedia";
+        const villagesData: VillageDetail[] = matchingClaims.map((claim: any) => {
+          const tahunKlaim = claim.createdAt
+            ? new Date(claim.createdAt).getFullYear().toString()
+            : "Tidak tersedia";
 
           return {
-            namaDesa: data.namaDesa || "Tidak tersedia",
-            namaInovasi: data.namaInovasi,
+            namaDesa: claim.namaDesa || "Tidak tersedia",
+            namaInovasi: claim.namaInovasi,
             tanggalKlaim: tahunKlaim,
           };
         });
@@ -196,7 +172,7 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({
     };
 
     fetchData();
-  }, [db, innovationId]);
+  }, [innovationId]);
 
   const totalPages = Math.ceil(villages.length / itemsPerPage);
   const currentData = villages.slice(

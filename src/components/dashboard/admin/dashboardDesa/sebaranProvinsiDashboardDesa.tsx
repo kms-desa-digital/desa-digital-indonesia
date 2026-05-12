@@ -15,7 +15,7 @@ import {
     Select,
     useDisclosure,
 } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import { Filter } from "lucide-react";
 import { DownloadIcon } from "@chakra-ui/icons";
@@ -37,13 +37,20 @@ const SebaranDesaDashboard: React.FC = () => {
     // Fetch data desa
     const fetchVillageData = async () => {
         try {
-            const db = getFirestore();
-            const villagesRef = collection(db, "villages");
-            const snapshot = await getDocs(villagesRef);
+            const auth = getAuth();
+            const currentUser = auth.currentUser;
+            const headers: Record<string, string> = {};
+            if (currentUser) {
+                const token = await currentUser.getIdToken();
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch("/api/villages", { headers });
+            const dataRaw = await response.json();
+            const villages = dataRaw.villages || [];
 
             const villageList: any[] = [];
-            snapshot.forEach((doc) => {
-                const data = doc.data();
+            villages.forEach((data: any) => {
                 if (
                     data.namaDesa &&
                     data.lokasi?.provinsi?.label &&
@@ -51,12 +58,11 @@ const SebaranDesaDashboard: React.FC = () => {
                     data.lokasi?.kecamatan?.label
                 ) {
                     villageList.push({
-                        name: data.namaDesa.trim(),
+                        name: data.namaDesa?.label ? data.namaDesa.label.trim() : typeof data.namaDesa === 'string' ? data.namaDesa.trim() : "",
                         provinsi: data.lokasi.provinsi.label.trim(),
                         kabupaten: data.lokasi.kabupatenKota.label.trim(),
                         kecamatan: data.lokasi.kecamatan.label.trim(),
                     });
-                    console.log("✅ Desa dimasukkan:", villageList[villageList.length - 1]);
                 }
             });
 

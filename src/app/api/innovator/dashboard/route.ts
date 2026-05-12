@@ -59,7 +59,17 @@ export async function GET(request: NextRequest) {
     const innovator = await db.collection('innovators').findOne(innovatorQuery)
 
     if (!innovator) {
-      return NextResponse.json({ message: 'Innovator profile not found' }, { status: 404 })
+      return NextResponse.json({
+        message: 'Innovator profile not found',
+        innovator: null,
+        totalInnovations: 0,
+        verifiedInnovations: 0,
+        pendingInnovations: 0,
+        rejectedInnovations: 0,
+        top3Innovations: [],
+        categoryStats: [],
+        mapVillages: []
+      }, { status: 200 })
     }
 
     // 2. Siapkan filter cerdas untuk inovasi (karena innovatorId di database bisa berupa userId atau profile _id)
@@ -90,12 +100,54 @@ export async function GET(request: NextRequest) {
       status: 'Ditolak'
     })
 
+    // 3. Ambil Top 3 Innovations
+    const top3InnovationsData = await db.collection('innovations')
+      .find(innovationFilter)
+      .sort({ jumlahKlaim: -1 })
+      .limit(3)
+      .toArray();
+
+    const top3Innovations = top3InnovationsData.map(i => ({
+      name: i.namaInovasi || '',
+      totalKlaim: i.jumlahKlaim || 0,
+      kategori: i.kategori || ''
+    }));
+
+    // 4. Category Stats
+    const allInnovations = await db.collection('innovations').find(innovationFilter).toArray();
+    const categoryMap: Record<string, number> = {};
+    allInnovations.forEach(i => {
+      const kat = i.kategori || 'Uncategorized';
+      categoryMap[kat] = (categoryMap[kat] || 0) + 1;
+    });
+    const categoryStats = Object.keys(categoryMap).map(kat => ({ kategori: kat, total: categoryMap[kat] }));
+
+    // 5. Map Villages (Desa yang mengklaim inovasi innovator ini)
+    const claims = await db.collection('claimInnovations').find({ inovatorId: targetUserId }).toArray();
+    // jika di database inovatorId juga ada yg pakai userId profil, pastikan mencari klaim dgn dua ID tersebut
+    if (claims.length === 0 && innovator.userId) {
+       const claims2 = await db.collection('claimInnovations').find({ inovatorId: innovator.userId }).toArray();
+       claims.push(...claims2);
+    }
+    
+    const desaIds = [...new Set(claims.map(c => c.desaId).filter(Boolean))];
+    const villageData = await db.collection('villages').find({ userId: { $in: desaIds } }).toArray();
+    
+    const mapVillages = villageData.map(v => ({
+      name: v.namaDesa || '',
+      lat: v.latitude || 0,
+      lng: v.longitude || 0
+    })).filter(v => v.lat && v.lng);
+
     return NextResponse.json({
       innovator,
       totalInnovations,
       verifiedInnovations,
       pendingInnovations,
-      rejectedInnovations
+      rejectedInnovations,
+      top3Innovations,
+      categoryStats,
+      mapVillages
     })
   } catch (error) {
     console.error('Error fetching innovator dashboard:', error)

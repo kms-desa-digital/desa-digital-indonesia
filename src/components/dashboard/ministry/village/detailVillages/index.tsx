@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
+import { getVillages } from 'Services/villageServices';
 import {
   Box, Text, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Flex, Button, Image, IconButton, Menu, MenuButton, MenuList, MenuItem
 } from '@chakra-ui/react';
@@ -47,33 +47,36 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
       if (!selectedCategory) return;
 
       setLoading(true);
-      const db = getFirestore();
-      const desaRef = collection(db, 'villages');
-      const q = query(desaRef, where('kategori', '==', selectedCategory));
-      const snapshot = await getDocs(q);
+      try {
+        const responseData = await getVillages();
+        const villages = (responseData as any).villages || [];
 
-      const capitalizeWords = (str: string) =>
-        str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+        const capitalizeWords = (str: string) =>
+          str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 
-      const list: Implementation[] = snapshot.docs
-        .map((doc) => {
-          const d = doc.data();
-          const lokasi = d.lokasi ?? {};
+        const list: Implementation[] = villages
+          .filter((d: any) => d.kategori === selectedCategory)
+          .map((d: any) => {
+            const lokasi = d.lokasi ?? {};
 
-          return {
-            desa: capitalizeWords(lokasi.desaKelurahan?.label ?? "-"),
-            provinsi: capitalizeWords(lokasi.provinsi?.label ?? "-"),
-            kabupaten: capitalizeWords(lokasi.kabupatenKota?.label ?? "-"),
-            kecamatan: capitalizeWords(lokasi.kecamatan?.label ?? "-"),
-            potensi: d.potensi ?? "-",
-            idm: String(d.idm) ?? "-",
-          };
-        })
-        .filter(d => d.desa && d.provinsi && d.idm && d.idm !== 'ND' && d.idm !== '-' && d.idm !== '');
+            return {
+              desa: capitalizeWords(lokasi.desaKelurahan?.label ?? "-"),
+              provinsi: capitalizeWords(lokasi.provinsi?.label ?? "-"),
+              kabupaten: capitalizeWords(lokasi.kabupatenKota?.label ?? "-"),
+              kecamatan: capitalizeWords(lokasi.kecamatan?.label ?? "-"),
+              potensi: d.potensi ?? "-",
+              idm: String(d.idm) ?? "-",
+            };
+          })
+          .filter((d: Implementation) => d.desa && d.provinsi && d.idm && d.idm !== 'ND' && d.idm !== '-' && d.idm !== '');
 
-      setData(list);
-      setCurrentPage(1);
-      setLoading(false);
+        setData(list);
+        setCurrentPage(1);
+      } catch (error) {
+        console.error("Error fetching village data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();

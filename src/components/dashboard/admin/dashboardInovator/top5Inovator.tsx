@@ -22,7 +22,7 @@ import {
   LabelList,
 } from "recharts";
 import { useEffect, useState } from "react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -49,55 +49,41 @@ const Top5Inovator: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const db = getFirestore();
-        const innovatorsRef = collection(db, "innovators");
-        const snapshot = await getDocs(innovatorsRef);
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) return;
 
-        const limitWords = (text: string) =>
-          text.split(" ").slice(0, 3).join(" ");
+        const token = await user.getIdToken();
+        const response = await fetch('/api/admin/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-        // Ambil semua data + sorting benar
-        let allData = snapshot.docs
-          .map((doc) => {
-            const data = doc.data();
-            return {
-              namaInovator: data.namaInovator
-                ? limitWords(data.namaInovator)
-                : "Tidak Ada Nama",
-              namaInovatorFull: data.namaInovator || "Tidak Ada Nama",
-              jumlahInovasi: data.jumlahInovasi || 0,
-              jumlahDesaDampingan: data.jumlahDesaDampingan || 0,
-            };
-          })
-          .sort((a, b) => {
-            if (b.jumlahInovasi !== a.jumlahInovasi) {
-              return b.jumlahInovasi - a.jumlahInovasi;
-            }
-            return a.namaInovatorFull.localeCompare(b.namaInovatorFull);
-          });
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        const data = await response.json();
 
-        // ✅ Untuk tabel (semua data)
+        // Ambil top5Innovators dari API
+        const top5 = data.top5Innovators || [];
+
+        // ✅ Untuk tabel (gunakan data dari API)
         setInovatorData(
-          allData.map((item, index) => ({
+          top5.map((item: any, index: number) => ({
             no: index + 1,
-            namaInovator: item.namaInovator,
-            jumlahInovasi: item.jumlahInovasi,
-            jumlahDesaDampingan: item.jumlahDesaDampingan,
+            namaInovator: item.name || "-",
+            jumlahInovasi: item.totalInovasi || 0,
+            jumlahDesaDampingan: 0, // Tidak direturn oleh API baru
           }))
         );
 
-        // ✅ Untuk chart (top 5 sesuai sorting sama dengan tabel)
-        const top5 = allData.slice(0, 5);
-
-        // 🔥 Tetap pertahankan custom order & tinggi batang
+        // ✅ Untuk chart (top 5 sudah disorting oleh API)
+        // Tetap pertahankan custom order & tinggi batang
         const customOrder = [3, 1, 0, 2, 4];
         const customHeights = [20, 40, 50, 35, 15];
         const customRanks = ["4th", "2nd", "1st", "3rd", "5th"];
 
         const rankedChartData = customOrder.map((index, rankIndex) => ({
-          name: top5[index]?.namaInovator || "",
+          name: top5[index]?.name || "",
           value: customHeights[rankIndex],
-          valueAsli: top5[index]?.jumlahInovasi || 0,
+          valueAsli: top5[index]?.totalInovasi || 0,
           rank: customRanks[rankIndex],
         }));
 

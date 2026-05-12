@@ -1,6 +1,5 @@
 import { Box, Flex, Text, Button } from "@chakra-ui/react";
 import { Table, Thead, Tbody, Tr, Th, Td, TableContainer, useDisclosure, ModalOverlay, Modal, ModalContent, ModalHeader, ModalCloseButton, ModalBody, Select, ModalFooter } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs, where, query } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
@@ -68,7 +67,6 @@ const KategoriInovasiDesa: React.FC = () => {
 
     const fetchKategoriData = async () => {
         try {
-            const db = getFirestore();
             const auth = getAuth();
             const user = auth.currentUser;
 
@@ -77,54 +75,25 @@ const KategoriInovasiDesa: React.FC = () => {
                 return;
             }
 
-            // 1. Ambil namaDesa dari villages berdasarkan userId
-            const desaQuery = query(
-                collection(db, "villages"),
-                where("userId", "==", user.uid)
-            );
-            const desaSnap = await getDocs(desaQuery);
+            const token = await user.getIdToken();
+            const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
-            let namaDesa = "";
-            if (!desaSnap.empty) {
-                const desaData = desaSnap.docs[0].data();
-                namaDesa = desaData?.namaDesa?.trim().toLowerCase() || "";
-            } else {
-                console.warn("Desa tidak ditemukan");
-                return;
-            }
-
-            // 2. Ambil data claimInnovations yang terverifikasi terkait dengan desa
-            const claimQuery = query(
-                collection(db, "claimInnovations"),
-                where("desaId", "==", user.uid)
-            );
-            const claimSnap = await getDocs(claimQuery);
-
-            // 3. Ambil inovasiId yang terkait dengan klaim desa ini
-            const inovasiIds = claimSnap.docs.map(doc => doc.data().inovasiId);
-
-            // 4. Ambil inovasi yang terkait dengan klaim desa
-            const inovasiSnap = await getDocs(
-                query(collection(db, "innovations"), where("__name__", "in", inovasiIds))
-            );
-
-            // 5. Tampilkan kategori dari inovasi yang diterapkan pada desa
+            if (!response.ok) throw new Error("Failed to fetch dashboard data");
+            const data = await response.json();
+            
+            const categoryStats = data.categoryStats || [];
+            
             const kategoriCount: Record<string, number> = {};
-
-            inovasiSnap.forEach((doc) => {
-                const data = doc.data();
-                const kategori = data.kategori;
-
-                if (kategori && typeof kategori === "string" && kategori.trim()) {
-                    const formatted = kategori.charAt(0).toUpperCase() + kategori.slice(1).toLowerCase();
-                    kategoriCount[formatted] = (kategoriCount[formatted] || 0) + 1;
+            categoryStats.forEach((item: any) => {
+                if (item.kategori) {
+                    const formatted = item.kategori.charAt(0).toUpperCase() + item.kategori.slice(1).toLowerCase();
+                    kategoriCount[formatted] = (kategoriCount[formatted] || 0) + (item.total || 0);
                 }
             });
 
-            console.log("Kategori yang diterapkan pada desa:", kategoriCount);
-
-            // 6. Set kategori data
-            setAllKategoriData(kategoriCount); // set as object
+            setAllKategoriData(kategoriCount);
 
             const kondisiArray = Object.entries(kategoriCount).map(([kategori, jumlah]) => ({
                 kategori,
@@ -133,28 +102,22 @@ const KategoriInovasiDesa: React.FC = () => {
 
             setKondisiData(kondisiArray);
 
-            // 7. Buat top kategori jika ada
             const sortedKategori = Object.entries(kategoriCount)
                 .map(([name, value]) => ({ name, value }))
                 .sort((a, b) => b.value - a.value);
 
-            // 8. Sesuaikan jumlah kategori yang akan ditampilkan
-            const displayedKategori = sortedKategori.slice(0, 5); // Menampilkan hingga 5 kategori
+            const displayedKategori = sortedKategori.slice(0, 5);
 
-            // 9. Handle jika data < 5 (tambah dummy untuk kategori yang kosong)
             while (displayedKategori.length < 5) {
                 displayedKategori.push({
-                    name: "",  // Nama kosong untuk kategori yang tidak ada
-                    value: 0,  // Nilai kosong untuk kategori yang tidak ada
+                    name: "",
+                    value: 0,
                 });
             }
 
-            // 10. Rank kategori berdasarkan urutan dan atur data bar
             const customOrder = [3, 1, 0, 2, 4];
-            const customHeights = [20, 40, 50, 35, 15];  // Menjaga tinggi tetap sesuai urutan
             const customRanks = ["4th", "2nd", "1st", "3rd", "5th"];
 
-            // 11. Rank kategori berdasarkan urutan dan atur data bar
             const rankedData = customOrder.map((index, rankIndex) => {
                 const item = displayedKategori[index];
                 return {
@@ -162,13 +125,11 @@ const KategoriInovasiDesa: React.FC = () => {
                     value: item?.value || 0,
                     valueAsli: item?.value || 0,
                     rank: customRanks[rankIndex],
-                    isEmpty: item?.name === "" // Tandai kategori kosong
+                    isEmpty: item?.name === ""
                 };
             });
 
-            // 12. Set bar data untuk ditampilkan
             setBarData(rankedData);
-
 
         } catch (error) {
             console.error("Error fetching kategori data:", error);
@@ -256,8 +217,7 @@ const KategoriInovasiDesa: React.FC = () => {
             >
                 {/* Table Container */}
                 <TableContainer maxWidth="100%" width="auto" borderRadius="md">
-                    <Table variant="simple" size="sm"> {/* Mengurangi ukuran tabel */}
-                        {/* Header Tabel */}
+                    <Table variant="simple" size="sm">
                         <Thead bg="#C6D8D0">
                             <Tr>
                                 <Th p={3} fontSize="8px" textAlign="center">No</Th>
@@ -265,8 +225,6 @@ const KategoriInovasiDesa: React.FC = () => {
                                 <Th p={1} fontSize="8px" textAlign="center">Jumlah</Th>
                             </Tr>
                         </Thead>
-
-                        {/* Body Tabel */}
                         <Tbody>
                             {kondisiData
                                 .slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)

@@ -1,12 +1,8 @@
 import { useEffect, useState } from "react";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getInnovators } from "Services/innovatorServices";
+import { getInnovation } from "Services/innovationServices";
+import { getClaims } from "Services/villageServices";
 import { podiumStyles } from "./_topVillagesStyle";
 
 type TopItem = {
@@ -25,7 +21,6 @@ const TopVillages = () => {
   useEffect(() => {
     const fetchTopVillages = async () => {
       setLoading(true);
-      const db = getFirestore();
       const auth = getAuth();
       const currentUser = auth.currentUser;
 
@@ -36,66 +31,52 @@ const TopVillages = () => {
       }
 
       try {
-        const profilQuery = query(
-          collection(db, "innovators"),
-          where("id", "==", currentUser.uid)
-        );
-        const profilSnapshot = await getDocs(profilQuery);
+        // Fetch innovator profile via MongoDB API
+        const innovatorsRes = await getInnovators();
+        const allInnovators = (innovatorsRes as any).data || [];
+        const myProfile = allInnovators.find((i: any) => i.id === currentUser.uid);
 
-        if (profilSnapshot.empty) {
+        if (!myProfile) {
           setTopVillages([]);
           setLoading(false);
           return;
         }
 
-        const profilDoc = profilSnapshot.docs[0];
-        const inovatorId = profilDoc.id;
-        setInovatorProfile(profilDoc.data());
+        const inovatorId = myProfile._id || myProfile.id;
+        setInovatorProfile(myProfile);
 
-        const inovasiQuery = query(
-          collection(db, "innovations"),
-          where("innovatorId", "==", inovatorId)
+        // Fetch innovations by this innovator via MongoDB API
+        const innovationRes = await getInnovation();
+        const allInnovations = innovationRes.innovations || [];
+        const myInnovations = allInnovations.filter(
+          (i: any) => i.innovatorId === inovatorId
         );
-        const inovasiSnapshot = await getDocs(inovasiQuery);
 
-        if (inovasiSnapshot.empty) {
+        if (myInnovations.length === 0) {
           setTopVillages([]);
           setLoading(false);
           return;
         }
 
-        const inovasiIds = inovasiSnapshot.docs.map((doc) => doc.id);
+        const inovasiIds = myInnovations.map((i: any) => i._id || i.id);
 
-        // Chunk array helper
-        const chunkArray = <T,>(arr: T[], size: number): T[][] => {
-          const chunks: T[][] = [];
-          for (let i = 0; i < arr.length; i += size) {
-            chunks.push(arr.slice(i, i + size));
-          }
-          return chunks;
-        };
+        // Fetch all claims via MongoDB API and filter client-side
+        const claimsRes = await getClaims();
+        const allClaims = (claimsRes as any).claims || [];
+        const relevantClaims = allClaims.filter(
+          (claim: any) => claim.inovasiId && inovasiIds.includes(claim.inovasiId)
+        );
 
-        const chunks = chunkArray(inovasiIds, 10);
-        type DesaDoc = { desaId?: string; namaDesa?: string };
-        let desaDocs: DesaDoc[] = [];
-
-        for (const chunk of chunks) {
-          const desaQuery = query(
-            collection(db, "claimInnovations"),
-            where("inovasiId", "in", chunk)
-          );
-          const snapshot = await getDocs(desaQuery);
-          desaDocs.push(...snapshot.docs.map((doc) => doc.data()));
-        }
-
-        // Count namaDesa occurrences
+        // Count occurrences per desaId
         const countMap: Record<string, { namaDesa: string; count: number }> = {};
-        desaDocs.forEach((item: { desaId?: string; namaDesa?: string }) => {
-          if (item.desaId && item.namaDesa) {
-            if (!countMap[item.desaId]) {
-              countMap[item.desaId] = { namaDesa: item.namaDesa, count: 0 };
+        relevantClaims.forEach((claim: any) => {
+          const desaId = claim.desaId;
+          const namaDesa = claim.namaDesa;
+          if (desaId && namaDesa) {
+            if (!countMap[desaId]) {
+              countMap[desaId] = { namaDesa, count: 0 };
             }
-            countMap[item.desaId].count++;
+            countMap[desaId].count++;
           }
         });
 

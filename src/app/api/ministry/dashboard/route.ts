@@ -45,6 +45,17 @@ export async function GET(request: NextRequest) {
           users: {
             total: totalUsers,
           },
+          pieChart: {
+            villages: totalVillages,
+            innovators: totalInnovators,
+            innovations: totalInnovations
+          },
+          mapMarkers: [
+            ...(await db.collection('villages').find({ latitude: { $exists: true } }).toArray())
+                .map(v => ({ name: v.namaDesa || '', type: 'village', lat: v.latitude, lng: v.longitude })),
+            ...(await db.collection('innovators').find({ latitude: { $exists: true } }).toArray())
+                .map(i => ({ name: i.namaInovator || '', type: 'innovator', lat: i.latitude, lng: i.longitude }))
+          ].filter(m => m.lat && m.lng)
         },
       },
       { status: 200 }

@@ -30,10 +30,10 @@ export const Background = styled.div.withConfig({
   position: relative;
 `;
 
-export const Container = styled.div<{ gapSize?: number }>`
+export const Container = styled.div<{ $gapSize?: number }>`
   display: flex;
   flex-direction: column;
-  gap: ${({ gapSize }) => gapSize || 8}px;
+  gap: ${({ $gapSize }) => $gapSize || 8}px;
 `;
 
 export const Title = styled.p`

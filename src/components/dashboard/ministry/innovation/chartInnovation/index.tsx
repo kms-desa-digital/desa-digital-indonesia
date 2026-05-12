@@ -24,7 +24,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getInnovation } from "Services/innovationServices";
 import YearRangeFilter from "./dateFilter";
 import filterIcon from "@public/icons/icon-filter.svg";
 import downloadIcon from "@public/icons/icon-download.svg";
@@ -33,8 +33,6 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-
-const db = getFirestore();
 
 type BarValue = {
   id: number;
@@ -101,38 +99,43 @@ const ChartInnovation = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const snapshot = await getDocs(collection(db, "innovations"));
-      const dataPerYear: Record<number, Record<string, number>> = {};
-      const allData: any[] = [];
+      try {
+        const responseData = await getInnovation();
+        const innovationsData = responseData.innovations || [];
+        const dataPerYear: Record<number, Record<string, number>> = {};
+        const allData: any[] = [];
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        const year = data.tahunDibuat;
-        const kategori = data.kategori;
+        innovationsData.forEach((data: any) => {
+          const year = data.tahunDibuat;
+          const kategori = data.kategori;
 
-        if (!year || !kategori) return;
-        if (year < fromYear || year > toYear) return;
+          if (!year || !kategori) return;
+          if (year < fromYear || year > toYear) return;
 
-        if (!dataPerYear[year]) {
-          dataPerYear[year] = {};
-          innovationCategories.forEach((cat) => {
-            dataPerYear[year][cat] = 0;
-          });
-        }
-        if (innovationCategories.includes(kategori)) {
-          dataPerYear[year][kategori] += 1;
-        }
+          if (!dataPerYear[year]) {
+            dataPerYear[year] = {};
+            innovationCategories.forEach((cat) => {
+              dataPerYear[year][cat] = 0;
+            });
+          }
+          if (innovationCategories.includes(kategori)) {
+            dataPerYear[year][kategori] += 1;
+          }
 
-        allData.push(data);
-      });
+          allData.push(data);
+        });
 
-      const formatted = Object.entries(dataPerYear)
-        .map(([year, counts]) => ({ year: +year, ...counts }))
-        .sort((a, b) => a.year - b.year);
+        const formatted = Object.entries(dataPerYear)
+          .map(([year, counts]) => ({ year: +year, ...counts }))
+          .sort((a, b) => a.year - b.year);
 
-      setChartData(formatted);
-      setInovasiDetails(allData);
-      setLoading(false);
+        setChartData(formatted);
+        setInovasiDetails(allData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();

@@ -12,7 +12,7 @@ import {
     Icon,
     TableContainer,
 } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import {
@@ -96,14 +96,21 @@ const SebaranPotensiDesa: React.FC = () => {
 
     const fetchPotensiData = async () => {
         try {
-            const db = getFirestore();
-            const villagesRef = collection(db, "villages");
-            const snapshot = await getDocs(villagesRef);
+            const auth = getAuth();
+            const currentUser = auth.currentUser;
+            const headers: Record<string, string> = {};
+            if (currentUser) {
+                const token = await currentUser.getIdToken();
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch("/api/villages", { headers });
+            const dataRaw = await response.json();
+            const villages = dataRaw.villages || [];
 
             const potensiCount: Record<string, number> = {};
 
-            snapshot.forEach((doc) => {
-                const data = doc.data();
+            villages.forEach((data: any) => {
                 if (Array.isArray(data.potensiDesa)) {
                     data.potensiDesa.forEach((potensiItem: string) => {
                         const potensiSplit = potensiItem.split(',').map(p => p.trim());
@@ -112,6 +119,12 @@ const SebaranPotensiDesa: React.FC = () => {
                             const formattedPotensi = toTitleCase(potensi);
                             potensiCount[formattedPotensi] = (potensiCount[formattedPotensi] || 0) + 1;
                         });
+                    });
+                } else if (typeof data.potensiDesa === 'string') {
+                    const potensiSplit = data.potensiDesa.split(',').map((p: string) => p.trim());
+                    potensiSplit.forEach((potensi: string) => {
+                        const formattedPotensi = toTitleCase(potensi);
+                        potensiCount[formattedPotensi] = (potensiCount[formattedPotensi] || 0) + 1;
                     });
                 }
             });

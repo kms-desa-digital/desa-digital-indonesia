@@ -14,13 +14,45 @@ import {
     DrawerHeader,
 } from "@chakra-ui/react";
 import { FaSeedling } from "react-icons/fa6";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { getAuth } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { paths } from "Consts/path";
 
 const Rekomendasi = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const router = useRouter();
+    const [rekomendasi, setRekomendasi] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const auth = getAuth();
+                const user = auth.currentUser;
+                if (!user) return;
+
+                const token = await user.getIdToken();
+                const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.recommendations && data.recommendations.length > 0) {
+                        setRekomendasi(data.recommendations[0]);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching recommendation:", error);
+            }
+        };
+
+        fetchDashboardData();
+    }, []);
+
+    const namaInovasi = rekomendasi?.name || "eFeeder";
+    const namaInovator = rekomendasi?.innovator || "eFishery";
+    const linkDetail = rekomendasi?.id ? `/innovation/detail/${rekomendasi.id}` : "/innovation/detail/8HeAYMhzlFQvdUgoSXpX";
 
     return (
         <>
@@ -49,10 +81,10 @@ const Rekomendasi = () => {
                     </Box>
                     <Box>
                         <Text fontSize="md" fontWeight="bold" color="green.700">
-                            eFeeder
+                            {namaInovasi}
                         </Text>
                         <Text fontSize="sm" color="gray.600">
-                            Inovator: eFishery
+                            Inovator: {namaInovator}
                         </Text>
                     </Box>
                 </Flex>
@@ -112,10 +144,10 @@ const Rekomendasi = () => {
                             py={8}
                         >
                             <Text fontWeight="bold" fontSize="lg">
-                                eFeeder
+                                {namaInovasi}
                             </Text>
                             <Text fontSize="sm" mb={4}>
-                                dari eFishery
+                                dari {namaInovator}
                             </Text>
 
                             <Box my={6}>
@@ -144,7 +176,7 @@ const Rekomendasi = () => {
                             fontSize="sm"
                             border="2px"
                             _hover={{ bg: "#2e5e4b" }}
-                            onClick={() => router.push("/innovation/detail/8HeAYMhzlFQvdUgoSXpX")}
+                            onClick={() => router.push(linkDetail)}
                         >
                             Detail Inovasi
                         </Button>

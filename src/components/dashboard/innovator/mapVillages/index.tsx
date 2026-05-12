@@ -23,15 +23,6 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  getDoc,
-  doc,
-} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 import geoData from "@public/indonesia-province-simple.json";
@@ -129,145 +120,66 @@ const Legend = () => {
 };
 
 const MapVillages = () => {
+  const auth = getAuth();
   const [desaPins, setDesaPins] = useState<DesaPin[]>([]);
   const [totals, setTotals] = useState<Record<string, number>>({});
   const [exportData, setExportData] = useState<any[]>([]);
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  const db = getFirestore();
-  const auth = getAuth();
-
   useEffect(() => {
     const fetchDesaPins = async () => {
       const currentUID = auth.currentUser?.uid;
       if (!currentUID) return;
 
-      // Get inovator profile
-      const inovatorSnap = await getDocs(
-        query(collection(db, "innovators"), where("id", "==", currentUID))
-      );
-      const inovatorDoc = inovatorSnap.docs[0];
-      const inovatorId = inovatorDoc?.id;
-      const inovatorData = inovatorDoc?.data();
-      if (!inovatorId || !inovatorData) return;
+      try {
+        const token = await auth.currentUser?.getIdToken();
+        const response = await fetch('/api/innovator/dashboard', {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        });
 
-      // Get inovasi docs by inovatorId
-      const inovasiSnap = await getDocs(
-        query(collection(db, "innovations"), where("innovatorId", "==", inovatorId))
-      );
-      const inovasiDocs = inovasiSnap.docs;
-      const inovasiMap = Object.fromEntries(
-        inovasiDocs.map((doc) => [doc.id, doc.data()])
-      );
-      const inovasiIds = inovasiDocs.map((doc) => doc.id);
-      if (inovasiIds.length === 0) return;
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        const data = await response.json();
 
-      // Get menerapkanInovasi docs filtered by inovasiId in inovasiIds
-      const claimSnap = await getDocs(
-        query(collection(db, "claimInnovations"), where("inovasiId", "in", inovasiIds))
-      );
+        const mapVillages = data.mapVillages || [];
 
-      const pinResults: DesaPin[] = [];
-      const dynamicTotals: Record<string, Set<string>> = {};
-      const exportTemp: any[] = [];
+        const pinResults: DesaPin[] = mapVillages.map((v: any, index: number) => ({
+          desaId: `desa-${index}`,
+          namaDesa: v.name || "Desa",
+          lat: parseFloat(v.lat),
+          lng: parseFloat(v.lng),
+          provinsi: "Unknown",
+          inovasiId: "-",
+          inovasiList: [], // Data spesifik list inovasi tidak tersedia di respon mapVillages
+        }));
 
-      const produkInovator = inovasiDocs
-        .map((doc) => doc.data().namaInovasi)
-        .filter(Boolean)
-        .join(", ");
+        const exportTemp: any[] = mapVillages.map((v: any) => ({
+          namaDesa: v.name || "-",
+          namaInovasi: "-",
+          kategoriInovasi: "-",
+          namaInovator: data.innovator?.namaInovator || "-",
+          desaKelurahan: v.name || "-",
+          kecamatan: "-",
+          kabupatenKota: "-",
+          provinsi: "-",
+          tanggalKlaim: "-",
+          kategoriInovator: "-",
+          tahunDibentuk: "-",
+          targetPengguna: "-",
+          modelBisnis: "-",
+          produk: "-",
+        }));
 
-      for (const docSnap of claimSnap.docs) {
-        const klaimData = docSnap.data();
-        const desaId = klaimData.desaId;
-        const inovasiId = klaimData.inovasiId;
-
-        // Fetch villages data
-        const desaSnap = await getDoc(doc(db, "villages", desaId));
-        if (!desaSnap.exists()) continue;
-        const desaData = desaSnap.data();
-
-        // Fetch inovasi data from map
-        const inovasiData = inovasiMap[inovasiId];
-        if (!inovasiData) continue;
-
-        // Coordinates
-        const lat = desaData.lat || desaData.latitude || desaData.latlong?.[0];
-        const lng = desaData.lng || desaData.longitude || desaData.latlong?.[1];
-        const provinsiRaw = desaData.lokasi.provinsi.label || "Unknown";
-        const provinsi = cleanName(provinsiRaw);
-
-        if (lat && lng) {
-          const existingPin = pinResults.find((p) => p.desaId === desaId);
-
-          if (existingPin) {
-            existingPin.inovasiList = [
-              ...(existingPin.inovasiList || []),
-              inovasiData.namaInovasi,
-            ];
-          } else {
-            pinResults.push({
-              desaId,
-              namaDesa: desaData.namaDesa ?? "Desa",
-              lat,
-              lng,
-              provinsi,
-              inovasiId,
-              inovasiList: [inovasiData.namaInovasi],
-            });
-          }
-
-          if (!dynamicTotals[provinsi]) dynamicTotals[provinsi] = new Set();
-          dynamicTotals[provinsi].add(desaId);
-
-          const capitalizeWords = (str: string) =>
-            str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
-
-          const lokasi = desaData.lokasi || {};
-
-          exportTemp.push({
-            namaDesa: desaData.namaDesa ?? "-",
-            namaInovasi: inovasiData.namaInovasi ?? "-",
-            kategoriInovasi: inovasiData.kategori ?? "-",
-            namaInovator: inovasiData.namaInnovator ?? "-",
-            desaKelurahan: capitalizeWords(desaData.lokasi?.desaKelurahan?.label ?? "-"),
-            kecamatan: capitalizeWords(desaData.lokasi?.kecamatan?.label ?? "-"),
-            kabupatenKota: capitalizeWords(desaData.lokasi?.kabupatenKota?.label ?? "-"),
-            provinsi: capitalizeWords(desaData.lokasi?.provinsi?.label ?? "-"),
-            tanggalKlaim: klaimData.createdAt?.toDate?.().getFullYear?.() ?? "-",
-            kategoriInovator: inovatorData.kategori ?? "-",
-            tahunDibentuk: inovatorData.tahunDibentuk ?? "-",
-            targetPengguna: inovatorData.targetPengguna ?? "-",
-            modelBisnis: inovatorData.modelBisnis ?? "-",
-            produk: produkInovator || "-",
-          });
-        }
+        setExportData(exportTemp);
+        setDesaPins(pinResults);
+        setTotals({}); // GeoJSON tidak diwarnai karena info provinsi tidak ada di response baru
+      } catch (error) {
+        console.error("Error fetching map villages:", error);
       }
-
-      exportTemp.sort((a, b) => {
-        const yearA = typeof a.tanggalKlaim === "number" ? a.tanggalKlaim : 0;
-        const yearB = typeof b.tanggalKlaim === "number" ? b.tanggalKlaim : 0;
-
-        // Mengurutkan data sesuai tahun klaim, kemudian abjad nama desa
-        if (yearB !== yearA) return yearB - yearA;
-        return a.namaDesa.localeCompare(b.namaDesa);
-      });
-
-      setExportData(exportTemp);
-      console.log("Exported Data:", exportTemp);
-
-      const totalsCount: Record<string, number> = {};
-      Object.keys(dynamicTotals).forEach((prov) => {
-        totalsCount[prov] = dynamicTotals[prov].size;
-      });
-
-      setExportData(exportTemp);
-      setDesaPins(pinResults);
-      setTotals(totalsCount);
     };
 
     fetchDesaPins();
-  }, [auth.currentUser, db]);
+  }, [auth.currentUser]);
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();

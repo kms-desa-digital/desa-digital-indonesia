@@ -1,12 +1,8 @@
 import { useEffect, useState } from "react";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs
-} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getInnovators } from "Services/innovatorServices";
+import { getInnovation } from "Services/innovationServices";
+import { getClaims } from "Services/villageServices";
 import { podiumStyles } from "./_topInnovationsStyle";
 
 const TopInnovations = () => {
@@ -19,72 +15,59 @@ const TopInnovations = () => {
   useEffect(() => {
     const fetchTopInnovations = async () => {
       setLoading(true);
-      const db = getFirestore();
       const auth = getAuth();
       const currentUser = auth.currentUser;
 
       if (!currentUser) return;
 
       try {
-        const profilQuery = query(
-          collection(db, "innovators"),
-          where("id", "==", currentUser.uid)
-        );
-        const profilSnapshot = await getDocs(profilQuery);
+        // Fetch innovator profile
+        const innovatorsRes = await getInnovators();
+        const allInnovators = (innovatorsRes as any).data || [];
+        const myProfile = allInnovators.find((i: any) => i.id === currentUser.uid);
 
-        if (profilSnapshot.empty) {
+        if (!myProfile) {
           setTopInnovations([]);
           setLoading(false);
           return;
         }
 
-        const profilDoc = profilSnapshot.docs[0];
-        const inovatorId = profilDoc.id;
-        setInovatorProfile(profilDoc.data());
+        const inovatorId = myProfile._id || myProfile.id;
+        setInovatorProfile(myProfile);
 
-        // Ambil semua inovasi dari inovator
-        const inovasiQuery = query(
-          collection(db, "innovations"),
-          where("innovatorId", "==", inovatorId)
+        // Fetch innovations by this innovator
+        const innovationRes = await getInnovation();
+        const allInnovations = innovationRes.innovations || [];
+        const myInnovations = allInnovations.filter(
+          (i: any) => i.innovatorId === inovatorId
         );
-        const inovasiSnapshot = await getDocs(inovasiQuery);
 
-        const inovasiData = inovasiSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as { namaInovasi: string }),
-        }));
-
-        if (inovasiData.length === 0) {
+        if (myInnovations.length === 0) {
           setTopInnovations([]);
           return;
         }
 
-        // Ambil semua data berdasarkan inovasiId
-        const inovasiIds = inovasiData.map((item) => item.id);
+        // Fetch claims
+        const claimsRes = await getClaims();
+        const allClaims = (claimsRes as any).claims || [];
 
-        const claimQuery = query(
-          collection(db, "claimInnovations"),
-          where("inovasiId", "in", inovasiIds)
-        );
-        const claimSnapshot = await getDocs(claimQuery);
-
-        // Hitung frekuensi inovasiId
+        // Count claims per inovasiId
+        const inovasiIds = myInnovations.map((i: any) => i._id || i.id);
         const freqMap: Record<string, number> = {};
-        claimSnapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.inovasiId) {
-            freqMap[data.inovasiId] = (freqMap[data.inovasiId] || 0) + 1;
+        allClaims.forEach((claim: any) => {
+          if (claim.inovasiId && inovasiIds.includes(claim.inovasiId)) {
+            freqMap[claim.inovasiId] = (freqMap[claim.inovasiId] || 0) + 1;
           }
         });
 
-        // Gabungkan ID dengan nama inovasi
-        const countInovasi = inovasiData
-          .filter((item) => item.namaInovasi)
-          .map((item) => ({
+        // Combine with innovation names
+        const countInovasi = myInnovations
+          .filter((item: any) => item.namaInovasi)
+          .map((item: any) => ({
             name: item.namaInovasi,
-            count: freqMap[item.id] || 0,
+            count: freqMap[item._id || item.id] || 0,
           }))
-          .filter((item) => item.count > 0);
+          .filter((item: any) => item.count > 0);
 
         if (countInovasi.length === 0) {
           setTopInnovations([]);

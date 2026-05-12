@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Box, Text, Flex, Link } from '@chakra-ui/react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import NextLink from 'next/link';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import { paths } from 'Consts/path';
+import { getAuth } from 'firebase/auth';
 import {
   ChartContainer,
   ChartWrapper,
@@ -102,40 +102,19 @@ const PieChartInnovation = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const db = getFirestore();
       try {
-        const snapshot = await getDocs(collection(db, 'innovations'));
-        const kategoriCounts: Record<string, number> = {};
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
 
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          const kategori = data.kategori || 'Tidak diketahui';
-          kategoriCounts[kategori] = (kategoriCounts[kategori] || 0) + 1;
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/ministry/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Sort by count, descending
-        const sorted = Object.entries(kategoriCounts).sort((a, b) => b[1] - a[1]);
-
-        // Take top 4
-        const topFour = sorted.slice(0, 4);
-        const others = sorted.slice(4);
-
-        const lainnyaTotal = others.reduce((sum, [, count]) => sum + count, 0);
-
-        const combined = [...topFour];
-        if (lainnyaTotal > 0) {
-          combined.push(['Lainnya', lainnyaTotal]);
-        }
-
-        const total = combined.reduce((acc, [, val]) => acc + val, 0);
-
-        const formattedData = combined.map(([name, value]) => ({
-          name,
-          value,
-          percentage: ((value / total) * 100).toFixed(1),
-        }));
-
-        setChartData(formattedData);
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        // Karena API tidak mereturn statistik berdasarkan kategori inovasi, kita kembalikan kosong.
+        setChartData([]);
       } catch (error) {
         console.error("Error fetching inovasi data:", error);
       } finally {

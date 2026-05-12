@@ -18,7 +18,6 @@ import {
 import downloadIcon from "@public/icons/icon-download.svg";
 
 import { getAuth } from "firebase/auth";
-import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -88,50 +87,41 @@ const TableInnovator = () => {
   useEffect(() => {
     const fetchData = async () => {
       const auth = getAuth();
-      const db = getFirestore();
       const currentUser = auth.currentUser;
 
       if (!currentUser) return console.warn("User not authenticated");
 
       try {
-        const profilRef = collection(db, "innovators");
-        const qProfil = query(profilRef, where("id", "==", currentUser.uid));
-        const profilSnap = await getDocs(qProfil);
-
-        if (profilSnap.empty) return console.warn("No Inovator found.");
-
-        const profilDoc = profilSnap.docs[0];
-        const profilData = profilDoc.data();
-        const profilInovatorId = profilDoc.id;
-
-        const inovasiRef = collection(db, "innovations");
-        const qInovasi = query(inovasiRef, where("innovatorId", "==", profilInovatorId));
-        const inovasiSnap = await getDocs(qInovasi);
-
-        const fetched: Implementation[] = inovasiSnap.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            namaInovator: data.namaInnovator || "-",
-            namaInovasi: data.namaInovasi || "-",
-            kategoriInovasi: data.kategori || "-",
-            tahunDibuat: data.tahunDibuat || 0,
-          };
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
+
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        const data = await response.json();
+
+        const inovatorName = data.innovator?.namaInovator || "-";
+        
+        // Memetakan top3Innovations karena API tidak mereturn semua inovasi
+        const fetched: Implementation[] = (data.top3Innovations || []).map((item: any) => ({
+          namaInovator: inovatorName,
+          namaInovasi: item.name || "-",
+          kategoriInovasi: item.kategori || "-",
+          tahunDibuat: "-", // Tidak ada di response baru
+        }));
 
         const produkInovator = fetched.map(item => item.namaInovasi).filter(Boolean).join(", ");
 
         setInovatorProfile({
-          namaInovator: profilData.namaInovator || "-",
-          kategoriInovator: profilData.kategori || "-",
-          tahunDibentuk: profilData.tahunDibentuk || "-",
-          targetPengguna: profilData.targetPengguna || "-",
-          modelBisnis: profilData.modelBisnis || "-",
+          namaInovator: inovatorName,
+          kategoriInovator: data.innovator?.kategori || "-",
+          tahunDibentuk: data.innovator?.tahunDibentuk || "-",
+          targetPengguna: data.innovator?.targetPengguna || "-",
+          modelBisnis: data.innovator?.modelBisnis || "-",
           produk: produkInovator || "-",
         });
 
-        setImplementationData(
-          fetched.sort((a, b) => a.namaInovasi.localeCompare(b.namaInovasi))
-        );
+        setImplementationData(fetched);
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -278,16 +268,24 @@ const TableInnovator = () => {
             </Tr>
           </Thead>
           <Tbody>
-            {currentData.map((item, index) => (
-              <Tr key={index}>
-                <Td sx={tableCellStyle}>
-                  {(currentPage - 1) * itemsPerPage + index + 1}
+            {currentData.length > 0 ? (
+              currentData.map((item, index) => (
+                <Tr key={index}>
+                  <Td sx={tableCellStyle}>
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </Td>
+                  <Td sx={tableCellStyle}>{item.namaInovasi}</Td>
+                  <Td sx={tableCellStyle}>{item.kategoriInovasi}</Td>
+                  <Td sx={tableCellStyle}>{item.tahunDibuat}</Td>
+                </Tr>
+              ))
+            ) : (
+              <Tr>
+                <Td colSpan={4} textAlign="center" py={4} color="gray.500">
+                  Belum ada data inovasi
                 </Td>
-                <Td sx={tableCellStyle}>{item.namaInovasi}</Td>
-                <Td sx={tableCellStyle}>{item.kategoriInovasi}</Td>
-                <Td sx={tableCellStyle}>{item.tahunDibuat}</Td>
               </Tr>
-            ))}
+            )}
           </Tbody>
         </Table>
       </TableContainer>

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Box, Text, Flex, Link, Spinner } from "@chakra-ui/react";
 import NextLink from 'next/link';
-import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { paths } from "Consts/path";
 import {
@@ -23,82 +22,30 @@ const TopInnovations = () => {
   useEffect(() => {
     const fetchTopInnovations = async () => {
       setLoading(true);
-      const db = getFirestore();
       const auth = getAuth();
       const currentUser = auth.currentUser;
 
-      if (!currentUser) return console.warn("User not authenticated");
+      if (!currentUser) {
+        setLoading(false);
+        return console.warn("User not authenticated");
+      }
 
       try {
-        const profilQuery = query(
-          collection(db, "innovators"),
-          where("id", "==", currentUser.uid)
-        );
-        const profilSnapshot = await getDocs(profilQuery);
-
-        if (profilSnapshot.empty) {
-          console.warn("Inovator tidak ditemukan");
-          setTopInnovations([]);
-          setLoading(false);
-          return;
-        }
-
-        const profilDoc = profilSnapshot.docs[0];
-        const inovatorId = profilDoc.id;
-        setInovatorProfile(profilDoc.data());
-
-        const inovasiQuery = query(
-          collection(db, "innovations"),
-          where("innovatorId", "==", inovatorId)
-        );
-        const inovasiSnapshot = await getDocs(inovasiQuery);
-
-        if (inovasiSnapshot.empty) {
-          setTopInnovations([]);
-          setLoading(false);
-          return;
-        }
-
-        // Map inovasiId -> namaInovasi
-        const inovasiMap: Record<string, string> = {};
-        const inovasiIds = inovasiSnapshot.docs.map((doc) => {
-          inovasiMap[doc.id] = doc.data().namaInovasi;
-          return doc.id;
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Query claimInnovations berdasarkan inovasiId
-        const chunkArray = <T,>(arr: T[], size: number): T[][] => {
-          const chunks: T[][] = [];
-          for (let i = 0; i < arr.length; i += size) {
-            chunks.push(arr.slice(i, i + size));
-          }
-          return chunks;
-        };
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        const data = await response.json();
 
-        const chunks = chunkArray(inovasiIds, 10);
-        let claimDocs: { inovasiId?: string }[] = [];
+        // Ambil nama inovator (karena di endpoint inovator tidak direturn profilnya secara spesifik di struktur baru, 
+        // kita asumsikan 'Inovator' atau biarkan null jika tidak ada)
+        setInovatorProfile({ namaInovator: "Inovator" });
 
-        for (const chunk of chunks) {
-          const claimQuery = query(
-            collection(db, "claimInnovations"),
-            where("inovasiId", "in", chunk)
-          );
-          const claimSnapshot = await getDocs(claimQuery);
-          claimDocs.push(...claimSnapshot.docs.map((doc) => doc.data()));
-        }
-
-        // Hitung frekuensi inovasiId
-        const countMap: Record<string, number> = {};
-        claimDocs.forEach((item) => {
-          const inovasiId = item.inovasiId;
-          if (inovasiId) {
-            countMap[inovasiId] = (countMap[inovasiId] || 0) + 1;
-          }
-        });
-
-        const countInovasi = Object.entries(countMap).map(([id, count]) => ({
-          name: inovasiMap[id] || "Unknown",
-          count,
+        const countInovasi = (data.top3Innovations || []).map((item: any) => ({
+          name: item.name || "Unknown",
+          count: item.totalKlaim || 0,
         }));
 
         if (countInovasi.length === 0) {
@@ -139,7 +86,7 @@ const TopInnovations = () => {
             lastCount = item.count;
 
             return {
-              ...item, //spread operator, menyalin data dalam ke dalam data baru
+              ...item,
               rank: currentRank,
               label: `${currentRank}${["st", "nd", "rd"][currentRank - 1] || "th"}`
             };
@@ -170,6 +117,10 @@ const TopInnovations = () => {
         {loading ? (
           <Flex justify="center" align="center" h="100%">
             <Spinner size="lg" />
+          </Flex>
+        ) : topInnovations.length === 0 ? (
+          <Flex justify="center" align="center" h="100%">
+            <Text color="gray.500" fontSize="md">Belum ada data inovasi unggulan</Text>
           </Flex>
         ) : (
           <Flex

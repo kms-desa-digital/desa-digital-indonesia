@@ -1,7 +1,7 @@
 import { Box, Text } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getVillages } from 'Services/villageServices';
 import {
   pieChartWrapperStyle,
   containerStyle,
@@ -22,30 +22,35 @@ const PieChartVillage = ({ onSliceClick }: { onSliceClick: (categoryName: string
 
   useEffect(() => {
     const fetchData = async () => {
-      const db = getFirestore();
-      const snapshot = await getDocs(collection(db, 'villages'));
+      try {
+        const responseData = await getVillages();
+        const villages = (responseData as any).villages || [];
 
-      const counts: Record<string, number> = {};
+        const counts: Record<string, number> = {};
 
-      snapshot.forEach(doc => {
-        const kategori = doc.data().kategori;
+        villages.forEach((item: any) => {
+          const kategori = item.kategori;
 
-        if (kategori && kategori !== 'ND' && kategori !== '-') {
-          counts[kategori] = (counts[kategori] || 0) + 1;
-        }
-      });
+          if (kategori && kategori !== 'ND' && kategori !== '-') {
+            counts[kategori] = (counts[kategori] || 0) + 1;
+          }
+        });
 
-      const sortedEntries = Object.entries(counts).sort(([, a], [, b]) => b - a);
+        const sortedEntries = Object.entries(counts).sort(([, a], [, b]) => b - a);
 
-      const allData = sortedEntries.map(([name, value], index) => ({
-        id: index + 1,
-        name,
-        value,
-        color: COLORS[index % COLORS.length],
-      }));
+        const allData = sortedEntries.map(([name, value], index) => ({
+          id: index + 1,
+          name,
+          value,
+          color: COLORS[index % COLORS.length],
+        }));
 
-      setCategories(allData);
-      setLoading(false);
+        setCategories(allData);
+      } catch (error) {
+        console.error("Error fetching village categories:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();

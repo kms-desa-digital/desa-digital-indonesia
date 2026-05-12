@@ -17,7 +17,7 @@ import {
     Button,
     useDisclosure,
 } from '@chakra-ui/react';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Filter } from 'lucide-react';
@@ -43,20 +43,23 @@ const Peta: React.FC = () => {
 
     const fetchData = async () => {
         setLoading(true);
-        const db = getFirestore();
 
         try {
             const results: MarkerItem[] = [];
 
             if (selectedCategory === 'inovator') {
-                const villageSnapshot = await getDocs(collection(db, 'villages'));
-                const villages = villageSnapshot.docs.map(doc => doc.data());
+                const [villageRes, innovatorRes] = await Promise.all([
+                    fetch('/api/villages'),
+                    fetch('/api/innovator')
+                ]);
 
-                const innovatorSnapshot = await getDocs(collection(db, 'innovators'));
+                const villageData = await villageRes.json();
+                const innovatorData = await innovatorRes.json();
 
-                innovatorSnapshot.forEach((doc) => {
-                    const data = doc.data();
+                const villages = villageData.villages || [];
+                const innovators = innovatorData.data || [];
 
+                innovators.forEach((data: any) => {
                     let desaList: string[] = [];
                     if (Array.isArray(data.desaDampingan)) {
                         desaList = data.desaDampingan;
@@ -67,7 +70,7 @@ const Peta: React.FC = () => {
                     desaList.forEach((namaDesa) => {
                         if (namaDesa === 'Tidak diketahui') return;
 
-                        const matchedVillage = villages.find(v => v.namaDesa === namaDesa);
+                        const matchedVillage = villages.find((v: any) => v.namaDesa === namaDesa);
                         if (matchedVillage) {
                             const lat = parseFloat(matchedVillage.latitude);
                             const lon = parseFloat(matchedVillage.longitude);
@@ -93,28 +96,24 @@ const Peta: React.FC = () => {
                 });
             }
             else {
-                let colName = '';
-                switch (selectedCategory) {
-                    case 'desa':
-                        colName = 'villages';
-                        break;
-                    case 'inovasi':
-                        colName = 'innovations';
-                        break;
-                }
-
                 if (selectedCategory === 'inovasi') {
-                    const villageSnapshot = await getDocs(collection(db, 'villages'));
-                    const villages = villageSnapshot.docs.map(doc => doc.data());
+                    const [villageRes, innovationRes] = await Promise.all([
+                        fetch('/api/villages'),
+                        fetch('/api/innovations')
+                    ]);
 
-                    const innovationSnapshot = await getDocs(collection(db, 'innovations'));
-                    innovationSnapshot.forEach((doc) => {
-                        const data = doc.data();
+                    const villageData = await villageRes.json();
+                    const innovationData = await innovationRes.json();
+
+                    const villages = villageData.villages || [];
+                    const innovations = innovationData.innovations || [];
+
+                    innovations.forEach((data: any) => {
                         const namaDesa = data.inputDesaMenerapkan;
 
                         if (!namaDesa || namaDesa === 'Tidak diketahui') return;
 
-                        const matchedVillage = villages.find(v => v.namaDesa === namaDesa);
+                        const matchedVillage = villages.find((v: any) => v.namaDesa === namaDesa);
 
                         if (matchedVillage) {
                             const lat = parseFloat(matchedVillage.latitude);
@@ -123,7 +122,7 @@ const Peta: React.FC = () => {
                             if (!isNaN(lat) && !isNaN(lon)) {
                                 const details = [
                                     { label: 'Nama Desa', value: matchedVillage.namaDesa || 'Tidak diketahui' },
-                                    { label: 'Nama Inovator', value: data.namaInovator || 'Tidak diketahui' },
+                                    { label: 'Nama Inovator', value: data.namaInnovator || data.namaInovator || 'Tidak diketahui' },
                                     { label: 'Tahun Dibuat', value: data.tahunDibuat || 'Tidak diketahui' },
                                 ];
 
@@ -140,26 +139,22 @@ const Peta: React.FC = () => {
                         }
                     });
                 }
+                else if (selectedCategory === 'desa') {
+                    const villageRes = await fetch('/api/villages');
+                    const villageData = await villageRes.json();
+                    const villages = villageData.villages || [];
 
-                else if (colName) {
-                    const snapshot = await getDocs(collection(db, colName));
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
+                    villages.forEach((data: any) => {
                         const lat = parseFloat(data.latitude);
                         const lon = parseFloat(data.longitude);
 
                         if (!isNaN(lat) && !isNaN(lon)) {
-                            let details: { label: string; value: string | number }[] = [];
+                            let details: { label: string; value: string | number }[] = [
+                                { label: 'Nama Inovasi', value: data.namaInovasi || 'Tidak diketahui' },
+                                { label: 'Jumlah Inovasi', value: data.jumlahInovasi || 0 },
+                            ];
 
-                            if (selectedCategory === 'desa') {
-                                details = [
-                                    { label: 'Nama Inovasi', value: data.namaInovasi || 'Tidak diketahui' },
-                                    { label: 'Jumlah Inovasi', value: data.jumlahInovasi || 0 },
-                                ];
-                            }
-
-                            let name = 'Tanpa Nama';
-                            if (selectedCategory === 'desa') name = data.namaDesa || 'Tanpa Nama';
+                            let name = data.namaDesa || 'Tanpa Nama';
 
                             results.push({ name, lat, lon, details, raw: data });
                         }

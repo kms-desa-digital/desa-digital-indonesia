@@ -23,11 +23,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 
-import {
-  getFirestore,
-  collection,
-  getDocs,
-} from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 import geoData from "@public/indonesia-province-simple.json";
 import filterIcon from "@public/icons/icon-filter.svg";
@@ -123,142 +119,63 @@ const MapVillages = () => {
   const [exportData, setExportData] = useState<any[]>([]);
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const db = getFirestore();
+  const auth = getAuth();
 
   useEffect(() => {
     const fetchAllData = async () => {
-      const inovasiSnap = await getDocs(collection(db, "innovations"));
-      const inovasiMap = new Map<string, { namaInovator: string; kategoriInovasi: string }>();
-      inovasiSnap.docs.forEach(doc => {
-        const d = doc.data();
-        inovasiMap.set(d.namaInovasi, {
-          namaInovator: d.namaInnovator,
-          kategoriInovasi: d.kategori,
+      try {
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/ministry/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
-      });
 
-      const desaSnap = await getDocs(collection(db, "villages"));
-      const villages: any[] = [];
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        const data = await response.json();
 
-      const desaMap = new Map<string, any>();
-      desaSnap.docs.forEach(doc => {
-        const d = doc.data();
-        const lokasi = d.lokasi || {};
+        const mapMarkers = data.mapMarkers || [];
+        const villageMarkers = mapMarkers.filter((m: any) => m.type === 'village');
 
-        const desaObj = {
-          desaId: d.userId,
-          namaDesa: d.namaDesa ?? "-",
-          latitude: d.latitude,
-          longitude: d.longitude,
-          kategori: d.kategori ?? "-",
-          idm: d.idm ?? "-",
-          potensiDesa: d.potensiDesa ?? "-",
-          lokasi: {
-            desaKelurahan: lokasi.desaKelurahan?.label ?? "-",
-            kabupatenKota: lokasi.kabupatenKota?.label ?? "-",
-            kecamatan: lokasi.kecamatan?.label ?? "-",
-            provinsi: lokasi.provinsi?.label ?? "-",
-          }
-        };
+        const exportTemp: any[] = villageMarkers.map((desa: any) => ({
+          namaDesa: desa.name || "-",
+          desaKelurahan: desa.name || "-",
+          kecamatan: "-",
+          kabupatenKota: "-",
+          provinsi: "-",
+          kategoriDesa: "-",
+          idm: "-",
+          potensi: "-",
+          namaInovasi: "-",
+          tanggalPengajuan: "-",
+          namaInovator: "-",
+          kategoriInovasi: "-",
+        }));
 
-        villages.push(desaObj);
-        desaMap.set(d.userId, desaObj);
-      });
+        const pinsTemp: DesaPin[] = villageMarkers.map((desa: any, index: number) => ({
+          desaId: `desa-${index}`,
+          namaDesa: desa.name || "Desa",
+          desaKelurahan: "-",
+          kecamatan: "-",
+          kabupatenKota: "-",
+          provinsi: "Unknown",
+          lat: parseFloat(desa.lat),
+          lng: parseFloat(desa.lng),
+          inovasiId: null,
+          inovasiList: [],
+        }));
 
-      const countByProvince: Record<string, number> = {};
-
-      villages.forEach((desa) => {
-        const provinsi = desa.lokasi.provinsi || "Unknown";
-        const provKey = cleanName(provinsi);
-        countByProvince[provKey] = (countByProvince[provKey] || 0) + 1;
-      });
-
-      const claimSnap = await getDocs(collection(db, "claimInnovations"));
-      const claimInnovations: any[] = claimSnap.docs.map(doc => doc.data());
-
-      const exportTemp: any[] = [];
-
-      const capitalizeWords = (str: string) =>
-        str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
-
-      villages.forEach((desa) => {
-        // Cek apakah desa X memiliki klaim inovasi 
-        const desaClaims = claimInnovations.filter(c => c.desaId === desa.desaId);
-
-        if (desaClaims.length > 0) {
-          // Kalau ada klaim, buat data (1 desa per row)
-          const inovasiNames = desaClaims.map(c => c.namaInovasi).join(", ");
-          const inovatorNames = desaClaims.map(c => inovasiMap.get(c.namaInovasi)?.namaInovator || "-").join(", ");
-          const kategoriList = desaClaims.map(c => inovasiMap.get(c.namaInovasi)?.kategoriInovasi || "-").join(", ");
-          const tanggalList = desaClaims.map(c => c.tanggalPengajuan ?? "-").join(", ");
-
-          exportTemp.push({
-            namaDesa: desa.namaDesa,
-            desaKelurahan: capitalizeWords(desa.lokasi?.desaKelurahan),
-            kecamatan: capitalizeWords(desa.lokasi?.kecamatan),
-            kabupatenKota: capitalizeWords(desa.lokasi?.kabupatenKota),
-            provinsi: capitalizeWords(desa.lokasi?.provinsi),
-            kategoriDesa: desa.kategori,
-            idm: desa.idm,
-            potensi: desa.potensiDesa,
-            namaInovasi: inovasiNames,
-            tanggalPengajuan: tanggalList,
-            namaInovator: inovatorNames,
-            kategoriInovasi: kategoriList,
-          });
-        } else {
-          // Kalau tidak ada klaim, tetap export dengan kolom inovasi kosong
-          exportTemp.push({
-            namaDesa: desa.namaDesa,
-            desaKelurahan: capitalizeWords(desa.lokasi?.desaKelurahan),
-            kecamatan: capitalizeWords(desa.lokasi?.kecamatan),
-            kabupatenKota: capitalizeWords(desa.lokasi?.kabupatenKota),
-            provinsi: capitalizeWords(desa.lokasi?.provinsi),
-            kategoriDesa: desa.kategori,
-            idm: desa.idm,
-            potensi: desa.potensiDesa,
-            namaInovasi: "-",
-            tanggalPengajuan: "-",
-            namaInovator: "-",
-            kategoriInovasi: "-",
-          });
-        }
-      });
-
-      exportTemp.sort((a, b) => a.namaDesa.localeCompare(b.namaDesa));
-      console.log("Exported Data:", exportTemp);
-
-      const pinsTemp: DesaPin[] = villages.map((desa) => ({
-        desaId: desa.desaId,
-        namaDesa: desa.namaDesa,
-        desaKelurahan: capitalizeWords(desa.lokasi?.desaKelurahan),
-        kecamatan: capitalizeWords(desa.lokasi?.kecamatan),
-        kabupatenKota: capitalizeWords(desa.lokasi?.kabupatenKota),
-        provinsi: capitalizeWords(desa.lokasi?.provinsi),
-        lat: desa?.latitude,
-        lng: desa?.longitude,
-        inovasiId: null,
-        inovasiList: [],
-      }));
-
-      console.log("xxxxx", pinsTemp)
-
-      // Update kalau ada klaim inovasi
-      claimInnovations.forEach((claim) => {
-        const idx = pinsTemp.findIndex((p) => p.desaId === claim.desaId);
-        if (idx !== -1) {
-          pinsTemp[idx].inovasiId = claim.inovasiId ?? null;
-          pinsTemp[idx].inovasiList.push(claim.namaInovasi);
-        }
-      });
-
-      setExportData(exportTemp);
-      setDesaPins(pinsTemp);
-      setTotals(countByProvince);
+        setExportData(exportTemp);
+        setDesaPins(pinsTemp);
+        setTotals({}); // GeoJSON kosong karena data provinsi tidak direturn API
+      } catch (error) {
+        console.error("Error fetching map data:", error);
+      }
     };
 
     fetchAllData();
-  }, [db]);
+  }, []);
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF({ orientation: "landscape" });
