@@ -32,8 +32,12 @@ const Village: React.FC = () => {
 
         // Sort manually by valid "jumlahInovasiDiterapkan" descending
         const sortedVillages = mapped
-          .sort((a: any, b: any) => (Number(b.jumlahInovasiDiterapkan) || 0) - (Number(a.jumlahInovasiDiterapkan) || 0))
-          .slice(0, 5); // Take top 5
+          .sort((a: any, b: any) => {
+            const inovasi = (Number(b.jumlahInovasiDiterapkan) || 0) - (Number(a.jumlahInovasiDiterapkan) || 0);
+            if (inovasi !== 0) return inovasi;
+            return (a.namaDesa || "").localeCompare(b.namaDesa || "");
+          })
+          .slice(0, 5);
           
         setVillages(sortedVillages);
       } catch (error) {

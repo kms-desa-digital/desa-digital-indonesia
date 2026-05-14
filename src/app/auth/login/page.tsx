@@ -10,7 +10,7 @@ import {
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import React, { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
@@ -37,26 +37,62 @@ const Login: React.FC = () => {
     const [loginLoading, setLoginLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
     const [show, setShow] = useState(false);
+
     const router = useRouter();
-    const onShowPassword = () => setShow(!show);
     const googleProvider = new GoogleAuthProvider();
 
+    const onShowPassword = () => setShow(!show);
+
     const onChange = ({ target }: { target: HTMLInputElement }) => {
-        setLoginForm((prev) => ({ ...prev, [target.name]: target.value }));
+        setLoginForm((prev) => ({
+            ...prev,
+            [target.name]: target.value,
+        }));
+
         if (error) setError("");
+    };
+
+    const checkEmailExists = async (email: string) => {
+        const usersRef = collection(firestore, "users");
+        const q = query(usersRef, where("email", "==", email));
+        const querySnapshot = await getDocs(q);
+
+        return !querySnapshot.empty;
     };
 
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
         if (error) setError("");
 
-        // Form validation
-        if (!loginForm.email.includes("@")) return setError("Email tidak valid");
-        if (loginForm.password.length < 6)
+        if (!loginForm.email && !loginForm.password) {
+            return setError("Email dan kata sandi wajib diisi");
+        }
+
+        if (!loginForm.email) {
+            return setError("Email wajib diisi");
+        }
+
+        if (!loginForm.email.includes("@")) {
+            return setError("Gunakan @ untuk format email");
+        }
+
+        if (!loginForm.password) {
+            return setError("Kata sandi wajib diisi");
+        }
+
+        if (loginForm.password.length < 6) {
             return setError("Kata sandi minimal 6 karakter");
+        }
 
         setLoginLoading(true);
         try {
+            const isEmailRegistered = await checkEmailExists(loginForm.email);
+            if (!isEmailRegistered) {
+                setError("Email belum terdaftar");
+                return;
+            }
+
             const userCredential = await signInWithEmailAndPassword(
                 auth,
                 loginForm.email,
@@ -73,10 +109,7 @@ const Login: React.FC = () => {
 
             const userData = userDoc.data();
             const userRole = (userData?.role || "").toLowerCase();
-            const idToken = await userCredential.user.getIdToken();
 
-            // Simpan role ke localStorage (bukan data sensitif)
-            // Token dikelola otomatis oleh Firebase SDK via onIdTokenChanged
             localStorage.setItem("userRole", userRole);
             window.dispatchEvent(new Event("auth:tokenChanged"));
             router.refresh();
@@ -88,7 +121,7 @@ const Login: React.FC = () => {
             } else {
                 router.push(paths.LANDING_PAGE);
             }
-            
+
             toast.success("Berhasil Masuk", {
                 position: "top-center",
                 autoClose: 2000,
@@ -100,8 +133,9 @@ const Login: React.FC = () => {
             });
         } catch (error: any) {
             console.log("Error during login:", error);
+            console.log("Firebase error code:", error?.code);
             setError(
-                FIREBASE_ERRORS[error?.message as keyof typeof FIREBASE_ERRORS] ||
+                FIREBASE_ERRORS[error?.code] ||
                     "Terjadi kesalahan, coba lagi"
             );
         } finally {
@@ -121,7 +155,8 @@ const Login: React.FC = () => {
 
             if (!userDoc.exists()) {
                 router.push(`${paths.REGISTER_PAGE}?google=1`);
-                toast.info("Silakan pilih peran untuk melengkapi pendaftaran", {
+
+                toast.info("Silakan pilih role untuk melengkapi pendaftaran", {
                     position: "top-center",
                     autoClose: 2500,
                     hideProgressBar: false,
@@ -134,11 +169,10 @@ const Login: React.FC = () => {
 
             const userData = userDoc.data();
             const userRole = (userData?.role || "").toLowerCase();
-            const idToken = await user.getIdToken();
 
             if (!userRole) {
                 router.push(`${paths.REGISTER_PAGE}?google=1`);
-                toast.info("Silakan pilih peran untuk melengkapi pendaftaran", {
+                toast.info("Silakan pilih role untuk melengkapi pendaftaran", {
                     position: "top-center",
                     autoClose: 2500,
                     hideProgressBar: false,
@@ -149,8 +183,6 @@ const Login: React.FC = () => {
                 return;
             }
 
-            // Simpan role ke localStorage (bukan data sensitif)
-            // Token dikelola otomatis oleh Firebase SDK via onIdTokenChanged
             localStorage.setItem("userRole", userRole);
             window.dispatchEvent(new Event("auth:tokenChanged"));
             router.refresh();
@@ -174,8 +206,9 @@ const Login: React.FC = () => {
             });
         } catch (error: any) {
             console.log("Error during Google login:", error);
+            console.log("Firebase error code:", error?.code);
             setError(
-                FIREBASE_ERRORS[error?.message as keyof typeof FIREBASE_ERRORS] ||
+                FIREBASE_ERRORS[error?.code] ||
                     "Gagal login dengan Google"
             );
         } finally {
@@ -191,15 +224,17 @@ const Login: React.FC = () => {
                     <Title>Halo!</Title>
                     <Description>Silahkan masukkan akun</Description>
 
-                    <form onSubmit={onSubmit}>
+                    <form onSubmit={onSubmit} noValidate>
                         <Text fontSize="10pt" mt="12px">
                             Email
                         </Text>
                         <Input
                             name="email"
-                            type="email"
+                            type="text"
+                            inputMode="email"
+                            autoComplete="email"
+                            value={loginForm.email}
                             onChange={onChange}
-                            required
                             placeholder="Email"
                             mt="4px"
                             fontSize="10pt"
@@ -212,17 +247,28 @@ const Login: React.FC = () => {
                             <Input
                                 name="password"
                                 type={show ? "text" : "password"}
+                                value={loginForm.password}
                                 onChange={onChange}
-                                required
                                 placeholder="Kata sandi"
                                 fontSize="10pt"
                             />
-                            <InputRightElement onClick={onShowPassword} cursor="pointer" height="100%">
+
+                            <InputRightElement
+                                onClick={onShowPassword}
+                                cursor="pointer"
+                                height="100%"
+                            >
                                 {show ? <FaEyeSlash /> : <FaEye />}
                             </InputRightElement>
                         </InputGroup>
+
                         {error && (
-                            <Text textAlign="center" color="red" fontSize="10pt" mt={2}>
+                            <Text
+                                textAlign="center"
+                                color="red"
+                                fontSize="10pt"
+                                mt={2}
+                            >
                                 {error}
                             </Text>
                         )}
@@ -230,7 +276,6 @@ const Login: React.FC = () => {
                         <Button
                             mt={4}
                             type="submit"
-                            // alignItems="center"
                             width="100%"
                             isLoading={loginLoading}
                         >
@@ -251,7 +296,11 @@ const Login: React.FC = () => {
 
                     <ActionContainer mt={20}>
                         <Label>Lupa kata sandi?</Label>
-                        <Action onClick={() => router.push(paths.EMAIL_RESET_PASSWORD_PAGE)}>
+                        <Action
+                            onClick={() =>
+                                router.push(paths.EMAIL_RESET_PASSWORD_PAGE)
+                            }
+                        >
                             Klik disini
                         </Action>
                     </ActionContainer>
