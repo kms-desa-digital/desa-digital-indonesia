@@ -61,6 +61,7 @@ const InnovationListPage = () => {
                                 tahunDibuat={innovation.tahunDibuat}
                                 innovatorLogo={innovation.innovatorImgURL}
                                 innovatorName={innovation.namaInnovator}
+                                jumlahDesa={innovation.jumlahDesa || 0}
                                 onClick={() => router.push(`/innovation/detail/${innovation.id}`)}
                             />
                         ))}

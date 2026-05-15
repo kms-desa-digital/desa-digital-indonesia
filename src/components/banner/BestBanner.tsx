@@ -5,17 +5,9 @@ const first = "/icons/first.svg";
 const second = "/icons/seccond.svg";
 const third = "/icons/third.svg";
 const banner = "/images/banner-unggulan.svg";
-import {
-  collection,
-  DocumentData,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  where,
-} from "firebase/firestore";
-import { firestore } from "../../firebase/clientApp";
+import { DocumentData } from "firebase/firestore";
 import { getVillages } from "Services/villageServices";
+import { getInnovators } from "Services/innovatorServices";
 
 const BestBanner: React.FC = () => {
   const t = useTranslations("Home");
@@ -26,25 +18,29 @@ const BestBanner: React.FC = () => {
   useEffect(() => {
     const fetchTopData = async () => {
       try {
-        // Innovators still use Firebase as API is not ready
-        const innovatorQuery = query(
-          collection(firestore, "innovators"),
-          orderBy("jumlahDesaDampingan", "desc"),
-          limit(3)
-        );
+        // Innovators from MongoDB API 
+        const innovatorRes: any = await getInnovators({ status: "Terverifikasi" });
+        const fetchedInnovators = innovatorRes?.data || innovatorRes?.innovators || [];
+        const sortedInnovators = (Array.isArray(fetchedInnovators) ? fetchedInnovators : [])
+          .sort((a: any, b: any) => {
+            const desa = (b.jumlahDesaDampingan || 0) - (a.jumlahDesaDampingan || 0);
+            if (desa !== 0) return desa;
+            const inovasi = (b.jumlahInovasi || 0) - (a.jumlahInovasi || 0);
+            if (inovasi !== 0) return inovasi;
+            return (a.namaInovator || "").localeCompare(b.namaInovator || "");
+          })
+          .slice(0, 3);
+        setInnovators(sortedInnovators);
 
-        const innovatorSnapshot = await getDocs(innovatorQuery);
-        const innovatorsData = innovatorSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setInnovators(innovatorsData);
-
-        // Villages now use MongoDB API to synchronize with the cards below
+        // Villages now use MongoDB API 
         const response: any = await getVillages("Terverifikasi");
         const fetchedVillages = response.villages || response.data || [];
         const sortedVillages = fetchedVillages
-          .sort((a: any, b: any) => (b.jumlahInovasiDiterapkan || 0) - (a.jumlahInovasiDiterapkan || 0))
+          .sort((a: any, b: any) => {
+            const inovasi = (b.jumlahInovasiDiterapkan || 0) - (a.jumlahInovasiDiterapkan || 0);
+            if (inovasi !== 0) return inovasi;
+            return (a.namaDesa || "").localeCompare(b.namaDesa || "");
+          })
           .slice(0, 3);
           
         setVillages(sortedVillages);

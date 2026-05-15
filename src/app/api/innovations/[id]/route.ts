@@ -23,7 +23,39 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
       query = { _id: id }
     }
 
-    const doc = await db.collection('innovations').findOne(query)
+    const pipeline: any[] = [
+      { $match: query },
+      {
+        $addFields: {
+          _idStr: { $toString: "$_id" }
+        }
+      },
+      {
+        $lookup: {
+          from: 'claimInnovations',
+          localField: '_idStr',
+          foreignField: 'inovasiId',
+          as: 'allClaims',
+        },
+      },
+      {
+        $addFields: {
+          jumlahDesa: {
+            $size: {
+              $filter: {
+                input: '$allClaims',
+                as: 'claim',
+                cond: { $eq: ['$$claim.status', 'Terverifikasi'] },
+              },
+            },
+          },
+        },
+      },
+      { $project: { allClaims: 0, _idStr: 0 } }
+    ]
+
+    const innovations = await db.collection('innovations').aggregate(pipeline).toArray()
+    const doc = innovations[0]
 
     if (!doc) {
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })

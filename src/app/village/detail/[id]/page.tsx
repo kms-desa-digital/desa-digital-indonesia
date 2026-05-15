@@ -456,14 +456,14 @@ export default function DetailVillagePage() {
                                                 kategori={innovation.kategori}
                                                 deskripsi={innovation.deskripsi}
                                                 tahunDibuat={innovation.tahunDibuat}
-                                                // innovatorLogo={innovation.innovatorImgURL}
-                                                // innovatorName={innovation.namaInnovator}
+                                                innovatorLogo={innovation.innovatorImgURL}
+                                                innovatorName={innovation.namaInnovator}
+                                                jumlahDesa={innovation.jumlahDesa || 0}
                                                 onClick={() => {
                                                     if (innovation.id) {
                                                         router.push(`/innovation/detail/${innovation.id}`);
                                                     }
                                                 }}
-
                                             />
                                         ))
                                     )}

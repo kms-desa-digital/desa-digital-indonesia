@@ -4,6 +4,9 @@ import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { notifyAllAdmins } from '@/services/notificationServices'
 
+// Opt out of Next.js static caching so jumlahDesa always reflects live DB state
+export const dynamic = 'force-dynamic'
+
 // =========================================================
 // GET /api/innovations
 // Mengambil semua inovasi, support query:
@@ -39,12 +42,42 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    let innovationQuery = db.collection('innovations').find(filter).sort({ createdAt: -1 })
+    const pipeline: any[] = [
+      { $match: filter },
+      {
+        $addFields: {
+          _idStr: { $toString: "$_id" }
+        }
+      },
+      {
+        $lookup: {
+          from: 'claimInnovations',
+          localField: '_idStr',
+          foreignField: 'inovasiId',
+          as: 'allClaims',
+        },
+      },
+      {
+        $addFields: {
+          jumlahDesa: {
+            $size: {
+              $filter: {
+                input: '$allClaims',
+                as: 'claim',
+                cond: { $eq: ['$$claim.status', 'Terverifikasi'] },
+              },
+            },
+          },
+        },
+      },
+      { $project: { allClaims: 0, _idStr: 0 } },
+      { $sort: { createdAt: -1 } },
+    ]
 
-    if (skipVal > 0) innovationQuery = innovationQuery.skip(skipVal)
-    if (limitVal > 0) innovationQuery = innovationQuery.limit(limitVal)
+    if (skipVal > 0) pipeline.push({ $skip: skipVal })
+    if (limitVal > 0) pipeline.push({ $limit: limitVal })
 
-    const innovations = await innovationQuery.toArray()
+    const innovations = await db.collection('innovations').aggregate(pipeline).toArray()
 
     // Konversi _id ObjectId → string untuk kemudahan konsumsi frontend
     const result = innovations.map((doc) => ({

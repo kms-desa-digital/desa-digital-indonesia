@@ -21,6 +21,7 @@ interface InovationData {
     innovatorName?: string;
     manfaat?: { deskripsi: string }[];
     status?: string;
+    jumlahDesa?: number;
     [key: string]: any;
 }
 
@@ -122,6 +123,7 @@ const SearchContent = () => {
                                 innovatorLogo={item.innovatorLogo}
                                 innovatorName={item.innovatorName}
                                 highlightQuery={searchValue}
+                                jumlahDesa={item.jumlahDesa || 0}
                                 onClick={() => handleCardClick(item.id)}
                             />
                         ))}

@@ -680,7 +680,7 @@ function DetailInnovation() {
                             {t("viewAll")}{" "}
                         </Text>
                     </Flex>
-                    {village.map((desa: any, index: number) => (
+                    {village.slice(0, 3).map((desa: any, index: number) => (
                         <ActionContainer
                             key={index}
                             onClick={() =>
