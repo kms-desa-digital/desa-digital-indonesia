@@ -190,7 +190,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
     const { id } = await params
     const db = await connectToDatabase()
     
-    // Gunakan try-catch
+    // Define query to find innovation by ObjectId or string ID
     let query: any;
     try {
       query = { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
@@ -198,10 +198,45 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
       query = { _id: id }
     }
 
-    const result = await db.collection('innovations').deleteOne(query)
+    // 1. Find the innovation to ensure it exists and get its ID as string
+    const existing = await db.collection('innovations').findOne(query)
+    if (!existing) {
+      return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
+    }
+
+    const inovasiIdStr = existing._id.toString()
+
+    // 2. Handle associated claims cleanup
+    try {
+        // Find verified claims to decrement village counts
+        const verifiedClaims = await db.collection('claimInnovations').find({
+            inovasiId: inovasiIdStr,
+            status: 'Terverifikasi'
+        }).toArray()
+
+        if (verifiedClaims.length > 0) {
+            // Group by desaId to handle multiple claims from same village (though unlikely for same innovation)
+            for (const claim of verifiedClaims) {
+                await db.collection('villages').updateOne(
+                    { $or: [{ userId: claim.desaId }, { desaId: claim.desaId }] },
+                    { $inc: { jumlahInovasiDiterapkan: -1 } }
+                ).catch(err => console.error(`Failed to decrement count for village ${claim.desaId}:`, err))
+            }
+        }
+
+        // Delete all associated claims (Verified, Menunggu, or Ditolak)
+        await db.collection('claimInnovations').deleteMany({ inovasiId: inovasiIdStr })
+        
+    } catch (cleanupErr) {
+        console.error('Error during associated claims cleanup:', cleanupErr)
+        // We continue deleting the innovation even if cleanup fails
+    }
+
+    // 3. Delete the innovation itself
+    const result = await db.collection('innovations').deleteOne({ _id: existing._id })
 
     if (result.deletedCount === 0) {
-      return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
+      return NextResponse.json({ message: 'Gagal menghapus inovasi' }, { status: 500 })
     }
 
     return NextResponse.json({ message: 'Inovasi berhasil dihapus' }, { status: 200 })

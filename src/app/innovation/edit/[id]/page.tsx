@@ -76,11 +76,15 @@ const predefinedModels = [
     "Lain-lain",
 ];
 
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+
 const EditInnovation: React.FC = () => {
     const router = useRouter();
     const toast = useToast();
     const params = useParams();
     const id = params.id as string;
+    const { role, uid, loading: userLoading } = useUser();
 
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const selectFileRef = useRef<HTMLInputElement>(null);
@@ -204,6 +208,17 @@ const EditInnovation: React.FC = () => {
         };
         fetchInnovation();
     }, [id]);
+
+    if (loading || userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "admin" || uid === innovatorId;
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     const onSelectImage = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;

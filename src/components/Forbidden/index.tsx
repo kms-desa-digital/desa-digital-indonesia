@@ -3,8 +3,9 @@
 import { Box, Button } from '@chakra-ui/react'
 import Image from 'next/image'
 import Link from 'next/link'
+import React from 'react'
 
-export default function NotFound() {
+const Forbidden: React.FC = () => {
   return (
     <Box
       w="100%"
@@ -15,6 +16,7 @@ export default function NotFound() {
       alignItems="center"
       justifyContent="center"
       overflow="hidden"
+      zIndex={9999}
     >
       <Box
         w="100%"
@@ -29,7 +31,7 @@ export default function NotFound() {
         <Box position="relative" w="100%" h="100%">
           <Image
             src="/images/403.svg"
-            alt="403 Halaman Tidak Ditemukan"
+            alt="403 Akses Dilarang"
             fill
             style={{
               objectFit: 'contain',
@@ -58,7 +60,8 @@ export default function NotFound() {
           Kembali
         </Button>
       </Box>
-
     </Box>
   )
 }
+
+export default Forbidden

@@ -42,11 +42,16 @@ const SkeletonCard = () => (
     </Box>
 );
 
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+import Loading from "Components/loading";
+
 const PengajuanInovasi: React.FC = () => {
     const params = useParams();
     const id = params.id as string;
     const router = useRouter();
     const [user] = useAuthState(auth);
+    const { role, loading: userLoading, uid } = useUser();
     const [data, setData] = useState<any[]>([]);
     const [filteredData, setFilteredData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -95,6 +100,17 @@ const PengajuanInovasi: React.FC = () => {
             fetchData(1);
         }
     }, [id, selectedFilter, searchTerm]);
+
+    if (userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "admin" || uid === id;
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     const handleNextPage = async () => {
         if (hasMore) {

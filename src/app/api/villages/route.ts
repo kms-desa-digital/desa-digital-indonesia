@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       const { notifyAllAdmins } = await import('@/services/notificationServices')
       await notifyAllAdmins({
         type: 'personal',
-        category: 'profile_submission',
+        category: 'village_submission',
         title: `Pendaftaran Desa Baru: ${namaDesa}`,
         description: `Sebuah desa baru telah mendaftar: ${namaDesa}. Silakan verifikasi profil desa ini.`,
         actionType: 'profile',

@@ -46,6 +46,7 @@ import Loading from "Components/loading";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
 
 const KlaimInovasiDetail: React.FC = () => {
     const router = useRouter();
@@ -63,9 +64,9 @@ const KlaimInovasiDetail: React.FC = () => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    const { role } = useUser();
+    const { role, uid, loading: userLoading } = useUser();
     useEffect(() => {
-        setIsAdmin(role === "admin");
+        setIsAdmin(role === "admin" || role === "ADMIN");
     }, [role]);
 
     useEffect(() => {
@@ -179,7 +180,15 @@ const KlaimInovasiDetail: React.FC = () => {
         }
     };
 
-    if (fetchLoading) return <Loading />;
+    if (fetchLoading || userLoading) return <Loading />;
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "admin" || uid === claimData?.desaId;
+
+    if (claimData && !isAuthorized) {
+        return <Forbidden />;
+    }
+
     if (!claimData) return null;
 
     const files = claimData.buktiFiles || claimData.bukti_files || {};

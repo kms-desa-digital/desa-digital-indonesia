@@ -111,7 +111,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
         const { notifyAllAdmins } = await import('@/services/notificationServices')
         await notifyAllAdmins({
           type: 'personal',
-          category: 'profile_submission',
+          category: 'innovator_submission',
           title: `Pendaftaran Innovator Baru: ${namaInovator}`,
           description: `Seorang innovator baru has mendaftar: ${namaInovator}. Silakan verifikasi profil ini.`,
           actionType: 'profile',
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
         if (isResubmission) {
             await notifyAllAdmins({
                 type: 'personal',
-                category: 'profile_submission',
+                category: 'innovator_submission',
                 title: `Pengajuan Ulang Profil Innovator: ${namaInovator}`,
                 description: `Innovator ${namaInovator} telah memperbarui profil yang sebelumnya ditolak. Silakan verifikasi kembali.`,
                 actionType: 'profile',

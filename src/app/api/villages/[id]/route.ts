@@ -107,8 +107,8 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
         if (isResubmission) {
             await notifyAllAdmins({
                 type: 'personal',
-                category: 'profile_submission',
-                title: `Pengajuan Ulang Profil Desa: ${body.namaDesa || existing?.namaDesa}`,
+                category: 'village_submission',
+                title: isResubmission ? `Pengajuan Ulang Profil Desa: ${body.namaDesa}` : `Pengajuan Profil Desa: ${body.namaDesa}`,
                 description: `Desa ${body.namaDesa || existing?.namaDesa} telah memperbarui profil yang sebelumnya ditolak. Silakan verifikasi kembali.`,
                 actionType: 'profile',
                 relatedId: id,

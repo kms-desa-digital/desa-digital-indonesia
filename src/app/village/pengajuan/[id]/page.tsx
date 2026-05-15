@@ -44,11 +44,16 @@ const SkeletonCard = () => (
     </Box>
 );
 
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+import Loading from "Components/loading";
+
 const PengajuanKlaim: React.FC = () => {
     const params = useParams();
     const id = params.id as string;
     const router = useRouter();
     const [user] = useAuthState(auth);
+    const { role, loading: userLoading, uid } = useUser();
     const [data, setData] = useState<any[]>([]);
     const [filteredData, setFilteredData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -96,7 +101,18 @@ const PengajuanKlaim: React.FC = () => {
             setCurrentPage(1);
             fetchData(1);
         }
-    }, [id, selectedFilter, searchTerm]); // Tambah searchTerm ke dependency
+    }, [id, selectedFilter, searchTerm]);
+
+    if (userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "admin" || uid === id;
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     // Client side UI filtering removed in favor of server side search/filter
 

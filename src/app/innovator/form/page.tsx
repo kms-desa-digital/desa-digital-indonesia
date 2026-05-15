@@ -51,9 +51,15 @@ const businessModels = [
     "Layanan Subsidi",
 ];
 
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+import Loading from "Components/loading";
+
 const InnovatorForm: React.FC = () => {
     const router = useRouter();
     const [user] = useAuthState(auth);
+    const { role, loading: userLoading } = useUser();
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
 
     const [selectedCategory, setSelectedCategory] = useState<{
         label: string;
@@ -321,7 +327,11 @@ const InnovatorForm: React.FC = () => {
                     if (err?.response?.status !== 404) {
                         console.error("Error fetching data from API:", err);
                     }
+                } finally {
+                    setIsInitialLoading(false);
                 }
+            } else {
+                setIsInitialLoading(false);
             }
         };
         fetchData();
@@ -418,6 +428,17 @@ const InnovatorForm: React.FC = () => {
             color: "#9CA3AF",
         }),
     };
+
+    if (isInitialLoading || userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "innovator" || normalizedRole === "admin";
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     return (
         <>

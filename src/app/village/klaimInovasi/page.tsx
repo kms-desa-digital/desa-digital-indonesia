@@ -43,12 +43,14 @@ import { auth } from "src/firebase/clientApp";
 import { useUser } from "src/contexts/UserContext";
 import RecommendationDrawer from "Components/drawer/RecommendationDrawer";
 
+import Forbidden from "src/components/Forbidden";
+
 const KlaimInovasiContent: React.FC = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [user] = useAuthState(auth);
-    //   const params = useParams();
-    //   const id = params.id as string;
+    const { role, loading: userLoading } = useUser();
+
     const [claimData, setClaimData] = useState<any>(null);
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [selectedDoc, setSelectedDoc] = useState<string[]>([]);
@@ -81,20 +83,25 @@ const KlaimInovasiContent: React.FC = () => {
     } = useDisclosure();
 
     const [isRejectionVisible, setIsRejectionVisible] = useState(true);
-
-
-    //   const location = useLocation();
-    //   const inovasiId = location.state?.id;
     const inovasiId = searchParams.get("inovasiId");
-
-    const { role } = useUser();
     const editId = searchParams.get("editId");
 
     useEffect(() => {
         if (role) {
-            setIsAdmin(role === "admin");
+            setIsAdmin(role === "admin" || role === "ADMIN");
         }
     }, [role]);
+
+    if (userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "village" || normalizedRole === "desa" || normalizedRole === "admin";
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     useEffect(() => {
         const fetchEditData = async () => {

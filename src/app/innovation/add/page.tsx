@@ -91,9 +91,14 @@ const predefinedModels = [
     "Lain-lain",
 ];
 
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+import Loading from "Components/loading";
+
 const AddInnovation: React.FC = () => {
     const router = useRouter();
     const [user] = useAuthState(auth);
+    const { role, loading: userLoading } = useUser();
 
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const selectFileRef = useRef<HTMLInputElement>(null);
@@ -139,6 +144,17 @@ const AddInnovation: React.FC = () => {
         setIsModal1Open(false);
         setIsModal2Open(false);
     };
+
+    if (userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "innovator" || normalizedRole === "admin";
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     const handleModal1Yes = () => {
         setIsModal1Open(false);
