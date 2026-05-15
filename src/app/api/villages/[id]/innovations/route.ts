@@ -14,11 +14,35 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     const db = await connectToDatabase()
 
     // 1. Ambil inovasi dari koleksi 'innovations' yang memiliki desaId ini (penugasan langsung)
+    // dengan jumlah desa yang menerapkan dari claimInnovations
+    const directPipeline: any[] = [
+      { $match: { desaId: { $in: [id] }, status: 'Terverifikasi' } },
+      {
+        $lookup: {
+          from: 'claimInnovations',
+          localField: '_id',
+          foreignField: 'inovasiId',
+          as: 'allClaims',
+        },
+      },
+      {
+        $addFields: {
+          jumlahDesa: {
+            $size: {
+              $filter: {
+                input: '$allClaims',
+                as: 'claim',
+                cond: { $eq: ['$$claim.status', 'Terverifikasi'] },
+              },
+            },
+          },
+        },
+      },
+      { $project: { allClaims: 0 } },
+    ]
+
     const directInnovations = await db.collection('innovations')
-      .find({
-        desaId: { $in: [id] },
-        status: 'Terverifikasi'
-      })
+      .aggregate(directPipeline)
       .toArray()
 
     // 2. Ambil SEMUA klaim dari koleksi 'claimInnovations' yang terverifikasi (Manual & Reguler)
@@ -50,7 +74,8 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
         namaInnovator: doc.namaInovator || doc.namaInovator,
         deskripsi: doc.deskripsiInovasi || doc.deskripsi,
         images: doc.fotoInovasi ? [doc.fotoInovasi] : (doc.buktiFiles?.foto || []),
-        status: 'Terverifikasi'
+        status: 'Terverifikasi',
+        jumlahDesa: 0, // klaim manual tidak punya inovasiId untuk di-lookup
       }))
 
     const finalResult = [...result_direct, ...result_claims]

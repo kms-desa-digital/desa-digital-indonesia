@@ -26,6 +26,7 @@ const InnovationPreview = ({ innovations, innovatorId }: any) => {
             tahunDibuat={innovation.tahunDibuat}
             innovatorLogo={innovation.innovatorImgURL}
             innovatorName={innovation.namaInnovator}
+            jumlahDesa={innovation.jumlahDesa || 0}
             onClick={() => handleClick(innovation.id)}
           />
         </Box>

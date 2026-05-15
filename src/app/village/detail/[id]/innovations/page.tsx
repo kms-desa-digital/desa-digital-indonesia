@@ -63,13 +63,18 @@ export default function VillageAppliedInnovationsPage() {
                         {data.map((item, idx) => (
                             <CardInnovation
                                 key={idx}
-                                {...item}
+                                images={item.images}
+                                namaInovasi={item.namaInovasi}
+                                kategori={item.kategori}
+                                deskripsi={item.deskripsi}
+                                tahunDibuat={item.tahunDibuat}
                                 innovatorLogo={
                                     item.innovatorImgURL || (
                                          <ChakraImage src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />
                                     )
                                 }
                                 innovatorName={item.namaInnovator}
+                                jumlahDesa={item.jumlahDesa || 0}
                                 onClick={() =>
                                     router.push(`/innovation/detail/${item.id}`)
                                 }

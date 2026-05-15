@@ -13,6 +13,7 @@ type VillageData = {
     logo?: string;
     provinsi?: string;
     kabupaten?: string;
+    kabupatenKota?: string;
     kecamatan?: string;
     desa?: string;
 };
@@ -164,10 +165,11 @@ const InovasiDesaYangMenerapkan = () => {
                                         <Text fontSize="14px" fontWeight="600" color="#1F2937" noOfLines={1}>
                                             {village.namaDesa}
                                         </Text>
-                                        {(village.kecamatan || village.kabupaten) && (
+                                        {(village.kecamatan || village.kabupaten || village.kabupatenKota || village.provinsi) && (
                                             <Text fontSize="12px" color="#6B7280" mt={1} noOfLines={1}>
-                                                {village.kecamatan && `Kec. ${village.kecamatan}${village.kabupaten ? ', ' : ''}`}
-                                                {village.kabupaten && `${village.kabupaten}`}
+                                                {village.kecamatan && `Kec. ${village.kecamatan}, `}
+                                                {(village.kabupaten || village.kabupatenKota) && `${village.kabupaten || village.kabupatenKota}, `}
+                                                {village.provinsi && `${village.provinsi}`}
                                             </Text>
                                         )}
                                     </Box>

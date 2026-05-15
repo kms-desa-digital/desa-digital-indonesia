@@ -60,7 +60,7 @@ const InnovatorProductsPage = () => {
                         {t("noInnovations")}
                     </Box>
                 ) : (
-                    <SimpleGrid columns={[1, 2]} spacing={4}>
+                    <SimpleGrid columns={2} spacing={4}>
                         {innovations.map((innovation: any, idx: number) => (
                             <CardInnovation
                                 key={idx}
@@ -71,6 +71,7 @@ const InnovatorProductsPage = () => {
                                 tahunDibuat={innovation.tahunDibuat}
                                 innovatorLogo={innovation.innovatorImgURL}
                                 innovatorName={innovation.namaInnovator || innovatorName}
+                                jumlahDesa={innovation.jumlahDesa || 0}
                                 onClick={() => router.push(`/innovation/detail/${innovation.id}`)}
                             />
                         ))}

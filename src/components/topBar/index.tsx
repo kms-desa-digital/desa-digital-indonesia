@@ -34,6 +34,11 @@ function TopBar(props: TopBarProps) {
   const [village, setVillage] = useState(false);
   const { isVillageVerified } = useUser();
   const [claimStatus, setClaimStatus] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const allowedPaths = [
     paths.LANDING_PAGE,
@@ -194,6 +199,7 @@ function TopBar(props: TopBarProps) {
 
           {!isClaimButtonVisible &&
             isUserMenuVisible &&
+            mounted &&
             (user || isAuthenticated ? (
               <UserMenu user={user} />
             ) : (

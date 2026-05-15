@@ -38,6 +38,7 @@ import { auth } from "src/firebase/clientApp";
 // import { firestore, storage } from "src/firebase/clientApp";
 import { storage } from "src/firebase/clientApp";
 import { getInnovationById, updateInnovation, deleteInnovation } from "Services/innovationServices";
+import { paths } from "Consts/path";
 import { NavbarButton } from "./_styles";
 import StatusCard from "Components/card/status/StatusCard";
 import Loading from "Components/loading";
@@ -392,8 +393,9 @@ const EditInnovation: React.FC = () => {
                 status: "success",
                 duration: 5000,
                 isClosable: true,
+                position: "top",
             });
-            router.push("/");
+            router.push(paths.PENGAJUAN_INOVASI_DETAIL_PAGE.replace(":id", id));
         } catch (error: any) {
             console.error("Error deleting innovation via API:", error);
             if (error.response?.data?.message === "ID tidak valid") {

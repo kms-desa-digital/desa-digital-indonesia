@@ -25,6 +25,7 @@ type SearchSuggestion = {
   tahunDibuat?: string;
   innovatorLogo?: string;
   innovatorName?: string;
+  jumlahDesa?: number;
 };
 
 interface SearchBarLinkProps {
@@ -187,6 +188,7 @@ const SearchBarLink: React.FC<SearchBarLinkProps> = ({
                       innovatorLogo={item.innovatorLogo}
                       innovatorName={item.innovatorName}
                       highlightQuery={highlightQuery}
+                      jumlahDesa={item.jumlahDesa}
                     />
                   </Box>
                 ))}

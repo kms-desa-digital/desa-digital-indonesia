@@ -40,6 +40,7 @@ export default function Home() {
     tahunDibuat?: string;
     innovatorLogo?: string;
     innovatorName?: string;
+    jumlahDesa?: number;
   };
 
   const sortByRelevance = (items: any[], keyword: string) => {
@@ -130,6 +131,7 @@ export default function Home() {
             tahunDibuat: item.tahunDibuat,
             innovatorLogo: item.innovatorLogo,
             innovatorName: item.innovatorName || item.namaInnovator,
+            jumlahDesa: item.jumlahDesa || 0,
           }))
           .filter((item: HomeSuggestion) => Boolean(item.id));
 
