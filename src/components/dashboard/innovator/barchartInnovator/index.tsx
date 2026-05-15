@@ -10,7 +10,7 @@ import {
   MenuItem,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
+import { useAuthToken } from "Hooks/useAuthToken";
 
 import YearRangeFilter from "./dateFilter";
 import filterIcon from "@public/icons/icon-filter.svg";
@@ -30,9 +30,10 @@ import {
 } from "recharts";
 
 const BarChartInovasi = () => {
-  const auth = getAuth();
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   const [showFilter, setShowFilter] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [yearRange, setYearRange] = useState<[number, number]>([2010, 2025]);
   const [dataByYear, setDataByYear] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
@@ -52,21 +53,25 @@ const BarChartInovasi = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!authLoaded) return;
       setLoading(true);
+      setError(null);
       try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
+        if (!token) {
+          setError("User not authenticated.");
           setDataByYear({});
           setLoading(false);
           return;
         }
 
-        const token = await currentUser.getIdToken();
         const response = await fetch('/api/innovator/dashboard', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch dashboard data");
+        }
         const data = await response.json();
 
         setProfilInovator({
@@ -78,19 +83,30 @@ const BarChartInovasi = () => {
           produk: (data.top3Innovations || []).map((i: any) => i.name).join(", ") || "-",
         });
 
-        // Karena API /api/innovator/dashboard tidak mengembalikan data berdasarkan tahun klaim desa,
-        // kita kosongkan data grafik agar menampilkan status "Belum ada data".
-        setDataByYear({});
-        setFormattedData([]);
+        const claimsData = data.pertumbuhanDesa || [];
+        
+        // Filter based on selected yearRange
+        const filteredData = claimsData.filter((item: any) => item.year >= yearRange[0] && item.year <= yearRange[1]);
+        setFormattedData(filteredData);
+        
+        const yearCount: Record<number, number> = {};
+        filteredData.forEach((item: any) => {
+          yearCount[item.year] = (yearCount[item.year] || 0) + 1;
+        });
+        
+        setDataByYear(yearCount);
       } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        setError(message);
         console.error("Error:", err);
         setDataByYear({});
+        setFormattedData([]);
       }
       setLoading(false);
     };
 
     fetchData();
-  }, [yearRange, auth.currentUser]);
+  }, [yearRange, authLoaded, token]);
 
   const isEmpty = formattedData.length === 0;
 

@@ -11,8 +11,7 @@ import {
 } from "@chakra-ui/react";
 import Image from "next/image";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
-import { getAuth } from "firebase/auth";
-import { getInnovators } from "Services/innovatorServices";
+import { useAuthToken } from "Hooks/useAuthToken";
 import { getInnovation } from "Services/innovationServices";
 import { getClaims } from "Services/villageServices";
 import {
@@ -59,33 +58,34 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
     modelBisnis: "-",
   });
 
-  const auth = getAuth();
-  const currentUser = auth.currentUser;
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
-    if (!currentUser) {
-      setImplementationData([]);
-      setLoading(false);
-      setUserName("");
-      return;
-    }
-
-    // Set userName from auth displayName or email fallback
-    setUserName(
-      currentUser.displayName
-        ? currentUser.displayName
-        : currentUser.email
-          ? currentUser.email.split("@")[0]
-          : "User"
-    );
-
     const fetchData = async () => {
+      if (!authLoaded) return;
       setLoading(true);
+
+      if (!token) {
+        setImplementationData([]);
+        setLoading(false);
+        setUserName("");
+        return;
+      }
+
       try {
-        // Fetch innovator profile via MongoDB API
-        const innovatorsRes = await getInnovators();
-        const allInnovators = (innovatorsRes as any).data || [];
-        const myProfile = allInnovators.find((i: any) => i.id === currentUser.uid);
+        // Dapatkan profil innovator milik user saat ini via dashboard API
+        const dashRes = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!dashRes.ok) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
+        }
+
+        const dashData = await dashRes.json();
+        const myProfile = dashData.innovator;
 
         if (!myProfile) {
           setImplementationData([]);
@@ -93,7 +93,8 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
           return;
         }
 
-        const inovatorId = myProfile._id || myProfile.id;
+        const inovatorId = myProfile._id?.toString();
+        setUserName(myProfile.namaInovator || "");
 
         // Fetch innovations by this innovator via MongoDB API
         const innovationRes = await getInnovation();
@@ -186,7 +187,7 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
     };
 
     fetchData();
-  }, [currentUser]);
+  }, [authLoaded, token]);
 
   const totalPages = Math.ceil(implementationData.length / itemsPerPage);
   const currentData = implementationData.slice(
@@ -244,11 +245,6 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
       month: "long",
       year: "numeric",
     });
-
-    // Assuming `userName` is defined and `implementationData` is the list of innovations
-    const userProfile = {
-      nama: userName || "-",
-    };
 
     // Header with green background
     doc.setFillColor(0, 128, 0);

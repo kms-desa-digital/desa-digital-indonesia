@@ -13,11 +13,11 @@ export async function GET(request: NextRequest) {
 
     const db = await connectToDatabase()
 
-    let targetUserId = '';
-
+    let possibleIds: string[] = [];
     if (queriedInnovatorId) {
-      targetUserId = queriedInnovatorId;
+      possibleIds.push(queriedInnovatorId);
     } else {
+      possibleIds.push(auth.uid);
       // Cari user dengan format ID yang aman (Firebase UID atau ObjectId)
       let userQuery: any = { 
         $or: [
@@ -42,21 +42,31 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ message: 'User not found in database' }, { status: 404 })
       }
 
-      targetUserId = user._id.toString();
+      possibleIds.push(user._id.toString());
+      if (user.firebaseUid) possibleIds.push(user.firebaseUid);
+      if (user.uid) possibleIds.push(user.uid);
     }
+
+    // Buat daftar ID unik
+    possibleIds = [...new Set(possibleIds.filter(Boolean))];
 
     // 1. Cari Profil Innovator dengan pencarian cerdas
     let innovatorQuery: any = {
       $or: [
-        { userId: targetUserId },
-        { _id: targetUserId }
+        { userId: { $in: possibleIds } },
+        { _id: { $in: possibleIds } }
       ]
     };
-    if (ObjectId.isValid(targetUserId)) {
-      innovatorQuery.$or.push({ _id: new ObjectId(targetUserId) });
-    }
+    
+    possibleIds.forEach(id => {
+      if (ObjectId.isValid(id)) {
+        innovatorQuery.$or.push({ _id: new ObjectId(id) });
+        innovatorQuery.$or.push({ userId: new ObjectId(id) });
+      }
+    });
 
     const innovator = await db.collection('innovators').findOne(innovatorQuery)
+    console.log("Dashboard Debug: possibleIds:", possibleIds, "innovator found:", innovator ? innovator._id : 'null')
 
     if (!innovator) {
       return NextResponse.json({
@@ -75,14 +85,17 @@ export async function GET(request: NextRequest) {
     // 2. Siapkan filter cerdas untuk inovasi (karena innovatorId di database bisa berupa userId atau profile _id)
     const innovationFilter = {
       $or: [
-        { innovatorId: targetUserId },
+        { innovatorId: { $in: possibleIds } },
         { innovatorId: innovator._id.toString() },
         ...(innovator.userId ? [{ innovatorId: innovator.userId }] : [])
       ]
     };
+    
+    console.log("Dashboard Debug: innovationFilter:", JSON.stringify(innovationFilter));
 
     // Hitung inovasi milik innovator ini
     const totalInnovations = await db.collection('innovations').countDocuments(innovationFilter)
+    console.log("Dashboard Debug: totalInnovations:", totalInnovations);
 
     // Hitung inovasi berdasarkan status
     const verifiedInnovations = await db.collection('innovations').countDocuments({
@@ -123,31 +136,46 @@ export async function GET(request: NextRequest) {
     const categoryStats = Object.keys(categoryMap).map(kat => ({ kategori: kat, total: categoryMap[kat] }));
 
     // 5. Map Villages (Desa yang mengklaim inovasi innovator ini)
-    const claims = await db.collection('claimInnovations').find({ inovatorId: targetUserId }).toArray();
-    // jika di database inovatorId juga ada yg pakai userId profil, pastikan mencari klaim dgn dua ID tersebut
-    if (claims.length === 0 && innovator.userId) {
-       const claims2 = await db.collection('claimInnovations').find({ inovatorId: innovator.userId }).toArray();
-       claims.push(...claims2);
-    }
-    
+    const claimFilter = {
+      $or: [
+        { inovatorId: { $in: possibleIds } },
+        { inovatorId: innovator._id.toString() },
+        ...(innovator.userId ? [{ inovatorId: innovator.userId }] : [])
+      ]
+    };
+    const claims = await db.collection('claimInnovations').find(claimFilter).toArray();
+
     const desaIds = [...new Set(claims.map(c => c.desaId).filter(Boolean))];
     const villageData = await db.collection('villages').find({ userId: { $in: desaIds } }).toArray();
-    
+
     const mapVillages = villageData.map(v => ({
       name: v.namaDesa || '',
       lat: v.latitude || 0,
       lng: v.longitude || 0
     })).filter(v => v.lat && v.lng);
 
+    const totalKlienDesa = desaIds.length;
+
+    // Export claims for Pertumbuhan Desa Dampingan
+    const pertumbuhanDesa = claims.map(c => ({
+      namaDesa: c.namaDesa || '',
+      namaInovasi: c.namaInovasi || '',
+      namaInovator: c.namaInovator || '',
+      year: new Date(c.createdAt).getFullYear() || new Date().getFullYear()
+    }));
+
     return NextResponse.json({
       innovator,
       totalInnovations,
+      totalInovasi: totalInnovations,
+      totalKlienDesa,
       verifiedInnovations,
       pendingInnovations,
       rejectedInnovations,
       top3Innovations,
       categoryStats,
-      mapVillages
+      mapVillages,
+      pertumbuhanDesa
     })
   } catch (error) {
     console.error('Error fetching innovator dashboard:', error)
