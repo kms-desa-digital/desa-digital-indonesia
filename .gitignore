@@ -46,4 +46,7 @@ yarn-error.log*
 next-env.d.ts
 
 /docs
+/src/scripts/files
+/test-archive
+
 /src/scripts/accounts*

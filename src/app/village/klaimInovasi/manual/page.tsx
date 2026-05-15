@@ -143,7 +143,7 @@ const KlaimInovasiManualContent: React.FC = () => {
         try {
             await deleteClaim(itemToDelete);
             toast.success("Klaim berhasil dihapus");
-            router.replace("/village/pengajuan/saya");
+            router.replace(`/village/pengajuan/${user?.uid}`);
         } catch (err) {
             console.error("Error deleting manual claim:", err);
             toast.error("Gagal menghapus klaim");
@@ -587,15 +587,15 @@ const KlaimInovasiManualContent: React.FC = () => {
                                     </Box>
                                 )}
                                 <Flex gap={2} w="100%">
-                                        <Button
-                                            flex={1}
-                                            isLoading={loading}
-                                            onClick={handleAjukanKlaim}
-                                            type="button"
-                                            isDisabled={!isFormValid() || disabled || Object.values(isUploading).some(v => v)}
-                                            colorScheme="green"
-                                            fontSize="14px"
-                                        >
+                                    <Button
+                                        flex={1}
+                                        isLoading={loading}
+                                        onClick={handleAjukanKlaim}
+                                        type="button"
+                                        isDisabled={!isFormValid() || disabled || Object.values(isUploading).some(v => v)}
+                                        colorScheme="green"
+                                        fontSize="14px"
+                                    >
                                         {claimData?.status === "Ditolak" ? "Ajukan Ulang" : editId ? "Perbarui Klaim" : "Ajukan Klaim"}
                                     </Button>
                                     <ConfModal

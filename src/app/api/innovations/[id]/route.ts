@@ -157,8 +157,9 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       if (isResubmission) {
         await notifyAllAdmins({
           type: 'personal',
-          title: `Pengajuan Ulang: ${existing.namaInovasi}`,
-          description: `Innovator ${existing.namaInnovator || 'unknown'} telah mengajukan ulang inovasi yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+          category: 'innovation_submission',
+          title: `Pengajuan Ulang Inovasi: ${existing.namaInovasi}`,
+          description: `Innovator ${existing.namaInovator || 'unknown'} telah mengajukan ulang inovasi "${existing.namaInovasi}" yang sebelumnya ditolak. Silakan verifikasi kembali.`,
           actionType: 'innovation_detail',
           relatedId: existing._id.toString(),
         })

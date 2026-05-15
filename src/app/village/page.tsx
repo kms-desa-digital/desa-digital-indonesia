@@ -174,7 +174,13 @@ const Village: React.FC = () => {
                     provinsi: item.lokasi?.provinsi?.label || item.provinsi || "",
                     kabupatenKota: item.lokasi?.kabupatenKota?.label || item.kabupatenKota || item.kabupaten || "",
                     namaDesa: item.lokasi?.desaKelurahan?.label || item.namaDesa || item.desa || "",
-                }));
+                }))
+                .sort((a: any, b: any) => {
+                    const inovasi = (Number(b.jumlahInovasiDiterapkan) || 0) - (Number(a.jumlahInovasiDiterapkan) || 0);
+                    if (inovasi !== 0) return inovasi;
+                    return (a.namaDesa || "").localeCompare(b.namaDesa || "");
+                });
+                
                 setVillages(villagesData);
                 setIsFetched(true);
             } catch (error) {
@@ -272,6 +278,7 @@ const Village: React.FC = () => {
                                 jumlahInovasiDiterapkan={item.jumlahInovasiDiterapkan}
                                 isHome={false}
                                 highlightQuery={searchTerm}
+                                ranking={startIndex + idx + 1}
                                 onClick={() => {
                                     router.push(`/village/detail/${item.userId || item.id}`);
                                 }}

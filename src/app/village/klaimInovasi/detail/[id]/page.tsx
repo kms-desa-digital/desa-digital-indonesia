@@ -349,7 +349,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                             height="160px"
                                             bg="gray.100"
                                             cursor="pointer"
-                                            onClick={() => window.open(src, '_blank')}
+                                            onClick={() => setPreviewUrl(src)}
                                             transition="transform 0.2s"
                                             _hover={{ transform: "scale(1.02)" }}
                                         >
@@ -525,21 +525,31 @@ const KlaimInovasiDetail: React.FC = () => {
                     >
                         <ModalHeader bg="green.700" color="white" py={3} fontSize="14px">
                             <Flex justify="space-between" align="center">
-                                <Text fontWeight="700">Pratinjau Dokumen</Text>
+                                <Text fontWeight="700">Pratinjau {previewUrl && (/\.(jpg|jpeg|png|webp|gif|svg)/i.test(previewUrl.split('?')[0]) ? "Foto" : "Dokumen")}</Text>
                                 <ModalCloseButton position="static" size="sm" />
                             </Flex>
                         </ModalHeader>
-                        <ModalBody p={0} bg="white">
+                        <ModalBody p={0} bg="white" display="flex" alignItems="center" justifyContent="center">
                             {previewUrl && (
-                                <iframe
-                                    src={`${previewUrl}#view=FitH&toolbar=0`}
-                                    style={{
-                                        width: "100%",
-                                        height: "100%",
-                                        border: "none",
-                                    }}
-                                    title="Pratinjau Dokumen"
-                                />
+                                /\.(jpg|jpeg|png|webp|gif|svg)/i.test(previewUrl.split('?')[0]) ? (
+                                    <Image 
+                                        src={previewUrl} 
+                                        maxH="100%" 
+                                        w="auto" 
+                                        objectFit="contain" 
+                                        alt="Pratinjau Foto" 
+                                    />
+                                ) : (
+                                    <iframe
+                                        src={`${previewUrl}#view=FitH&toolbar=0`}
+                                        style={{
+                                            width: "100%",
+                                            height: "100%",
+                                            border: "none",
+                                        }}
+                                        title="Pratinjau Dokumen"
+                                    />
+                                )
                             )}
                         </ModalBody>
                     </ModalContent>

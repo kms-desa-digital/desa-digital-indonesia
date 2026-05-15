@@ -173,7 +173,7 @@ const KlaimInovasiContent: React.FC = () => {
         try {
             await deleteClaim(itemToDelete);
             toast.success("Klaim berhasil dihapus");
-            router.replace("/village/pengajuan/saya");
+            router.replace(`/village/pengajuan/${user?.uid}`);
         } catch (err) {
             console.error("Error deleting claim:", err);
             toast.error("Gagal menghapus klaim");
