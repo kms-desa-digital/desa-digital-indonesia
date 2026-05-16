@@ -53,7 +53,7 @@ const PengajuanKlaim: React.FC = () => {
     const id = params.id as string;
     const router = useRouter();
     const [user] = useAuthState(auth);
-    const { role, loading: userLoading, uid } = useUser();
+    const { role, loading: userLoading, uid, firebaseUid } = useUser();
     const [data, setData] = useState<any[]>([]);
     const [filteredData, setFilteredData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -108,7 +108,7 @@ const PengajuanKlaim: React.FC = () => {
     }
 
     const normalizedRole = (role || "").toLowerCase();
-    const isAuthorized = normalizedRole === "admin" || uid === id;
+    const isAuthorized = normalizedRole === "admin" || uid === id || firebaseUid === id;
 
     if (!isAuthorized) {
         return <Forbidden />;

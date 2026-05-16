@@ -18,6 +18,7 @@ import { paths } from "Consts/path";
 import { getInnovatorById, getAssistedVillages } from "Services/innovatorServices";
 import { verifyInnovator } from "Services/adminServices";
 import { getInnovation } from "Services/innovationServices";
+import { useUser } from "src/contexts/UserContext";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -83,6 +84,7 @@ const ProfileInnovator: React.FC = () => {
     const [owner, setOwner] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { uid: contextUid, firebaseUid: contextFirebaseUid, role } = useUser();
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
@@ -147,14 +149,19 @@ const ProfileInnovator: React.FC = () => {
                 const data = res?.innovator || res?.data;
                 if (data) {
                     setInnovatorData(data);
-                    
-                    const uid = userLogin?.uid;
-                    const isOwner = data.id === uid || data.userId === uid || id === uid;
-                    
-                    if (uid) {
+
+                    const isOwner =
+                        data.id === contextUid ||
+                        data.userId === contextUid ||
+                        id === contextUid ||
+                        data.id === contextFirebaseUid ||
+                        data.userId === contextFirebaseUid ||
+                        id === contextFirebaseUid;
+
+                    if (contextUid || contextFirebaseUid) {
                         setOwner(isOwner);
                     }
-                    
+
                     // Redirect Owner if status is Ditolak
                     if (isOwner && data.status === "Ditolak") {
                         router.push(paths.INNOVATOR_FORM);
@@ -163,10 +170,10 @@ const ProfileInnovator: React.FC = () => {
                 } else {
                     console.log("Innovator not found via API");
                     if (userLogin?.uid === id) {
-                         router.push(paths.INNOVATOR_FORM);
-                         return;
+                        router.push(paths.INNOVATOR_FORM);
+                        return;
                     } else {
-                         setError("Innovator not found.");
+                        setError("Innovator not found.");
                     }
                 }
 
@@ -191,7 +198,7 @@ const ProfileInnovator: React.FC = () => {
         };
 
         fetchInnovatorData();
-        
+
         // Polling for real-time status updates
         const intervalId = setInterval(async () => {
             if (!id) return;
@@ -459,62 +466,62 @@ const ProfileInnovator: React.FC = () => {
                     </Flex>
                     {villages.length > 0 ? (
                         villages.slice(0, 3).map((village) => (
-                             <Box
-                                 mt={2}
-                                 key={village.id}
-                                 borderWidth="1px"
-                                 borderRadius="xl"
-                                 p={4}
-                                 mb={4}
-                                 cursor="pointer"
-                                 backgroundColor="white"
-                                 borderColor="gray.200"
-                                 shadow="xs"
-                                 _hover={{ shadow: 'sm', borderColor: '#347357' }}
-                                 onClick={() =>
-                                     router.push(`/village/detail/${village.id}`)
-                                 }
-                             >
-                                 <Flex alignItems="center">
-                                     <Image
-                                         src={village.logo || "/images/default-logo.svg"}
-                                         alt={`${village.namaDesa} Logo`}
-                                         boxSize="32px"
-                                         borderRadius="full"
-                                         mr={3}
-                                     />
-                                     <Text fontSize="13px" fontWeight="700" color="#1F2937">
-                                         {village.namaDesa}
-                                     </Text>
-                                     <ChevronRightIcon color="gray.400" ml="auto" />
-                                 </Flex>
-                                 <Box borderTop="1px" borderColor="gray.100" pt={2} mt={2}>
-                                     <Text fontSize="10px" fontWeight="400" mb={1} color="#9CA3AF">
-                                         {tInnovation("appliedInnovations")}
-                                     </Text>
-                                     <Flex direction="row" gap={2} flexWrap="wrap">
-                                         {Array.isArray(village.inovasiDiterapkan) && village.inovasiDiterapkan.length > 0 ? (
-                                             village.inovasiDiterapkan.map((inovasi: any, index: number) => (
-                                                 <Box
-                                                     key={index}
-                                                     px={2}
-                                                     py={0.5}
-                                                     fontSize="10px"
-                                                     fontWeight="500"
-                                                     borderRadius="full"
-                                                     backgroundColor="#F3F4F6"
-                                                     color="#4B5563"
-                                                     border="1px solid #E5E7EB"
-                                                 >
-                                                     {inovasi}
-                                                 </Box>
-                                             ))
-                                         ) : (
-                                             <Text fontSize="10px" color="#D1D5DB">Belum ada inovasi spesifik</Text>
-                                         )}
-                                     </Flex>
-                                 </Box>
-                             </Box>
+                            <Box
+                                mt={2}
+                                key={village.id}
+                                borderWidth="1px"
+                                borderRadius="xl"
+                                p={4}
+                                mb={4}
+                                cursor="pointer"
+                                backgroundColor="white"
+                                borderColor="gray.200"
+                                shadow="xs"
+                                _hover={{ shadow: 'sm', borderColor: '#347357' }}
+                                onClick={() =>
+                                    router.push(`/village/detail/${village.id}`)
+                                }
+                            >
+                                <Flex alignItems="center">
+                                    <Image
+                                        src={village.logo || "/images/default-logo.svg"}
+                                        alt={`${village.namaDesa} Logo`}
+                                        boxSize="32px"
+                                        borderRadius="full"
+                                        mr={3}
+                                    />
+                                    <Text fontSize="13px" fontWeight="700" color="#1F2937">
+                                        {village.namaDesa}
+                                    </Text>
+                                    <ChevronRightIcon color="gray.400" ml="auto" />
+                                </Flex>
+                                <Box borderTop="1px" borderColor="gray.100" pt={2} mt={2}>
+                                    <Text fontSize="10px" fontWeight="400" mb={1} color="#9CA3AF">
+                                        {tInnovation("appliedInnovations")}
+                                    </Text>
+                                    <Flex direction="row" gap={2} flexWrap="wrap">
+                                        {Array.isArray(village.inovasiDiterapkan) && village.inovasiDiterapkan.length > 0 ? (
+                                            village.inovasiDiterapkan.map((inovasi: any, index: number) => (
+                                                <Box
+                                                    key={index}
+                                                    px={2}
+                                                    py={0.5}
+                                                    fontSize="10px"
+                                                    fontWeight="500"
+                                                    borderRadius="full"
+                                                    backgroundColor="#F3F4F6"
+                                                    color="#4B5563"
+                                                    border="1px solid #E5E7EB"
+                                                >
+                                                    {inovasi}
+                                                </Box>
+                                            ))
+                                        ) : (
+                                            <Text fontSize="10px" color="#D1D5DB">Belum ada inovasi spesifik</Text>
+                                        )}
+                                    </Flex>
+                                </Box>
+                            </Box>
                         ))
                     ) : (
                         <Text fontSize="12px" color="#9CA3AF" textAlign="left" mt={2}>
@@ -548,20 +555,20 @@ const ProfileInnovator: React.FC = () => {
                             message={innovatorData.catatanAdmin}
                         />
                     ) : (
-                    <NavbarButton>
-                        <Button
-                            width="100%"
-                            onClick={() => {
-                                if (owner) {
-                                    toEditInovator(); // Arahkan ke halaman edit inovator jika owner
-                                } else {
-                                    onOpen(); // Buka modal jika bukan owner
-                                }
-                            }}
-                        >
-                            {owner ? t("editProfile") : t("contact")}
-                        </Button>
-                    </NavbarButton>
+                        <NavbarButton>
+                            <Button
+                                width="100%"
+                                onClick={() => {
+                                    if (owner) {
+                                        toEditInovator(); // Arahkan ke halaman edit inovator jika owner
+                                    } else {
+                                        onOpen(); // Buka modal jika bukan owner
+                                    }
+                                }}
+                            >
+                                {owner ? t("editProfile") : t("contact")}
+                            </Button>
+                        </NavbarButton>
                     )
                 )}
             </div>

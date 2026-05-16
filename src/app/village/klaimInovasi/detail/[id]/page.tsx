@@ -117,12 +117,6 @@ const KlaimInovasiDetail: React.FC = () => {
         try {
             if (id && claimData) {
                 await updateClaim(id, { status: "Terverifikasi" });
-                if (claimData.desaId) {
-                    const vRes: any = await getVillageById(claimData.desaId);
-                    const vData = vRes.data || vRes.village;
-                    const newValue = (Number(vData?.jumlahInovasiDiterapkan) || 0) + 1;
-                    await updateVillage(claimData.desaId, { jumlahInovasiDiterapkan: newValue });
-                }
                 setClaimData((prev: any) => ({ ...prev, status: "Terverifikasi" }));
                 toast.success("Klaim berhasil diverifikasi!");
             }
@@ -530,41 +524,47 @@ const KlaimInovasiDetail: React.FC = () => {
 
                 {/* Document Preview Modal */}
                 <Modal isOpen={!!previewUrl} onClose={() => setPreviewUrl(null)} isCentered>
-                    <ModalOverlay bg="blackAlpha.500" />
+                    <ModalOverlay bg="blackAlpha.700" />
                     <ModalContent
-                        maxW="340px"
-                        w="85%"
-                        h="80vh"
+                        maxW="90vw"
+                        w="auto"
+                        h="auto"
+                        minH="unset"
+                        maxH="90vh"
                         borderRadius="xl"
                         overflow="hidden"
                         mx="auto"
+                        bg="transparent"
+                        boxShadow="none"
                     >
-                        <ModalHeader bg="green.700" color="white" py={3} fontSize="14px">
+                        <ModalHeader bg="green.700" color="white" py={3} fontSize="14px" borderTopRadius="xl">
                             <Flex justify="space-between" align="center">
                                 <Text fontWeight="700">Pratinjau {previewUrl && (/\.(jpg|jpeg|png|webp|gif|svg)/i.test(previewUrl.split('?')[0]) ? "Foto" : "Dokumen")}</Text>
                                 <ModalCloseButton position="static" size="sm" />
                             </Flex>
                         </ModalHeader>
-                        <ModalBody p={0} bg="white" display="flex" alignItems="center" justifyContent="center">
+                        <ModalBody p={0} bg="white" borderBottomRadius="xl" display="flex" alignItems="center" justifyContent="center" overflow="hidden">
                             {previewUrl && (
                                 /\.(jpg|jpeg|png|webp|gif|svg)/i.test(previewUrl.split('?')[0]) ? (
                                     <Image 
                                         src={previewUrl} 
-                                        maxH="100%" 
-                                        w="auto" 
+                                        maxH="80vh" 
+                                        maxW="100%"
                                         objectFit="contain" 
                                         alt="Pratinjau Foto" 
                                     />
                                 ) : (
-                                    <iframe
-                                        src={`${previewUrl}#view=FitH&toolbar=0`}
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            border: "none",
-                                        }}
-                                        title="Pratinjau Dokumen"
-                                    />
+                                    <Box w="340px" h="80vh">
+                                        <iframe
+                                            src={`${previewUrl}#view=FitH&toolbar=0`}
+                                            style={{
+                                                width: "100%",
+                                                height: "100%",
+                                                border: "none",
+                                            }}
+                                            title="Pratinjau Dokumen"
+                                        />
+                                    </Box>
                                 )
                             )}
                         </ModalBody>

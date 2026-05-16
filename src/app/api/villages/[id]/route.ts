@@ -31,10 +31,21 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     // Hitung jumlah inovasi yang benar-benar terverifikasi untuk desa ini
     // Ini membantu jika field static 'jumlahInovasiDiterapkan' belum tersinkronisasi
     const desaId = village.userId || village._id.toString();
-    const verifiedCount = await db.collection('claimInnovations').countDocuments({
+    
+    // 1. Count verified MANUAL claims only (to avoid double counting standard innovations)
+    const manualClaimCount = await db.collection('claimInnovations').countDocuments({
       desaId: desaId,
+      status: 'Terverifikasi',
+      $or: [{ inovasiId: null }, { inovasiId: { $exists: false } }]
+    });
+
+    // 2. Count standard innovations where this village is in desaId array
+    const standardCount = await db.collection('innovations').countDocuments({
+      desaId: { $in: [desaId] },
       status: 'Terverifikasi'
     });
+
+    const totalVerified = manualClaimCount + standardCount;
 
     return NextResponse.json(
       { 
@@ -42,7 +53,7 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
           ...village, 
           id: village._id.toString(), 
           _id: village._id.toString(),
-          jumlahInovasiDiterapkan: Math.max(village.jumlahInovasiDiterapkan || 0, verifiedCount)
+          jumlahInovasiDiterapkan: totalVerified
         } 
       },
       { status: 200 }

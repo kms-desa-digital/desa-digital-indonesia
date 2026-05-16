@@ -84,7 +84,7 @@ const EditInnovation: React.FC = () => {
     const toast = useToast();
     const params = useParams();
     const id = params.id as string;
-    const { role, uid, loading: userLoading } = useUser();
+    const { role, uid, firebaseUid, loading: userLoading } = useUser();
 
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const selectFileRef = useRef<HTMLInputElement>(null);
@@ -214,7 +214,7 @@ const EditInnovation: React.FC = () => {
     }
 
     const normalizedRole = (role || "").toLowerCase();
-    const isAuthorized = normalizedRole === "admin" || uid === innovatorId;
+    const isAuthorized = normalizedRole === "admin" || uid === innovatorId || firebaseUid === innovatorId;
 
     if (!isAuthorized) {
         return <Forbidden />;

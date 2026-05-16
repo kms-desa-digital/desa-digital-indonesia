@@ -70,12 +70,12 @@ function CardInnovation(props: CardInnovationProps) {
     <Container onClick={onClick} style={style}>
       <Background src={(images && images[0]) ? images[0] : "/images/default-header.svg"} alt={namaInovasi} />
       <Content>
-        <div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <Title>{renderHighlightedText(namaInovasi)}</Title>
           <Category>{kategori}</Category>
           <Description>{renderHighlightedText(deskripsi)}</Description>
         </div>
-        <div>
+        <div style={{ marginTop: 'auto' }}>
           <CompanyContainer>
             {typeof innovatorLogo === "string" ? (
               <Icon src={innovatorLogo} alt={namaInovasi} />

@@ -103,6 +103,42 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
     }
 
+    // Sync data if status changed TO Terverifikasi
+    if (claim.status !== 'Terverifikasi' && nextStatus === 'Terverifikasi') {
+        try {
+            // 1. Increment Village implementation count
+            const villageQuery: any = { $or: [{ userId: claim.desaId }] };
+            if (ObjectId.isValid(claim.desaId)) {
+                villageQuery.$or.push({ _id: new ObjectId(claim.desaId) });
+            }
+
+            await db.collection('villages').updateOne(
+                villageQuery,
+                { $inc: { jumlahInovasiDiterapkan: 1 } }
+            ).catch(err => console.error("Failed to increment village count:", err));
+
+            // 2. If regular claim, update Innovation document
+            if (claim.inovasiId) {
+                let innovQuery: any = {};
+                if (ObjectId.isValid(claim.inovasiId)) {
+                    innovQuery._id = new ObjectId(claim.inovasiId);
+                } else {
+                    innovQuery._id = claim.inovasiId;
+                }
+
+                await db.collection('innovations').updateOne(
+                    innovQuery,
+                    { 
+                        $addToSet: { desaId: claim.desaId },
+                        $inc: { jumlahPenerapan: 1 } 
+                    }
+                ).catch(err => console.error("Failed to increment innovation stats:", err));
+            }
+        } catch (syncError) {
+            console.error("Error during data synchronization on verification:", syncError);
+        }
+    }
+
     // Sync data if status changed FROM Terverifikasi TO Menunggu
     if (claim.status === 'Terverifikasi' && nextStatus === 'Menunggu') {
         try {

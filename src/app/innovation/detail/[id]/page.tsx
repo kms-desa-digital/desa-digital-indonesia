@@ -78,6 +78,7 @@ function DetailInnovation() {
     const [isClaimed, setIsClaimed] = useState(false);
     const [claimId, setClaimId] = useState("");
     const [claimStatus, setClaimStatus] = useState("");
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     const getApiErrorInfo = (err: any) => {
         const status = err?.status || err?.response?.status;
@@ -92,6 +93,8 @@ function DetailInnovation() {
     useEffect(() => {
         if (id) {
             setLoading(true);
+            let redirecting = false;
+
             getInnovationById(id)
                 .then((res: any) => {
                     const innovationData = res.innovation || res.data || res;
@@ -102,7 +105,7 @@ function DetailInnovation() {
                         throw new Error("404");
                     }
                 })
-                .catch(async (error) => {
+                .catch(async (error: any) => {
                     const { status } = getApiErrorInfo(error);
                     if (status === 404 || error.message === "404") {
                         // Innovation not found, try to check if it's a manual claim
@@ -111,6 +114,8 @@ function DetailInnovation() {
                             const claimData = claimRes.data;
                             if (claimData && !claimData.inovasiId) {
                                 // It's a manual claim, redirect to its specific detail page
+                                redirecting = true;
+                                setIsRedirecting(true);
                                 router.replace(`/village/klaimInovasi/detail/${id}`);
                                 return;
                             }
@@ -124,7 +129,9 @@ function DetailInnovation() {
                     }
                 })
                 .finally(() => {
-                    setLoading(false);
+                    if (!redirecting) {
+                        setLoading(false);
+                    }
                 });
         }
     }, [id]);
@@ -322,7 +329,7 @@ function DetailInnovation() {
         }
     };
 
-    if (loading) {
+    if (loading || isRedirecting) {
         return (
             <Box>
                 <TopBar title={t("detailTitle")} onBack={() => router.back()} />

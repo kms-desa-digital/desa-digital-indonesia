@@ -71,11 +71,13 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
         id: doc._id.toString(),
         _id: doc._id.toString(),
         namaInovasi: doc.namaInovasi,
-        namaInnovator: doc.namaInovator || doc.namaInovator,
+        namaInnovator: doc.namaInovator,
+        innovatorImgURL: doc.logoInovator || null, // Map logoInovator to innovatorImgURL for consistency
+        kategori: 'Inovasi Manual', // Default category for manual claims
         deskripsi: doc.deskripsiInovasi || doc.deskripsi,
         images: doc.fotoInovasi ? [doc.fotoInovasi] : (doc.buktiFiles?.foto || []),
         status: 'Terverifikasi',
-        jumlahDesa: 0, // klaim manual tidak punya inovasiId untuk di-lookup
+        jumlahDesa: 1, // klaim manual minimal diterapkan oleh desa yang mengklaim
       }))
 
     const finalResult = [...result_direct, ...result_claims]
