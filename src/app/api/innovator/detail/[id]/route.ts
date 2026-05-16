@@ -33,17 +33,32 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
             {
               $match: {
                 $expr: {
-                  $or: [
-                    { $eq: ['$innovatorId', '$$innovator_id'] },
-                    { $eq: ['$innovatorId', '$$user_id'] }
+                  $and: [
+                    {
+                      $or: [
+                        { $eq: ['$innovatorId', '$$innovator_id'] },
+                        { $eq: ['$innovatorId', '$$user_id'] }
+                      ]
+                    },
+                    { $eq: ['$status', 'Terverifikasi'] }
                   ]
                 }
               }
-            },
-            { $unwind: { path: '$desaId', preserveNullAndEmptyArrays: false } },
-            { $group: { _id: '$desaId' } }
+            }
           ],
-          as: 'uniqueDesas'
+          as: 'allInnovations'
+        }
+      },
+      {
+        $addFields: {
+          jumlahInovasi: { $size: '$allInnovations' },
+          uniqueDesas: {
+            $reduce: {
+              input: '$allInnovations',
+              initialValue: [],
+              in: { $setUnion: ['$$value', { $ifNull: ['$$this.desaId', []] }] }
+            }
+          }
         }
       },
       {

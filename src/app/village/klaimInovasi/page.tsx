@@ -39,7 +39,8 @@ import ActionDrawer from "Components/drawer/ActionDrawer";
 import Loading from "Components/loading";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { auth } from "src/firebase/clientApp";
+import { auth, storage } from "src/firebase/clientApp";
+import { getDownloadURL, ref, uploadString } from "firebase/storage";
 import { useUser } from "src/contexts/UserContext";
 import RecommendationDrawer from "Components/drawer/RecommendationDrawer";
 
@@ -262,6 +263,58 @@ const KlaimInovasiContent: React.FC = () => {
         setEditable(false);
     };
 
+    const uploadFilesToStorage = async (
+        claimId: string,
+        files: {
+            foto: string[],
+            video: string[],
+            dokumen: string[]
+        }
+    ) => {
+        const uploadResults: any = { foto: [], video: [], dokumen: [] };
+
+        // Upload Foto
+        for (let i = 0; i < files.foto.length; i++) {
+            const file = files.foto[i];
+            if (file.startsWith('data:')) {
+                const storageRef = ref(storage, `claimInnovations/${claimId}/images/foto_${Date.now()}_${i}`);
+                await uploadString(storageRef, file, 'data_url');
+                const url = await getDownloadURL(storageRef);
+                uploadResults.foto.push(url);
+            } else {
+                uploadResults.foto.push(file);
+            }
+        }
+
+        // Upload Video
+        for (let i = 0; i < files.video.length; i++) {
+            const file = files.video[i];
+            if (file.startsWith('data:')) {
+                const storageRef = ref(storage, `claimInnovations/${claimId}/videos/video_${Date.now()}_${i}`);
+                await uploadString(storageRef, file, 'data_url');
+                const url = await getDownloadURL(storageRef);
+                uploadResults.video.push(url);
+            } else {
+                uploadResults.video.push(file);
+            }
+        }
+
+        // Upload Dokumen
+        for (let i = 0; i < files.dokumen.length; i++) {
+            const file = files.dokumen[i];
+            if (file.startsWith('data:')) {
+                const storageRef = ref(storage, `claimInnovations/${claimId}/documents/doc_${Date.now()}_${i}`);
+                await uploadString(storageRef, file, 'data_url');
+                const url = await getDownloadURL(storageRef);
+                uploadResults.dokumen.push(url);
+            } else {
+                uploadResults.dokumen.push(file);
+            }
+        }
+
+        return uploadResults;
+    };
+
     const submitClaim = async () => {
         console.log("Submitting claim via API...");
         setLoading(true);
@@ -302,9 +355,25 @@ const KlaimInovasiContent: React.FC = () => {
                 status: "Menunggu"
             };
 
+            // Initial submission to get claimId
             const response: any = editId
                 ? await updateClaim(editId, formData)
                 : await claimInnovation(formData);
+
+            const claimId = editId || response?.claimId || response?.data?.claimId;
+            if (!claimId) throw new Error("Failed to retrieve claim ID");
+
+            // Upload files to structured storage
+            const uploadedUrls = await uploadFilesToStorage(claimId, {
+                foto: formData.buktiFiles.foto,
+                video: formData.buktiFiles.video,
+                dokumen: formData.buktiFiles.dokumen
+            });
+
+            // Update claim with structured URLs
+            await updateClaim(claimId, {
+                buktiFiles: uploadedUrls
+            });
 
             console.log("Response from server:", response);
 

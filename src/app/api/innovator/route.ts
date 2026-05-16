@@ -33,22 +33,39 @@ export async function GET(request: NextRequest) {
             {
               $match: {
                 $expr: {
-                  $or: [
-                    { $eq: ['$innovatorId', '$$innovator_id'] },
-                    { $eq: ['$innovatorId', '$$user_id'] }
+                  $and: [
+                    {
+                      $or: [
+                        { $eq: ['$innovatorId', '$$innovator_id'] },
+                        { $eq: ['$innovatorId', '$$user_id'] }
+                      ]
+                    },
+                    { $eq: ['$status', 'Terverifikasi'] }
                   ]
                 }
               }
-            },
-            { $unwind: { path: '$desaId', preserveNullAndEmptyArrays: false } },
-            { $group: { _id: '$desaId' } }
+            }
           ],
-          as: 'uniqueDesas'
+          as: 'allInnovations'
         }
       },
       {
         $addFields: {
-          // override the static field with the calculated one if innovations exist
+          // Count all verified innovations
+          jumlahInovasi: { $size: '$allInnovations' },
+          
+          // Extract and unwind desaId to count unique villages
+          uniqueDesas: {
+            $reduce: {
+              input: '$allInnovations',
+              initialValue: [],
+              in: { $setUnion: ['$$value', { $ifNull: ['$$this.desaId', []] }] }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
           jumlahDesaDampingan: { $size: '$uniqueDesas' }
         }
       },

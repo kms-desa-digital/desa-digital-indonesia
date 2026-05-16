@@ -13,7 +13,8 @@ import SecConfModal from "src/components/confirmModal/secConfModal";
 import DocUpload from "src/components/form/DocUpload";
 import ImageUpload from "src/components/form/ImageUpload";
 import VidUpload from "src/components/form/VideoUpload";
-import { auth } from "src/firebase/clientApp";
+import { auth, storage } from "src/firebase/clientApp";
+import { getDownloadURL, ref, uploadString } from "firebase/storage";
 import { getVillageById, claimInnovation, updateVillage, getClaimById, updateClaim, deleteClaim } from "Services/villageServices";
 
 import {
@@ -244,6 +245,80 @@ const KlaimInovasiManualContent: React.FC = () => {
         }
     };
 
+    const uploadFilesToStorage = async (
+        claimId: string,
+        data: {
+            logoInovator: string | null,
+            fotoInovasi: string | null,
+            buktiFiles: {
+                foto: string[],
+                video: string[],
+                dokumen: string[]
+            }
+        }
+    ) => {
+        const uploadResults: any = {
+            logoInovator: data.logoInovator,
+            fotoInovasi: data.fotoInovasi,
+            buktiFiles: { foto: [], video: [], dokumen: [] }
+        };
+
+        // Upload Logo Inovator
+        if (data.logoInovator?.startsWith('data:')) {
+            const storageRef = ref(storage, `claimInnovations/${claimId}/logo/logo_${Date.now()}`);
+            await uploadString(storageRef, data.logoInovator, 'data_url');
+            uploadResults.logoInovator = await getDownloadURL(storageRef);
+        }
+
+        // Upload Foto Inovasi (Main)
+        if (data.fotoInovasi?.startsWith('data:')) {
+            const storageRef = ref(storage, `claimInnovations/${claimId}/main/photo_${Date.now()}`);
+            await uploadString(storageRef, data.fotoInovasi, 'data_url');
+            uploadResults.fotoInovasi = await getDownloadURL(storageRef);
+        }
+
+        // Upload Bukti Foto
+        for (let i = 0; i < data.buktiFiles.foto.length; i++) {
+            const file = data.buktiFiles.foto[i];
+            if (file.startsWith('data:')) {
+                const storageRef = ref(storage, `claimInnovations/${claimId}/evidence/images/foto_${Date.now()}_${i}`);
+                await uploadString(storageRef, file, 'data_url');
+                const url = await getDownloadURL(storageRef);
+                uploadResults.buktiFiles.foto.push(url);
+            } else {
+                uploadResults.buktiFiles.foto.push(file);
+            }
+        }
+
+        // Upload Bukti Video
+        for (let i = 0; i < data.buktiFiles.video.length; i++) {
+            const file = data.buktiFiles.video[i];
+            if (file.startsWith('data:')) {
+                const storageRef = ref(storage, `claimInnovations/${claimId}/evidence/videos/video_${Date.now()}_${i}`);
+                await uploadString(storageRef, file, 'data_url');
+                const url = await getDownloadURL(storageRef);
+                uploadResults.buktiFiles.video.push(url);
+            } else {
+                uploadResults.buktiFiles.video.push(file);
+            }
+        }
+
+        // Upload Bukti Dokumen
+        for (let i = 0; i < data.buktiFiles.dokumen.length; i++) {
+            const file = data.buktiFiles.dokumen[i];
+            if (file.startsWith('data:')) {
+                const storageRef = ref(storage, `claimInnovations/${claimId}/evidence/documents/doc_${Date.now()}_${i}`);
+                await uploadString(storageRef, file, 'data_url');
+                const url = await getDownloadURL(storageRef);
+                uploadResults.buktiFiles.dokumen.push(url);
+            } else {
+                uploadResults.buktiFiles.dokumen.push(file);
+            }
+        }
+
+        return uploadResults;
+    };
+
     const onSubmitForm = async (event: React.FormEvent<HTMLElement>) => {
         event.preventDefault();
         submitClaim();
@@ -286,6 +361,23 @@ const KlaimInovasiManualContent: React.FC = () => {
             const response: any = editId
                 ? await updateClaim(editId as string, formData)
                 : await claimInnovation(formData);
+
+            const claimId = editId || response?.claimId || response?.data?.claimId;
+            if (!claimId) throw new Error("Failed to retrieve claim ID");
+
+            // Upload files to structured storage
+            const uploadResults = await uploadFilesToStorage(claimId as string, {
+                logoInovator: formData.logoInovator,
+                fotoInovasi: formData.fotoInovasi,
+                buktiFiles: formData.buktiFiles
+            });
+
+            // Update claim with structured URLs
+            await updateClaim(claimId as string, {
+                logoInovator: uploadResults.logoInovator,
+                fotoInovasi: uploadResults.fotoInovasi,
+                buktiFiles: uploadResults.buktiFiles
+            });
 
             setIsModal2Open(true);
             toast.success(editId ? "Klaim manual berhasil diperbarui" : "Klaim inovasi manual berhasil diajukan", {

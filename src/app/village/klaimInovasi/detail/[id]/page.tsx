@@ -64,7 +64,7 @@ const KlaimInovasiDetail: React.FC = () => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    const { role, uid, loading: userLoading } = useUser();
+    const { role, uid, firebaseUid, loading: userLoading } = useUser();
     useEffect(() => {
         setIsAdmin(role === "admin" || role === "ADMIN");
     }, [role]);
@@ -177,7 +177,7 @@ const KlaimInovasiDetail: React.FC = () => {
     if (fetchLoading || userLoading) return <Loading />;
 
     const normalizedRole = (role || "").toLowerCase();
-    const isAuthorized = normalizedRole === "admin" || uid === claimData?.desaId;
+    const isAuthorized = normalizedRole === "admin" || uid === claimData?.desaId || firebaseUid === claimData?.desaId;
 
     // Allow viewing if authorized (Admin/Owner) OR if the claim is verified (Public View)
     const canView = isAuthorized || claimData?.status === "Terverifikasi";

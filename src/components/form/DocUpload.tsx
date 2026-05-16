@@ -1,4 +1,4 @@
-import { Button, Flex, Icon, Image, Text, Progress, Box } from "@chakra-ui/react";
+import { Button, Flex, Icon, Image, Text, Progress, Box, Tag } from "@chakra-ui/react";
 import React, { useState } from "react";
 import Folder from "@public/icons/folder.svg";
 import { DeleteIcon } from "@chakra-ui/icons";
@@ -17,45 +17,9 @@ const DocUpload: React.FC<DocUploadProps> = ({
     selectedDoc,
     setSelectedDoc,
     selectDocRef,
+    onSelectDoc,
     disabled
 }) => {
-    const [uploading, setUploading] = useState(false);
-    const [progress, setProgress] = useState(0);
-
-    const handleSelectDoc = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        setUploading(true);
-        setProgress(0);
-
-        try {
-            const storageRef = ref(storage, `documents/${Date.now()}_${file.name}`);
-            const uploadTask = uploadBytesResumable(storageRef, file);
-
-            uploadTask.on(
-                "state_changed",
-                (snapshot) => {
-                    const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    setProgress(p);
-                },
-                (error) => {
-                    console.error("Upload failed", error);
-                    setUploading(false);
-                },
-                async () => {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    setSelectedDoc([...selectedDoc, downloadURL]);
-                    setUploading(false);
-                    setProgress(0);
-                }
-            );
-        } catch (error) {
-            console.error("Error uploading document:", error);
-            setUploading(false);
-        }
-    };
-
     const handleDeleteDoc = (index: number) => {
         const newDoc = [...selectedDoc];
         newDoc.splice(index, 1);
@@ -63,14 +27,15 @@ const DocUpload: React.FC<DocUploadProps> = ({
     };
 
     const getFileName = (url: string) => {
+        if (!url) return "Dokumen";
+        if (url.startsWith("data:")) {
+            return "File baru dipilih";
+        }
         try {
             const decodedUrl = decodeURIComponent(url);
-            // Ambil bagian setelah nama folder terakhir dan sebelum query params
             const parts = decodedUrl.split("/");
             const lastPart = parts[parts.length - 1];
-            // Hilangkan query params (alt=media...)
             const fileNameWithTimestamp = lastPart.split("?")[0];
-            // Hilangkan timestamp (format: 123456789_filename.ext)
             if (fileNameWithTimestamp.includes("_")) {
                 return fileNameWithTimestamp.split("_").slice(1).join("_");
             }
@@ -106,19 +71,26 @@ const DocUpload: React.FC<DocUploadProps> = ({
                             whiteSpace="nowrap"
                             textOverflow="ellipsis"
                             overflow="hidden"
-                            as='a'
-                            cursor="pointer"
+                            as={url.startsWith("data:") ? 'span' : 'a'}
+                            cursor={url.startsWith("data:") ? 'default' : "pointer"}
                             onClick={() => {
-                                window.open(url, "_blank");
+                                if (!url.startsWith("data:")) {
+                                    window.open(url, "_blank");
+                                }
                             }}
-                            title="Klik untuk mengunduh dokumen"
-                            _hover={{
+                            title={url.startsWith("data:") ? "" : "Klik untuk mengunduh dokumen"}
+                            _hover={url.startsWith("data:") ? {} : {
                                 textDecoration: "underline",
                                 color: "blue.500",
                             }}
                         >
                             {getFileName(url)}
                         </Text>
+                        {url.startsWith("data:") && (
+                            <Tag size="sm" colorScheme="orange" variant="subtle" fontSize="9px" borderRadius="full" ml={1}>
+                                Menunggu Pengajuan
+                            </Tag>
+                        )}
                     </Flex>
                     <Button
                         bg="red.500"
@@ -135,15 +107,8 @@ const DocUpload: React.FC<DocUploadProps> = ({
                 </Flex>
             ))}
 
-            {uploading && (
-                <Box width="270px">
-                    <Text fontSize="10px" color="gray.500">Mengunggah... {Math.round(progress)}%</Text>
-                    <Progress value={progress} size="xs" colorScheme="green" borderRadius="4px" mt={1} />
-                </Box>
-            )}
-
             {
-                selectedDoc.length < 3 && !uploading && !disabled && (
+                selectedDoc.length < 3 && !disabled && (
                     <Button
                         leftIcon={<img src={Folder.src} alt="folder" />}
                         _hover={{ bg: "DBFFE6" }}
@@ -167,7 +132,7 @@ const DocUpload: React.FC<DocUploadProps> = ({
                             hidden
                             accept=".pdf,.doc,.docx"
                             ref={selectDocRef}
-                            onChange={handleSelectDoc}
+                            onChange={onSelectDoc}
                         />
                     </Button>
                 )
@@ -176,5 +141,3 @@ const DocUpload: React.FC<DocUploadProps> = ({
     );
 };
 export default DocUpload;
-
-// <Icon as={AddIcon} color="gray.300" fontSize="16px" />
