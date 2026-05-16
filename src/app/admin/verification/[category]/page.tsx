@@ -280,7 +280,7 @@ const VerificationPage: React.FC = () => {
 
                             return (
                                 <CardNotification
-                                    key={index}
+                                    key={data.id || data._id || index}
                                     title={
                                         data.namaDesa ||
                                         data.namaInovator ||

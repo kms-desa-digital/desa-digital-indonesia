@@ -464,7 +464,7 @@ const InnovatorForm: React.FC = () => {
                             padding="12px"
                             mb={4}
                             width="100%"
-                            maxWidth="1000px"
+                            maxWidth="360px"
                             mx="auto"
                         >
                             {alertMessage}
@@ -603,11 +603,12 @@ const InnovatorForm: React.FC = () => {
                             form="InnovatorForm"
                             width="100%"
                             isLoading={loading}
-                            isDisabled={loading || isFormLocked || (status === "Menunggu" && !isEditable)}
-                            onClick={() => {
+                            isDisabled={!isFormValid() || loading || isFormLocked || (status === "Menunggu" && !isEditable)}
+                            onClick={(e) => {
                                 if (isFormValid()) {
-                                    setIsModal1Open(true);
+                                    // Handled by form onSubmit
                                 } else {
+                                    e.preventDefault();
                                     setAlertMessage("Harap isi semua data wajib terlebih dahulu.");
                                     setAlertStatus("error");
                                     window.scrollTo({ top: 0, behavior: "smooth" });

@@ -185,7 +185,10 @@ const KlaimInovasiDetail: React.FC = () => {
     const normalizedRole = (role || "").toLowerCase();
     const isAuthorized = normalizedRole === "admin" || uid === claimData?.desaId;
 
-    if (claimData && !isAuthorized) {
+    // Allow viewing if authorized (Admin/Owner) OR if the claim is verified (Public View)
+    const canView = isAuthorized || claimData?.status === "Terverifikasi";
+
+    if (claimData && !canView) {
         return <Forbidden />;
     }
 
@@ -286,7 +289,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                     bg="gray.50"
                                 >
                                     <Avatar
-                                        src={claimData.logoInovator}
+                                        src={claimData.logoInovator || "/images/default-logo.svg"}
                                         name={claimData.namaInovator}
                                         size="sm"
                                         borderRadius="lg"
@@ -338,11 +341,12 @@ const KlaimInovasiDetail: React.FC = () => {
                                     </Button>
                                 )}
                             </Stack>
-                        </Box>
                     </Box>
-
-                    {/* Evidence Section */}
-                    <Box px={8} mt={6}>
+                    </Box>
+                    
+                    {/* Evidence Section - Only shown to Authorized Users (Admin/Owner) */}
+                    {isAuthorized && (
+                        <Box px={8} mt={6}>
                         <Text fontWeight="700" fontSize="14px" color="gray.700" mb={2}>Dokumen Bukti Klaim</Text>
 
                         {/* Photo Proofs */}
@@ -441,64 +445,67 @@ const KlaimInovasiDetail: React.FC = () => {
                                 </Stack>
                             </Box>
                         )}
-                    </Box>
+                        </Box>
+                    )}
                 </Box>
 
 
                 {/* Fixed Action Bar at the Bottom */}
 
-                <Box
-                    position="fixed"
-                    bottom="0"
-                    left="50%"
-                    transform="translateX(-50%)"
-                    width="100%"
-                    maxW="363px"
-                    bg="white"
-                    p={4}
-                    pb="24px"
-                    zIndex="20"
-                    shadow="0px -4px 10px rgba(0,0,0,0.05)"
-                    borderTopWidth="1px"
-                >
-                    {isAdmin ? (
-                        claimData.status === "Menunggu" ? (
-                            <Button
-                                w="full"
-                                h="48px"
-                                borderRadius="lg"
-                                colorScheme="green"
-                                isLoading={loading}
-                                onClick={onOpen}
-                                fontWeight="800"
-                                fontSize="15px"
-                            >
-                                Verifikasi Klaim
-                            </Button>
-                        ) : (
-                            <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
-                        )
-                    ) : (
-                        <Stack spacing={3} w="full">
-                            {/* Status Card only for Waiting status for User (Rejection is shown at top) */}
-                            {claimData.status === "Menunggu" && (
-                                <StatusCard status="Menunggu" />
-                            )}
-
-                            {user?.uid === claimData.desaId && (
+                {isAuthorized && (
+                    <Box
+                        position="fixed"
+                        bottom="0"
+                        left="50%"
+                        transform="translateX(-50%)"
+                        width="100%"
+                        maxW="363px"
+                        bg="white"
+                        p={4}
+                        pb="24px"
+                        zIndex="20"
+                        shadow="0px -4px 10px rgba(0,0,0,0.05)"
+                        borderTopWidth="1px"
+                    >
+                        {isAdmin ? (
+                            claimData.status === "Menunggu" ? (
                                 <Button
-                                    width="100%"
-                                    onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?editId=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
-                                    fontSize="16px"
-                                    display={claimData.status === "Menunggu" ? "none" : "flex"}
-                                    mt={2}
+                                    w="full"
+                                    h="48px"
+                                    borderRadius="lg"
+                                    colorScheme="green"
+                                    isLoading={loading}
+                                    onClick={onOpen}
+                                    fontWeight="800"
+                                    fontSize="15px"
                                 >
-                                    {claimData.status === "Ditolak" ? "Ajukan Ulang" : "Edit Klaim"}
+                                    Verifikasi Klaim
                                 </Button>
-                            )}
-                        </Stack>
-                    )}
-                </Box>
+                            ) : (
+                                <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
+                            )
+                        ) : (
+                            <Stack spacing={3} w="full">
+                                {/* Status Card only for Waiting status for User (Rejection is shown at top) */}
+                                {claimData.status === "Menunggu" && (
+                                    <StatusCard status="Menunggu" />
+                                )}
+
+                                {user?.uid === claimData.desaId && (
+                                    <Button
+                                        width="100%"
+                                        onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?editId=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
+                                        fontSize="16px"
+                                        display={claimData.status === "Menunggu" ? "none" : "flex"}
+                                        mt={2}
+                                    >
+                                        {claimData.status === "Ditolak" ? "Ajukan Ulang" : "Edit Klaim"}
+                                    </Button>
+                                )}
+                            </Stack>
+                        )}
+                    </Box>
+                )}
 
 
 

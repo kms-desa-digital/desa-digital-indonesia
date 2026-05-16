@@ -36,6 +36,31 @@ const EditAds: React.FC = () => {
         status: "",
     });
 
+    const isFormValid = () => {
+        const trimmedName = textInputsValue.name.trim();
+        const trimmedLink = textInputsValue.link.trim();
+        const { minDate, maxDate } = textInputsValue;
+
+        let isUrlValid = false;
+        if (trimmedLink) {
+            try {
+                new URL(trimmedLink);
+                isUrlValid = true;
+            } catch {
+                isUrlValid = false;
+            }
+        }
+
+        const isDateValid = !!minDate && !!maxDate && new Date(minDate) < new Date(maxDate);
+
+        return (
+            trimmedName !== "" &&
+            isDateValid &&
+            selectedImg !== "" &&
+            isUrlValid
+        );
+    };
+
     useEffect(() => {
         const fetchAd = async () => {
             if (!id) return;
@@ -94,6 +119,11 @@ const EditAds: React.FC = () => {
         if (!textInputsValue.minDate) nextFieldErrors.minDate = t("adsErrorStartDateRequired");
         if (!textInputsValue.maxDate) nextFieldErrors.maxDate = t("adsErrorEndDateRequired");
         if (!trimmedLink) nextFieldErrors.link = t("adsErrorLinkRequired");
+        if (!selectedImg) {
+            setError("Harap unggah gambar iklan.");
+            setLoading(false);
+            return;
+        }
 
         if (textInputsValue.minDate && textInputsValue.maxDate) {
             const minDate = new Date(textInputsValue.minDate);
@@ -280,7 +310,11 @@ const EditAds: React.FC = () => {
                     boxShadow="0px -2px 4px 0px rgba(0, 0, 0, 0.06), 0px -4px 6px 0px rgba(0, 0, 0, 0.10)"
                     bg="white"
                 >
-                    <Button width="100%" type="submit" isLoading={loading}
+                    <Button
+                        width="100%"
+                        type="submit"
+                        isLoading={loading}
+                        isDisabled={!isFormValid() || loading}
                         backgroundColor="#347357"
                         color="white"
                         _hover={{ backgroundColor: "#2a5c46" }}

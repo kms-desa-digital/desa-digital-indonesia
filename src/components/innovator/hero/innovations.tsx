@@ -17,7 +17,7 @@ const InnovationPreview = ({ innovations, innovatorId }: any) => {
   return (
     <Flex direction="row" gap={4} mt={2}>
       {innovations.slice(0, 5).map((innovation: any, idx: number) => (
-        <Box key={idx} width="calc(50% - 8px)" display="flex" flexDirection="column" >
+        <Box key={innovation.id || idx} width="calc(50% - 8px)" display="flex" flexDirection="column" >
           <CardInnovation
             images={innovation.images}
             namaInovasi={innovation.namaInovasi}

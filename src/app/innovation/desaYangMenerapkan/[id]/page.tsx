@@ -75,7 +75,7 @@ const InovasiDesaYangMenerapkan = () => {
     }, [searchTerm, villages]);
 
     return (
-        <Box width="100%" maxWidth="480px" mx="auto" minHeight="100vh" backgroundColor="#f9fafb" pb={8}>
+        <Box width="100%" maxWidth="360px" mx="auto" minHeight="100vh" backgroundColor="#f9fafb" pb={8}>
             {/* Header */}
             <Flex
                 alignItems="center"
