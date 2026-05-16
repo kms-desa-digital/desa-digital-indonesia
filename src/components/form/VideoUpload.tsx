@@ -10,7 +10,7 @@ type VidUploadProps = {
   selectedVid: string; // Menyimpan URL video
   setSelectedVid: (value: string) => void;
   selectVidRef: React.RefObject<HTMLInputElement | null>;
-  onSelectVid?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  claimId: string;
   disabled?: boolean;
 };
 
@@ -18,9 +18,39 @@ const VidUpload: React.FC<VidUploadProps> = ({
   selectedVid,
   setSelectedVid,
   selectVidRef,
-  onSelectVid,
+  claimId,
   disabled,
 }) => {
+  const [progress, setProgress] = useState<number>(0);
+  const [uploading, setUploading] = useState<boolean>(false);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const fileName = `${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, `claimInnovations/${claimId}/videos/${fileName}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setProgress(p);
+      },
+      (error) => {
+        console.error("Upload error:", error);
+        setUploading(false);
+      },
+      async () => {
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        setSelectedVid(downloadURL);
+        setUploading(false);
+        setProgress(0);
+      }
+    );
+  };
   const handleDeleteVid = () => {
     setSelectedVid("");
   };
@@ -71,27 +101,17 @@ const VidUpload: React.FC<VidUploadProps> = ({
               whiteSpace="nowrap"
               textOverflow="ellipsis"
               overflow="hidden"
-              as={selectedVid.startsWith("data:") ? 'span' : 'a'}
-              cursor={selectedVid.startsWith("data:") ? 'default' : "pointer"}
-              onClick={() => {
-                if (!selectedVid.startsWith("data:")) {
-                  window.open(selectedVid, "_blank");
-                }
-              }}
-              title={selectedVid.startsWith("data:") ? "" : "Klik untuk menonton video"}
-              _hover={selectedVid.startsWith("data:") ? {} : {
+              as="a"
+              cursor="pointer"
+              onClick={() => window.open(selectedVid, "_blank")}
+              title="Klik untuk menonton video"
+              _hover={{
                 textDecoration: "underline",
                 color: "blue.500",
               }}
             >
               {getFileName(selectedVid)}
             </Text>
-            {selectedVid.startsWith("data:") && (
-                <Tag size="sm" colorScheme="orange" variant="subtle" fontSize="9px" borderRadius="full" ml={1}>
-                    Menunggu Pengajuan
-                </Tag>
-            )}
-
           </Flex>
 
           <Button
@@ -107,6 +127,11 @@ const VidUpload: React.FC<VidUploadProps> = ({
             <DeleteIcon />
           </Button>
         </Flex>
+      ) : uploading ? (
+        <Box width="100%" maxWidth="270px">
+          <Text fontSize="xs" color="gray.500" mb={1}>Mengunggah Video ({Math.round(progress)}%)</Text>
+          <Progress value={progress} size="xs" colorScheme="green" borderRadius="full" />
+        </Box>
       ) : (
         <>
           {!disabled && (
@@ -133,7 +158,7 @@ const VidUpload: React.FC<VidUploadProps> = ({
                 hidden
                 accept="video/mp4"
                 ref={selectVidRef}
-                onChange={onSelectVid}
+                onChange={handleFileChange}
               />
             </Button>
           )}

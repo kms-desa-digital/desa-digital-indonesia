@@ -9,7 +9,7 @@ type DocUploadProps = {
     selectedDoc: string[]; // Menyimpan URL file
     setSelectedDoc: (value: string[]) => void;
     selectDocRef: React.RefObject<HTMLInputElement | null>;
-    onSelectDoc?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+    claimId: string;
     disabled?: boolean;
 };
 
@@ -17,9 +17,43 @@ const DocUpload: React.FC<DocUploadProps> = ({
     selectedDoc,
     setSelectedDoc,
     selectDocRef,
-    onSelectDoc,
+    claimId,
     disabled
 }) => {
+    const [uploadProgress, setUploadProgress] = useState<{ [key: number]: number }>({});
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files || files.length === 0) return;
+
+        Array.from(files).forEach((file, index) => {
+            const fileName = `${Date.now()}_${file.name}`;
+            const storageRef = ref(storage, `claimInnovations/${claimId}/documents/${fileName}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            const fileIndex = selectedDoc.length + index;
+
+            uploadTask.on(
+                "state_changed",
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    setUploadProgress((prev) => ({ ...prev, [fileIndex]: progress }));
+                },
+                (error) => {
+                    console.error("Upload error:", error);
+                },
+                async () => {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    setSelectedDoc([...selectedDoc, downloadURL]);
+                    setUploadProgress((prev) => {
+                        const newState = { ...prev };
+                        delete newState[fileIndex];
+                        return newState;
+                    });
+                }
+            );
+        });
+    };
     const handleDeleteDoc = (index: number) => {
         const newDoc = [...selectedDoc];
         newDoc.splice(index, 1);
@@ -48,64 +82,67 @@ const DocUpload: React.FC<DocUploadProps> = ({
     return (
         <Flex direction="column" justifyContent="space-between" gap={2} alignItems={'stretch'}>
             {selectedDoc.map((url, index) => (
-                <Flex justifyContent="space-between" key={index}>
-                    <Flex
-                        direction="row"
-                        maxWidth="270px"
-                        maxHeight="32px"
-                        width="100%"
-                        height="100%"
-                        bg="#E5FFE4"
-                        borderRadius="4px"
-                        border="1px solid #347357"
-                        paddingRight={2}
-                        paddingLeft={2}
-                        gap={4}
-                        position="relative"
-                    >
-                        <Text
-                            margin={1}
-                            fontSize="sm"
-                            color="gray.800"
-                            maxWidth="95%"
-                            whiteSpace="nowrap"
-                            textOverflow="ellipsis"
-                            overflow="hidden"
-                            as={url.startsWith("data:") ? 'span' : 'a'}
-                            cursor={url.startsWith("data:") ? 'default' : "pointer"}
-                            onClick={() => {
-                                if (!url.startsWith("data:")) {
-                                    window.open(url, "_blank");
-                                }
-                            }}
-                            title={url.startsWith("data:") ? "" : "Klik untuk mengunduh dokumen"}
-                            _hover={url.startsWith("data:") ? {} : {
-                                textDecoration: "underline",
-                                color: "blue.500",
-                            }}
+                <Box key={index}>
+                    <Flex justifyContent="space-between">
+                        <Flex
+                            direction="row"
+                            maxWidth="270px"
+                            maxHeight="32px"
+                            width="100%"
+                            height="100%"
+                            bg="#E5FFE4"
+                            borderRadius="4px"
+                            border="1px solid #347357"
+                            paddingRight={2}
+                            paddingLeft={2}
+                            gap={4}
+                            position="relative"
                         >
-                            {getFileName(url)}
-                        </Text>
-                        {url.startsWith("data:") && (
-                            <Tag size="sm" colorScheme="orange" variant="subtle" fontSize="9px" borderRadius="full" ml={1}>
-                                Menunggu Pengajuan
-                            </Tag>
-                        )}
+                            <Text
+                                margin={1}
+                                fontSize="sm"
+                                color="gray.800"
+                                maxWidth="95%"
+                                whiteSpace="nowrap"
+                                textOverflow="ellipsis"
+                                overflow="hidden"
+                                as="a"
+                                cursor="pointer"
+                                onClick={() => window.open(url, "_blank")}
+                                title="Klik untuk mengunduh dokumen"
+                                _hover={{
+                                    textDecoration: "underline",
+                                    color: "blue.500",
+                                }}
+                            >
+                                {getFileName(url)}
+                            </Text>
+                        </Flex>
+                        <Button
+                            bg="red.500"
+                            _hover={{ bg: "red.600" }}
+                            width="32px"
+                            height="32px"
+                            variant="solid"
+                            size="md"
+                            onClick={() => handleDeleteDoc(index)}
+                            disabled={disabled}
+                        >
+                            <DeleteIcon />
+                        </Button>
                     </Flex>
-                    <Button
-                        bg="red.500"
-                        _hover={{ bg: "red.600" }}
-                        width="32px"
-                        height="32px"
-                        variant="solid"
-                        size="md"
-                        onClick={() => handleDeleteDoc(index)}
-                        disabled={disabled}
-                    >
-                        <DeleteIcon />
-                    </Button>
-                </Flex>
+                </Box>
             ))}
+
+            {Object.keys(uploadProgress).map((key) => {
+                const idx = parseInt(key);
+                return (
+                    <Box key={idx} width="100%" maxWidth="270px">
+                        <Text fontSize="xs" color="gray.500" mb={1}>Mengunggah...</Text>
+                        <Progress value={uploadProgress[idx]} size="xs" colorScheme="green" borderRadius="full" />
+                    </Box>
+                );
+            })}
 
             {
                 selectedDoc.length < 3 && !disabled && (
@@ -132,7 +169,7 @@ const DocUpload: React.FC<DocUploadProps> = ({
                             hidden
                             accept=".pdf,.doc,.docx"
                             ref={selectDocRef}
-                            onChange={onSelectDoc}
+                            onChange={handleFileChange}
                         />
                     </Button>
                 )

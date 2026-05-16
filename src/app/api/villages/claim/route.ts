@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const newClaim = {
+    const newClaim: any = {
       desaId,
       namaDesa: namaDesa || '',
       inovasiId: inovasiId || null,
@@ -77,6 +77,11 @@ export async function POST(request: NextRequest) {
       catatanAdmin: '',
       createdAt: new Date(),
       updatedAt: new Date()
+    }
+
+    // Support client-side generated IDs for structured storage consistency
+    if (body.id) {
+      newClaim._id = body.id;
     }
 
     const result = await db.collection('claimInnovations').insertOne(newClaim)
