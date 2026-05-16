@@ -259,14 +259,23 @@ const KlaimInovasiContent: React.FC = () => {
         }
 
         try {
+            // Fetch metadata for consistency
+            const [villageRes, innovationRes]: any = await Promise.all([
+                getVillageById(user.uid),
+                getInnovationById(inovasiId)
+            ]);
+
+            const villageMetadata = villageRes.data || villageRes.village;
+            const innovationMetadata = innovationRes.data || innovationRes.innovation;
+
             const formData = {
                 id: claimId, 
                 desaId: user.uid,
-                namaDesa: claimData?.namaDesa || "",
+                namaDesa: villageMetadata?.namaDesa || claimData?.namaDesa || "",
                 inovasiId: inovasiId || null,
-                namaInovasi: claimData?.namaInovasi || "",
-                namaInovator: claimData?.namaInovator || "",
-                deskripsiInovasi: claimData?.deskripsiInovasi || "",
+                namaInovasi: innovationMetadata?.namaInovasi || claimData?.namaInovasi || "",
+                namaInovator: innovationMetadata?.namaInovator || claimData?.namaInovator || "",
+                deskripsiInovasi: innovationMetadata?.deskripsiInovasi || claimData?.deskripsiInovasi || "",
                 buktiJenis: selectedCheckboxes,
                 buktiFiles: {
                     foto: selectedCheckboxes.includes("foto") ? selectedFiles : [],
