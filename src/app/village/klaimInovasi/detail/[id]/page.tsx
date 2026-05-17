@@ -26,6 +26,7 @@ import { auth } from "src/firebase/clientApp";
 import { getClaimById, updateVillage, updateClaim, getVillageById, deleteClaim } from "Services/villageServices";
 
 import { getInnovationById } from "Services/innovationServices";
+import { getInnovatorById } from "Services/innovatorServices";
 
 import {
     Container as LocalContainer,
@@ -91,11 +92,31 @@ const KlaimInovasiDetail: React.FC = () => {
                         if (data.inovasiId) {
                             try {
                                 const iRes: any = await getInnovationById(data.inovasiId);
-                                if (iRes.data?.kategori || iRes.data?.category) {
+                                const invData = iRes.data || iRes.innovation || iRes;
+                                
+                                if (invData) {
                                     setClaimData((prev: any) => ({
                                         ...prev,
-                                        kategoriInovasi: iRes.data.kategori || iRes.data.category
+                                        kategoriInovasi: invData.kategori || invData.category,
+                                        innovatorId: invData.innovatorId || prev.innovatorId
                                     }));
+                                    
+                                    const innovatorIdToFetch = invData.innovatorId || data.innovatorId;
+                                    if (innovatorIdToFetch) {
+                                        try {
+                                            const innovRes: any = await getInnovatorById(innovatorIdToFetch);
+                                            const innovProfile = innovRes.data || innovRes.innovator || innovRes;
+                                            if (innovProfile) {
+                                                setClaimData((prev: any) => ({
+                                                    ...prev,
+                                                    logoInovator: innovProfile.logo || innovProfile.logoInnovator,
+                                                    namaInovator: innovProfile.namaInovator || innovProfile.nama || prev.namaInovator
+                                                }));
+                                            }
+                                        } catch (e) {
+                                            console.error("Error fetching innovator profile:", e);
+                                        }
+                                    }
                                 }
                             } catch (err) {
                                 console.error("Error fetching innovation category:", err);
@@ -281,6 +302,13 @@ const KlaimInovasiDetail: React.FC = () => {
                                     borderWidth="1px"
                                     borderColor="gray.100"
                                     bg="gray.50"
+                                    cursor={!isManual && claimData.innovatorId ? "pointer" : "default"}
+                                    onClick={() => {
+                                        if (!isManual && claimData.innovatorId) {
+                                            router.push(`/innovator/profile/${claimData.innovatorId}`);
+                                        }
+                                    }}
+                                    _hover={!isManual && claimData.innovatorId ? { bg: "gray.100" } : {}}
                                 >
                                     <Avatar
                                         src={claimData.logoInovator || "/images/default-logo.svg"}
@@ -526,8 +554,8 @@ const KlaimInovasiDetail: React.FC = () => {
                 <Modal isOpen={!!previewUrl} onClose={() => setPreviewUrl(null)} isCentered>
                     <ModalOverlay bg="blackAlpha.700" />
                     <ModalContent
-                        maxW="90vw"
-                        w="auto"
+                        maxW="min(90vw, 360px)"
+                        w="100%"
                         h="auto"
                         minH="unset"
                         maxH="90vh"
@@ -549,7 +577,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                     <Image 
                                         src={previewUrl} 
                                         maxH="80vh" 
-                                        maxW="100%"
+                                        w="100%"
                                         objectFit="contain" 
                                         alt="Pratinjau Foto" 
                                     />
