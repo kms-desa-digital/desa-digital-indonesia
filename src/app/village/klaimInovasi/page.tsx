@@ -274,7 +274,7 @@ const KlaimInovasiContent: React.FC = () => {
                 namaDesa: villageMetadata?.namaDesa || claimData?.namaDesa || "",
                 inovasiId: inovasiId || null,
                 namaInovasi: innovationMetadata?.namaInovasi || claimData?.namaInovasi || "",
-                namaInovator: innovationMetadata?.namaInovator || claimData?.namaInovator || "",
+                namaInovator: innovationMetadata?.namaInnovator || innovationMetadata?.namaInovator || claimData?.namaInovator || "",
                 deskripsiInovasi: innovationMetadata?.deskripsi || innovationMetadata?.deskripsiInovasi || claimData?.deskripsiInovasi || "",
                 buktiJenis: selectedCheckboxes,
                 buktiFiles: {
