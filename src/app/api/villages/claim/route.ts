@@ -28,10 +28,17 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Validasi field wajib
-    if (!desaId || !namaInovasi || !namaInovator || !deskripsiInovasi || !buktiJenis || buktiJenis.length === 0) {
+    const missingFields = [];
+    if (!desaId) missingFields.push('desaId');
+    if (!namaInovasi) missingFields.push('namaInovasi');
+    if (!namaInovator) missingFields.push('namaInovator');
+    if (!deskripsiInovasi) missingFields.push('deskripsiInovasi');
+    if (!buktiJenis || buktiJenis.length === 0) missingFields.push('buktiJenis');
+
+    if (missingFields.length > 0) {
       return new NextResponse(
         JSON.stringify({ 
-          message: 'Field wajib tidak lengkap: desaId, namaInovasi, namaInovator, deskripsiInovasi, dan buktiJenis harus diisi.' 
+          message: `Field wajib tidak lengkap: ${missingFields.join(', ')} harus diisi.` 
         }, null, 2),
         {
           status: 400,
