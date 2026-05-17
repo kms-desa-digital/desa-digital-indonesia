@@ -49,3 +49,4 @@ next-env.d.ts
 /src/scripts/files
 
 /test-archive
+serviceAccountKey.json

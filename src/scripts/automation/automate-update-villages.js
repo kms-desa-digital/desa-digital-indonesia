@@ -3,15 +3,15 @@ const { google } = require('googleapis');
 const csv = require('csv-parser');
 const fs = require('fs');
 const axios = require('axios');
-
 const path = require('path');
 
 // --- CONFIGURATION ---
 const FIREBASE_BUCKET = "desa-digital-prod.firebasestorage.app";
 const API_BASE_URL = "https://desa-digital-v3.vercel.app/api";
 const CSV_FILE = path.join(__dirname, 'data_desa.csv');
-const SERVICE_ACCOUNT_PATH = "../../../serviceAccountKey.json";
-const AUTH_TOKEN = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImVlYzIxN2Q0MThjYjhlNWEzMTQzMThhMGQyZmZhNGUwY2ViMmU0Y2MiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZGVzYS1kaWdpdGFsLXByb2QiLCJhdWQiOiJkZXNhLWRpZ2l0YWwtcHJvZCIsImF1dGhfdGltZSI6MTc3OTAwMzc4OSwidXNlcl9pZCI6IlBnT0JKNmxTbURUa2p0aHFKeG9pNlVvVEtDUTIiLCJzdWIiOiJQZ09CSjZsU21EVGtqdGhxSnhvaTZVb1RLQ1EyIiwiaWF0IjoxNzc5MDA3MDkwLCJleHAiOjE3NzkwMTA2OTAsImVtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbImFkbWluQGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.jgpOxF_V5xI1W2jhCD_mxpdAgBwr0qNFUfkOhugxDOmra0H6FI81rV4_vTQWZrq6NRirCPjghzfNF9esXr7NGnkLZBl2TOH5emkVy8Wb3YHmBf-laY5IS0MYuIheZBJOEZz6SOA8rLQGbiTY2sK1gmA1Kr_BH1xPuVIGNJOSUAunan0kGWLb1TuB-OJzhqXXfs-zqEJ09NwgM0VurMh4AmaRN-FWw-stGIEQ6Il5GdLs26rb8O1w7U4vAXItT8SnqEJs2h20sfhyB7J1478o3aGWgSagp2jkWJ5hOrS9Nl-YBAeUF9WowKmrbLx4DctwyEYnGoZhGIU0ewNoLMpPdw";
+const SERVICE_ACCOUNT_PATH = path.join(__dirname, "../../../serviceAccountKey.json");
+// Gunakan Token Admin yang Anda dapatkan dari browser
+const AUTH_TOKEN = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImVlYzIxN2Q0MThjYjhlNWEzMTQzMThhMGQyZmZhNGUwY2ViMmU0Y2MiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZGVzYS1kaWdpdGFsLXByb2QiLCJhdWQiOiJkZXNhLWRpZ2l0YWwtcHJvZCIsImF1dGhfdGltZSI6MTc3OTAwMzc4OSwidXNlcl9pZCI6IlBnT0JKNmxTbURUa2p0aHFKeG9pNlVvVEtDUTIiLCJzdWIiOiJQZ09CSjZsU21EVGtqdGhxSnhvaTZVb1RLQ1EyIiwiaWF0IjoxNzc5MDEwMzkxLCJleHAiOjE3NzkwMTM5OTEsImVtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7ImVtYWlsIjpbImFkbWluQGdtYWlsLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.qCnkJPQOxOB_yPx2fl1iIZFeif8QV6tZLUEg3RIt264hVVKO0KmOeIFetvg9oPe67ddqO6neiXfQJCJHgAU9cJth9MpsODwIk6Weyq37bue2iyxEVR231sss_JZk4urDBtw_3W5QMmnaKsbhC7YIGAn-iY8pXK-OsNBuBCu0klf498fNXfhDQ60uIVQ4TBoVMhcbsX6CeUi-3VrOwabmlYNdNNsT0O7OlwxXonTumo1q-C4qLOznWxgh0Fh7Wk-PhW5LqtHRH8mmRo_hQ9uO3DRfqKiUIUJCRB-OTV8pau0zxTGCR_BMGF599yl3jHgH9bEY4ti0sP51eiC8owRZ0w";
 
 // 1. Setup Firebase Admin
 const serviceAccount = require(SERVICE_ACCOUNT_PATH);
@@ -20,11 +20,6 @@ admin.initializeApp({
     storageBucket: FIREBASE_BUCKET
 });
 
-// 2. Setup Google Drive Auth
-const auth = new google.auth.GoogleAuth({
-    keyFile: SERVICE_ACCOUNT_PATH,
-    scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-});
 
 // 3. Extract ID dari link Google Drive
 function extractDriveId(url) {
@@ -46,15 +41,12 @@ async function uploadToFirebase(driveId, destinationPath) {
     if (!driveId) return null;
 
     try {
-        const driveAuth = await auth.getClient();
-        const drive = google.drive({ version: 'v3', auth: driveAuth });
         const bucket = admin.storage().bucket();
         const file = bucket.file(destinationPath);
 
-        const driveResponse = await drive.files.get(
-            { fileId: driveId, alt: 'media' },
-            { responseType: 'stream' }
-        );
+        // Download dari Google Drive menggunakan public link (tidak perlu API Key jika sudah di-share publik)
+        const downloadUrl = `https://drive.google.com/uc?export=download&id=${driveId}`;
+        const driveResponse = await axios.get(downloadUrl, { responseType: 'stream' });
 
         return new Promise((resolve, reject) => {
             driveResponse.data
@@ -72,7 +64,7 @@ async function uploadToFirebase(driveId, destinationPath) {
                 });
         });
     } catch (err) {
-        console.error(`Gagal upload ${driveId}:`, err.message);
+        console.error(`Gagal mengunduh file dari Drive (ID: ${driveId}). Pastikan link bisa diakses publik (Anyone with the link). Error:`, err.message);
         return null;
     }
 }
@@ -82,19 +74,18 @@ async function processRow(row) {
     const id = row.userId;
     if (!id) return;
 
-    console.log(`\n--- Memproses Desa: ${row.nama} (${id}) ---`);
+    console.log(`\n--- Memperbarui Desa: ${row.nama} (${id}) ---`);
 
     // A. Upload Images & Files
+    // Catatan: Jika logoUrl gagal (null), usahakan jangan menimpa logo yang lama dengan null
     const logoUrl = await uploadToFirebase(extractDriveId(row.logoDesa), `villages/${id}/logo.jpg`);
     const headerUrl = await uploadToFirebase(extractDriveId(row.headerDesa), `villages/${id}/header.jpg`);
 
-    // Upload multi images (jika ada fotoInovasi2, dst)
     const img1 = await uploadToFirebase(extractDriveId(row.fotoInovasi), `villages/${id}/gallery/img1.jpg`);
     const img2 = await uploadToFirebase(extractDriveId(row.fotoInovasi2), `villages/${id}/gallery/img2.jpg`);
 
-    // B. Build Payload sesuai format Anda
-    const payload = {
-        userId: id,
+    // B. Build Payload (Hanya field yang valid / tidak null/undefined)
+    let payload = {
         namaDesa: row.nama,
         lokasi: {
             provinsi: { value: row.kodeProv, label: row.namaProv },
@@ -102,9 +93,6 @@ async function processRow(row) {
             kecamatan: { value: row.kodeKec, label: row.namaKec },
             desaKelurahan: { value: row.kodeDesa, label: row.namaDesa }
         },
-        logo: logoUrl || "",
-        header: headerUrl || "",
-        images: [img1, img2].filter(url => url !== null),
         deskripsi: row.deskripsi || "",
         potensiDesa: [row.potensi, row.potensi2]
             .filter(Boolean)
@@ -124,16 +112,25 @@ async function processRow(row) {
         website: row.website || ""
     };
 
-    // C. Kirim ke API
+    // Jika Anda mengosongkan kolom logoDesa di CSV, ini akan menghapus logo di database ("")
+    payload.logo = logoUrl || "";
+
+    // Jika Anda mengosongkan kolom headerDesa di CSV, ini akan menghapus header di database ("")
+    payload.header = headerUrl || "";
+
+    // Jika kolom fotoInovasi kosong, ini akan me-reset array images menjadi kosong []
+    payload.images = [img1, img2].filter(url => url !== null);
+
+    // C. Kirim ke API menggunakan PUT (Update)
     try {
-        const response = await axios.post(`${API_BASE_URL}/villages`, payload, {
+        const response = await axios.put(`${API_BASE_URL}/villages/${id}`, payload, {
             headers: {
                 Authorization: `Bearer ${AUTH_TOKEN}`
             }
         });
-        console.log(`✅ Berhasil input API untuk ${row.nama}`);
+        console.log(`✅ Berhasil UPDATE data desa ${row.nama}`);
     } catch (err) {
-        console.error(`❌ Gagal input API untuk ${row.nama}:`, err.response?.data || err.message);
+        console.error(`❌ Gagal UPDATE desa ${row.nama}:`, err.response?.data || err.message);
     }
 }
 
@@ -148,11 +145,10 @@ fs.createReadStream(CSV_FILE)
     .pipe(csv())
     .on('data', (data) => results.push(data))
     .on('end', async () => {
-        console.log(`Memulai proses ${results.length} baris data...`);
+        console.log(`Memulai proses UPDATE ${results.length} baris data...`);
         for (const row of results) {
             await processRow(row);
         }
-        console.log('\n--- SEMUA PROSES SELESAI ---');
+        console.log('\n--- SEMUA PROSES UPDATE SELESAI ---');
+        process.exit(0);
     });
-
-// node src/scripts/automation/automate-villages.js`
