@@ -42,6 +42,17 @@ export async function POST(request: NextRequest) {
 
     const db = await connectToDatabase()
 
+    // Validate village verification status
+    if (auth.role !== 'admin') {
+      const village = await db.collection('villages').findOne({ userId: auth.uid })
+      if (!village || village.status !== 'Terverifikasi') {
+        return new NextResponse(
+          JSON.stringify({ message: 'Profil Desa Anda belum diverifikasi. Anda tidak dapat mengajukan klaim inovasi.' }, null, 2),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        )
+      }
+    }
+
     // Jika ada inovasiId, cek apakah klaim ini sudah pernah diajukan untuk inovasi yang sama
     if (inovasiId) {
       const existing = await db.collection('claimInnovations').findOne({ 
@@ -54,7 +65,7 @@ export async function POST(request: NextRequest) {
         return new NextResponse(
           JSON.stringify({ message: 'Inovasi ini sudah dalam proses klaim oleh desa Anda' }, null, 2),
           {
-            status: 400,
+            status: 409,
             headers: { 'Content-Type': 'application/json' },
           }
         )
@@ -62,6 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     const newClaim: any = {
+      ...body,
       desaId,
       namaDesa: namaDesa || '',
       inovasiId: inovasiId || null,

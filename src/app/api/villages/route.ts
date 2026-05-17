@@ -168,23 +168,60 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth
 
     const body = await request.json()
-    const { userId, namaDesa } = body
+    const { 
+      userId, 
+      namaDesa, 
+      deskripsi, 
+      lokasi, 
+      potensiDesa, 
+      logo, 
+      header,
+      geografisDesa,
+      sosialBudaya,
+      sumberDaya,
+      whatsapp,
+      kondisijalan,
+      jaringan,
+      listrik,
+      teknologi,
+      kemampuan
+    } = body
 
-    if (!userId || !namaDesa) {
-      return NextResponse.json({ message: 'userId dan namaDesa wajib diisi' }, { status: 400 })
+    // Comprehensive Validation for Required Fields (matching frontend)
+    if (
+      !userId || 
+      !namaDesa || 
+      !deskripsi || 
+      !potensiDesa || (Array.isArray(potensiDesa) && potensiDesa.length === 0) ||
+      !logo || 
+      !header ||
+      !geografisDesa ||
+      !sosialBudaya ||
+      !sumberDaya ||
+      !whatsapp ||
+      !kondisijalan ||
+      !jaringan ||
+      !listrik ||
+      !teknologi ||
+      !kemampuan ||
+      !lokasi || !lokasi.provinsi || !lokasi.kabupatenKota || !lokasi.kecamatan || !lokasi.desaKelurahan
+    ) {
+      return NextResponse.json({ 
+        message: 'Field wajib tidak lengkap. Pastikan semua data bintang (*) telah diisi.' 
+      }, { status: 400 })
     }
 
     const db = await connectToDatabase()
     
-    // Cek apakah profil desa untuk userId ini sudah ada
+    // Check if village profile already exists for this user
     const existing = await db.collection('villages').findOne({ userId })
     if (existing) {
-      return NextResponse.json({ message: 'Profil desa untuk user ini sudah ada' }, { status: 400 })
+      return NextResponse.json({ message: 'Profil desa untuk user ini sudah ada' }, { status: 409 })
     }
 
     const newVillage = {
       ...body,
-      status: 'Menunggu', // Default status verifikasi admin
+      status: 'Menunggu', // Default status for admin verification
       catatanAdmin: '',
       createdAt: new Date(),
       updatedAt: new Date()

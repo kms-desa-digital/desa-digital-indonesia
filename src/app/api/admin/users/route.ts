@@ -155,10 +155,13 @@ export async function POST(req: NextRequest) {
       // but it's important for the current login flow.
     }
 
-    return NextResponse.json({ 
-      message: "User created successfully",
-      user: { uid: fbUser.uid, email, role }
-    });
+    return NextResponse.json(
+      { 
+        message: "User created successfully",
+        user: { uid: fbUser.uid, email, role }
+      },
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error("Error creating user:", error);
     return NextResponse.json({ message: error.message || "Internal server error" }, { status: 500 });

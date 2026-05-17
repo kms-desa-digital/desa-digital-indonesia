@@ -4,9 +4,7 @@ import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 
 type Params = Promise<{ id: string }>
-
 type MongoFilter = { [key: string]: any }
-
 type InnovatorDoc = { _id: string | ObjectId; [key: string]: any }
 
 const normalizeArray = (value: unknown) => {
@@ -25,7 +23,81 @@ const buildFilter = (id: string): MongoFilter => {
   return { $or: conditions }
 }
 
-// PUT /api/innovator/edit/:id
+// GET /api/innovator/:id
+// Ambil detail profil inovator berdasarkan id.
+export async function GET(_request: NextRequest, { params }: { params: Params }) {
+  try {
+    const { id } = await params
+
+    if (!id) {
+      return NextResponse.json({ message: 'Innovator ID is required' }, { status: 400 })
+    }
+
+    const db = await connectToDatabase()
+    const query: any = buildFilter(id)
+
+    const innovators = await db.collection('innovators').aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: 'innovations',
+          let: { innovator_id: { $toString: '$_id' }, user_id: '$userId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $or: [
+                        { $eq: ['$innovatorId', '$$innovator_id'] },
+                        { $eq: ['$innovatorId', '$$user_id'] }
+                      ]
+                    },
+                    { $eq: ['$status', 'Terverifikasi'] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'allInnovations'
+        }
+      },
+      {
+        $addFields: {
+          jumlahInovasi: { $size: '$allInnovations' },
+          uniqueDesas: {
+            $reduce: {
+              input: '$allInnovations',
+              initialValue: [],
+              in: { $setUnion: ['$$value', { $ifNull: ['$$this.desaId', []] }] }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          jumlahDesaDampingan: { $size: '$uniqueDesas' }
+        }
+      }
+    ]).toArray()
+
+    const innovator = innovators[0]
+
+    if (!innovator) {
+      return NextResponse.json({ message: 'Innovator tidak ditemukan' }, { status: 404 })
+    }
+
+    return NextResponse.json(
+      { innovator: { ...innovator, id: innovator._id.toString(), _id: innovator._id.toString() } },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error('Error fetching innovator detail:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// PUT /api/innovator/:id
 // Edit innovator profile in MongoDB.
 export async function PUT(request: NextRequest, { params }: { params: Params }) {
   try {
@@ -55,11 +127,11 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       status,
     } = body
 
-    if (!namaInovator || !deskripsi || !kategori || !whatsapp) {
+    if (!namaInovator || !deskripsi || !kategori || !whatsapp || !logo || !header) {
       return NextResponse.json(
         {
           message:
-            'Field wajib tidak lengkap: namaInovator, deskripsi, kategori, dan whatsapp harus diisi.',
+            'Field wajib tidak lengkap: namaInovator, deskripsi, kategori, whatsapp, logo, dan header harus diisi.',
         },
         { status: 400 }
       )
@@ -76,6 +148,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     const now = new Date()
     const updatedProfile = {
+      ...body,
       namaInovator,
       deskripsi,
       kategori,
