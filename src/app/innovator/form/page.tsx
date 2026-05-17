@@ -241,7 +241,7 @@ const InnovatorForm: React.FC = () => {
                 userId,
                 namaInovator: name,
                 deskripsi: description,
-                kategori: selectedCategory?.label,
+                kategori: selectedCategory?.label || "",
                 instagram,
                 website,
                 whatsapp,
