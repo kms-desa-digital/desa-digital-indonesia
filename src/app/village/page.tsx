@@ -278,7 +278,7 @@ const Village: React.FC = () => {
                                 jumlahInovasiDiterapkan={item.jumlahInovasiDiterapkan}
                                 isHome={false}
                                 highlightQuery={searchTerm}
-                                ranking={startIndex + idx + 1}
+                                ranking={searchTerm.trim() ? undefined : (startIndex + idx + 1)}
                                 onClick={() => {
                                     router.push(`/village/detail/${item.userId || item.id}`);
                                 }}

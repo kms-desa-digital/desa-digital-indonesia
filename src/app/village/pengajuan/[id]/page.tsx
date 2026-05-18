@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
     Box,
@@ -76,6 +76,8 @@ const PengajuanKlaimContent: React.FC = () => {
 
     const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
 
+    const isFirstMount = useRef(true);
+
     const updateUrl = (page: number, filter: string, search: string) => {
         const urlParams = new URLSearchParams();
         if (page > 1) urlParams.set("page", page.toString());
@@ -84,7 +86,7 @@ const PengajuanKlaimContent: React.FC = () => {
         
         const queryString = urlParams.toString();
         const newPath = queryString ? `?${queryString}` : window.location.pathname;
-        router.push(newPath, { scroll: false });
+        router.replace(newPath, { scroll: false });
     };
 
     const fetchData = async (page = 1) => {
@@ -117,6 +119,10 @@ const PengajuanKlaimContent: React.FC = () => {
 
     // Debounce search
     useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
         const timeoutId = setTimeout(() => {
             setDebouncedSearch(searchTerm);
             setCurrentPage(1);

@@ -26,7 +26,7 @@ import CardNotification from "Components/card/notification/CardNotification";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
-import React, { useEffect, useState, Suspense } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { getVillages, getClaims } from "Services/villageServices";
@@ -72,6 +72,8 @@ const VerificationPageContent: React.FC = () => {
     const [itemsPerPage] = useState(5);
     const [hasMore, setHasMore] = useState(true);
 
+    const isFirstMount = useRef(true);
+
     const updateUrl = (page: number, filter: string, search: string) => {
         const urlParams = new URLSearchParams();
         if (page > 1) urlParams.set("page", page.toString());
@@ -80,7 +82,7 @@ const VerificationPageContent: React.FC = () => {
         
         const queryString = urlParams.toString();
         const newPath = queryString ? `?${queryString}` : window.location.pathname;
-        router.push(newPath, { scroll: false });
+        router.replace(newPath, { scroll: false });
     };
 
     const formatShortDate = (dateSource: any) => {
@@ -209,6 +211,10 @@ const VerificationPageContent: React.FC = () => {
 
     // Search optimization: delay search
     useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
         const timeoutId = setTimeout(async () => {
             setCurrentPage(1);
             updateUrl(1, selectedFilter, searchTerm);

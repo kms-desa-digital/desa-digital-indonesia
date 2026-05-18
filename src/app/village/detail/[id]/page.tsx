@@ -151,7 +151,7 @@ export default function DetailVillagePage() {
                     const villageData = res.village || res.data;
                     if (villageData) {
                         if (villageData.userId === userLogin?.uid) {
-                            router.push("/village/profile/" + id);
+                            router.replace("/village/profile/" + id);
                             return;
                         }
                         setVillage(villageData);

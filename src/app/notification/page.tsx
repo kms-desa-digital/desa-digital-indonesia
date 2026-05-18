@@ -112,7 +112,7 @@ const NotificationPageContent = () => {
         
         const queryString = urlParams.toString();
         const newPath = queryString ? `?${queryString}` : window.location.pathname;
-        router.push(newPath, { scroll: false });
+        router.replace(newPath, { scroll: false });
     };
 
     useEffect(() => {
