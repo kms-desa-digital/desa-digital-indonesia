@@ -12,17 +12,58 @@ import {
     Image,
     DrawerFooter,
     DrawerHeader,
+    Spinner,
 } from "@chakra-ui/react";
 import { FaSeedling } from "react-icons/fa";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { paths } from "Consts/path";
+import { getInnovation } from "Services/innovationServices";
 
 const Recommendation = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const router = useRouter();
     const bgRecommendation = "/images/background-recommendation.png";
-    const efisheryLogo = "/images/efishery-logo.jpg";
+
+    const [topInnovation, setTopInnovation] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        getInnovation({ status: "Terverifikasi" })
+            .then((res) => {
+                const list = res.innovations || [];
+                // Urutkan berdasarkan popularitas (jumlahDesa) atau ambil yang pertama
+                const sorted = [...list].sort((a, b) => (b.jumlahDesa || 0) - (a.jumlahDesa || 0));
+                if (sorted.length > 0) {
+                    setTopInnovation(sorted[0]);
+                }
+            })
+            .catch((err) => console.error("Error fetching top innovation:", err))
+            .finally(() => setLoading(false));
+    }, []);
+
+    const getImageSrc = (item: any) => {
+        if (!item) return "/images/default-logo.svg";
+        if (item.fotoInovasi && item.fotoInovasi.length > 0) {
+            return item.fotoInovasi[0];
+        }
+        if (item.images && item.images.length > 0) {
+            return item.images[0];
+        }
+        return "/images/default-logo.svg";
+    };
+
+    if (loading) {
+        return (
+            <Flex justify="center" align="center" py={8} w="100%">
+                <Spinner size="md" color="green.700" />
+            </Flex>
+        );
+    }
+
+    if (!topInnovation) {
+        return null; // Sembunyikan jika tidak ada rekomendasi sama sekali
+    }
 
     return (
         <>
@@ -52,10 +93,10 @@ const Recommendation = () => {
                     </Box>
                     <Box>
                         <Text fontSize="md" fontWeight="bold" color="green.700">
-                            eFeeder
+                            {topInnovation.namaInovasi}
                         </Text>
                         <Text fontSize="sm" color="gray.600">
-                            Inovator: eFishery
+                            Inovator: {topInnovation.namaInnovator || "Umum"}
                         </Text>
                     </Box>
                 </Flex>
@@ -115,26 +156,29 @@ const Recommendation = () => {
                             py={8}
                         >
                             <Text fontWeight="bold" fontSize="lg">
-                                eFeeder
+                                {topInnovation.namaInovasi}
                             </Text>
                             <Text fontSize="sm" mb={4}>
-                                dari eFishery
+                                dari {topInnovation.namaInnovator || "Umum"}
                             </Text>
 
                             <Box my={6}>
                                 <Image
-                                    src={efisheryLogo}
-                                    alt="eFeeder"
+                                    src={getImageSrc(topInnovation)}
+                                    alt={topInnovation.namaInovasi}
                                     mx="auto"
                                     boxSize="80px"
+                                    borderRadius="full"
+                                    objectFit="cover"
+                                    fallbackSrc="/images/default-logo.svg"
                                 />
                             </Box>
 
                             <Text fontWeight="bold" mb={1}>
                                 Cocok dengan desamu!
                             </Text>
-                            <Text fontSize="sm" color="gray.600">
-                                Saatnya desamu berinovasi! Terapkan inovasi dan buat perubahan besar di desamu
+                            <Text fontSize="sm" color="gray.600" noOfLines={3}>
+                                {topInnovation.deskripsi || "Saatnya desamu berinovasi! Terapkan inovasi dan buat perubahan besar di desamu."}
                             </Text>
                         </Flex>
                     </DrawerBody>
@@ -147,7 +191,7 @@ const Recommendation = () => {
                             fontSize="sm"
                             border="2px"
                             _hover={{ bg: "#2e5e4b" }}
-                            onClick={() => router.push("/innovation/detail/8HeAYMhzlFQvdUgoSXpX")}
+                            onClick={() => router.push(`/innovation/detail/${topInnovation.id}`)}
                         >
                             Detail Inovasi
                         </Button>

@@ -18,9 +18,9 @@ import {
 import CardInnovation from "Components/card/innovation";
 import { paths } from "Consts/path";
 import { useRecommendations } from "Hooks/useRecommendation";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-
+import { getInnovation } from "Services/innovationServices";
 
 type RecommendationDrawerProps = {
   isOpen: boolean;
@@ -33,11 +33,44 @@ const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
   onClose,
   innovationId,
 }) => {
-  console.log("ini innovationId", innovationId)
+  const router = useRouter();
+  
+  // Ambil rekomendasi machine learning / similarity
+  const { data, loading: loadingRecs, error } = useRecommendations(innovationId, 4);
+  
+  // Ambil data terverifikasi (leaderboard) sebagai fallback jika ML kosong atau gagal
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
 
-  const router = useRouter()
-  const { data, loading, error } = useRecommendations(innovationId, 4)
+  useEffect(() => {
+    getInnovation({ status: "Terverifikasi" })
+      .then((res) => {
+        const list = res.innovations || [];
+        const sorted = [...list]
+          .sort((a, b) => (b.jumlahDesa || 0) - (a.jumlahDesa || 0))
+          .filter((item) => item.id !== innovationId); // Jangan tampilkan inovasi yang sama
+        setLeaderboard(sorted);
+      })
+      .catch((err) => console.error("Error fetching fallback leaderboard:", err))
+      .finally(() => setLoadingLeaderboard(false));
+  }, [innovationId]);
+
   const recs = data?.data || [];
+  
+  // Jika data dari FastAPI kosong/error, gunakan top 4 leaderboard terpopuler!
+  const finalRecs = recs.length > 0 
+    ? recs.slice(0, 4)
+    : leaderboard.slice(0, 4).map(item => ({
+        id: item.id || item._id,
+        images: item.fotoInovasi || item.images || ["/images/default-logo.svg"],
+        inovasi: item.namaInovasi,
+        kategori: item.kategori,
+        deskripsi: item.deskripsi,
+        tahunDibuat: item.tahunDibuat,
+        namaInnovator: item.namaInnovator || "Umum"
+      }));
+
+  const isLoading = loadingRecs && loadingLeaderboard;
 
   return (
     <Drawer isOpen={isOpen} placement="bottom" onClose={onClose}>
@@ -80,19 +113,22 @@ const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
           <Text fontSize="14px" fontWeight={700} textAlign="center">
             Rekomendasi Inovasi Lainnya untuk Desamu
           </Text>
-          {loading && <Spinner mt={4} display="block" mx="auto" />}
-          {!loading && !error && (
+          {isLoading && <Spinner mt={4} display="block" mx="auto" />}
+          {!isLoading && (
             <SimpleGrid columns={{ base: 2 }} spacing={4} mt={4}>
-              {recs.map((r: any) => (
+              {finalRecs.map((r: any) => (
                 <CardInnovation
                   key={r.id}
-                  images={r.images ? r.images : ["/images/default-header.svg"]}
+                  images={r.images && r.images.length > 0 ? r.images : ["/images/default-logo.svg"]}
                   namaInovasi={r.inovasi}
                   kategori={r.kategori}
                   deskripsi={r.deskripsi}
                   tahunDibuat={r.tahunDibuat}
                   innovatorName={r.namaInnovator}
-                  onClick={() => router.push(`/innovation/detail/${r.id}`)}
+                  onClick={() => {
+                    onClose();
+                    router.push(`/innovation/detail/${r.id}`);
+                  }}
                 />
               ))}
             </SimpleGrid>
@@ -104,7 +140,10 @@ const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
             colorScheme="blue"
             size="sm"
             width="100%"
-            onClick={() => { }}
+            onClick={() => {
+              onClose();
+              router.push(paths.VILLAGE_DASHBOARD);
+            }}
           >
             Kembali ke Beranda
           </Button>
@@ -113,4 +152,5 @@ const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
     </Drawer>
   );
 };
+
 export default RecommendationDrawer;
