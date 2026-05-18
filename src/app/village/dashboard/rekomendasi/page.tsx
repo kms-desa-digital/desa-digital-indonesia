@@ -140,10 +140,12 @@ const RekomendasiInovasi = () => {
                                     key={item.id}
                                     bg="white"
                                     w="full"
-                                    p={3}
+                                    h="72px"
+                                    px={4}
+                                    py={3}
                                     boxShadow="sm"
                                     borderColor="gray.200"
-                                    borderRadius={10}
+                                    borderRadius={12}
                                     align="center"
                                     spacing={3}
                                     cursor="pointer"
@@ -151,7 +153,7 @@ const RekomendasiInovasi = () => {
                                     _hover={{ bg: "gray.50", transform: "translateY(-1px)" }}
                                     transition="all 0.2s"
                                 >
-                                    <Text fontWeight="bold" fontSize="sm" color="gray.600" w="30px" ml={2}>
+                                    <Text fontWeight="bold" fontSize="sm" color="gray.400" w="24px" textAlign="center" flexShrink={0}>
                                         {String(idx + 4).padStart(2, "0")}
                                     </Text>
                                     <Image
@@ -160,18 +162,19 @@ const RekomendasiInovasi = () => {
                                         borderRadius="full"
                                         objectFit="cover"
                                         fallbackSrc="/images/default-logo.svg"
+                                        flexShrink={0}
                                     />
-                                    <Box flex="1">
-                                        <Text fontSize="14px" fontWeight="semibold" isTruncated maxW="200px">
+                                    <Box flex="1" minW={0}>
+                                        <Text fontSize="14px" fontWeight="semibold" color="gray.800" isTruncated>
                                             {item.namaInovasi}
                                         </Text>
-                                        <Text fontSize="xs" color="gray.500">
+                                        <Text fontSize="xs" color="gray.500" isTruncated>
                                             Inovator: <b>{item.namaInnovator || "Umum"}</b>
                                         </Text>
                                     </Box>
-                                    <HStack spacing={1} bg="green.50" px={2} py={1} borderRadius="full">
-                                        <Image src="/icons/village-active.svg" w={3} h={3} alt="Village Icon" />
-                                        <Text fontSize="10px" fontWeight="bold" color="green.700">
+                                    <HStack spacing={1} bg="green.50" px={3} py={1.5} borderRadius="full" flexShrink={0} maxW="100px" justify="center">
+                                        <Image src="/icons/village-active.svg" w={3.5} h={3.5} alt="Village Icon" />
+                                        <Text fontSize="10px" fontWeight="extrabold" color="green.700" whiteSpace="nowrap">
                                             {item.jumlahDesa || 0} Desa
                                         </Text>
                                     </HStack>
