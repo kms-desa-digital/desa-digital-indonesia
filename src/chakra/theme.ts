@@ -24,6 +24,17 @@ export const theme = extendTheme({
       body: {
         bg: "brand.300",
       },
+      ".chakra-toast__container": {
+        maxWidth: "360px !important",
+        width: "90% !important",
+        margin: "0 auto !important",
+        left: "50% !important",
+        transform: "translateX(-50%) !important",
+      },
+      ".chakra-toast__inner": {
+        width: "100% !important",
+        maxWidth: "360px !important",
+      }
     }),
   },
   components: {

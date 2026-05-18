@@ -94,7 +94,7 @@ export default function InnovationCategoryPage() {
                         )
                         .map((item, idx) => (
                             <CardInnovation
-                                key={idx}
+                                key={item.id || item._id || idx}
                                 {...item}
                                 jumlahDesa={item.appliedVillages?.length || item.jumlahDesaDiterapkan || item.jumlahDesa || 0}
                                 innovatorLogo={

@@ -70,12 +70,77 @@ export async function GET(request: NextRequest) {
 
     const filter: any = andConditions.length ? { $and: andConditions } : {}
 
-    let villageQuery = db.collection('villages').find(filter).sort({ createdAt: -1 })
+    const pipeline: any[] = [
+      { $match: filter },
+      { $sort: { createdAt: -1 } },
+    ]
 
-    if (skipVal > 0) villageQuery = villageQuery.skip(skipVal)
-    if (limitVal > 0) villageQuery = villageQuery.limit(limitVal)
+    if (skipVal > 0) pipeline.push({ $skip: skipVal })
+    if (limitVal > 0) pipeline.push({ $limit: limitVal })
 
-    const villages = await villageQuery.toArray()
+    // Add fields for live counting
+    pipeline.push(
+      {
+        $addFields: {
+          villageIdStr: { $toString: "$_id" }
+        }
+      },
+      {
+        $lookup: {
+          from: 'claimInnovations',
+          let: { vId: "$userId", v_id: "$villageIdStr" },
+          pipeline: [
+            { 
+              $match: { 
+                $expr: { 
+                  $and: [
+                    { $or: [{ $eq: ["$desaId", "$$vId"] }, { $eq: ["$desaId", "$$v_id"] }] },
+                    { $eq: ["$status", "Terverifikasi"] },
+                    { $or: [{ $eq: ["$inovasiId", null] }, { $not: ["$inovasiId"] }] } // Only Manual Claims
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'manualClaims'
+        }
+      },
+      {
+        $lookup: {
+          from: 'innovations',
+          let: { vId: "$userId", v_id: "$villageIdStr" },
+          pipeline: [
+            { 
+              $match: { 
+                $expr: { 
+                  $and: [
+                    { $or: [{ $in: ["$$vId", { $ifNull: ["$desaId", []] }] }, { $in: ["$$v_id", { $ifNull: ["$desaId", []] }] }] },
+                    { $eq: ["$status", "Terverifikasi"] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'standardInnovations'
+        }
+      },
+      {
+        $addFields: {
+          liveCount: { $add: [{ $size: "$manualClaims" }, { $size: "$standardInnovations" }] }
+        }
+      },
+      {
+        $addFields: {
+          // Use the live count as the primary source of truth
+          jumlahInovasiDiterapkan: "$liveCount"
+        }
+      },
+      {
+        $project: { manualClaims: 0, standardInnovations: 0, villageIdStr: 0, liveCount: 0 }
+      }
+    )
+
+    const villages = await db.collection('villages').aggregate(pipeline).toArray()
 
     const result = villages.map(doc => ({
       ...doc,
@@ -133,7 +198,7 @@ export async function POST(request: NextRequest) {
       const { notifyAllAdmins } = await import('@/services/notificationServices')
       await notifyAllAdmins({
         type: 'personal',
-        category: 'profile_submission',
+        category: 'village_submission',
         title: `Pendaftaran Desa Baru: ${namaDesa}`,
         description: `Sebuah desa baru telah mendaftar: ${namaDesa}. Silakan verifikasi profil desa ini.`,
         actionType: 'profile',

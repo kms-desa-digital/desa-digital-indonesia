@@ -217,7 +217,7 @@
                 "description": "You cannot make an individual claim. Claims can only be made through a village account. For that, your village must register an account and complete the village profile before applying for an innovation claim. After completing the profile, claim submissions can be made through the innovation page you want."
             },
             {
-                "title": "How to claim an innovation that is not yet registered on KMS?",
+                "title": "How to claim an innovation, but the desired innovation is not found?",
                 "description": "You can claim an innovation that is not yet registered on the website by making a manual claim. Manual claims can be done through the claim application page. You need to enter proof of claim, innovation information, and innovator details."
             }
         ]

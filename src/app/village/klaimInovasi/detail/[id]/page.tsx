@@ -26,6 +26,7 @@ import { auth } from "src/firebase/clientApp";
 import { getClaimById, updateVillage, updateClaim, getVillageById, deleteClaim } from "Services/villageServices";
 
 import { getInnovationById } from "Services/innovationServices";
+import { getInnovatorById } from "Services/innovatorServices";
 
 import {
     Container as LocalContainer,
@@ -46,6 +47,7 @@ import Loading from "Components/loading";
 import { useRouter, useParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
 
 const KlaimInovasiDetail: React.FC = () => {
     const router = useRouter();
@@ -63,9 +65,9 @@ const KlaimInovasiDetail: React.FC = () => {
     const [isExpanded, setIsExpanded] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    const { role } = useUser();
+    const { role, uid, firebaseUid, loading: userLoading } = useUser();
     useEffect(() => {
-        setIsAdmin(role === "admin");
+        setIsAdmin(role === "admin" || role === "ADMIN");
     }, [role]);
 
     useEffect(() => {
@@ -90,11 +92,31 @@ const KlaimInovasiDetail: React.FC = () => {
                         if (data.inovasiId) {
                             try {
                                 const iRes: any = await getInnovationById(data.inovasiId);
-                                if (iRes.data?.kategori || iRes.data?.category) {
+                                const invData = iRes.data || iRes.innovation || iRes;
+                                
+                                if (invData) {
                                     setClaimData((prev: any) => ({
                                         ...prev,
-                                        kategoriInovasi: iRes.data.kategori || iRes.data.category
+                                        kategoriInovasi: invData.kategori || invData.category,
+                                        innovatorId: invData.innovatorId || prev.innovatorId
                                     }));
+                                    
+                                    const innovatorIdToFetch = invData.innovatorId || data.innovatorId;
+                                    if (innovatorIdToFetch) {
+                                        try {
+                                            const innovRes: any = await getInnovatorById(innovatorIdToFetch);
+                                            const innovProfile = innovRes.data || innovRes.innovator || innovRes;
+                                            if (innovProfile) {
+                                                setClaimData((prev: any) => ({
+                                                    ...prev,
+                                                    logoInovator: innovProfile.logo || innovProfile.logoInnovator,
+                                                    namaInovator: innovProfile.namaInovator || innovProfile.nama || prev.namaInovator
+                                                }));
+                                            }
+                                        } catch (e) {
+                                            console.error("Error fetching innovator profile:", e);
+                                        }
+                                    }
                                 }
                             } catch (err) {
                                 console.error("Error fetching innovation category:", err);
@@ -116,12 +138,6 @@ const KlaimInovasiDetail: React.FC = () => {
         try {
             if (id && claimData) {
                 await updateClaim(id, { status: "Terverifikasi" });
-                if (claimData.desaId) {
-                    const vRes: any = await getVillageById(claimData.desaId);
-                    const vData = vRes.data || vRes.village;
-                    const newValue = (Number(vData?.jumlahInovasiDiterapkan) || 0) + 1;
-                    await updateVillage(claimData.desaId, { jumlahInovasiDiterapkan: newValue });
-                }
                 setClaimData((prev: any) => ({ ...prev, status: "Terverifikasi" }));
                 toast.success("Klaim berhasil diverifikasi!");
             }
@@ -179,7 +195,18 @@ const KlaimInovasiDetail: React.FC = () => {
         }
     };
 
-    if (fetchLoading) return <Loading />;
+    if (fetchLoading || userLoading) return <Loading />;
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "admin" || uid === claimData?.desaId || firebaseUid === claimData?.desaId;
+
+    // Allow viewing if authorized (Admin/Owner) OR if the claim is verified (Public View)
+    const canView = isAuthorized || claimData?.status === "Terverifikasi";
+
+    if (claimData && !canView) {
+        return <Forbidden />;
+    }
+
     if (!claimData) return null;
 
     const files = claimData.buktiFiles || claimData.bukti_files || {};
@@ -275,9 +302,16 @@ const KlaimInovasiDetail: React.FC = () => {
                                     borderWidth="1px"
                                     borderColor="gray.100"
                                     bg="gray.50"
+                                    cursor={!isManual && claimData.innovatorId ? "pointer" : "default"}
+                                    onClick={() => {
+                                        if (!isManual && claimData.innovatorId) {
+                                            router.push(`/innovator/profile/${claimData.innovatorId}`);
+                                        }
+                                    }}
+                                    _hover={!isManual && claimData.innovatorId ? { bg: "gray.100" } : {}}
                                 >
                                     <Avatar
-                                        src={claimData.logoInovator}
+                                        src={claimData.logoInovator || "/images/default-logo.svg"}
                                         name={claimData.namaInovator}
                                         size="sm"
                                         borderRadius="lg"
@@ -329,11 +363,12 @@ const KlaimInovasiDetail: React.FC = () => {
                                     </Button>
                                 )}
                             </Stack>
-                        </Box>
                     </Box>
-
-                    {/* Evidence Section */}
-                    <Box px={8} mt={6}>
+                    </Box>
+                    
+                    {/* Evidence Section - Only shown to Authorized Users (Admin/Owner) */}
+                    {isAuthorized && (
+                        <Box px={8} mt={6}>
                         <Text fontWeight="700" fontSize="14px" color="gray.700" mb={2}>Dokumen Bukti Klaim</Text>
 
                         {/* Photo Proofs */}
@@ -349,7 +384,7 @@ const KlaimInovasiDetail: React.FC = () => {
                                             height="160px"
                                             bg="gray.100"
                                             cursor="pointer"
-                                            onClick={() => window.open(src, '_blank')}
+                                            onClick={() => setPreviewUrl(src)}
                                             transition="transform 0.2s"
                                             _hover={{ transform: "scale(1.02)" }}
                                         >
@@ -432,64 +467,67 @@ const KlaimInovasiDetail: React.FC = () => {
                                 </Stack>
                             </Box>
                         )}
-                    </Box>
+                        </Box>
+                    )}
                 </Box>
 
 
                 {/* Fixed Action Bar at the Bottom */}
 
-                <Box
-                    position="fixed"
-                    bottom="0"
-                    left="50%"
-                    transform="translateX(-50%)"
-                    width="100%"
-                    maxW="363px"
-                    bg="white"
-                    p={4}
-                    pb="24px"
-                    zIndex="20"
-                    shadow="0px -4px 10px rgba(0,0,0,0.05)"
-                    borderTopWidth="1px"
-                >
-                    {isAdmin ? (
-                        claimData.status === "Menunggu" ? (
-                            <Button
-                                w="full"
-                                h="48px"
-                                borderRadius="lg"
-                                colorScheme="green"
-                                isLoading={loading}
-                                onClick={onOpen}
-                                fontWeight="800"
-                                fontSize="15px"
-                            >
-                                Verifikasi Klaim
-                            </Button>
-                        ) : (
-                            <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
-                        )
-                    ) : (
-                        <Stack spacing={3} w="full">
-                            {/* Status Card only for Waiting status for User (Rejection is shown at top) */}
-                            {claimData.status === "Menunggu" && (
-                                <StatusCard status="Menunggu" />
-                            )}
-
-                            {user?.uid === claimData.desaId && (
+                {isAuthorized && (
+                    <Box
+                        position="fixed"
+                        bottom="0"
+                        left="50%"
+                        transform="translateX(-50%)"
+                        width="100%"
+                        maxW="363px"
+                        bg="white"
+                        p={4}
+                        pb="24px"
+                        zIndex="20"
+                        shadow="0px -4px 10px rgba(0,0,0,0.05)"
+                        borderTopWidth="1px"
+                    >
+                        {isAdmin ? (
+                            claimData.status === "Menunggu" ? (
                                 <Button
-                                    width="100%"
-                                    onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?editId=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
-                                    fontSize="16px"
-                                    display={claimData.status === "Menunggu" ? "none" : "flex"}
-                                    mt={2}
+                                    w="full"
+                                    h="48px"
+                                    borderRadius="lg"
+                                    colorScheme="green"
+                                    isLoading={loading}
+                                    onClick={onOpen}
+                                    fontWeight="800"
+                                    fontSize="15px"
                                 >
-                                    {claimData.status === "Ditolak" ? "Ajukan Ulang" : "Edit Klaim"}
+                                    Verifikasi Klaim
                                 </Button>
-                            )}
-                        </Stack>
-                    )}
-                </Box>
+                            ) : (
+                                <StatusCard status={claimData.status} message={claimData.catatanAdmin} />
+                            )
+                        ) : (
+                            <Stack spacing={3} w="full">
+                                {/* Status Card only for Waiting status for User (Rejection is shown at top) */}
+                                {claimData.status === "Menunggu" && (
+                                    <StatusCard status="Menunggu" />
+                                )}
+
+                                {user?.uid === claimData.desaId && (
+                                    <Button
+                                        width="100%"
+                                        onClick={() => router.push(isManual ? `/village/klaimInovasi/manual?editId=${id}` : `/village/klaimInovasi?inovasiId=${claimData.inovasiId}&editId=${id}`)}
+                                        fontSize="16px"
+                                        display={claimData.status === "Menunggu" ? "none" : "flex"}
+                                        mt={2}
+                                    >
+                                        {claimData.status === "Ditolak" ? "Ajukan Ulang" : "Edit Klaim"}
+                                    </Button>
+                                )}
+                            </Stack>
+                        )}
+                    </Box>
+                )}
 
 
 
@@ -514,32 +552,48 @@ const KlaimInovasiDetail: React.FC = () => {
 
                 {/* Document Preview Modal */}
                 <Modal isOpen={!!previewUrl} onClose={() => setPreviewUrl(null)} isCentered>
-                    <ModalOverlay bg="blackAlpha.500" />
+                    <ModalOverlay bg="blackAlpha.700" />
                     <ModalContent
-                        maxW="340px"
-                        w="85%"
-                        h="80vh"
+                        maxW="min(90vw, 360px)"
+                        w="100%"
+                        h="auto"
+                        minH="unset"
+                        maxH="90vh"
                         borderRadius="xl"
                         overflow="hidden"
                         mx="auto"
+                        bg="transparent"
+                        boxShadow="none"
                     >
-                        <ModalHeader bg="green.700" color="white" py={3} fontSize="14px">
+                        <ModalHeader bg="green.700" color="white" py={3} fontSize="14px" borderTopRadius="xl">
                             <Flex justify="space-between" align="center">
-                                <Text fontWeight="700">Pratinjau Dokumen</Text>
+                                <Text fontWeight="700">Pratinjau {previewUrl && (/\.(jpg|jpeg|png|webp|gif|svg)/i.test(previewUrl.split('?')[0]) ? "Foto" : "Dokumen")}</Text>
                                 <ModalCloseButton position="static" size="sm" />
                             </Flex>
                         </ModalHeader>
-                        <ModalBody p={0} bg="white">
+                        <ModalBody p={0} bg="white" borderBottomRadius="xl" display="flex" alignItems="center" justifyContent="center" overflow="hidden">
                             {previewUrl && (
-                                <iframe
-                                    src={`${previewUrl}#view=FitH&toolbar=0`}
-                                    style={{
-                                        width: "100%",
-                                        height: "100%",
-                                        border: "none",
-                                    }}
-                                    title="Pratinjau Dokumen"
-                                />
+                                /\.(jpg|jpeg|png|webp|gif|svg)/i.test(previewUrl.split('?')[0]) ? (
+                                    <Image 
+                                        src={previewUrl} 
+                                        maxH="80vh" 
+                                        w="100%"
+                                        objectFit="contain" 
+                                        alt="Pratinjau Foto" 
+                                    />
+                                ) : (
+                                    <Box w="340px" h="80vh">
+                                        <iframe
+                                            src={`${previewUrl}#view=FitH&toolbar=0`}
+                                            style={{
+                                                width: "100%",
+                                                height: "100%",
+                                                border: "none",
+                                            }}
+                                            title="Pratinjau Dokumen"
+                                        />
+                                    </Box>
+                                )
                             )}
                         </ModalBody>
                     </ModalContent>

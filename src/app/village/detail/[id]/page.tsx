@@ -450,7 +450,7 @@ export default function DetailVillagePage() {
                                     ) : (
                                         innovations.slice(0, 5).map((innovation, idx) => (
                                             <CardInnovation
-                                                key={idx}
+                                                key={innovation.id || innovation._id || idx}
                                                 images={innovation.images}
                                                 namaInovasi={innovation.namaInovasi}
                                                 kategori={innovation.kategori}

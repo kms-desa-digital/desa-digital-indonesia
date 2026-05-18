@@ -1,5 +1,5 @@
 import { DeleteIcon } from "@chakra-ui/icons";
-import { Button, Flex, Text, Progress, Box } from "@chakra-ui/react";
+import { Button, Flex, Text, Progress, Box, Tag } from "@chakra-ui/react";
 import Video from "@public/icons/video-camera.svg";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 import React, { useState } from "react";
@@ -10,7 +10,7 @@ type VidUploadProps = {
   selectedVid: string; // Menyimpan URL video
   setSelectedVid: (value: string) => void;
   selectVidRef: React.RefObject<HTMLInputElement | null>;
-  onSelectVid?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  claimId: string;
   disabled?: boolean;
 };
 
@@ -18,50 +18,48 @@ const VidUpload: React.FC<VidUploadProps> = ({
   selectedVid,
   setSelectedVid,
   selectVidRef,
+  claimId,
   disabled,
 }) => {
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress] = useState<number>(0);
+  const [uploading, setUploading] = useState<boolean>(false);
 
-  const handleSelectVid = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
-    setProgress(0);
+    const fileName = `${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, `claimInnovations/${claimId}/videos/${fileName}`);
+    const uploadTask = uploadBytesResumable(storageRef, file);
 
-    try {
-      const storageRef = ref(storage, `videos/${Date.now()}_${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setProgress(p);
-        },
-        (error) => {
-          console.error("Upload failed", error);
-          setUploading(false);
-        },
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setSelectedVid(downloadURL);
-          setUploading(false);
-          setProgress(0);
-        }
-      );
-    } catch (error) {
-      console.error("Error uploading video:", error);
-      setUploading(false);
-    }
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setProgress(p);
+      },
+      (error) => {
+        console.error("Upload error:", error);
+        setUploading(false);
+      },
+      async () => {
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        setSelectedVid(downloadURL);
+        setUploading(false);
+        setProgress(0);
+      }
+    );
   };
-
   const handleDeleteVid = () => {
     setSelectedVid("");
   };
 
   const getFileName = (url: string) => {
+    if (!url) return "Video";
+    if (url.startsWith("data:")) {
+      return "Video baru dipilih";
+    }
     try {
       const decodedUrl = decodeURIComponent(url);
       const parts = decodedUrl.split("/");
@@ -103,11 +101,9 @@ const VidUpload: React.FC<VidUploadProps> = ({
               whiteSpace="nowrap"
               textOverflow="ellipsis"
               overflow="hidden"
-              as='a'
+              as="a"
               cursor="pointer"
-              onClick={() => {
-                window.open(selectedVid, "_blank");
-              }}
+              onClick={() => window.open(selectedVid, "_blank")}
               title="Klik untuk menonton video"
               _hover={{
                 textDecoration: "underline",
@@ -116,7 +112,6 @@ const VidUpload: React.FC<VidUploadProps> = ({
             >
               {getFileName(selectedVid)}
             </Text>
-
           </Flex>
 
           <Button
@@ -132,16 +127,14 @@ const VidUpload: React.FC<VidUploadProps> = ({
             <DeleteIcon />
           </Button>
         </Flex>
+      ) : uploading ? (
+        <Box width="100%" maxWidth="270px">
+          <Text fontSize="xs" color="gray.500" mb={1}>Mengunggah Video ({Math.round(progress)}%)</Text>
+          <Progress value={progress} size="xs" colorScheme="green" borderRadius="full" />
+        </Box>
       ) : (
         <>
-          {uploading && (
-            <Box width="270px">
-              <Text fontSize="10px" color="gray.500">Mengunggah... {Math.round(progress)}%</Text>
-              <Progress value={progress} size="xs" colorScheme="green" borderRadius="4px" mt={1} />
-            </Box>
-          )}
-
-          {!uploading && !disabled && (
+          {!disabled && (
             <Button
               leftIcon={<img src={Video.src} alt="video" />}
               _hover={{ bg: "DBFFE6" }}
@@ -165,7 +158,7 @@ const VidUpload: React.FC<VidUploadProps> = ({
                 hidden
                 accept="video/mp4"
                 ref={selectVidRef}
-                onChange={handleSelectVid}
+                onChange={handleFileChange}
               />
             </Button>
           )}
@@ -175,3 +168,4 @@ const VidUpload: React.FC<VidUploadProps> = ({
   );
 };
 export default VidUpload;
+

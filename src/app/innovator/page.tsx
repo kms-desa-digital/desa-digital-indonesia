@@ -74,7 +74,15 @@ export default function InnovatorPage() {
                     kategori: categoryFilter === "Semua Kategori" ? undefined : categoryFilter,
                 });
                 const innovatorsData = res?.data || res?.innovators || [];
-                setInnovatorsShowed(Array.isArray(innovatorsData) ? innovatorsData : []);
+                const sortedInnovators = (Array.isArray(innovatorsData) ? innovatorsData : [])
+                    .sort((a: any, b: any) => {
+                        const desa = (Number(b.jumlahDesaDampingan) || 0) - (Number(a.jumlahDesaDampingan) || 0);
+                        if (desa !== 0) return desa;
+                        const inovasi = (Number(b.jumlahInovasi) || 0) - (Number(a.jumlahInovasi) || 0);
+                        if (inovasi !== 0) return inovasi;
+                        return (a.namaInovator || "").localeCompare(b.namaInovator || "");
+                    });
+                setInnovatorsShowed(sortedInnovators);
             } catch (error) {
                 console.error("Error fetching innovators from MongoDB API:", error);
             } finally {
@@ -150,6 +158,7 @@ export default function InnovatorPage() {
                             key={item.id}
                             {...item}
                             highlightQuery={searchQuery}
+                            ranking={startIndex + idx + 1}
                             onClick={() =>
                                 // navigate(generatePath(paths.INNOVATOR_PROFILE_PAGE, { id: item.id }))
                                 router.push(`/innovator/profile/${item.id}`)

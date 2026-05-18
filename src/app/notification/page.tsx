@@ -30,6 +30,13 @@ import {
     Button,
 } from "@chakra-ui/react";
 import {
+    ChevronDownIcon,
+    DeleteIcon,
+    EmailIcon,
+    InfoOutlineIcon,
+    SettingsIcon
+} from "@chakra-ui/icons";
+import {
     ChevronLeft, Bell, CheckCircle2, XCircle, Info, Star,
     ArrowRight, MoreVertical, Trash2, CheckCircle,
     Trophy, Megaphone, Lightbulb, UserPlus
@@ -37,12 +44,13 @@ import {
 import { useRouter } from "next/navigation";
 import TopBar from "Components/topBar";
 import { useAuthToken } from "@/hooks/useAuthToken";
+import { useUser } from "src/contexts/UserContext";
 
 interface NotificationItem {
     id: string;
     userId: string;
     type: "general" | "personal";
-    category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status' | 'innovation_submission' | 'claim_submission' | 'profile_submission';
+    category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status' | 'innovation_submission' | 'claim_submission' | 'profile_submission' | 'village_submission' | 'innovator_submission';
     title: string;
     description: string;
     isRead: boolean;
@@ -80,6 +88,9 @@ const NotificationPage = () => {
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [tabIndex, setTabIndex] = useState(0);
+    const [filterCategory, setFilterCategory] = useState<string>("all");
+    const { role } = useUser();
+    const isAdmin = role === "admin";
 
     const [isDeleteAllOpen, setIsDeleteAllOpen] = useState(false);
     const [isDeleteSingleOpen, setIsDeleteSingleOpen] = useState(false);
@@ -242,7 +253,13 @@ const NotificationPage = () => {
         }
 
         // 2. Pengajuan Baru untuk Admin (Bintang)
-        if (category === 'innovation_submission' || category === 'claim_submission' || category === 'profile_submission') {
+        if (
+            category === 'innovation_submission' || 
+            category === 'claim_submission' || 
+            category === 'village_submission' || 
+            category === 'innovator_submission' ||
+            category === 'profile_submission'
+        ) {
             return <Star size={18} color="#F59E0B" />;
         }
 
@@ -324,11 +341,11 @@ const NotificationPage = () => {
                 </Box>
                 <Box flex={1}>
                     <Flex justify="space-between" align="start" mb={1}>
-                        <Text 
-                            fontWeight="800" 
-                            fontSize="15px" 
-                            color={notifTitleColor} 
-                            noOfLines={1} 
+                        <Text
+                            fontWeight="800"
+                            fontSize="15px"
+                            color={notifTitleColor}
+                            noOfLines={1}
                             pr={6} // Padding agar judul tidak mepet tombol hapus
                         >
                             {notif.title}
@@ -341,7 +358,7 @@ const NotificationPage = () => {
                         <Text fontSize="11px" color="gray.400" fontWeight="500">
                             {formatDate(notif.createdAt)}
                         </Text>
-                        
+
                         <Flex align="center" gap={1} color="green.600">
                             <Text fontSize="11px" fontWeight="700">Buka</Text>
                             <ArrowRight size={12} />
@@ -421,7 +438,7 @@ const NotificationPage = () => {
                             p={1.5}
                             borderRadius="full"
                             shadow="sm"
-                            mb={6}
+                            mb={2}
                         >
                             <Tab
                                 borderRadius="full"
@@ -461,21 +478,116 @@ const NotificationPage = () => {
                                 </Stack>
                             </TabPanel>
                             <TabPanel p={0}>
+                                {isAdmin && (
+                                    <Box mb={4}>
+                                        <Menu matchWidth>
+                                            <MenuButton
+                                                as={Button}
+                                                rightIcon={<ChevronDownIcon />}
+                                                variant="outline"
+                                                w="full"
+                                                borderRadius="xl"
+                                                fontSize="14px"
+                                                h="48px"
+                                                textAlign="left"
+                                                fontWeight="500"
+                                                color="gray.600"
+                                                bg="white"
+                                                borderColor="gray.200"
+                                                _hover={{ bg: "gray.50" }}
+                                                _active={{ bg: "gray.50" }}
+                                                px={4}
+                                            >
+                                                {filterCategory === "all" ? "Semua Verifikasi" :
+                                                    filterCategory === "village_submission" ? "Pengajuan Desa" :
+                                                        filterCategory === "innovator_submission" ? "Pengajuan Innovator" :
+                                                            filterCategory === "innovation_submission" ? "Pengajuan Inovasi" :
+                                                                filterCategory === "claim_submission" ? "Pengajuan Klaim" : "Filter"}
+                                            </MenuButton>
+                                            <MenuList borderRadius="xl" shadow="lg" py={2}>
+                                                <MenuItem
+                                                    onClick={() => setFilterCategory("all")}
+                                                    fontSize="14px"
+                                                    fontWeight={filterCategory === "all" ? "600" : "400"}
+                                                    color={filterCategory === "all" ? "green.600" : "inherit"}
+                                                >
+                                                    Semua Verifikasi
+                                                </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => setFilterCategory("village_submission")}
+                                                    fontSize="14px"
+                                                    fontWeight={filterCategory === "village_submission" ? "600" : "400"}
+                                                    color={filterCategory === "village_submission" ? "green.600" : "inherit"}
+                                                >
+                                                    Pengajuan Desa
+                                                </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => setFilterCategory("innovator_submission")}
+                                                    fontSize="14px"
+                                                    fontWeight={filterCategory === "innovator_submission" ? "600" : "400"}
+                                                    color={filterCategory === "innovator_submission" ? "green.600" : "inherit"}
+                                                >
+                                                    Pengajuan Innovator
+                                                </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => setFilterCategory("innovation_submission")}
+                                                    fontSize="14px"
+                                                    fontWeight={filterCategory === "innovation_submission" ? "600" : "400"}
+                                                    color={filterCategory === "innovation_submission" ? "green.600" : "inherit"}
+                                                >
+                                                    Pengajuan Inovasi
+                                                </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => setFilterCategory("claim_submission")}
+                                                    fontSize="14px"
+                                                    fontWeight={filterCategory === "claim_submission" ? "600" : "400"}
+                                                    color={filterCategory === "claim_submission" ? "green.600" : "inherit"}
+                                                >
+                                                    Pengajuan Klaim
+                                                </MenuItem>
+                                            </MenuList>
+                                        </Menu>
+                                    </Box>
+                                )}
                                 <Stack spacing={3}>
-                                    {personalNotifs.length > 0 ? (
-                                        <>
-                                            {personalNotifs.map((notif, i) => (
-                                                <NotificationCard key={`${notif.id}-${i}`} notif={notif} />
-                                            ))}
-                                            {loadingMore && tabIndex === 1 && (
-                                                <Flex justify="center" py={4}>
-                                                    <Spinner size="sm" color="green.500" />
-                                                </Flex>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <EmptyState />
-                                    )}
+                                    {(() => {
+                                        const filteredNotifs = personalNotifs.filter(n => {
+                                            if (filterCategory === "all") return true;
+
+                                            // Smart Mapping for Legacy Data (Fallback based on title keywords)
+                                            let effectiveCategory = n.category;
+                                            const titleLower = n.title.toLowerCase();
+
+                                            if (!effectiveCategory || effectiveCategory === 'profile_submission' || effectiveCategory === 'submission_status') {
+                                                if (titleLower.includes('klaim')) {
+                                                    effectiveCategory = 'claim_submission';
+                                                } else if (titleLower.includes('inovasi')) {
+                                                    effectiveCategory = 'innovation_submission';
+                                                } else if (titleLower.includes('desa')) {
+                                                    effectiveCategory = 'village_submission';
+                                                } else if (titleLower.includes('innovator')) {
+                                                    effectiveCategory = 'innovator_submission';
+                                                }
+                                            }
+
+                                            return effectiveCategory === filterCategory;
+                                        });
+
+                                        return filteredNotifs.length > 0 ? (
+                                            <>
+                                                {filteredNotifs.map((notif, i) => (
+                                                    <NotificationCard key={`${notif.id}-${i}`} notif={notif} />
+                                                ))}
+                                                {loadingMore && tabIndex === 1 && (
+                                                    <Flex justify="center" py={4}>
+                                                        <Spinner size="sm" color="green.500" />
+                                                    </Flex>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <EmptyState />
+                                        );
+                                    })()}
                                 </Stack>
                             </TabPanel>
                         </TabPanels>

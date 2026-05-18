@@ -32,6 +32,31 @@ const MakeAds: React.FC = () => {
         link: "",
     });
 
+    const isFormValid = () => {
+        const trimmedName = textInputsValue.name.trim();
+        const trimmedLink = textInputsValue.link.trim();
+        const { minDate, maxDate } = textInputsValue;
+
+        let isUrlValid = false;
+        if (trimmedLink) {
+            try {
+                new URL(trimmedLink);
+                isUrlValid = true;
+            } catch {
+                isUrlValid = false;
+            }
+        }
+
+        const isDateValid = !!minDate && !!maxDate && new Date(minDate) < new Date(maxDate);
+
+        return (
+            trimmedName !== "" &&
+            isDateValid &&
+            selectedImg !== "" &&
+            isUrlValid
+        );
+    };
+
     // Confirmation modal
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [pendingSubmit, setPendingSubmit] = useState<null | {
@@ -72,6 +97,10 @@ const MakeAds: React.FC = () => {
         if (!textInputsValue.minDate) nextFieldErrors.minDate = t("adsErrorStartDateRequired");
         if (!textInputsValue.maxDate) nextFieldErrors.maxDate = t("adsErrorEndDateRequired");
         if (!trimmedLink) nextFieldErrors.link = t("adsErrorLinkRequired");
+        if (!selectedImg) {
+            setError(t("adsErrorImageRequired") || "Harap unggah gambar iklan.");
+            return;
+        }
 
         if (textInputsValue.minDate && textInputsValue.maxDate) {
             const minDate = new Date(textInputsValue.minDate);
@@ -144,13 +173,19 @@ const MakeAds: React.FC = () => {
                             mt={2}
                             value={textInputsValue.name}
                             onChange={onTextChange}
+                            isInvalid={!!fieldErrors.name}
                         />
+                        {fieldErrors.name && (
+                            <Text color="red.500" fontSize="12px" mt={2}>
+                                {fieldErrors.name}
+                            </Text>
+                        )}
                     </Box>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
                             {t("adsDate")} <span style={{ color: "red" }}>*</span>
                         </Text>
-                        <Flex align="center" justify="space-between">
+                        <Flex align="center" justify="space-between" gap={2}>
                             <Input
                                 placeholder="DD/MM/YYYY"
                                 name="minDate"
@@ -161,8 +196,9 @@ const MakeAds: React.FC = () => {
                                 maxW="150px"
                                 value={textInputsValue.minDate}
                                 onChange={onTextChange}
+                                isInvalid={!!fieldErrors.minDate}
                             />
-                            <MinusIcon fontSize="8pt" />
+                            <MinusIcon fontSize="8pt" mt={2} />
                             <Input
                                 placeholder="DD/MM/YYYY"
                                 name="maxDate"
@@ -173,8 +209,14 @@ const MakeAds: React.FC = () => {
                                 maxW="150px"
                                 value={textInputsValue.maxDate}
                                 onChange={onTextChange}
+                                isInvalid={!!fieldErrors.maxDate}
                             />
                         </Flex>
+                        {(fieldErrors.minDate || fieldErrors.maxDate) && (
+                            <Text color="red.500" fontSize="12px" mt={2}>
+                                {fieldErrors.minDate || fieldErrors.maxDate}
+                            </Text>
+                        )}
                     </Box>
                     <Box>
                         <Text fontSize="14px" fontWeight="400">
@@ -234,7 +276,12 @@ const MakeAds: React.FC = () => {
                     boxShadow="0px -2px 4px 0px rgba(0, 0, 0, 0.06), 0px -4px 6px 0px rgba(0, 0, 0, 0.10)"
                     bg="white"
                 >
-                    <Button width="100%" type="submit" isLoading={loading}>
+                    <Button
+                        width="100%"
+                        type="submit"
+                        isLoading={loading}
+                        isDisabled={!isFormValid() || loading}
+                    >
                         {t("adsSubmit")}
                     </Button>
                 </Flex>

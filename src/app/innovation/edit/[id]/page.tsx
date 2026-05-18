@@ -76,11 +76,15 @@ const predefinedModels = [
     "Lain-lain",
 ];
 
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+
 const EditInnovation: React.FC = () => {
     const router = useRouter();
     const toast = useToast();
     const params = useParams();
     const id = params.id as string;
+    const { role, uid, firebaseUid, loading: userLoading } = useUser();
 
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const selectFileRef = useRef<HTMLInputElement>(null);
@@ -108,6 +112,7 @@ const EditInnovation: React.FC = () => {
     const cancelRef = useRef<HTMLButtonElement>(null);
     const [isSuccessOpen, setIsSuccessOpen] = useState(false);
     const [isRejectionVisible, setIsRejectionVisible] = useState(true);
+    const [innovatorId, setInnovatorId] = useState("");
 
     const isFormValid = () => {
         const { name, year, description, villages } = textInputsValue;
@@ -115,19 +120,19 @@ const EditInnovation: React.FC = () => {
         if (selectedFiles.length === 0) return false;
         if (selectedModels.length === 0) return false;
         if (selectedModels.includes("Lain-lain") && !otherBusinessModel.trim()) return false;
-        
+
         // Benefit check
         if (benefit.length === 0) return false;
         for (const b of benefit) {
             if (!b.benefit.trim() || !b.description.trim()) return false;
         }
-        
+
         // Requirements check
         if (requirements.length === 0) return false;
         for (const r of requirements) {
             if (!r.trim()) return false;
         }
-        
+
         return true;
     };
 
@@ -150,6 +155,7 @@ const EditInnovation: React.FC = () => {
 
                 if (data) {
                     console.log("Fetched data from API:", data);
+                    setInnovatorId(data.innovatorId || "");
                     setTextInputsValue({
                         name: data.namaInovasi || "",
                         year: data.tahunDibuat || "",
@@ -202,6 +208,17 @@ const EditInnovation: React.FC = () => {
         };
         fetchInnovation();
     }, [id]);
+
+    if (loading || userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "admin" || uid === innovatorId || firebaseUid === innovatorId;
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     const onSelectImage = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -395,7 +412,7 @@ const EditInnovation: React.FC = () => {
                 isClosable: true,
                 position: "top",
             });
-            router.push(paths.PENGAJUAN_INOVASI_DETAIL_PAGE.replace(":id", id));
+            router.push(paths.PENGAJUAN_INOVASI_DETAIL_PAGE.replace(":id", innovatorId));
         } catch (error: any) {
             console.error("Error deleting innovation via API:", error);
             if (error.response?.data?.message === "ID tidak valid") {

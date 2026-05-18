@@ -120,7 +120,7 @@ const BantuanFAQ: React.FC = () => {
                         </Flex>
                         <Flex width="328px" align-items="flex-start" gap="16px" padding="0px 0px 8px">
                             <img src={Envelope.src} alt="WA" width="16px" height="16px" />
-                            dvi@gmail.com
+                            kms.desadigital.ipb@gmail.com
                         </Flex>
 
                     </DrawerBody>

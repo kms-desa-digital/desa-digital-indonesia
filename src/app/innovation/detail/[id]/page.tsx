@@ -38,7 +38,7 @@ import { paths } from "Consts/path";
 import { auth } from "src/firebase/clientApp";
 import { getInnovationById, getAppliedVillages, updateInnovation } from "Services/innovationServices";
 import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
-import { getVillageById, getClaims, updateVillage } from "Services/villageServices";
+import { getVillageById, getClaims, updateVillage, getClaimById } from "Services/villageServices";
 import {
     ActionContainer,
     BenefitContainer,
@@ -78,6 +78,7 @@ function DetailInnovation() {
     const [isClaimed, setIsClaimed] = useState(false);
     const [claimId, setClaimId] = useState("");
     const [claimStatus, setClaimStatus] = useState("");
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     const getApiErrorInfo = (err: any) => {
         const status = err?.status || err?.response?.status;
@@ -92,6 +93,8 @@ function DetailInnovation() {
     useEffect(() => {
         if (id) {
             setLoading(true);
+            let redirecting = false;
+
             getInnovationById(id)
                 .then((res: any) => {
                     const innovationData = res.innovation || res.data || res;
@@ -99,20 +102,36 @@ function DetailInnovation() {
                         setData(innovationData);
                         setError("");
                     } else {
-                        setError("Inovasi tidak ditemukan atau sudah dihapus");
+                        throw new Error("404");
                     }
                 })
-                .catch((error) => {
-                    const { status, message } = getApiErrorInfo(error);
-                    if (status === 404) {
+                .catch(async (error: any) => {
+                    const { status } = getApiErrorInfo(error);
+                    if (status === 404 || error.message === "404") {
+                        // Innovation not found, try to check if it's a manual claim
+                        try {
+                            const claimRes: any = await getClaimById(id);
+                            const claimData = claimRes.data;
+                            if (claimData && !claimData.inovasiId) {
+                                // It's a manual claim, redirect to its specific detail page
+                                redirecting = true;
+                                setIsRedirecting(true);
+                                router.replace(`/village/klaimInovasi/detail/${id}`);
+                                return;
+                            }
+                        } catch (claimErr) {
+                            console.error("Not a claim either:", claimErr);
+                        }
                         setError("Inovasi tidak ditemukan atau sudah dihapus");
                     } else {
-                        console.error("Error fetching innovation details:", { status, message });
+                        console.error("Error fetching innovation details:", error);
                         setError("Gagal memuat detail inovasi");
                     }
                 })
                 .finally(() => {
-                    setLoading(false);
+                    if (!redirecting) {
+                        setLoading(false);
+                    }
                 });
         }
     }, [id]);
@@ -310,7 +329,7 @@ function DetailInnovation() {
         }
     };
 
-    if (loading) {
+    if (loading || isRedirecting) {
         return (
             <Box>
                 <TopBar title={t("detailTitle")} onBack={() => router.back()} />
@@ -689,7 +708,7 @@ function DetailInnovation() {
                             style={{ cursor: "pointer" }}
                         >
                             <Logo
-                                src={desa.logo || innovatorData.logo}
+                                src={desa.logo || "/images/default-logo.svg"}
                                 alt="logo"
                                 style={{
                                     borderRadius: "50%",

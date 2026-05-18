@@ -78,12 +78,15 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     const isAdmin = auth.role === 'admin'
 
+    // Reset status if resubmitting rejected profile
+    const isResubmission = !isAdmin && claim?.status === 'Ditolak'
+    
     const updateData: any = { ...body, updatedAt: new Date() }
     delete updateData._id
     delete updateData.id
 
     // Jika village mengedit, paksa status kembali ke Menunggu
-    if (!isAdmin) {
+    if (isResubmission) {
         updateData.status = 'Menunggu'
         updateData.catatanAdmin = null
     }
@@ -98,6 +101,42 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
+    }
+
+    // Sync data if status changed TO Terverifikasi
+    if (claim.status !== 'Terverifikasi' && nextStatus === 'Terverifikasi') {
+        try {
+            // 1. Increment Village implementation count
+            const villageQuery: any = { $or: [{ userId: claim.desaId }] };
+            if (ObjectId.isValid(claim.desaId)) {
+                villageQuery.$or.push({ _id: new ObjectId(claim.desaId) });
+            }
+
+            await db.collection('villages').updateOne(
+                villageQuery,
+                { $inc: { jumlahInovasiDiterapkan: 1 } }
+            ).catch(err => console.error("Failed to increment village count:", err));
+
+            // 2. If regular claim, update Innovation document
+            if (claim.inovasiId) {
+                let innovQuery: any = {};
+                if (ObjectId.isValid(claim.inovasiId)) {
+                    innovQuery._id = new ObjectId(claim.inovasiId);
+                } else {
+                    innovQuery._id = claim.inovasiId;
+                }
+
+                await db.collection('innovations').updateOne(
+                    innovQuery,
+                    { 
+                        $addToSet: { desaId: claim.desaId },
+                        $inc: { jumlahPenerapan: 1 } 
+                    }
+                ).catch(err => console.error("Failed to increment innovation stats:", err));
+            }
+        } catch (syncError) {
+            console.error("Error during data synchronization on verification:", syncError);
+        }
     }
 
     // Sync data if status changed FROM Terverifikasi TO Menunggu
@@ -133,6 +172,9 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     // Restore Notification Logic
     try {
+        const { notifyAllAdmins } = await import('@/services/notificationServices')
+        
+        // 1. Jika admin mengubah status verifikasi → notif ke village
         if (isAdmin && nextStatus && nextStatus !== claim?.status) {
             const villageId = claim.desaId
             if (villageId) {
@@ -152,6 +194,18 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
                     relatedId: claim._id.toString(),
                 })
             }
+        }
+
+        // 2. Jika village mengajukan ulang klaim yang ditolak → notif ke admin
+        if (isResubmission) {
+            await notifyAllAdmins({
+                type: 'personal',
+                category: 'claim_submission',
+                title: `Pengajuan Ulang Klaim Inovasi: ${claim.namaInovasi}`,
+                description: `Desa ${claim.namaDesa || 'unknown'} telah mengajukan ulang klaim untuk inovasi "${claim.namaInovasi}" yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+                actionType: 'claim_detail',
+                relatedId: claim._id.toString(),
+            })
         }
     } catch (notifError) {
         console.error("Failed to send notification:", notifError);
