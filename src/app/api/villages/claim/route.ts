@@ -88,7 +88,11 @@ export async function POST(request: NextRequest) {
 
     // Support client-side generated IDs for structured storage consistency
     if (body.id) {
-      newClaim._id = body.id;
+      if (ObjectId.isValid(body.id)) {
+         newClaim._id = new ObjectId(body.id);
+      } else {
+         newClaim._id = body.id;
+      }
     }
 
     const result = await db.collection('claimInnovations').insertOne(newClaim)

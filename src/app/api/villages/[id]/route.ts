@@ -96,11 +96,15 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     const existing = await db.collection('villages').findOne(query)
     
-    // Reset status if resubmitting rejected profile
-    const isResubmission = !isAdmin && existing?.status === 'Ditolak'
+    // Reset status if resubmitting rejected or verified profile
+    const isResubmission = !isAdmin && existing?.status !== 'Menunggu'
     if (isResubmission) {
         body.status = 'Menunggu'
         body.catatanAdmin = null
+    }
+
+    if (!isAdmin) {
+        body.createdAt = new Date()
     }
 
     const result = await db.collection('villages').updateOne(
@@ -119,8 +123,8 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
             await notifyAllAdmins({
                 type: 'personal',
                 category: 'village_submission',
-                title: isResubmission ? `Pengajuan Ulang Profil Desa: ${body.namaDesa}` : `Pengajuan Profil Desa: ${body.namaDesa}`,
-                description: `Desa ${body.namaDesa || existing?.namaDesa} telah memperbarui profil yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+                title: isResubmission ? `Pengajuan Ulang Profil Desa: ${body.namaDesa || existing?.namaDesa}` : `Pengajuan Profil Desa: ${body.namaDesa || existing?.namaDesa}`,
+                description: `Desa ${body.namaDesa || existing?.namaDesa} telah memperbarui profil. Silakan verifikasi kembali.`,
                 actionType: 'profile',
                 relatedId: id,
             })

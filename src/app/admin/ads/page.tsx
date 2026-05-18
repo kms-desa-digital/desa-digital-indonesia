@@ -1,6 +1,6 @@
 "use client";
 
-import { AddIcon, ChevronDownIcon, SearchIcon } from "@chakra-ui/icons";
+import { AddIcon, ChevronDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import {
     Box,
     Button,
@@ -18,9 +18,9 @@ import {
 } from "@chakra-ui/react";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef, Suspense } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { paths } from "Consts/path";
 import { getAds } from "Services/adminServices";
 
@@ -80,40 +80,109 @@ const SkeletonCard = () => (
     </Box>
 );
 
-const AdminAdsPage: React.FC = () => {
+const AdminAdsPageContent: React.FC = () => {
     const t = useTranslations("Admin");
     const router = useRouter();
+    const searchParams = useSearchParams();
 
+    // Initial states from search params
+    const initialPage = parseInt(searchParams.get("page") || "1", 10);
+    const initialFilter = searchParams.get("filter") || "Semua";
+    const initialSearch = searchParams.get("search") || "";
 
     const [ads, setAds] = useState<Ad[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedStatus, setSelectedStatus] = useState<string>("Semua");
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+    const [selectedStatus, setSelectedStatus] = useState<string>(initialFilter);
+    const [currentPage, setCurrentPage] = useState(initialPage);
+    const [hasMore, setHasMore] = useState(false);
+    const itemsPerPage = 5;
 
-    const fetchAds = useCallback(async () => {
+    const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+    const isFirstMount = useRef(true);
+
+    const updateUrl = (page: number, filter: string, search: string) => {
+        const urlParams = new URLSearchParams();
+        if (page > 1) urlParams.set("page", page.toString());
+        if (filter !== "Semua") urlParams.set("filter", filter);
+        if (search) urlParams.set("search", search);
+        
+        const queryString = urlParams.toString();
+        const newPath = queryString ? `?${queryString}` : window.location.pathname;
+        router.replace(newPath, { scroll: false });
+    };
+
+    const fetchAds = useCallback(async (page = 1) => {
         setLoading(true);
         try {
-            const params: any = {};
+            const params: any = {
+                page,
+                limit: itemsPerPage,
+            };
             if (selectedStatus && selectedStatus !== "Semua") params.status = selectedStatus;
-            if (searchTerm) params.search = searchTerm;
+            if (debouncedSearch) params.search = debouncedSearch;
 
             const response: any = await getAds(params);
             const data = response?.data?.data || response?.data || [];
+            
             setAds(Array.isArray(data) ? data : []);
+            
+            // Check pagination hasMore from response or length
+            const pagination = response?.data?.pagination || response?.pagination;
+            if (pagination) {
+                setHasMore(pagination.hasNextPage || page < (pagination.totalPages || 1));
+            } else {
+                setHasMore(data.length === itemsPerPage);
+            }
         } catch (err) {
             console.error("Error fetching ads:", err);
             setAds([]);
+            setHasMore(false);
         } finally {
             setLoading(false);
         }
-    }, [selectedStatus, searchTerm]);
+    }, [selectedStatus, debouncedSearch]);
 
+    // Initial load and dependency load
     useEffect(() => {
-        const delay = setTimeout(() => fetchAds(), 300);
-        return () => clearTimeout(delay);
-    }, [fetchAds]);
+        fetchAds(currentPage);
+    }, [fetchAds, currentPage]);
 
+    // Search debounce
+    useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
+        const timeoutId = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setCurrentPage(1);
+            updateUrl(1, selectedStatus, searchTerm);
+        }, 500);
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
 
+    const handleFilterSelect = (status: string) => {
+        setSelectedStatus(status);
+        setCurrentPage(1);
+        updateUrl(1, status, searchTerm);
+    };
+
+    const handleNextPage = () => {
+        if (hasMore) {
+            const nextPage = currentPage + 1;
+            setCurrentPage(nextPage);
+            updateUrl(nextPage, selectedStatus, searchTerm);
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            const prevPage = currentPage - 1;
+            setCurrentPage(prevPage);
+            updateUrl(prevPage, selectedStatus, searchTerm);
+        }
+    };
 
     return (
         <Container page>
@@ -179,7 +248,7 @@ const AdminAdsPage: React.FC = () => {
                                     fontSize={13}
                                     fontWeight={selectedStatus === status ? "semibold" : "normal"}
                                     color={selectedStatus === status ? "#347357" : "inherit"}
-                                    onClick={() => setSelectedStatus(status)}
+                                    onClick={() => handleFilterSelect(status)}
                                 >
                                     {status}
                                 </MenuItem>
@@ -253,10 +322,55 @@ const AdminAdsPage: React.FC = () => {
                         })
                     )}
                 </Stack>
+
+                {/* Pagination Controls */}
+                {!loading && ads.length > 0 && (
+                    <Flex
+                        justifyContent="center"
+                        mt={8}
+                        mb={8}
+                        alignItems="center"
+                        gap={4}
+                    >
+                        <Button
+                            onClick={handlePrevPage}
+                            isDisabled={currentPage === 1}
+                            variant="outline"
+                            size="sm"
+                            borderColor="gray.200"
+                            color="#347357"
+                            _hover={{ bg: "gray.50" }}
+                        >
+                            <ChevronLeftIcon />
+                        </Button>
+                        
+                        <Text textAlign="center" fontWeight="500" fontSize="14px" color="gray.700">
+                            Halaman {currentPage}
+                        </Text>
+                        
+                        <Button
+                            onClick={handleNextPage}
+                            isDisabled={!hasMore}
+                            variant="outline"
+                            size="sm"
+                            borderColor="gray.200"
+                            color="#347357"
+                            _hover={{ bg: "gray.50" }}
+                        >
+                            <ChevronRightIcon />
+                        </Button>
+                    </Flex>
+                )}
             </Box>
-
-
         </Container>
+    );
+};
+
+const AdminAdsPage = () => {
+    return (
+        <Suspense fallback={<Skeleton height="100vh" />}>
+            <AdminAdsPageContent />
+        </Suspense>
     );
 };
 

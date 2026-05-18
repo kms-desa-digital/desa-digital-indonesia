@@ -51,3 +51,5 @@ next-env.d.ts
 
 /src/scripts/accounts*
 serviceAccountKey.json
+
+/recommendation

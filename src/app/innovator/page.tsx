@@ -158,7 +158,7 @@ export default function InnovatorPage() {
                             key={item.id}
                             {...item}
                             highlightQuery={searchQuery}
-                            ranking={startIndex + idx + 1}
+                            ranking={searchQuery.trim() ? undefined : (startIndex + idx + 1)}
                             onClick={() =>
                                 // navigate(generatePath(paths.INNOVATOR_PROFILE_PAGE, { id: item.id }))
                                 router.push(`/innovator/profile/${item.id}`)

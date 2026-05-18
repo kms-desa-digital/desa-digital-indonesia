@@ -136,7 +136,7 @@ const DetailInnovator: React.FC = () => {
                 const data = res?.innovator || res?.data;
                 if (data) {
                     if (data.userId === userLogin?.uid) {
-                        router.push("/innovator/profile/" + id);
+                        router.replace("/innovator/profile/" + id);
                         return;
                     }
                     setInnovatorData(data);
