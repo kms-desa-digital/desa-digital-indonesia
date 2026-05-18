@@ -10,13 +10,14 @@ export function useRecommendations(
   const [error, setError] = useState<string>();
 
   useEffect(() => {
+    if (!innovationId) return;
     setLoading(true);
     api
       .post<any>("/recommendations", {
         innovation_id: innovationId,
         top_n: topN,
       })
-      .then((res) => setData(res.data))
+      .then((res) => setData(res))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [innovationId, topN]);
