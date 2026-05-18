@@ -26,9 +26,9 @@ import CardNotification from "Components/card/notification/CardNotification";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { getVillages, getClaims } from "Services/villageServices";
 import { getInnovators } from "Services/innovatorServices";
 import { getInnovation } from "Services/innovationServices";
@@ -48,8 +48,9 @@ const SkeletonCard = () => {
     );
 };
 
-const VerificationPage: React.FC = () => {
+const VerificationPageContent: React.FC = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const t = useTranslations("Admin");
     const tc = useTranslations("Categories");
     const params = useParams() as { category: string };
@@ -57,14 +58,32 @@ const VerificationPage: React.FC = () => {
     const [verifData, setVerifData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Initial states from search params
+    const initialPage = parseInt(searchParams.get("page") || "1", 10);
+    const initialFilter = searchParams.get("filter") || "Semua";
+    const initialSearch = searchParams.get("search") || "";
+
     // Pencarian dan filter
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedFilter, setSelectedFilter] = useState<string>("Semua");
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+    const [selectedFilter, setSelectedFilter] = useState<string>(initialFilter);
 
     // Pagination states
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(initialPage);
     const [itemsPerPage] = useState(5);
     const [hasMore, setHasMore] = useState(true);
+
+    const isFirstMount = useRef(true);
+
+    const updateUrl = (page: number, filter: string, search: string) => {
+        const urlParams = new URLSearchParams();
+        if (page > 1) urlParams.set("page", page.toString());
+        if (filter !== "Semua") urlParams.set("filter", filter);
+        if (search) urlParams.set("search", search);
+        
+        const queryString = urlParams.toString();
+        const newPath = queryString ? `?${queryString}` : window.location.pathname;
+        router.replace(newPath, { scroll: false });
+    };
 
     const formatShortDate = (dateSource: any) => {
         if (!dateSource) return "-";
@@ -190,15 +209,15 @@ const VerificationPage: React.FC = () => {
         load();
     }, [category, selectedFilter, currentPage]);
 
-    // Reset page when filter changes
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [selectedFilter]);
-
     // Search optimization: delay search
     useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
         const timeoutId = setTimeout(async () => {
             setCurrentPage(1);
+            updateUrl(1, selectedFilter, searchTerm);
             const data = await fetchData(1);
             setVerifData(data || []);
         }, 500);
@@ -206,11 +225,19 @@ const VerificationPage: React.FC = () => {
     }, [searchTerm]);
 
     const handleNextPage = () => {
-        if (hasMore) setCurrentPage(prev => prev + 1);
+        if (hasMore) {
+            const nextPage = currentPage + 1;
+            setCurrentPage(nextPage);
+            updateUrl(nextPage, selectedFilter, searchTerm);
+        }
     };
 
     const handlePrevPage = () => {
-        if (currentPage > 1) setCurrentPage(prev => prev - 1);
+        if (currentPage > 1) {
+            const prevPage = currentPage - 1;
+            setCurrentPage(prevPage);
+            updateUrl(prevPage, selectedFilter, searchTerm);
+        }
     };
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -219,6 +246,8 @@ const VerificationPage: React.FC = () => {
 
     const handleFilterSelect = (status: string) => {
         setSelectedFilter(status);
+        setCurrentPage(1);
+        updateUrl(1, status, searchTerm);
     };
 
     return (
@@ -339,6 +368,14 @@ const VerificationPage: React.FC = () => {
                     )}
                 </Stack>
         </Container>
+    );
+};
+
+const VerificationPage = () => {
+    return (
+        <Suspense fallback={<Skeleton height="100vh" />}>
+            <VerificationPageContent />
+        </Suspense>
     );
 };
 

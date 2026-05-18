@@ -44,8 +44,8 @@ const KlaimInovasiManualContent: React.FC = () => {
     const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
     const [uploadProgress, setUploadProgress] = useState<{ logo: number; innovation: number }>({ logo: 0, innovation: 0 });
     
-    // Persistent ID for structured storage
-    const [claimId] = useState(() => searchParams.get("editId") || `claim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+    const generateObjectId = () => [...Array(24)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    const [claimId] = useState(() => searchParams.get("editId") || generateObjectId());
     const logoFileRef = useRef<HTMLInputElement>(null);
     const innovationFileRef = useRef<HTMLInputElement>(null);
     const buktiFotoRef = useRef<HTMLInputElement>(null);

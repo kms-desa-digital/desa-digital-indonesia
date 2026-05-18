@@ -58,8 +58,8 @@ const KlaimInovasiContent: React.FC = () => {
     const [selectedVid, setSelectedVid] = useState<string>("");
     const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
     
-    // Persistent ID for structured storage
-    const [claimId] = useState(() => searchParams.get("editId") || `claim_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+    const generateObjectId = () => [...Array(24)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    const [claimId] = useState(() => searchParams.get("editId") || generateObjectId());
     const selectedFileRef = useRef<HTMLInputElement>(null);
     const selectedVidRef = useRef<HTMLInputElement>(null);
     const selectedDocRef = useRef<HTMLInputElement>(null);
