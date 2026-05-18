@@ -113,7 +113,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
           type: 'personal',
           category: 'innovator_submission',
           title: `Pendaftaran Innovator Baru: ${namaInovator}`,
-          description: `Seorang innovator baru has mendaftar: ${namaInovator}. Silakan verifikasi profil ini.`,
+          description: `Seorang innovator baru telah mendaftar: ${namaInovator}. Silakan verifikasi profil ini.`,
           actionType: 'profile',
           relatedId: id,
         })

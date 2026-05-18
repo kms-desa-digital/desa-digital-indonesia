@@ -7,7 +7,7 @@ type Params = Promise<{ id: string }>
 
 type MongoFilter = { [key: string]: any }
 
-type InnovatorDoc = { _id: string | ObjectId; [key: string]: any }
+type InnovatorDoc = { _id: string | ObjectId;[key: string]: any }
 
 const normalizeArray = (value: unknown) => {
   if (Array.isArray(value)) return value
@@ -91,33 +91,39 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
         typeof jumlahDesaDampingan === 'number'
           ? jumlahDesaDampingan
           : existingDoc.jumlahDesaDampingan ?? 0,
-      status: status ?? (existingDoc.status === 'Ditolak' ? 'Menunggu' : existingDoc.status ?? 'Menunggu'),
-      catatanAdmin:
-        existingDoc.status === 'Ditolak' && status === undefined
-          ? ''
-          : existingDoc.catatanAdmin ?? '',
+      status: existingDoc.status,
+      catatanAdmin: existingDoc.catatanAdmin ?? '',
       editedAt: now,
       createdAt: existingDoc.createdAt ?? now,
     }
 
-    const isResubmission = !isAdmin && existingDoc.status === 'Ditolak'
+    const isResubmission = !isAdmin && existingDoc.status !== 'Menunggu'
+    if (isResubmission) {
+      updatedProfile.status = 'Menunggu'
+      updatedProfile.catatanAdmin = ''
+    }
+
+    if (!isAdmin) {
+      updatedProfile.createdAt = now
+    }
+
     await innovatorCollection.updateOne(filter, { $set: updatedProfile })
 
     // Notify admins about update/resubmission
     try {
-        const { notifyAllAdmins } = await import('@/services/notificationServices')
-        if (isResubmission) {
-            await notifyAllAdmins({
-                type: 'personal',
-                category: 'profile_submission',
-                title: `Pengajuan Ulang Profil Innovator: ${namaInovator}`,
-                description: `Innovator ${namaInovator} telah memperbarui profil yang sebelumnya ditolak. Silakan verifikasi kembali.`,
-                actionType: 'profile',
-                relatedId: id,
-            })
-        }
+      const { notifyAllAdmins } = await import('@/services/notificationServices')
+      if (isResubmission) {
+        await notifyAllAdmins({
+          type: 'personal',
+          category: 'profile_submission',
+          title: `Pengajuan Ulang Profil Innovator: ${namaInovator}`,
+          description: `Innovator ${namaInovator} telah memperbarui profil. Silakan verifikasi kembali.`,
+          actionType: 'profile',
+          relatedId: id,
+        })
+      }
     } catch (notifErr) {
-        console.error('Error notifying admins about innovator profile update:', notifErr)
+      console.error('Error notifying admins about innovator profile update:', notifErr)
     }
 
     return NextResponse.json(

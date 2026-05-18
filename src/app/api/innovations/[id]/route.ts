@@ -113,11 +113,15 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
     }
 
-    // Jika inovasi diedit ulang oleh pemilik dan status sebelumnya Ditolak, reset ke Menunggu
-    const isResubmission = !isAdmin && existing.status === 'Ditolak'
+    // Jika inovasi diedit ulang oleh pemilik dan status sebelumnya bukan Menunggu, reset ke Menunggu
+    const isResubmission = !isAdmin && existing.status !== 'Menunggu'
     if (isResubmission) {
       body.status = 'Menunggu'
       body.catatanAdmin = null
+    }
+
+    if (!isAdmin) {
+      body.createdAt = new Date()
     }
 
     const result = await db.collection('innovations').updateOne(
@@ -159,7 +163,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
           type: 'personal',
           category: 'innovation_submission',
           title: `Pengajuan Ulang Inovasi: ${existing.namaInovasi}`,
-          description: `Innovator ${existing.namaInovator || 'unknown'} telah mengajukan ulang inovasi "${existing.namaInovasi}" yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+          description: `Innovator ${existing.namaInovator || 'unknown'} telah memperbarui inovasi "${existing.namaInovasi}". Silakan verifikasi kembali.`,
           actionType: 'innovation_detail',
           relatedId: existing._id.toString(),
         })

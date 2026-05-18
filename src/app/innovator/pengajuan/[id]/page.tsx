@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import React, { useEffect, useState, Suspense } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
     Box,
     Button,
@@ -46,24 +46,43 @@ import { useUser } from "src/contexts/UserContext";
 import Forbidden from "src/components/Forbidden";
 import Loading from "Components/loading";
 
-const PengajuanInovasi: React.FC = () => {
+const PengajuanInovasiContent: React.FC = () => {
     const params = useParams();
     const id = params.id as string;
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [user] = useAuthState(auth);
     const { role, loading: userLoading, uid, firebaseUid } = useUser();
     const [data, setData] = useState<any[]>([]);
     const [filteredData, setFilteredData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Initial states from search params
+    const initialPage = parseInt(searchParams.get("page") || "1", 10);
+    const initialFilter = searchParams.get("filter") || "Semua";
+    const initialSearch = searchParams.get("search") || "";
+
     // Pencarian dan filter
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+    const [selectedFilter, setSelectedFilter] = useState<string>(initialFilter);
 
     // Pagination Status
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(initialPage);
     const [hasMore, setHasMore] = useState(false);
     const itemsPerPage = 5;
+
+    const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+
+    const updateUrl = (page: number, filter: string, search: string) => {
+        const urlParams = new URLSearchParams();
+        if (page > 1) urlParams.set("page", page.toString());
+        if (filter !== "Semua") urlParams.set("filter", filter);
+        if (search) urlParams.set("search", search);
+        
+        const queryString = urlParams.toString();
+        const newPath = queryString ? `?${queryString}` : window.location.pathname;
+        router.push(newPath, { scroll: false });
+    };
 
     const fetchData = async (page = 1) => {
         setLoading(true);
@@ -73,7 +92,7 @@ const PengajuanInovasi: React.FC = () => {
             const response: any = await getInnovation({
                 innovatorId: id,
                 status: selectedFilter && selectedFilter !== "Semua" ? selectedFilter : undefined,
-                search: searchTerm || undefined,
+                search: debouncedSearch || undefined,
             });
             
             const innovationsData = response.innovations || response.data?.innovations || [];
@@ -94,12 +113,27 @@ const PengajuanInovasi: React.FC = () => {
         }
     };
 
+    // Debounce search
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setCurrentPage(1);
+            updateUrl(1, selectedFilter, searchTerm);
+        }, 500);
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
+
+    const handleFilterSelect = (status: string) => {
+        setSelectedFilter(status);
+        setCurrentPage(1);
+        updateUrl(1, status, searchTerm);
+    };
+
     useEffect(() => {
         if (id) {
-            setCurrentPage(1);
-            fetchData(1);
+            fetchData(currentPage);
         }
-    }, [id, selectedFilter, searchTerm]);
+    }, [id, selectedFilter, debouncedSearch, currentPage]);
 
     if (userLoading) {
         return <Loading />;
@@ -116,7 +150,7 @@ const PengajuanInovasi: React.FC = () => {
         if (hasMore) {
             const nextPage = currentPage + 1;
             setCurrentPage(nextPage);
-            await fetchData(nextPage);
+            updateUrl(nextPage, selectedFilter, searchTerm);
         }
     };
 
@@ -124,7 +158,7 @@ const PengajuanInovasi: React.FC = () => {
         if (currentPage > 1) {
             const prevPage = currentPage - 1;
             setCurrentPage(prevPage);
-            await fetchData(prevPage);
+            updateUrl(prevPage, selectedFilter, searchTerm);
         }
     };
 
@@ -193,9 +227,7 @@ const PengajuanInovasi: React.FC = () => {
                                     <MenuItem
                                         key={status}
                                         fontSize={12}
-                                        onClick={() =>
-                                            setSelectedFilter(status === "Semua" ? null : status)
-                                        }
+                                        onClick={() => handleFilterSelect(status)}
                                     >
                                         {status}
                                     </MenuItem>
@@ -256,6 +288,14 @@ const PengajuanInovasi: React.FC = () => {
                 </Flex>
             </Stack>
         </Container>
+    );
+};
+
+const PengajuanInovasi = () => {
+    return (
+        <Suspense fallback={<Loading />}>
+            <PengajuanInovasiContent />
+        </Suspense>
     );
 };
 
