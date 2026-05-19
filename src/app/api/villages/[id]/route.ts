@@ -95,16 +95,24 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     }
 
     const existing = await db.collection('villages').findOne(query)
+    if (!existing) {
+      return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
+    }
+
+    // Validasi kepemilikan: Hanya pemilik profil atau admin yang boleh mengedit
+    if (!isAdmin && existing.userId !== auth.uid) {
+      return NextResponse.json({ message: 'Anda tidak memiliki hak untuk mengubah profil ini' }, { status: 403 })
+    }
     
     // Reset status if resubmitting rejected profile
-    const isResubmission = !isAdmin && existing?.status === 'Ditolak'
+    const isResubmission = !isAdmin && existing.status === 'Ditolak'
     if (isResubmission) {
         body.status = 'Menunggu'
         body.catatanAdmin = null
     }
 
     const result = await db.collection('villages').updateOne(
-      query,
+      { _id: existing._id },
       { $set: body }
     )
 
@@ -119,10 +127,10 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
             await notifyAllAdmins({
                 type: 'personal',
                 category: 'village_submission',
-                title: isResubmission ? `Pengajuan Ulang Profil Desa: ${body.namaDesa}` : `Pengajuan Profil Desa: ${body.namaDesa}`,
-                description: `Desa ${body.namaDesa || existing?.namaDesa} telah memperbarui profil yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+                title: `Pengajuan Ulang Profil Desa: ${body.namaDesa || existing.namaDesa}`,
+                description: `Desa ${body.namaDesa || existing.namaDesa} telah memperbarui profil yang sebelumnya ditolak. Silakan verifikasi kembali.`,
                 actionType: 'profile',
-                relatedId: id,
+                relatedId: existing.userId || id,
             })
         }
     } catch (notifErr) {
@@ -146,6 +154,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
     const auth = await requireRole(_request, ["village", "admin"]);
     if (auth instanceof NextResponse) return auth;
 
+    const isAdmin = auth.role === 'admin'
     const { id } = await params
     const db = await connectToDatabase()
 
@@ -156,7 +165,17 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
       query = { userId: id }
     }
 
-    const result = await db.collection('villages').deleteOne(query)
+    const existing = await db.collection('villages').findOne(query)
+    if (!existing) {
+      return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
+    }
+
+    // Validasi kepemilikan: Hanya pemilik profil atau admin yang boleh menghapus
+    if (!isAdmin && existing.userId !== auth.uid) {
+      return NextResponse.json({ message: 'Anda tidak memiliki hak untuk menghapus profil ini' }, { status: 403 })
+    }
+
+    const result = await db.collection('villages').deleteOne({ _id: existing._id })
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })

@@ -187,9 +187,12 @@ export async function POST(request: NextRequest) {
       kemampuan
     } = body
 
+    // Tentukan targetUserId: jika bukan admin, gunakan UID dari token
+    const targetUserId = auth.role === "admin" ? userId : auth.uid
+
     // Comprehensive Validation for Required Fields (matching frontend)
     if (
-      !userId || 
+      !targetUserId || 
       !namaDesa || 
       !deskripsi || 
       !potensiDesa || (Array.isArray(potensiDesa) && potensiDesa.length === 0) ||
@@ -212,15 +215,32 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await connectToDatabase()
+
+    // 1. Validasi keberadaan user dan role di database
+    const targetUser = await db.collection('users').findOne({
+      $or: [
+        { uid: targetUserId },
+        { firebaseUid: targetUserId },
+        { id: targetUserId },
+        { _id: targetUserId as any }
+      ]
+    })
+    if (!targetUser) {
+      return NextResponse.json({ message: 'User tidak ditemukan di sistem' }, { status: 400 })
+    }
+    if (targetUser.role !== 'village') {
+      return NextResponse.json({ message: 'Peran pengguna haruslah perangkat desa (village)' }, { status: 400 })
+    }
     
     // Check if village profile already exists for this user
-    const existing = await db.collection('villages').findOne({ userId })
+    const existing = await db.collection('villages').findOne({ userId: targetUserId })
     if (existing) {
       return NextResponse.json({ message: 'Profil desa untuk user ini sudah ada' }, { status: 409 })
     }
 
     const newVillage = {
       ...body,
+      userId: targetUserId, // override to ensure consistency
       status: 'Menunggu', // Default status for admin verification
       catatanAdmin: '',
       createdAt: new Date(),
@@ -239,7 +259,7 @@ export async function POST(request: NextRequest) {
         title: `Pendaftaran Desa Baru: ${namaDesa}`,
         description: `Sebuah desa baru telah mendaftar: ${namaDesa}. Silakan verifikasi profil desa ini.`,
         actionType: 'profile',
-        relatedId: userId,
+        relatedId: targetUserId,
       })
     } catch (notifErr) {
       console.error('Error notifying admins about new village profile:', notifErr)

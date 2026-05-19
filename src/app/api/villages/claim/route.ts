@@ -14,9 +14,9 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json()
-    const { 
-      desaId, 
-      namaDesa, 
+    const {
+      desaId,
+      namaDesa,
       inovasiId,      // Optional untuk klaim manual
       namaInovasi,    // Wajib
       namaInovator,   // Wajib
@@ -30,14 +30,50 @@ export async function POST(request: NextRequest) {
     // Validasi field wajib
     if (!desaId || !namaInovasi || !namaInovator || !deskripsiInovasi || !buktiJenis || buktiJenis.length === 0) {
       return new NextResponse(
-        JSON.stringify({ 
-          message: 'Field wajib tidak lengkap: desaId, namaInovasi, namaInovator, deskripsiInovasi, dan buktiJenis harus diisi.' 
+        JSON.stringify({
+          message: 'Field wajib tidak lengkap: desaId, namaInovasi, namaInovator, deskripsiInovasi, dan buktiJenis harus diisi.'
         }, null, 2),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         }
       )
+    }
+
+    // Validasi buktiFiles terhadap buktiJenis yang dipilih
+    if (!buktiFiles || typeof buktiFiles !== 'object') {
+      return new NextResponse(
+        JSON.stringify({ message: 'Bukti file wajib diisi.' }, null, 2),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    for (const jenis of buktiJenis) {
+      if (jenis === 'foto') {
+        const fotoFiles = buktiFiles.foto;
+        if (!fotoFiles || !Array.isArray(fotoFiles) || fotoFiles.length === 0 || fotoFiles.some((f: any) => !f || typeof f !== 'string' || f.trim() === '')) {
+          return new NextResponse(
+            JSON.stringify({ message: 'Bukti foto harus menyertakan file foto yang valid.' }, null, 2),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+      } else if (jenis === 'video') {
+        const videoFiles = buktiFiles.video;
+        if (!videoFiles || !Array.isArray(videoFiles) || videoFiles.length === 0 || videoFiles.every((v: any) => !v || typeof v !== 'string' || v.trim() === '')) {
+          return new NextResponse(
+            JSON.stringify({ message: 'Bukti video harus menyertakan file video yang valid.' }, null, 2),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+      } else if (jenis === 'dokumen') {
+        const dokumenFiles = buktiFiles.dokumen;
+        if (!dokumenFiles || !Array.isArray(dokumenFiles) || dokumenFiles.length === 0 || dokumenFiles.some((d: any) => !d || typeof d !== 'string' || d.trim() === '')) {
+          return new NextResponse(
+            JSON.stringify({ message: 'Bukti dokumen harus menyertakan file dokumen yang valid.' }, null, 2),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+      }
     }
 
     const db = await connectToDatabase()
@@ -55,12 +91,12 @@ export async function POST(request: NextRequest) {
 
     // Jika ada inovasiId, cek apakah klaim ini sudah pernah diajukan untuk inovasi yang sama
     if (inovasiId) {
-      const existing = await db.collection('claimInnovations').findOne({ 
-        desaId, 
+      const existing = await db.collection('claimInnovations').findOne({
+        desaId,
         inovasiId,
         status: { $ne: 'Ditolak' } // Hanya cek yang belum ditolak
       })
-      
+
       if (existing) {
         return new NextResponse(
           JSON.stringify({ message: 'Inovasi ini sudah dalam proses klaim oleh desa Anda' }, null, 2),
@@ -127,8 +163,8 @@ export async function POST(request: NextRequest) {
     }
 
     return new NextResponse(
-      JSON.stringify({ 
-        message: 'Permohonan klaim inovasi berhasil diajukan', 
+      JSON.stringify({
+        message: 'Permohonan klaim inovasi berhasil diajukan',
         claimId: claimId
       }, null, 2),
       {
@@ -175,7 +211,7 @@ export async function GET(request: NextRequest) {
     }
 
     let query = db.collection('claimInnovations').find(filter).sort({ createdAt: -1 })
-    
+
     // Get total count for pagination metadata
     const total = await db.collection('claimInnovations').countDocuments(filter)
 
@@ -190,7 +226,7 @@ export async function GET(request: NextRequest) {
       _id: doc._id.toString(),
     }))
 
-    return new NextResponse(JSON.stringify({ 
+    return new NextResponse(JSON.stringify({
       claims: result,
       pagination: {
         total,

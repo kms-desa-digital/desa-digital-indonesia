@@ -146,6 +146,11 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       return NextResponse.json({ message: 'Profil inovator tidak ditemukan' }, { status: 404 })
     }
 
+    // Validasi kepemilikan: Hanya pemilik profil atau admin yang boleh mengedit
+    if (!isAdmin && existingDoc.userId !== auth.uid) {
+      return NextResponse.json({ message: 'Anda tidak memiliki hak untuk mengubah profil ini' }, { status: 403 })
+    }
+
     const now = new Date()
     const updatedProfile = {
       ...body,

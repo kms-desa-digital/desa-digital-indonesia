@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         $addFields: {
           // Count all verified innovations
           jumlahInovasi: { $size: '$allInnovations' },
-          
+
           // Extract and unwind desaId to count unique villages
           uniqueDesas: {
             $reduce: {
@@ -128,18 +128,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           message:
-            'Field wajib tidak lengkap: namaInovator, deskripsi, kategori, whatsapp, logo, dan header harus diisi.',
+            'Field wajib tidak lengkap.',
         },
         { status: 400 }
       )
     }
 
     const db = await connectToDatabase()
+
+    // 1. Validasi keberadaan user dan role di database
+    const targetUser = await db.collection('users').findOne({
+      $or: [
+        { uid: targetId },
+        { firebaseUid: targetId },
+        { id: targetId },
+        { _id: targetId as any }
+      ]
+    })
+    if (!targetUser) {
+      return NextResponse.json({ message: 'User tidak ditemukan di sistem' }, { status: 400 })
+    }
+    if (targetUser.role !== 'innovator') {
+      return NextResponse.json({ message: 'Peran pengguna haruslah inovator (innovator)' }, { status: 400 })
+    }
+
     const innovatorCollection = db.collection('innovators')
-    
+
     // Validasi apakah profil dengan targetId tersebut sudah ada
-    const existingDoc = await innovatorCollection.findOne({ 
-      $or: [{ _id: targetId }, { userId: targetId }] 
+    const existingDoc = await innovatorCollection.findOne({
+      $or: [{ _id: targetId }, { userId: targetId }]
     })
 
     if (existingDoc) {
