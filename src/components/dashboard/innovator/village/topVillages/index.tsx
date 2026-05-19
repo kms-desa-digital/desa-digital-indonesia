@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
-import { getInnovators } from "Services/innovatorServices";
+import { useAuthToken } from "Hooks/useAuthToken";
 import { getInnovation } from "Services/innovationServices";
 import { getClaims } from "Services/villageServices";
 import { podiumStyles } from "./_topVillagesStyle";
@@ -17,24 +16,33 @@ const TopVillages = () => {
   const [topVillages, setTopVillages] = useState<TopItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [inovatorProfile, setInovatorProfile] = useState<{ namaInovator?: string } | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
     const fetchTopVillages = async () => {
+      if (!authLoaded) return;
       setLoading(true);
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
 
-      if (!currentUser) {
+      if (!token) {
         setTopVillages([]);
         setLoading(false);
         return;
       }
 
       try {
-        // Fetch innovator profile via MongoDB API
-        const innovatorsRes = await getInnovators();
-        const allInnovators = (innovatorsRes as any).data || [];
-        const myProfile = allInnovators.find((i: any) => i.id === currentUser.uid);
+        // Dapatkan profil innovator milik user saat ini via dashboard API
+        const dashRes = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!dashRes.ok) {
+          setTopVillages([]);
+          setLoading(false);
+          return;
+        }
+
+        const dashData = await dashRes.json();
+        const myProfile = dashData.innovator;
 
         if (!myProfile) {
           setTopVillages([]);
@@ -42,7 +50,7 @@ const TopVillages = () => {
           return;
         }
 
-        const inovatorId = myProfile._id || myProfile.id;
+        const inovatorId = myProfile._id?.toString();
         setInovatorProfile(myProfile);
 
         // Fetch innovations by this innovator via MongoDB API
@@ -136,7 +144,7 @@ const TopVillages = () => {
     };
 
     fetchTopVillages();
-  }, []);
+  }, [authLoaded, token]);
 
   // Urutan podium versi 2, tapi style versi 1
   let podiumOrder: TopItem[] = [];

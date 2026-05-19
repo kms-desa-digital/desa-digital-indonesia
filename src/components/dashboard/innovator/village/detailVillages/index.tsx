@@ -12,8 +12,7 @@ import {
 import Image from "next/image";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import { useAuthToken } from "Hooks/useAuthToken";
-import { getInnovation } from "Services/innovationServices";
-import { getClaims } from "Services/villageServices";
+
 import {
   titleStyle,
   tableHeaderStyle,
@@ -24,7 +23,7 @@ import {
   paginationActiveButtonStyle,
   paginationEllipsisStyle,
 } from "./_detailVillagesStyle";
-import downloadIcon from "@public/icons/icon-download.svg";
+
 
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -96,31 +95,9 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
         const inovatorId = myProfile._id?.toString();
         setUserName(myProfile.namaInovator || "");
 
-        // Fetch innovations by this innovator via MongoDB API
-        const innovationRes = await getInnovation();
-        const allInnovations = innovationRes.innovations || [];
-        const myInnovations = allInnovations.filter(
-          (i: any) => i.innovatorId === inovatorId
-        );
+        const result: Implementation[] = dashData.desaDampingan || [];
 
-        if (myInnovations.length === 0) {
-          setImplementationData([]);
-          setLoading(false);
-          return;
-        }
-
-        // Build inovasiMap: id -> { namaInovasi, inovatorId }
-        const inovasiMap = new Map<string, { namaInovasi: string; inovatorId: string }>();
-        myInnovations.forEach((inov: any) => {
-          const id = inov._id || inov.id;
-          inovasiMap.set(id, {
-            namaInovasi: inov.namaInovasi,
-            inovatorId: inov.innovatorId,
-          });
-        });
-
-        const inovasiIds = Array.from(inovasiMap.keys());
-
+        const myInnovations = dashData.daftarInovasi || [];
         const produkInovator = myInnovations
           .map((i: any) => i.namaInovasi)
           .filter(Boolean)
@@ -135,40 +112,11 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
           produk: produkInovator || "-",
         });
 
-        // Fetch all claims via MongoDB API and filter by inovasiIds
-        const claimsRes = await getClaims();
-        const allClaims = (claimsRes as any).claims || [];
-        const relevantClaims = allClaims.filter(
-          (claim: any) => claim.inovasiId && inovasiIds.includes(claim.inovasiId)
-        );
-
-        // Aggregate: count unique innovations per desaId
-        const desaMap = new Map<
-          string,
-          { desaId: string; namaDesa: string; inovasiIdSet: Set<string> }
-        >();
-
-        for (const claim of relevantClaims) {
-          const desaId = claim.desaId;
-          const namaDesa = claim.namaDesa;
-          const inovasiId = claim.inovasiId;
-
-          if (!desaMap.has(desaId)) {
-            desaMap.set(desaId, {
-              desaId,
-              namaDesa,
-              inovasiIdSet: new Set<string>(),
-            });
-          }
-          desaMap.get(desaId)!.inovasiIdSet.add(inovasiId);
+        if (result.length === 0) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
         }
-
-        const result: Implementation[] = Array.from(desaMap.values()).map((data) => ({
-          namaDesa: data.namaDesa,
-          namaInovator: myProfile.namaInovator || "-",
-          jumlahInovasi: data.inovasiIdSet.size,
-          villageId: data.desaId || "",
-        }));
 
         setImplementationData(
           result.sort((a, b) => {
@@ -180,7 +128,7 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
         );
 
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching villages or profile data:", error instanceof Error ? error.message : error);
       } finally {
         setLoading(false);
       }
@@ -363,7 +311,7 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
               aria-label="Download options"
               icon={(
                 <Image
-                  src={downloadIcon}
+                  src="/icons/icon-download.svg"
                   alt="Download"
                   width={16}
                   height={16}

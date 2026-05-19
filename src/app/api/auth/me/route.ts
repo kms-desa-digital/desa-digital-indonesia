@@ -49,6 +49,19 @@ export async function GET(request: NextRequest) {
         // Fallback: create a temporary user object so the request can continue
         user = newUser as any
       }
+    } else if ((!user.role || user.role === 'guest') && role && role !== 'guest') {
+      // Auto-heal: If the user was registered but caught in a race condition (saving to Firestore took longer than token verification),
+      // their role in MongoDB might be permanently stuck as 'guest'. Let's fix it.
+      console.log(`[Auth/Me] Auto-healing user ${uid} role from 'guest' to '${role}'`)
+      try {
+        await db.collection('users').updateOne(
+          { _id: user._id },
+          { $set: { role: role, updatedAt: new Date() } }
+        )
+        user.role = role
+      } catch (updateError) {
+        console.error('[Auth/Me] Failed to auto-heal user role:', updateError)
+      }
     }
 
     const userIdString = user?._id ? user._id.toString() : uid

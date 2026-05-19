@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Box, Text, Flex, Link, Spinner } from "@chakra-ui/react";
-import { getAuth } from "firebase/auth";
+import { useAuthToken } from "Hooks/useAuthToken";
 import NextLink from 'next/link';
 import { paths } from "Consts/path";
 import {
@@ -22,37 +22,45 @@ type TopItem = {
 const TopVillages = () => {
   const [topVillages, setTopVillages] = useState<TopItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [inovatorProfile, setInovatorProfile] = useState<{ namaInovator?: string } | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
     const fetchTopVillages = async () => {
+      if (!authLoaded) return;
       setLoading(true);
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
+      setError(null);
 
-      if (!currentUser) {
+      if (!token) {
+        setError("User not authenticated.");
+        setTopVillages([]);
         setLoading(false);
-        return console.warn("User not authenticated");
+        return;
       }
 
       try {
-        const token = await currentUser.getIdToken();
         const response = await fetch('/api/innovator/dashboard', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch dashboard data");
+        }
         const data = await response.json();
 
         setInovatorProfile({ namaInovator: "Inovator" });
 
-        // Karena endpoint mapVillages hanya berisi array unique villages tanpa count,
-        // kita ambil 3 teratas dan beri nilai count = 1 agar dirender setara di podium
-        const villages = (data.mapVillages || []).slice(0, 3).map((item: any) => ({
-          id: item.name,
-          name: item.name,
-          count: 1
-        }));
+        // Menggunakan data desaDampingan yang sudah diurutkan berdasarkan jumlah klaim (inovasi)
+        const villages = (data.desaDampingan || [])
+          .sort((a: any, b: any) => b.jumlahInovasi - a.jumlahInovasi)
+          .slice(0, 3)
+          .map((item: any) => ({
+            id: item.villageId || item.namaDesa,
+            name: item.namaDesa,
+            count: item.jumlahInovasi || 1
+          }));
 
         if (villages.length === 0) {
           setTopVillages([]);
@@ -91,15 +99,17 @@ const TopVillages = () => {
 
         setTopVillages(ranked);
       } catch (error) {
-        console.error("Error fetching top villages:", error);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setError(message);
         setTopVillages([]);
+        console.error("Error fetching top villages:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTopVillages();
-  }, []);
+  }, [authLoaded, token]);
 
   return (
     <Box p={4}>
@@ -114,6 +124,10 @@ const TopVillages = () => {
         {loading ? (
           <Flex justify="center" align="center" h="100%">
             <Spinner size="lg" />
+          </Flex>
+        ) : error ? (
+          <Flex justify="center" align="center" h="100%">
+            <Text color="red.500">{error}</Text>
           </Flex>
         ) : topVillages.length === 0 ? (
           <Flex justify="center" align="center" h="100%">

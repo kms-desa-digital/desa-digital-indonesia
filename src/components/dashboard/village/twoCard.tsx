@@ -82,24 +82,25 @@ const TwoCard: React.FC = () => {
         }
 
         const token = await user.getIdToken();
-        const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+        const response = await fetch(`/api/villages/dashboard`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
         if (response.ok) {
           const data = await response.json();
-          
+          const dashboard = data.dashboard || {};
+
           setTotalInovasi({
-            desa: data.totalInovasi || 0,
-            total: data.totalInovasi || 0, // Karena API hanya me-return totalInovasi desa, kita samakan atau kosongkan bagian total keseluruhan
+            desa: dashboard.totalInovasi || 0,
+            total: dashboard.systemTotalInnovations || 0,
           });
 
           setTotalInovator({
-            desa: data.totalInovator || 0,
-            total: data.totalInovator || 0,
+            desa: dashboard.totalInovator || 0,
+            total: dashboard.systemTotalInnovators || 0,
           });
 
-          setUserDesa("Desa");
+          setUserDesa(data.desa?.namaDesa || "Desa");
         } else {
           console.error("Failed to fetch dashboard data:", await response.text());
         }
@@ -131,7 +132,7 @@ const TwoCard: React.FC = () => {
       overflowX="auto"
     >
       <CardItem
-        icon={<Image src={InnovationActive} alt="Innovation Icon" w={5} h={5} />}
+        icon={<Image src={InnovationActive.src} alt="Innovation Icon" w={5} h={5} />}
         mainText={formatStyledText(totalInovasi.desa, totalInovasi.total)}
         label="Inovasi"
         subText={`Telah diterapkan oleh ${userDesa}`}

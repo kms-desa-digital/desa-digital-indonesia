@@ -10,6 +10,7 @@ import {
   MenuList,
   useDisclosure,
 } from "@chakra-ui/react";
+import { useAuthToken } from "Hooks/useAuthToken";
 
 import {
   MapContainer,
@@ -23,11 +24,21 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 
-import { getAuth } from "firebase/auth";
+const getCustomIcon = () => {
+    return L.divIcon({
+        html: `<div style="display: flex; justify-content: center; align-items: center; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.35));">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30" fill="#2e7d32">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+        </div>`,
+        className: 'custom-leaflet-marker',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        popupAnchor: [0, -30]
+    });
+};
 
 import geoData from "@public/indonesia-province-simple.json";
-import filterIcon from "@public/icons/icon-filter.svg";
-import downloadIcon from "@public/icons/icon-download.svg";
 import ProvinceFilter from "./mapFilter";
 
 import jsPDF from "jspdf";
@@ -48,8 +59,18 @@ interface DesaPin {
   lat: number;
   lng: number;
   provinsi: string;
+  rawProvinsi?: string;
+  kabupatenKota?: string;
+  kecamatan?: string;
   inovasiId: string;
   inovasiList: string[];
+}
+
+interface FilterValues {
+  provinsi: string;
+  kabupatenKota: string;
+  kecamatan: string;
+  namaDesa: string;
 }
 
 const cleanName = (name: string) => {
@@ -120,25 +141,36 @@ const Legend = () => {
 };
 
 const MapVillages = () => {
-  const auth = getAuth();
+  const { token, isLoaded: authLoaded } = useAuthToken();
   const [desaPins, setDesaPins] = useState<DesaPin[]>([]);
   const [totals, setTotals] = useState<Record<string, number>>({});
   const [exportData, setExportData] = useState<any[]>([]);
-  const [selectedProvince, setSelectedProvince] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FilterValues>({
+    provinsi: "",
+    kabupatenKota: "",
+    kecamatan: "",
+    namaDesa: "",
+  });
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   useEffect(() => {
     const fetchDesaPins = async () => {
-      const currentUID = auth.currentUser?.uid;
-      if (!currentUID) return;
+      if (!authLoaded) return;
+      if (!token) {
+        setError("User not authenticated.");
+        return;
+      }
 
       try {
-        const token = await auth.currentUser?.getIdToken();
         const response = await fetch('/api/innovator/dashboard', {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch dashboard data");
+        }
         const data = await response.json();
 
         const mapVillages = data.mapVillages || [];
@@ -148,38 +180,52 @@ const MapVillages = () => {
           namaDesa: v.name || "Desa",
           lat: parseFloat(v.lat),
           lng: parseFloat(v.lng),
-          provinsi: "Unknown",
+          provinsi: cleanName(v.provinsi || "Unknown"),
+          rawProvinsi: v.provinsi || "Unknown",
+          kabupatenKota: v.kabupatenKota || "",
+          kecamatan: v.kecamatan || "",
           inovasiId: "-",
-          inovasiList: [], // Data spesifik list inovasi tidak tersedia di respon mapVillages
+          inovasiList: v.inovasiList || [],
         }));
 
         const exportTemp: any[] = mapVillages.map((v: any) => ({
           namaDesa: v.name || "-",
-          namaInovasi: "-",
-          kategoriInovasi: "-",
+          namaInovasi: v.namaInovasi || "-",
+          kategoriInovasi: v.kategoriInovasi || "-",
           namaInovator: data.innovator?.namaInovator || "-",
-          desaKelurahan: v.name || "-",
-          kecamatan: "-",
-          kabupatenKota: "-",
-          provinsi: "-",
+          desaKelurahan: v.desaKelurahan || v.name || "-",
+          kecamatan: v.kecamatan || "-",
+          kabupatenKota: v.kabupatenKota || "-",
+          provinsi: v.provinsi || "-",
           tanggalKlaim: "-",
-          kategoriInovator: "-",
-          tahunDibentuk: "-",
-          targetPengguna: "-",
-          modelBisnis: "-",
-          produk: "-",
+          kategoriInovator: data.innovator?.kategori || "-",
+          tahunDibentuk: data.innovator?.tahunDibentuk || "-",
+          targetPengguna: data.innovator?.targetPengguna || "-",
+          modelBisnis: data.innovator?.modelBisnis || "-",
+          produk: data.innovator?.produk || "-",
         }));
 
         setExportData(exportTemp);
         setDesaPins(pinResults);
-        setTotals({}); // GeoJSON tidak diwarnai karena info provinsi tidak ada di response baru
+
+        // Calculate counts of villages per province for GeoJSON mapping
+        const provinceTotals: Record<string, number> = {};
+        mapVillages.forEach((v: any) => {
+          const provName = cleanName(v.provinsi || "");
+          if (provName) {
+            provinceTotals[provName] = (provinceTotals[provName] || 0) + 1;
+          }
+        });
+        setTotals(provinceTotals);
       } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setError(message);
         console.error("Error fetching map villages:", error);
       }
     };
 
     fetchDesaPins();
-  }, [auth.currentUser]);
+  }, [authLoaded, token]);
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
@@ -306,7 +352,7 @@ const MapVillages = () => {
         <Text {...headerTextStyle}>Peta Sebaran Inovasi {inovatorProfile?.namaInovator || "Inovator"}</Text>
         <Flex gap={2} align="center">
           <Image
-            src={filterIcon}
+            src="/icons/icon-filter.svg"
             alt="Filter"
             boxSize="16px"
             cursor="pointer"
@@ -315,7 +361,7 @@ const MapVillages = () => {
           <Menu>
             <MenuButton>
               <Image
-                src={downloadIcon}
+                src="/icons/icon-download.svg"
                 alt="Download"
                 boxSize="16px"
                 cursor="pointer"
@@ -347,9 +393,15 @@ const MapVillages = () => {
               />
             )}
             {desaPins
-              .filter(d => !selectedProvince || d.provinsi === cleanName(selectedProvince))
+              .filter((d) => {
+                const matchProv = !filters.provinsi || (d.rawProvinsi || d.provinsi) === filters.provinsi;
+                const matchKab = !filters.kabupatenKota || d.kabupatenKota === filters.kabupatenKota;
+                const matchKec = !filters.kecamatan || d.kecamatan === filters.kecamatan;
+                const matchDesa = !filters.namaDesa || d.namaDesa === filters.namaDesa;
+                return matchProv && matchKab && matchKec && matchDesa;
+              })
               .map((desa) => (
-                <Marker key={desa.desaId} position={[desa.lat, desa.lng]}>
+                <Marker key={desa.desaId} position={[desa.lat, desa.lng]} icon={getCustomIcon()}>
                   <Popup>
                     <strong>{desa.namaDesa}</strong>
                     <br />
@@ -365,8 +417,9 @@ const MapVillages = () => {
       <ProvinceFilter
         isOpen={isOpen}
         onClose={onClose}
-        onApply={(province) => setSelectedProvince(province)}
-        provinces={[...new Set(exportData.map((item) => item.provinsi))].sort()}
+        onApply={(newFilters) => setFilters(newFilters)}
+        allPins={desaPins}
+        currentFilters={filters}
       />
     </Box>
   );

@@ -15,9 +15,10 @@ import {
   paginationActiveButtonStyle,
   paginationEllipsisStyle,
 } from "./_categoryInnovationStyle";
-import downloadIcon from "@public/icons/icon-download.svg";
 
-import { getAuth } from "firebase/auth";
+
+
+import { useAuthToken } from "Hooks/useAuthToken";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -32,10 +33,11 @@ interface Implementation {
 }
 
 const TableInnovator = () => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  const userName = user?.displayName || "Inovator";
+
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
   const [implementationData, setImplementationData] = useState<Implementation[]>([]);
   const itemsPerPage = 5;
 
@@ -86,28 +88,35 @@ const TableInnovator = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
+      if (!authLoaded) return;
+      setLoading(true);
+      setError(null);
 
-      if (!currentUser) return console.warn("User not authenticated");
+      if (!token) {
+        setError("User not authenticated.");
+        setLoading(false);
+        return;
+      }
 
       try {
-        const token = await currentUser.getIdToken();
         const response = await fetch('/api/innovator/dashboard', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch dashboard data");
+        }
         const data = await response.json();
 
         const inovatorName = data.innovator?.namaInovator || "-";
         
-        // Memetakan top3Innovations karena API tidak mereturn semua inovasi
-        const fetched: Implementation[] = (data.top3Innovations || []).map((item: any) => ({
+        // Menggunakan daftarInovasi agar menampilkan semua inovasi milik inovator ini
+        const fetched: Implementation[] = (data.daftarInovasi || []).map((item: any) => ({
           namaInovator: inovatorName,
-          namaInovasi: item.name || "-",
+          namaInovasi: item.namaInovasi || "-",
           kategoriInovasi: item.kategori || "-",
-          tahunDibuat: "-", // Tidak ada di response baru
+          tahunDibuat: item.tahunDibuat || "-", 
         }));
 
         const produkInovator = fetched.map(item => item.namaInovasi).filter(Boolean).join(", ");
@@ -123,12 +132,16 @@ const TableInnovator = () => {
 
         setImplementationData(fetched);
       } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setError(message);
         console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [authLoaded, token]);
 
   const exportToPDF = () => {
     const doc = new jsPDF();
@@ -137,11 +150,6 @@ const TableInnovator = () => {
       month: "long",
       year: "numeric",
     });
-
-    // Assuming `userName` is defined and `implementationData` is the list of innovations
-    const userProfile = {
-      nama: userName || "-",
-    };
 
     // Header with green background
     doc.setFillColor(0, 128, 0);
@@ -248,7 +256,7 @@ const TableInnovator = () => {
         <Text {...titleStyle}>Daftar Inovasi {inovatorProfile?.namaInovator || "Inovator"}</Text>
         <Menu>
           <MenuButton>
-            <Image src={downloadIcon.src} alt="Download" boxSize="16px" cursor="pointer" marginRight={2} />
+            <Image src="/icons/icon-download.svg" alt="Download" boxSize="16px" cursor="pointer" marginRight={2} />
           </MenuButton>
           <MenuList>
             <MenuItem onClick={exportToPDF}>Download PDF</MenuItem>
@@ -256,6 +264,11 @@ const TableInnovator = () => {
           </MenuList>
         </Menu>
       </Flex>
+      {error && (
+        <Text color="red.500" mb={4}>
+          {error}
+        </Text>
+      )}
 
       <TableContainer {...tableContainerStyle}>
         <Table variant="simple" size="sm" sx={{ tableLayout: "fixed" }}>

@@ -46,15 +46,25 @@ const PerkembanganInovasiDesa: React.FC = () => {
       }
 
       const token = await user.getIdToken();
-      const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+      const response = await fetch(`/api/villages/dashboard`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (!response.ok) throw new Error("Failed to fetch dashboard data");
-      
-      // Karena endpoint API tidak mereturn data berdasarkan tahun, kita kembalikan kosong.
-      setBarData([]);
-      setAllYears([]);
+      const data = await response.json();
+
+      const perkembangan: { year: number; total: number }[] =
+        data.dashboard?.perkembanganInovasi || [];
+
+      const chartData = perkembangan.map(p => ({
+        name: String(p.year),
+        value: p.total,
+      }));
+
+      const years = perkembangan.map(p => String(p.year));
+
+      setBarData(chartData);
+      setAllYears(years);
     } catch (error) {
       console.error("❌ Error fetching innovation data:", error);
     }

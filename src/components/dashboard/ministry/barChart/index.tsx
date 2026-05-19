@@ -30,7 +30,8 @@ import {
 
 const BarChartInovasi = () => {
   const [showFilter, setShowFilter] = useState(false);
-  const [yearRange, setYearRange] = useState<[number, number]>([2015, 2025]);
+  const currentYear = new Date().getFullYear();
+  const [yearRange, setYearRange] = useState<[number, number]>([2015, currentYear]);
   const [dataByYear, setDataByYear] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [detailedData, setDetailedData] = useState<
@@ -55,9 +56,29 @@ const BarChartInovasi = () => {
         });
 
         if (!response.ok) throw new Error("Failed to fetch dashboard data");
-        // Karena endpoint API tidak mereturn data berdasarkan tahun, kita kembalikan kosong.
-        setDataByYear({});
-        setDetailedData([]);
+        const data = await response.json();
+
+        if (data.dashboard?.pertumbuhanDesa) {
+          const list = data.dashboard.pertumbuhanDesa;
+          setDetailedData(list);
+
+          const counts: Record<number, number> = {};
+          for (let y = yearRange[0]; y <= yearRange[1]; y++) {
+            counts[y] = 0;
+          }
+
+          list.forEach((item: any) => {
+            const y = item.year;
+            if (y >= yearRange[0] && y <= yearRange[1]) {
+              counts[y] = (counts[y] || 0) + 1;
+            }
+          });
+
+          setDataByYear(counts);
+        } else {
+          setDataByYear({});
+          setDetailedData([]);
+        }
       } catch (error) {
         console.error("Failed to fetch data:", error);
       }
@@ -171,14 +192,14 @@ const BarChartInovasi = () => {
         <Flex align="center" gap={2}>
           <Image
             onClick={() => setShowFilter(true)}
-            src={filterIcon}
+            src={filterIcon.src}
             alt="Filter"
             boxSize="16px"
             cursor="pointer"
           />
           <Menu>
             <MenuButton as={Box} cursor="pointer" marginRight={2}>
-              <Image src={downloadIcon} alt="Download" boxSize="16px" />
+              <Image src={downloadIcon.src} alt="Download" boxSize="16px" />
             </MenuButton>
             <MenuList>
               <MenuItem onClick={() => exportToPDF(detailedData)}>Download PDF</MenuItem>

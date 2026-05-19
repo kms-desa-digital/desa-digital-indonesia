@@ -54,8 +54,54 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
         const capitalizeWords = (str: string) =>
           str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 
+        const resolveKesiapanDigital = (item: any) => {
+          let kategori = item.kesiapanDigital || item.kategori || item.kategoriDesa;
+          if (kategori && kategori !== 'ND' && kategori !== '-' && kategori.trim() !== '') {
+            return kategori;
+          }
+          let score = 0;
+          const jar = String(item.jaringan || '').toLowerCase();
+          if (jar.includes('seluruh') || jar.includes('baik')) score += 3;
+          else if (jar.includes('sebagian') || jar.includes('cukup')) score += 2;
+          else if (jar.includes('tidak') || jar.includes('belum')) score += 1;
+
+          const lis = String(item.listrik || '').toLowerCase();
+          if (lis.includes('seluruh') || lis.includes('tersedia')) score += 3;
+          else if (lis.includes('sebagian')) score += 2;
+          else if (lis.includes('belum') || lis.includes('tidak')) score += 1;
+
+          const tek = String(item.teknologi || '').toLowerCase();
+          if (tek.includes('seluruh') || tek.includes('baik') || tek.includes('berkembang')) score += 3;
+          else if (tek.includes('sebagian')) score += 2;
+          else if (tek.includes('belum') || tek.includes('tidak')) score += 1;
+
+          const kem = String(item.kemampuan || '').toLowerCase();
+          if (kem.includes('sangat') || kem.includes('baik')) score += 3;
+          else if (kem.includes('cukup')) score += 2;
+          else if (kem.includes('belum') || kem.includes('tidak')) score += 1;
+
+          if (score >= 10) return "Sangat Siap";
+          if (score >= 8) return "Siap";
+          if (score >= 6) return "Cukup Siap";
+          if (score >= 4) return "Kurang Siap";
+          return "Belum Siap";
+        };
+
         const list: Implementation[] = villages
-          .filter((d: any) => d.kategori === selectedCategory)
+          .filter((d: any) => {
+            let kategori = resolveKesiapanDigital(d);
+            if (!kategori || kategori === 'ND' || kategori === '-') {
+              const idmVal = parseFloat(String(d.idm || '0').replace(',', '.'));
+              if (!isNaN(idmVal) && idmVal > 0) {
+                if (idmVal > 0.815) kategori = "Mandiri";
+                else if (idmVal > 0.707) kategori = "Maju";
+                else if (idmVal > 0.599) kategori = "Berkembang";
+                else if (idmVal > 0.491) kategori = "Tertinggal";
+                else kategori = "Sangat Tertinggal";
+              }
+            }
+            return kategori === selectedCategory;
+          })
           .map((d: any) => {
             const lokasi = d.lokasi ?? {};
 

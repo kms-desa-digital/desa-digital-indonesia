@@ -76,14 +76,14 @@ const KategoriInovasiDesa: React.FC = () => {
             }
 
             const token = await user.getIdToken();
-            const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+            const response = await fetch(`/api/villages/dashboard`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
             if (!response.ok) throw new Error("Failed to fetch dashboard data");
             const data = await response.json();
             
-            const categoryStats = data.categoryStats || [];
+            const categoryStats = data.dashboard?.categoryStats || [];
             
             const kategoriCount: Record<string, number> = {};
             categoryStats.forEach((item: any) => {

@@ -41,10 +41,10 @@ const InfoCards = () => {
       if (response.ok) {
         const data = await response.json();
         setTotals({
-          innovators: data.totalInnovators || 0,
-          innovations: data.totalInnovations || 0,
-          villages: data.totalVillages || 0,
-          provinces: 0, // API tidak menyediakan hitungan provinsi
+          innovators: data.dashboard?.innovators?.total || 0,
+          innovations: data.dashboard?.innovations?.total || 0,
+          villages: data.dashboard?.villages?.total || 0,
+          provinces: data.dashboard?.provinces || 0,
         });
 
         // API tidak menyediakan history/tren, diset ke 0

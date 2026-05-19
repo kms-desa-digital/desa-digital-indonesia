@@ -275,7 +275,7 @@ const DetailInnovationsVillage = ({ selectedVillage, hasRowClicked }: Props) => 
           <Flex justify="flex-end" align="center">
             <Menu>
               <MenuButton display="flex" alignItems="center" mr={2}>
-                <img src={downloadIcon} alt="Download" style={{ width: 16, height: 16 }} />
+                <img src={downloadIcon.src} alt="Download" style={{ width: 16, height: 16 }} />
               </MenuButton>
               <MenuList>
                 <MenuItem onClick={handleDownloadPDF}>Download PDF</MenuItem>

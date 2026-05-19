@@ -13,8 +13,6 @@ import { useEffect, useState } from "react";
 import { useAuthToken } from "Hooks/useAuthToken";
 
 import YearRangeFilter from "./dateFilter";
-import filterIcon from "@public/icons/icon-filter.svg";
-import downloadIcon from "@public/icons/icon-download.svg";
 
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -34,7 +32,8 @@ const BarChartInovasi = () => {
 
   const [showFilter, setShowFilter] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [yearRange, setYearRange] = useState<[number, number]>([2010, 2025]);
+  const currentYear = new Date().getFullYear();
+  const [yearRange, setYearRange] = useState<[number, number]>([2010, currentYear]);
   const [dataByYear, setDataByYear] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
 
@@ -256,7 +255,7 @@ const BarChartInovasi = () => {
         </Text>
         <Flex gap={2}>
           <Image
-            src={filterIcon}
+            src="/icons/icon-filter.svg"
             alt="Filter"
             boxSize="16px"
             cursor="pointer"
@@ -264,7 +263,7 @@ const BarChartInovasi = () => {
           />
           <Menu>
             <MenuButton>
-              <Image src={downloadIcon} alt="Download" boxSize="16px" cursor="pointer" marginRight={2} />
+              <Image src="/icons/icon-download.svg" alt="Download" boxSize="16px" cursor="pointer" marginRight={2} />
             </MenuButton>
             <MenuList>
               <MenuItem onClick={() => { if (profilInovator) exportToPDF(formattedData, profilInovator); }}>

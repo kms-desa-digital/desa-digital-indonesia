@@ -3,6 +3,76 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 
+const provinceCoords: Record<string, { lat: number; lng: number }> = {
+  'ACEH': { lat: 4.695135, lng: 96.749399 },
+  'SUMATERA UTARA': { lat: 2.112102, lng: 99.084473 },
+  'SUMATERA BARAT': { lat: -0.739945, lng: 100.800005 },
+  'RIAU': { lat: 0.507068, lng: 101.543167 },
+  'KEPULAUAN RIAU': { lat: 3.945651, lng: 108.142867 },
+  'JAMBI': { lat: -1.61862, lng: 103.613898 },
+  'SUMATERA SELATAN': { lat: -3.319437, lng: 104.914652 },
+  'KEPULAUAN BANGKA BELITUNG': { lat: -2.741051, lng: 106.440587 },
+  'BANGKA BELITUNG': { lat: -2.741051, lng: 106.440587 },
+  'BENGKULU': { lat: -3.792845, lng: 102.260764 },
+  'LAMPUNG': { lat: -4.558585, lng: 105.400005 },
+  'DKI JAKARTA': { lat: -6.2088, lng: 106.8456 },
+  'JAWA BARAT': { lat: -7.090911, lng: 107.668887 },
+  'BANTEN': { lat: -6.405817, lng: 106.060005 },
+  'JAWA TENGAH': { lat: -7.150975, lng: 110.140259 },
+  'DI YOGYAKARTA': { lat: -7.875385, lng: 110.426208 },
+  'YOGYAKARTA': { lat: -7.875385, lng: 110.426208 },
+  'JAWA TIMUR': { lat: -7.536064, lng: 112.233154 },
+  'BALI': { lat: -8.409518, lng: 115.188916 },
+  'NUSA TENGGARA BARAT': { lat: -8.652933, lng: 117.361648 },
+  'NUSA TENGGARA TIMUR': { lat: -8.657382, lng: 121.07937 },
+  'KALIMANTAN BARAT': { lat: -0.278781, lng: 111.475285 },
+  'KALIMANTAN TENGAH': { lat: -1.681488, lng: 113.382355 },
+  'KALIMANTAN SELATAN': { lat: -3.092642, lng: 115.283759 },
+  'KALIMANTAN TIMUR': { lat: 1.640629, lng: 116.419389 },
+  'KALIMANTAN UTARA': { lat: 3.073125, lng: 116.041389 },
+  'SULAWESI UTARA': { lat: 0.624693, lng: 123.975005 },
+  'GORONTALO': { lat: 0.699937, lng: 122.446724 },
+  'SULAWESI TENGAH': { lat: -1.430005, lng: 121.445587 },
+  'SULAWESI BARAT': { lat: -2.844137, lng: 119.232078 },
+  'SULAWESI SELATAN': { lat: -3.668799, lng: 119.974053 },
+  'SULAWESI TENGGARA': { lat: -4.14491, lng: 122.174605 },
+  'MALUKU': { lat: -3.238458, lng: 130.145273 },
+  'MALUKU UTARA': { lat: 1.570999, lng: 127.800005 },
+  'PAPUA BARAT': { lat: -1.336106, lng: 133.174716 },
+  'PAPUA': { lat: -4.269928, lng: 138.080353 },
+  'PAPUA SELATAN': { lat: -7.5, lng: 139.0 },
+  'PAPUA TENGAH': { lat: -4.0, lng: 136.0 },
+  'PAPUA PEGUNUNGAN': { lat: -4.0, lng: 139.0 },
+  'PAPUA BARAT DAYA': { lat: -1.0, lng: 132.0 }
+};
+
+function getCoordsByProvince(prov: string, index: number = 0) {
+  const norm = (prov || '').toUpperCase().trim();
+  let coords = provinceCoords[norm];
+  if (!coords) {
+    const matchingKey = Object.keys(provinceCoords).find(k => norm.includes(k) || k.includes(norm));
+    if (matchingKey) {
+      coords = provinceCoords[matchingKey];
+    }
+  }
+  
+  if (coords) {
+    const jitterLat = ((index * 17) % 100 - 50) / 500;
+    const jitterLng = ((index * 23) % 100 - 50) / 500;
+    return {
+      lat: coords.lat + jitterLat,
+      lng: coords.lng + jitterLng
+    };
+  }
+  
+  const jitterLat = ((index * 17) % 100 - 50) / 250;
+  const jitterLng = ((index * 23) % 100 - 50) / 250;
+  return {
+    lat: -2.5 + jitterLat,
+    lng: 118.0 + jitterLng
+  };
+}
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireRole(request, ["admin"]);
@@ -65,11 +135,36 @@ export async function GET(request: NextRequest) {
     }));
 
     // Data map markers
-    const allVillages = await db.collection('villages').find({ latitude: { $exists: true } }).toArray();
-    const allInnovators = await db.collection('innovators').find({ latitude: { $exists: true } }).toArray();
+    const allVillages = await db.collection('villages').find({}).toArray();
+    const allInnovators = await db.collection('innovators').find({}).toArray();
+    
+    const mappedVillages = allVillages.map((v, idx) => {
+      const prov = v.provinsi || v.lokasi?.provinsi?.label || 'Unknown';
+      let lat = parseFloat(v.latitude);
+      let lng = parseFloat(v.longitude);
+      if (isNaN(lat) || isNaN(lng) || !lat || !lng) {
+        const coords = getCoordsByProvince(prov, idx);
+        lat = coords.lat;
+        lng = coords.lng;
+      }
+      return { name: v.namaDesa || 'Desa', type: 'village', lat, lng };
+    });
+
+    const mappedInnovators = allInnovators.map((i, idx) => {
+      const prov = i.provinsi || i.lokasi?.provinsi?.label || 'Unknown';
+      let lat = parseFloat(i.latitude);
+      let lng = parseFloat(i.longitude);
+      if (isNaN(lat) || isNaN(lng) || !lat || !lng) {
+        const coords = getCoordsByProvince(prov, idx + 100); // offset index to avoid complete overlap with villages
+        lat = coords.lat;
+        lng = coords.lng;
+      }
+      return { name: i.namaInovator || 'Inovator', type: 'innovator', lat, lng };
+    });
+
     const mapMarkers = [
-      ...allVillages.map(v => ({ name: v.namaDesa, type: 'village', lat: v.latitude, lng: v.longitude })),
-      ...allInnovators.map(i => ({ name: i.namaInovator, type: 'innovator', lat: i.latitude, lng: i.longitude }))
+      ...mappedVillages,
+      ...mappedInnovators
     ].filter(m => m.lat && m.lng);
 
     return NextResponse.json({

@@ -113,8 +113,12 @@ const PieChartInnovator = () => {
         });
 
         if (!response.ok) throw new Error("Failed to fetch dashboard data");
-        // Karena API tidak mereturn statistik berdasarkan kategori inovator, kita kembalikan kosong.
-        setChartData([]);
+        const data = await response.json();
+        if (data.dashboard?.pieChart?.innovators) {
+          setChartData(data.dashboard.pieChart.innovators.filter((d: any) => d.value > 0));
+        } else {
+          setChartData([]);
+        }
       } catch (error) {
         console.error("Error fetching inovator data:", error);
       } finally {

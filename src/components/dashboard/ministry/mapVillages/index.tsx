@@ -23,6 +23,20 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 
+const getCustomIcon = () => {
+    return L.divIcon({
+        html: `<div style="display: flex; justify-content: center; align-items: center; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.35));">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30" fill="#2e7d32">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+        </div>`,
+        className: 'custom-leaflet-marker',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        popupAnchor: [0, -30]
+    });
+};
+
 import { getAuth } from "firebase/auth";
 
 import geoData from "@public/indonesia-province-simple.json";
@@ -280,7 +294,7 @@ const MapVillages = () => {
         <Text {...headerTextStyle}>Peta Sebaran Desa Digital</Text>
         <Flex gap={2} align="center">
           <Image
-            src={filterIcon}
+            src={filterIcon.src}
             alt="Filter"
             boxSize="16px"
             cursor="pointer"
@@ -289,7 +303,7 @@ const MapVillages = () => {
           <Menu>
             <MenuButton>
               <Image
-                src={downloadIcon}
+                src={downloadIcon.src}
                 alt="Download"
                 boxSize="16px"
                 cursor="pointer"
@@ -330,7 +344,7 @@ const MapVillages = () => {
                   (!selectedProvince || cleanName(desa.provinsi) === cleanName(selectedProvince))
               )
               .map((desa) => (
-                <Marker key={desa.desaId} position={[desa.lat, desa.lng]}>
+                <Marker key={desa.desaId} position={[desa.lat, desa.lng]} icon={getCustomIcon()}>
                   <Popup>
                     <strong>{desa.namaDesa}</strong>
                     <br />

@@ -59,9 +59,44 @@ const ChartVillage = () => {
         const yearlyData: Record<number, any> = {};
         const desaData: any[] = [];
 
+        const getYearFromObjectId = (idStr: string) => {
+          if (idStr && idStr.length === 24) {
+            try {
+              const timestamp = parseInt(idStr.substring(0, 8), 16) * 1000;
+              if (!isNaN(timestamp)) {
+                return new Date(timestamp).getFullYear();
+              }
+            } catch (e) {}
+          }
+          return 2026;
+        };
+
         villages.forEach((data: any) => {
-          const yearRaw = data.tahunData?.toString()?.trim();
-          const category = data.kategori;
+          let yearRaw = data.tahunData?.toString()?.trim() || data.tahun?.toString()?.trim();
+          if (!yearRaw || yearRaw === "-" || yearRaw.toUpperCase() === "ND") {
+            if (data.createdAt) {
+              yearRaw = new Date(data.createdAt).getFullYear().toString();
+            } else {
+              const idVal = data._id || data.id;
+              if (idVal) {
+                yearRaw = getYearFromObjectId(idVal.toString()).toString();
+              } else {
+                yearRaw = "2026";
+              }
+            }
+          }
+
+          let category = data.kategori || data.kategoriDesa;
+          if (!category || !categories.includes(category)) {
+            const idmVal = parseFloat(String(data.idm || '0').replace(',', '.'));
+            if (!isNaN(idmVal) && idmVal > 0) {
+              if (idmVal > 0.815) category = "Mandiri";
+              else if (idmVal > 0.707) category = "Maju";
+              else if (idmVal > 0.599) category = "Berkembang";
+              else if (idmVal > 0.491) category = "Tertinggal";
+              else category = "Sangat Tertinggal";
+            }
+          }
 
           if (!yearRaw || yearRaw === "-" || yearRaw.toUpperCase() === "ND") return;
           const yearNum = parseInt(yearRaw);
@@ -228,12 +263,12 @@ const ChartVillage = () => {
           Pertumbuhan Desa Digital {"\n"} Tahun {fromYear} – {toYear}
         </Text>
         <Flex justify="flex-end" align="center">
-          <Image src={filterIcon} alt="Filter" boxSize="16px" cursor="pointer" ml={2} onClick={onOpen} />
+          <Image src={filterIcon.src} alt="Filter" boxSize="16px" cursor="pointer" ml={2} onClick={onOpen} />
           <Menu>
             <MenuButton
               as={IconButton}
               aria-label="Download"
-              icon={<Image src={downloadIcon} alt="Download" boxSize="16px" />}
+              icon={<Image src={downloadIcon.src} alt="Download" boxSize="16px" />}
               variant="ghost"
               _hover={{ bg: 'gray.100' }}
             />

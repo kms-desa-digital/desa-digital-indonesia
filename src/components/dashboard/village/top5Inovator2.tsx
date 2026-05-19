@@ -47,14 +47,14 @@ const Top5InovatorVillage: React.FC = () => {
         }
 
         const token = await user.getIdToken();
-        const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+        const response = await fetch(`/api/villages/dashboard`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
         if (!response.ok) throw new Error("Failed to fetch dashboard data");
         const data = await response.json();
         
-        const top5 = data.top5Innovators || [];
+        const top5 = data.dashboard?.top5Innovators || [];
         
         const sortedInovators = top5.map((item: any) => ({
           name: item.name || "-",
@@ -101,13 +101,13 @@ const Top5InovatorVillage: React.FC = () => {
         }
 
         const token = await user.getIdToken();
-        const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+        const response = await fetch(`/api/villages/dashboard`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
         if (!response.ok) throw new Error("Failed to fetch dashboard data");
         const data = await response.json();
-        const top5 = data.top5Innovators || [];
+        const top5 = data.dashboard?.top5Innovators || [];
 
         const sortedInovators = top5
           .map((item: any, index: number) => ({

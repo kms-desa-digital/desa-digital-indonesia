@@ -5,7 +5,7 @@ import Container from "Components/container";
 import TopBar from "Components/topBar";
 import Header from "src/components/dashboard/ministry/header";
 import { useRouter } from "next/navigation";
-import LogoutButton from "Components/topBar/RightContent/LogoutButton";
+import MinistryMenu from "Components/topBar/RightContent/MinistryMenu";
 import { getAuth } from "firebase/auth";
 
 // Dynamic import untuk komponen yang pakai window/browser API
@@ -26,7 +26,7 @@ const DashboardMinistry = () => {
         <Container page>
             <TopBar
                 title={`Dashboard ${userName}`}
-                rightElement={<LogoutButton />}
+                rightElement={<MinistryMenu />}
             />
             <Header description="KMS Desa Digital" text="Indonesia" />
             <InfoCards />

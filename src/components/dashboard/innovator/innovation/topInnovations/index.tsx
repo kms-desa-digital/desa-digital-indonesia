@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
-import { getInnovators } from "Services/innovatorServices";
+import { useAuthToken } from "Hooks/useAuthToken";
 import { getInnovation } from "Services/innovationServices";
 import { getClaims } from "Services/villageServices";
 import { podiumStyles } from "./_topInnovationsStyle";
@@ -11,20 +10,33 @@ const TopInnovations = () => {
   >([]);
   const [loading, setLoading] = useState(true);
   const [inovatorProfile, setInovatorProfile] = useState<{ namaInovator?: string } | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
     const fetchTopInnovations = async () => {
+      if (!authLoaded) return;
       setLoading(true);
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
 
-      if (!currentUser) return;
+      if (!token) {
+        setTopInnovations([]);
+        setLoading(false);
+        return;
+      }
 
       try {
-        // Fetch innovator profile
-        const innovatorsRes = await getInnovators();
-        const allInnovators = (innovatorsRes as any).data || [];
-        const myProfile = allInnovators.find((i: any) => i.id === currentUser.uid);
+        // Dapatkan profil innovator milik user saat ini via dashboard API
+        const dashRes = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!dashRes.ok) {
+          setTopInnovations([]);
+          setLoading(false);
+          return;
+        }
+
+        const dashData = await dashRes.json();
+        const myProfile = dashData.innovator;
 
         if (!myProfile) {
           setTopInnovations([]);
@@ -32,7 +44,7 @@ const TopInnovations = () => {
           return;
         }
 
-        const inovatorId = myProfile._id || myProfile.id;
+        const inovatorId = myProfile._id?.toString();
         setInovatorProfile(myProfile);
 
         // Fetch innovations by this innovator
@@ -44,6 +56,7 @@ const TopInnovations = () => {
 
         if (myInnovations.length === 0) {
           setTopInnovations([]);
+          setLoading(false);
           return;
         }
 
@@ -71,6 +84,7 @@ const TopInnovations = () => {
 
         if (countInovasi.length === 0) {
           setTopInnovations([]);
+          setLoading(false);
           return;
         }
 
@@ -110,13 +124,14 @@ const TopInnovations = () => {
         setTopInnovations(ranked);
       } catch (error) {
         console.error("Error fetching innovations:", error);
+        setTopInnovations([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTopInnovations();
-  }, []);
+  }, [authLoaded, token]);
 
   // === Penentuan tinggi & urutan podium ===
   const getPodiumOrder = (arr: typeof topInnovations) => {

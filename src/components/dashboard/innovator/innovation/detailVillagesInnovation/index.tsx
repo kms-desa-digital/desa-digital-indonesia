@@ -8,7 +8,7 @@ import { getAuth } from "firebase/auth";
 import { getInnovators } from "Services/innovatorServices";
 import { getInnovation } from "Services/innovationServices";
 import { getClaims } from "Services/villageServices";
-import downloadIcon from "@public/icons/icon-download.svg";
+
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -316,7 +316,7 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({
             <MenuButton
               as={IconButton}
               aria-label="Download options"
-              icon={<Image src={downloadIcon} alt="Download" boxSize="16px" />}
+              icon={<Image src="/icons/icon-download.svg" alt="Download" boxSize="16px" />}
               variant="ghost"
             />
             <MenuList>

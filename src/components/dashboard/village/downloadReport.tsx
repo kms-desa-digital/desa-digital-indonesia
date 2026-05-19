@@ -58,7 +58,23 @@ const DownloadReport: React.FC<DownloadReportProps> = ({
       if (!response.ok) throw new Error("Failed to fetch dashboard data");
       const data = await response.json();
 
-      let desaMeta: any = {
+      let desaMeta: any = data.desa ? {
+        namaDesa: data.desa.namaDesa || "Desa",
+        kecamatan: data.desa.kecamatan || "-",
+        kabupatenKota: data.desa.kabupaten || "-",
+        provinsi: data.desa.provinsi || "-",
+        potensiDesa: data.desa.potensiDesa || [],
+        kondisijalan: data.desa.kondisijalan || "-",
+        jaringan: data.desa.jaringan || "-",
+        listrik: data.desa.listrik || "-",
+        geografisDesa: data.desa.geografisDesa || "-",
+        kesiapanDigital: data.desa.kesiapanDigital || "Data Masih Kosong",
+        pemantapanPelayanan: data.desa.pemantapanPelayanan || "Data Masih Kosong",
+        sosialBudaya: data.desa.sosialBudaya || "Data Masih Kosong",
+        sumberDaya: data.desa.sumberDaya || "-",
+        perkembanganTeknologi: data.desa.teknologi || "-",
+        kemampuanTeknologi: data.desa.kemampuan || "-"
+      } : {
         namaDesa: "Desa",
         kecamatan: "-",
         kabupatenKota: "-",
@@ -76,14 +92,19 @@ const DownloadReport: React.FC<DownloadReportProps> = ({
         kemampuanTeknologi: "-"
       };
 
-      const inovatorData: InovatorReportData[] = (data.top5Innovators || []).map((item: any, index: number) => ({
+      const innovationsResponse = await fetch(`/api/villages/${data.desa?._id || user.uid}/innovations`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const innovationsData = innovationsResponse.ok ? await innovationsResponse.json() : { innovations: [] };
+
+      const inovatorData: InovatorReportData[] = (innovationsData.innovations || []).map((item: any, index: number) => ({
         no: index + 1,
-        namaInovator: item.name || "-",
-        namaInovasi: "-",
-        kategori: "-",
-        tahun: "-",
+        namaInovator: item.namaInnovator || item.namaInovator || "-",
+        namaInovasi: item.namaInovasi || "-",
+        kategori: item.kategori || "-",
+        tahun: item.tahunDibuat || (item.createdAt ? new Date(item.createdAt).getFullYear().toString() : "-"),
         namaDesa: "-",
-        jumlahInovasi: item.totalInovasi || 0,
+        jumlahInovasi: 0,
         jumlahDesaDampingan: 0,
       }));
 

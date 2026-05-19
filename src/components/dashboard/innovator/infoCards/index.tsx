@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
+import { useAuthToken } from "Hooks/useAuthToken";
 import { Box, Flex, Text } from "@chakra-ui/react";
 import Image from "next/image";
 import DateRangeFilter from "./dateFilter";
-import filterIcon from "@public/icons/icon-filter.svg";
+
 
 import {
   cardStyle,
@@ -23,14 +23,13 @@ const InfoCards = () => {
   const [desaCount, setDesaCount] = useState(0);
   const [trendInovasi, setTrendInovasi] = useState(0);
   const [trendDesa, setTrendDesa] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   const calculateData = async (fromDate: Date, toDate: Date) => {
-    try {
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-      if (!currentUser) return;
+    if (!token) return;
 
-      const token = await currentUser.getIdToken();
+    try {
       const response = await fetch('/api/innovator/dashboard', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -39,26 +38,34 @@ const InfoCards = () => {
         const data = await response.json();
         setInovasiCount(data.totalInovasi || 0);
         setDesaCount(data.totalKlienDesa || 0);
-        
-        // Data tren tidak disediakan oleh endpoint, diset ke 0
         setTrendInovasi(0);
         setTrendDesa(0);
       } else {
-        console.error("Failed to fetch dashboard data:", await response.text());
+        const message = await response.text();
+        setError(`Failed to fetch dashboard data: ${message}`);
+        console.error("Failed to fetch dashboard data:", message);
       }
     } catch (err) {
+      setError("Failed to calculate data.");
       console.error("Failed to calculate data:", err);
     }
   };
 
   useEffect(() => {
+    if (!authLoaded) return;
+
     const now = new Date();
     const startOfYear = new Date(Date.UTC(now.getFullYear(), 0, 1));
     const endOfYear = new Date(Date.UTC(now.getFullYear(), 11, 31));
     setFrom(startOfYear);
     setTo(endOfYear);
+    if (!token) {
+      setError("User not authenticated.");
+      return;
+    }
+
     calculateData(startOfYear, endOfYear);
-  }, []);
+  }, [authLoaded, token]);
 
   const renderTrend = (value: number) => {
     const arrow = value >= 0 ? "↑" : "↓";
@@ -75,13 +82,18 @@ const InfoCards = () => {
       <Flex justify="space-between" align="flex-start" mb={3}>
         <Box>
           <Text {...titleText}>Informasi Umum</Text>
+          {error ? (
+            <Text color="red.500" mb={2}>
+              {error}
+            </Text>
+          ) : null}
           <Text {...descriptionText}>
             Periode: {from?.toLocaleDateString()} - {to?.toLocaleDateString()}
           </Text>
         </Box>
         <Box as="div" onClick={() => setShowFilter(true)} cursor="pointer" mt={2}>
           <Image
-            src={filterIcon}
+            src="/icons/icon-filter.svg"
             alt="Filter"
             width={16}
             height={16}

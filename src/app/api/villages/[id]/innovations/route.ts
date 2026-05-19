@@ -13,10 +13,34 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     const { id } = await params
     const db = await connectToDatabase()
 
+    // Temukan dokumen desa berdasarkan id (bisa berupa Firebase UID atau MongoDB _id)
+    let village = null;
+    try {
+      if (ObjectId.isValid(id)) {
+        village = await db.collection('villages').findOne({ _id: new ObjectId(id) });
+      }
+    } catch (e) {}
+
+    if (!village) {
+      village = await db.collection('villages').findOne({
+        $or: [
+          { userId: id },
+          { _id: id as any }
+        ]
+      });
+    }
+
+    const possibleIds = [id];
+    if (village) {
+      possibleIds.push(village._id.toString());
+      if (village.userId) possibleIds.push(village.userId);
+    }
+    const uniqueIds = [...new Set(possibleIds)];
+
     // 1. Ambil inovasi dari koleksi 'innovations' yang memiliki desaId ini (penugasan langsung)
     const directInnovations = await db.collection('innovations')
       .find({
-        desaId: { $in: [id] },
+        desaId: { $in: uniqueIds },
         status: 'Terverifikasi'
       })
       .toArray()
@@ -24,7 +48,7 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     // 2. Ambil SEMUA klaim dari koleksi 'claimInnovations' yang terverifikasi (Manual & Reguler)
     const verifiedClaims = await db.collection('claimInnovations')
       .find({
-        desaId: id,
+        desaId: { $in: uniqueIds },
         status: 'Terverifikasi'
       })
       .toArray()

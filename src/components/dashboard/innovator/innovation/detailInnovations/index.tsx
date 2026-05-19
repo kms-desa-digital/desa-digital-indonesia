@@ -10,10 +10,8 @@ import {
   IconButton,
 } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
-import { getAuth } from "firebase/auth";
-import { getInnovators } from "Services/innovatorServices";
-import { getInnovation } from "Services/innovationServices";
-import { getClaims } from "Services/villageServices";
+import { useAuthToken } from "Hooks/useAuthToken";
+
 import {
   titleStyle,
   tableHeaderStyle,
@@ -24,7 +22,7 @@ import {
   paginationActiveButtonStyle,
   paginationEllipsisStyle,
 } from "./_detailInnovationsStyle";
-import downloadIcon from "@public/icons/icon-download.svg";
+
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -57,31 +55,33 @@ const DetailInnovations: React.FC<DetailInnovationsProps> = ({ onSelectInnovatio
     modelBisnis: "-",
   });
 
-  const auth = getAuth();
-  const [userName, setUserName] = useState<string | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
-    const user = auth.currentUser;
-
-    if (user) {
-      setUserName(user.displayName || user.email || "User");
-    } else {
-      setUserName(null);
-    }
-
-    if (!user) {
-      setImplementationData([]);
-      setLoading(false);
-      return;
-    }
-
     const fetchData = async () => {
+      if (!authLoaded) return;
       setLoading(true);
+
+      if (!token) {
+        setImplementationData([]);
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Fetch innovator profile
-        const innovatorsRes = await getInnovators();
-        const allInnovators = (innovatorsRes as any).data || [];
-        const myProfile = allInnovators.find((i: any) => i.id === user.uid);
+        // Dapatkan profil innovator milik user saat ini via dashboard API
+        const dashRes = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!dashRes.ok) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
+        }
+
+        const dashData = await dashRes.json();
+        const myProfile = dashData.innovator;
 
         if (!myProfile) {
           setImplementationData([]);
@@ -89,31 +89,15 @@ const DetailInnovations: React.FC<DetailInnovationsProps> = ({ onSelectInnovatio
           return;
         }
 
-        const inovatorId = myProfile._id || myProfile.id;
+        const inovatorId = myProfile._id?.toString();
 
-        // Fetch all innovations
-        const innovationRes = await getInnovation();
-        const allInnovations = innovationRes.innovations || [];
-        const myInnovations = allInnovations.filter(
-          (i: any) => i.innovatorId === inovatorId
-        );
+        const myInnovations = dashData.daftarInovasi || [];
 
         if (myInnovations.length === 0) {
           setImplementationData([]);
           setLoading(false);
           return;
         }
-
-        const inovasiMap = new Map<string, { namaInovasi: string; inovatorId: string }>();
-        myInnovations.forEach((inov: any) => {
-          const id = inov._id || inov.id;
-          inovasiMap.set(id, {
-            namaInovasi: inov.namaInovasi,
-            inovatorId: inov.innovatorId,
-          });
-        });
-
-        const inovasiIds = Array.from(inovasiMap.keys());
 
         const produkInovator = myInnovations
           .map((i: any) => i.namaInovasi)
@@ -129,51 +113,12 @@ const DetailInnovations: React.FC<DetailInnovationsProps> = ({ onSelectInnovatio
           produk: produkInovator || "-",
         });
 
-        // Fetch claims
-        const claimsRes = await getClaims();
-        const allClaims = (claimsRes as any).claims || [];
-
-        // Build innovator name map
-        const inovatorNameMap = new Map<string, string>();
-        allInnovators.forEach((inv: any) => {
-          const id = inv._id || inv.id;
-          inovatorNameMap.set(id, inv.namaInovator || "Unknown");
-        });
-
-        // Aggregate claim data
-        const aggregationMap = new Map<
-          string,
-          { innovationId: string; inovator: string; namaInovasi: string; desaSet: Set<string> }
-        >();
-
-        for (const claim of allClaims) {
-          const inovasiId = claim.inovasiId;
-          const namaDesa = claim.namaDesa;
-          const inovasiData = inovasiMap.get(inovasiId);
-          if (!inovasiData) continue;
-          const inovatorIdFromInov = inovasiData.inovatorId;
-          const inovatorName = inovatorNameMap.get(inovatorIdFromInov) || "Unknown";
-          const key = inovasiId;
-
-          if (!aggregationMap.has(key)) {
-            aggregationMap.set(key, {
-              innovationId: key,
-              namaInovasi: inovasiData.namaInovasi,
-              inovator: inovatorName,
-              desaSet: new Set(),
-            });
-          }
-          aggregationMap.get(key)!.desaSet.add(namaDesa);
-        }
-
-        const result: Implementation[] = Array.from(aggregationMap.values()).map(
-          (item) => ({
-            innovationId: item.innovationId,
-            namaInovasi: item.namaInovasi,
-            inovator: item.inovator,
-            jumlahDesa: item.desaSet.size,
-          })
-        );
+        const result: Implementation[] = myInnovations.map((item: any) => ({
+          innovationId: item.innovationId,
+          namaInovasi: item.namaInovasi,
+          inovator: item.inovator,
+          jumlahDesa: item.jumlahDesa,
+        }));
 
         setImplementationData(
           result.sort((a, b) => {
@@ -192,7 +137,7 @@ const DetailInnovations: React.FC<DetailInnovationsProps> = ({ onSelectInnovatio
     };
 
     fetchData();
-  }, [auth.currentUser]);
+  }, [authLoaded, token]);
 
   const totalPages = Math.ceil(implementationData.length / itemsPerPage);
   const currentData = implementationData.slice(
@@ -250,11 +195,6 @@ const DetailInnovations: React.FC<DetailInnovationsProps> = ({ onSelectInnovatio
       month: "long",
       year: "numeric",
     });
-
-    // Assuming `userName` is defined and `implementationData` is the list of innovations
-    const userProfile = {
-      nama: userName || "-",
-    };
 
     // Header with green background
     doc.setFillColor(0, 128, 0);
@@ -369,7 +309,7 @@ const DetailInnovations: React.FC<DetailInnovationsProps> = ({ onSelectInnovatio
             <MenuButton
               as={IconButton}
               aria-label="Download options"
-              icon={<Image src={downloadIcon} alt="Download" boxSize="16px" />}
+              icon={<Image src="/icons/icon-download.svg" alt="Download" boxSize="16px" />}
               variant="ghost"
             />
             <MenuList>

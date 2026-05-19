@@ -20,7 +20,93 @@ import {
 
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import * as L from 'leaflet';
 import { Filter } from 'lucide-react';
+
+const provinceCoords: Record<string, { lat: number; lng: number }> = {
+  'ACEH': { lat: 4.695135, lng: 96.749399 },
+  'SUMATERA UTARA': { lat: 2.112102, lng: 99.084473 },
+  'SUMATERA BARAT': { lat: -0.739945, lng: 100.800005 },
+  'RIAU': { lat: 0.507068, lng: 101.543167 },
+  'KEPULAUAN RIAU': { lat: 3.945651, lng: 108.142867 },
+  'JAMBI': { lat: -1.61862, lng: 103.613898 },
+  'SUMATERA SELATAN': { lat: -3.319437, lng: 104.914652 },
+  'KEPULAUAN BANGKA BELITUNG': { lat: -2.741051, lng: 106.440587 },
+  'BANGKA BELITUNG': { lat: -2.741051, lng: 106.440587 },
+  'BENGKULU': { lat: -3.792845, lng: 102.260764 },
+  'LAMPUNG': { lat: -4.558585, lng: 105.400005 },
+  'DKI JAKARTA': { lat: -6.2088, lng: 106.8456 },
+  'JAWA BARAT': { lat: -7.090911, lng: 107.668887 },
+  'BANTEN': { lat: -6.405817, lng: 106.060005 },
+  'JAWA TENGAH': { lat: -7.150975, lng: 110.140259 },
+  'DI YOGYAKARTA': { lat: -7.875385, lng: 110.426208 },
+  'YOGYAKARTA': { lat: -7.875385, lng: 110.426208 },
+  'JAWA TIMUR': { lat: -7.536064, lng: 112.233154 },
+  'BALI': { lat: -8.409518, lng: 115.188916 },
+  'NUSA TENGGARA BARAT': { lat: -8.652933, lng: 117.361648 },
+  'NUSA TENGGARA TIMUR': { lat: -8.657382, lng: 121.07937 },
+  'KALIMANTAN BARAT': { lat: -0.278781, lng: 111.475285 },
+  'KALIMANTAN TENGAH': { lat: -1.681488, lng: 113.382355 },
+  'KALIMANTAN SELATAN': { lat: -3.092642, lng: 115.283759 },
+  'KALIMANTAN TIMUR': { lat: 1.640629, lng: 116.419389 },
+  'KALIMANTAN UTARA': { lat: 3.073125, lng: 116.041389 },
+  'SULAWESI UTARA': { lat: 0.624693, lng: 123.975005 },
+  'GORONTALO': { lat: 0.699937, lng: 122.446724 },
+  'SULAWESI TENGAH': { lat: -1.430005, lng: 121.445587 },
+  'SULAWESI BARAT': { lat: -2.844137, lng: 119.232078 },
+  'SULAWESI SELATAN': { lat: -3.668799, lng: 119.974053 },
+  'SULAWESI TENGGARA': { lat: -4.14491, lng: 122.174605 },
+  'MALUKU': { lat: -3.238458, lng: 130.145273 },
+  'MALUKU UTARA': { lat: 1.570999, lng: 127.800005 },
+  'PAPUA BARAT': { lat: -1.336106, lng: 133.174716 },
+  'PAPUA': { lat: -4.269928, lng: 138.080353 },
+  'PAPUA SELATAN': { lat: -7.5, lng: 139.0 },
+  'PAPUA TENGAH': { lat: -4.0, lng: 136.0 },
+  'PAPUA PEGUNUNGAN': { lat: -4.0, lng: 139.0 },
+  'PAPUA BARAT DAYA': { lat: -1.0, lng: 132.0 }
+};
+
+function getCoordsByProvince(prov: string, index: number = 0) {
+  const norm = (prov || '').toUpperCase().trim();
+  let coords = provinceCoords[norm];
+  if (!coords) {
+    const matchingKey = Object.keys(provinceCoords).find(k => norm.includes(k) || k.includes(norm));
+    if (matchingKey) {
+      coords = provinceCoords[matchingKey];
+    }
+  }
+  
+  if (coords) {
+    const jitterLat = ((index * 17) % 100 - 50) / 500;
+    const jitterLng = ((index * 23) % 100 - 50) / 500;
+    return {
+      lat: coords.lat + jitterLat,
+      lng: coords.lng + jitterLng
+    };
+  }
+  
+  const jitterLat = ((index * 17) % 100 - 50) / 250;
+  const jitterLng = ((index * 23) % 100 - 50) / 250;
+  return {
+    lat: -2.5 + jitterLat,
+    lng: 118.0 + jitterLng
+  };
+}
+
+const getCustomIcon = (category: 'desa' | 'inovator' | 'inovasi') => {
+    const color = category === 'desa' ? '#2e7d32' : category === 'inovator' ? '#e65100' : '#0288d1';
+    return L.divIcon({
+        html: `<div style="display: flex; justify-content: center; align-items: center; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.35));">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30" fill="${color}">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+        </div>`,
+        className: 'custom-leaflet-marker',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        popupAnchor: [0, -30]
+    });
+};
 
 interface MarkerItem {
     name: string;
@@ -28,6 +114,7 @@ interface MarkerItem {
     lon: number;
     details: { label: string; value: string | number }[];
     raw: any;
+    category?: 'desa' | 'inovator' | 'inovasi';
 }
 
 const Peta: React.FC = () => {
@@ -72,25 +159,31 @@ const Peta: React.FC = () => {
 
                         const matchedVillage = villages.find((v: any) => v.namaDesa === namaDesa);
                         if (matchedVillage) {
-                            const lat = parseFloat(matchedVillage.latitude);
-                            const lon = parseFloat(matchedVillage.longitude);
+                            let lat = parseFloat(matchedVillage.latitude);
+                            let lon = parseFloat(matchedVillage.longitude);
 
-                            if (!isNaN(lat) && !isNaN(lon)) {
-                                const details = [
-                                    { label: 'Nama Desa', value: matchedVillage.namaDesa || 'Tidak diketahui' },
-                                    { label: 'Jumlah Desa Dampingan', value: data.jumlahDesaDampingan || desaList.length },
-                                ];
-
-                                const name = data.namaInovator || 'Tanpa Nama';
-
-                                results.push({
-                                    name,
-                                    lat,
-                                    lon,
-                                    details,
-                                    raw: data,
-                                });
+                            if (isNaN(lat) || isNaN(lon) || !lat || !lon) {
+                                const prov = matchedVillage.provinsi || matchedVillage.lokasi?.provinsi?.label || 'Unknown';
+                                const coords = getCoordsByProvince(prov, results.length);
+                                lat = coords.lat;
+                                lon = coords.lng;
                             }
+
+                            const details = [
+                                { label: 'Nama Desa', value: matchedVillage.namaDesa || 'Tidak diketahui' },
+                                { label: 'Jumlah Desa Dampingan', value: data.jumlahDesaDampingan || desaList.length },
+                            ];
+
+                            const name = data.namaInovator || 'Tanpa Nama';
+
+                            results.push({
+                                name,
+                                lat,
+                                lon,
+                                details,
+                                raw: data,
+                                category: 'inovator'
+                            });
                         }
                     });
                 });
@@ -116,26 +209,32 @@ const Peta: React.FC = () => {
                         const matchedVillage = villages.find((v: any) => v.namaDesa === namaDesa);
 
                         if (matchedVillage) {
-                            const lat = parseFloat(matchedVillage.latitude);
-                            const lon = parseFloat(matchedVillage.longitude);
+                            let lat = parseFloat(matchedVillage.latitude);
+                            let lon = parseFloat(matchedVillage.longitude);
 
-                            if (!isNaN(lat) && !isNaN(lon)) {
-                                const details = [
-                                    { label: 'Nama Desa', value: matchedVillage.namaDesa || 'Tidak diketahui' },
-                                    { label: 'Nama Inovator', value: data.namaInnovator || data.namaInovator || 'Tidak diketahui' },
-                                    { label: 'Tahun Dibuat', value: data.tahunDibuat || 'Tidak diketahui' },
-                                ];
-
-                                const name = data.namaInovasi || 'Tanpa Nama';
-
-                                results.push({
-                                    name,
-                                    lat,
-                                    lon,
-                                    details,
-                                    raw: data,
-                                });
+                            if (isNaN(lat) || isNaN(lon) || !lat || !lon) {
+                                const prov = matchedVillage.provinsi || matchedVillage.lokasi?.provinsi?.label || 'Unknown';
+                                const coords = getCoordsByProvince(prov, results.length);
+                                lat = coords.lat;
+                                lon = coords.lng;
                             }
+
+                            const details = [
+                                { label: 'Nama Desa', value: matchedVillage.namaDesa || 'Tidak diketahui' },
+                                { label: 'Nama Inovator', value: data.namaInnovator || data.namaInovator || 'Tidak diketahui' },
+                                { label: 'Tahun Dibuat', value: data.tahunDibuat || 'Tidak diketahui' },
+                            ];
+
+                            const name = data.namaInovasi || 'Tanpa Nama';
+
+                            results.push({
+                                name,
+                                lat,
+                                lon,
+                                details,
+                                raw: data,
+                                category: 'inovasi'
+                            });
                         }
                     });
                 }
@@ -144,20 +243,25 @@ const Peta: React.FC = () => {
                     const villageData = await villageRes.json();
                     const villages = villageData.villages || [];
 
-                    villages.forEach((data: any) => {
-                        const lat = parseFloat(data.latitude);
-                        const lon = parseFloat(data.longitude);
+                    villages.forEach((data: any, idx: number) => {
+                        let lat = parseFloat(data.latitude);
+                        let lon = parseFloat(data.longitude);
 
-                        if (!isNaN(lat) && !isNaN(lon)) {
-                            let details: { label: string; value: string | number }[] = [
-                                { label: 'Nama Inovasi', value: data.namaInovasi || 'Tidak diketahui' },
-                                { label: 'Jumlah Inovasi', value: data.jumlahInovasi || 0 },
-                            ];
-
-                            let name = data.namaDesa || 'Tanpa Nama';
-
-                            results.push({ name, lat, lon, details, raw: data });
+                        if (isNaN(lat) || isNaN(lon) || !lat || !lon) {
+                            const prov = data.provinsi || data.lokasi?.provinsi?.label || 'Unknown';
+                            const coords = getCoordsByProvince(prov, idx);
+                            lat = coords.lat;
+                            lon = coords.lng;
                         }
+
+                        let details: { label: string; value: string | number }[] = [
+                            { label: 'Nama Inovasi', value: data.namaInovasi || 'Tidak diketahui' },
+                            { label: 'Jumlah Inovasi', value: data.jumlahInovasi || 0 },
+                        ];
+
+                        let name = data.namaDesa || 'Tanpa Nama';
+
+                        results.push({ name, lat, lon, details, raw: data, category: 'desa' });
                     });
                 }
             }
@@ -363,7 +467,7 @@ const Peta: React.FC = () => {
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         />
                         {getFilteredMarkers().map((marker, index) => (
-                            <Marker key={index} position={[marker.lat, marker.lon]}>
+                            <Marker key={index} position={[marker.lat, marker.lon]} icon={getCustomIcon(marker.category || selectedCategory)}>
                                 <Popup>
                                     <Text fontWeight="bold" fontSize="sm">{marker.name}</Text>
                                     {marker.details.map((item, idx) => (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Box, Text, Flex, Link, Spinner } from "@chakra-ui/react";
 import NextLink from 'next/link';
-import { getAuth } from "firebase/auth";
+import { useAuthToken } from "Hooks/useAuthToken";
 import { paths } from "Consts/path";
 import {
   podiumWrapperStyle,
@@ -17,30 +17,34 @@ const TopInnovations = () => {
     { name: string; count: number; rank: number; label: string }[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [inovatorProfile, setInovatorProfile] = useState<{ namaInovator?: string } | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
     const fetchTopInnovations = async () => {
+      if (!authLoaded) return;
       setLoading(true);
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
+      setError(null);
 
-      if (!currentUser) {
+      if (!token) {
+        setError("User not authenticated.");
+        setTopInnovations([]);
         setLoading(false);
-        return console.warn("User not authenticated");
+        return;
       }
 
       try {
-        const token = await currentUser.getIdToken();
         const response = await fetch('/api/innovator/dashboard', {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (!response.ok) throw new Error("Failed to fetch dashboard data");
-        const data = await response.json();
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch dashboard data");
+        }
 
-        // Ambil nama inovator (karena di endpoint inovator tidak direturn profilnya secara spesifik di struktur baru, 
-        // kita asumsikan 'Inovator' atau biarkan null jika tidak ada)
+        const data = await response.json();
         setInovatorProfile({ namaInovator: "Inovator" });
 
         const countInovasi = (data.top3Innovations || []).map((item: any) => ({
@@ -95,14 +99,16 @@ const TopInnovations = () => {
 
         setTopInnovations(ranked);
       } catch (error) {
-        console.error("Error fetching innovations:", error);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setError(message);
+        console.error("Error fetching innovations:", error instanceof Error ? error.message : error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTopInnovations();
-  }, []);
+  }, [authLoaded, token]);
 
   return (
     <Box p={4}>
@@ -117,6 +123,10 @@ const TopInnovations = () => {
         {loading ? (
           <Flex justify="center" align="center" h="100%">
             <Spinner size="lg" />
+          </Flex>
+        ) : error ? (
+          <Flex justify="center" align="center" h="100%">
+            <Text color="red.500">{error}</Text>
           </Flex>
         ) : topInnovations.length === 0 ? (
           <Flex justify="center" align="center" h="100%">

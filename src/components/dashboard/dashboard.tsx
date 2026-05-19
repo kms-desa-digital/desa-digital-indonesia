@@ -15,7 +15,7 @@ import {
 } from "@chakra-ui/react";
 
 import { FaUsers, FaSeedling } from "react-icons/fa";
-import { getFirestore, collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
@@ -54,39 +54,23 @@ const Dashboard = () => {
       }
     };
 
-    const fetchInnovatorCount = async () => {
+    const fetchStats = async () => {
       try {
-        const db = getFirestore();
-        const innovatorsRef = collection(db, "innovators");
-        const snapshot = await getDocs(innovatorsRef);
-        setTotalInnovators(snapshot.size);
+        const response = await fetch("/api/stats");
+        if (response.ok) {
+          const data = await response.json();
+          setTotalVillage(data.totalVillage || 0);
+          setTotalInnovators(data.totalInnovators || 0);
+        } else {
+          console.error("Failed to fetch stats from API");
+        }
       } catch (error) {
-        console.error("Error fetching innovator count:", error);
-      }
-    };
-
-    const fetchVillageCount = async () => {
-      try {
-        const db = getFirestore();
-        const villageRef = collection(db, "villages");
-        const snapshot = await getDocs(villageRef);
-        const validVillages = snapshot.docs.filter((doc) => {
-          const data = doc.data();
-          return (
-            data.namaDesa &&
-            data.namaDesa.length > 1 &&
-            data.jumlahInovasi !== 0
-          );
-        });
-        setTotalVillage(validVillages.length);
-      } catch (error) {
-        console.error("Error fetching village count:", error);
+        console.error("Error fetching stats:", error);
       }
     };
 
     fetchUserRole();
-    fetchInnovatorCount();
-    fetchVillageCount();
+    fetchStats();
   }, []);
 
   const data = [
