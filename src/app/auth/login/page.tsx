@@ -115,11 +115,11 @@ const Login: React.FC = () => {
             router.refresh();
 
             if (userRole === "admin") {
-                router.push(paths.ADMIN_PAGE);
+                router.replace(paths.ADMIN_PAGE);
             } else if (userRole === "ministry") {
-                router.push(paths.DASHBOARD_MINISTRY_HOME);
+                router.replace(paths.DASHBOARD_MINISTRY_HOME);
             } else {
-                router.push(paths.LANDING_PAGE);
+                router.replace(paths.LANDING_PAGE);
             }
 
             toast.success("Berhasil Masuk", {
@@ -188,11 +188,11 @@ const Login: React.FC = () => {
             router.refresh();
 
             if (userRole === "admin") {
-                router.push(paths.ADMIN_PAGE);
+                router.replace(paths.ADMIN_PAGE);
             } else if (userRole === "ministry") {
-                router.push(paths.DASHBOARD_MINISTRY_HOME);
+                router.replace(paths.DASHBOARD_MINISTRY_HOME);
             } else {
-                router.push(paths.LANDING_PAGE);
+                router.replace(paths.LANDING_PAGE);
             }
 
             toast.success("Berhasil Masuk dengan Google", {

@@ -163,7 +163,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!loading && role === "admin") {
-      router.push(paths.ADMIN_PAGE);
+      router.replace(paths.ADMIN_PAGE);
     }
   }, [role, loading, router]);
 

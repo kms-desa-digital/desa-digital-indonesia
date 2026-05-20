@@ -72,7 +72,12 @@ export async function GET(request: NextRequest) {
 
     const pipeline: any[] = [
       { $match: filter },
-      { $sort: { createdAt: -1 } },
+      {
+        $addFields: {
+          sortDate: { $ifNull: ["$updatedAt", { $ifNull: ["$editedAt", "$createdAt"] }] }
+        }
+      },
+      { $sort: { sortDate: -1 } },
     ]
 
     if (skipVal > 0) pipeline.push({ $skip: skipVal })

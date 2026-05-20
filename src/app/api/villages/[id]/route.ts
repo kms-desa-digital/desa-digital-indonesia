@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     // Hitung jumlah inovasi yang benar-benar terverifikasi untuk desa ini
     // Ini membantu jika field static 'jumlahInovasiDiterapkan' belum tersinkronisasi
     const desaId = village.userId || village._id.toString();
-    
+
     // 1. Count verified MANUAL claims only (to avoid double counting standard innovations)
     const manualClaimCount = await db.collection('claimInnovations').countDocuments({
       desaId: desaId,
@@ -48,13 +48,13 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     const totalVerified = manualClaimCount + standardCount;
 
     return NextResponse.json(
-      { 
-        village: { 
-          ...village, 
-          id: village._id.toString(), 
+      {
+        village: {
+          ...village,
+          id: village._id.toString(),
           _id: village._id.toString(),
           jumlahInovasiDiterapkan: totalVerified
-        } 
+        }
       },
       { status: 200 }
     )
@@ -77,16 +77,16 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     const isAdmin = auth.role === 'admin'
     const { id } = await params
     const body = await request.json()
-    
+
     // Jangan izinkan ubah field sensitif secara langsung
     delete body._id
     delete body.userId
     delete body.catatanAdmin
-    
+
     body.updatedAt = new Date()
 
     const db = await connectToDatabase()
-    
+
     let query: any;
     try {
       query = { $or: [{ _id: new ObjectId(id) }, { userId: id }] }
@@ -103,12 +103,16 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     if (!isAdmin && existing.userId !== auth.uid) {
       return NextResponse.json({ message: 'Anda tidak memiliki hak untuk mengubah profil ini' }, { status: 403 })
     }
-    
-    // Reset status if resubmitting rejected profile
-    const isResubmission = !isAdmin && existing.status === 'Ditolak'
+
+    // Reset status if resubmitting rejected or verified profile
+    const isResubmission = !isAdmin && existing?.status !== 'Menunggu'
     if (isResubmission) {
-        body.status = 'Menunggu'
-        body.catatanAdmin = null
+      body.status = 'Menunggu'
+      body.catatanAdmin = null
+    }
+
+    if (!isAdmin) {
+      body.createdAt = new Date()
     }
 
     const result = await db.collection('villages').updateOne(
@@ -122,19 +126,19 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     // Notify admins about update/resubmission
     try {
-        const { notifyAllAdmins } = await import('@/services/notificationServices')
-        if (isResubmission) {
-            await notifyAllAdmins({
-                type: 'personal',
-                category: 'village_submission',
-                title: `Pengajuan Ulang Profil Desa: ${body.namaDesa || existing.namaDesa}`,
-                description: `Desa ${body.namaDesa || existing.namaDesa} telah memperbarui profil yang sebelumnya ditolak. Silakan verifikasi kembali.`,
-                actionType: 'profile',
-                relatedId: existing.userId || id,
-            })
-        }
+      const { notifyAllAdmins } = await import('@/services/notificationServices')
+      if (isResubmission) {
+        await notifyAllAdmins({
+          type: 'personal',
+          category: 'village_submission',
+          title: `Pengajuan Ulang Profil Desa: ${body.namaDesa || existing.namaDesa}`,
+          description: `Desa ${body.namaDesa || existing.namaDesa} telah memperbarui profil yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+          actionType: 'profile',
+          relatedId: existing.userId || id,
+        })
+      }
     } catch (notifErr) {
-        console.error('Error notifying admins about village profile update:', notifErr)
+      console.error('Error notifying admins about village profile update:', notifErr)
     }
 
     return NextResponse.json({ message: 'Profil desa berhasil diperbarui' }, { status: 200 })

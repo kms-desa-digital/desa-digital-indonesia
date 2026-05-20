@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') // 'general' or 'personal' or null for all
+    const category = searchParams.get('category')
     const limit = parseInt(searchParams.get('limit') || '20')
     const skip = parseInt(searchParams.get('skip') || '0')
 
@@ -23,6 +24,32 @@ export async function GET(request: NextRequest) {
 
     if (type) {
       filter.type = type
+    }
+    if (category && category !== 'all') {
+      // Handle legacy smart mapping for categories
+      if (category === 'claim_submission') {
+          filter.$or = [
+              { category: 'claim_submission' },
+              { category: { $in: [null, 'profile_submission', 'submission_status'] }, title: { $regex: /klaim/i } }
+          ]
+      } else if (category === 'innovation_submission') {
+          filter.$or = [
+              { category: 'innovation_submission' },
+              { category: { $in: [null, 'profile_submission', 'submission_status'] }, title: { $regex: /inovasi/i } }
+          ]
+      } else if (category === 'village_submission') {
+          filter.$or = [
+              { category: 'village_submission' },
+              { category: { $in: [null, 'profile_submission', 'submission_status'] }, title: { $regex: /profil desa|pengajuan desa/i } }
+          ]
+      } else if (category === 'innovator_submission') {
+          filter.$or = [
+              { category: 'innovator_submission' },
+              { category: { $in: [null, 'profile_submission', 'submission_status'] }, title: { $regex: /innovator|inovator/i } }
+          ]
+      } else {
+          filter.category = category
+      }
     }
 
     let query = db.collection('notifications').find(filter).sort({ createdAt: -1 })
@@ -41,12 +68,21 @@ export async function GET(request: NextRequest) {
       _id: doc._id.toString(),
     }))
 
-    // Count unread notifications
-    const unreadCount = await db.collection('notifications').countDocuments({
+    const unreadFilter: any = {
       userId: auth.uid,
       isRead: false,
       ...(type && { type })
-    })
+    }
+
+    if (category && category !== 'all') {
+        if (filter.$or) {
+            unreadFilter.$or = filter.$or;
+        } else {
+            unreadFilter.category = category;
+        }
+    }
+
+    const unreadCount = await db.collection('notifications').countDocuments(unreadFilter)
 
     return NextResponse.json(
       {

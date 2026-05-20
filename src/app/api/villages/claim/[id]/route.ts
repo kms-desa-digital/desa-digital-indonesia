@@ -120,8 +120,8 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       }
     }
 
-    // Reset status if resubmitting rejected profile
-    const isResubmission = !isAdmin && claim?.status === 'Ditolak'
+    // Reset status if resubmitting rejected or verified claim
+    const isResubmission = !isAdmin && claim?.status !== 'Menunggu'
 
     const updateData: any = { ...body, updatedAt: new Date() }
     delete updateData._id
@@ -131,6 +131,10 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     if (isResubmission) {
       updateData.status = 'Menunggu'
       updateData.catatanAdmin = null
+    }
+
+    if (!isAdmin) {
+      updateData.createdAt = new Date()
     }
 
     const nextStatus = updateData.status || body.status
@@ -238,13 +242,18 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
         }
       }
 
-      // 2. Jika village mengajukan ulang klaim yang ditolak → notif ke admin
+      // 2. Jika village mengajukan ulang atau memperbarui klaim → notif ke admin
       if (isResubmission) {
+        const isPrevRejected = claim.status === 'Ditolak'
         await notifyAllAdmins({
           type: 'personal',
           category: 'claim_submission',
-          title: `Pengajuan Ulang Klaim Inovasi: ${claim.namaInovasi}`,
-          description: `Desa ${claim.namaDesa || 'unknown'} telah mengajukan ulang klaim untuk inovasi "${claim.namaInovasi}" yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+          title: isPrevRejected 
+            ? `Pengajuan Ulang Klaim Inovasi: ${claim.namaInovasi}` 
+            : `Pembaruan Klaim Inovasi: ${claim.namaInovasi}`,
+          description: isPrevRejected
+            ? `Desa ${claim.namaDesa || 'unknown'} telah mengajukan ulang klaim untuk inovasi "${claim.namaInovasi}" yang sebelumnya ditolak. Silakan verifikasi kembali.`
+            : `Desa ${claim.namaDesa || 'unknown'} telah memperbarui data klaim untuk inovasi "${claim.namaInovasi}" yang sudah terverifikasi. Silakan verifikasi kembali.`,
           actionType: 'claim_detail',
           relatedId: claim._id.toString(),
         })

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import {
     Box,
@@ -41,7 +41,7 @@ import {
     ArrowRight, MoreVertical, Trash2, CheckCircle,
     Trophy, Megaphone, Lightbulb, UserPlus
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import TopBar from "Components/topBar";
 import { useAuthToken } from "@/hooks/useAuthToken";
 import { useUser } from "src/contexts/UserContext";
@@ -59,8 +59,9 @@ interface NotificationItem {
     createdAt: string;
 }
 
-const NotificationPage = () => {
+const NotificationPageContent = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { token, isLoaded } = useAuthToken();
     const bgColor = useColorModeValue("white", "gray.800");
     const hoverBg = useColorModeValue("gray.50", "gray.700");
@@ -87,8 +88,14 @@ const NotificationPage = () => {
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [tabIndex, setTabIndex] = useState(0);
-    const [filterCategory, setFilterCategory] = useState<string>("all");
+
+    // Initial states from URL params
+    const initialTabIndex = parseInt(searchParams.get("tab") || "0", 10);
+    const initialFilter = searchParams.get("category") || "all";
+
+    const [tabIndex, setTabIndex] = useState(initialTabIndex);
+    const [filterCategory, setFilterCategory] = useState<string>(initialFilter);
+    
     const { role } = useUser();
     const isAdmin = role === "admin";
 
@@ -97,6 +104,16 @@ const NotificationPage = () => {
     const [selectedNotifId, setSelectedNotifId] = useState<string | null>(null);
     const cancelRef = React.useRef<HTMLButtonElement>(null);
     const t = useTranslations("NotificationPage");
+
+    const updateUrl = (tab: number, category: string) => {
+        const urlParams = new URLSearchParams();
+        if (tab > 0) urlParams.set("tab", tab.toString());
+        if (category !== "all") urlParams.set("category", category);
+        
+        const queryString = urlParams.toString();
+        const newPath = queryString ? `?${queryString}` : window.location.pathname;
+        router.replace(newPath, { scroll: false });
+    };
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -110,7 +127,7 @@ const NotificationPage = () => {
         }
 
         fetchInitial();
-    }, [token, isLoaded]);
+    }, [token, isLoaded, filterCategory]);
 
     const fetchInitial = async () => {
         try {
@@ -123,9 +140,11 @@ const NotificationPage = () => {
                 "x-internal-request": "true",
             };
 
+            const categoryQuery = filterCategory !== 'all' ? `&category=${filterCategory}` : '';
+
             const [generalRes, personalRes] = await Promise.all([
                 fetch(`/api/notifications?type=general&limit=${LIMIT}&skip=0`, { headers }),
-                fetch(`/api/notifications?type=personal&limit=${LIMIT}&skip=0`, { headers })
+                fetch(`/api/notifications?type=personal&limit=${LIMIT}&skip=0${categoryQuery}`, { headers })
             ]);
 
             const generalData = generalRes.ok ? await generalRes.json() : { notifications: [], pagination: { hasMore: false }, unreadCount: 0 };
@@ -161,7 +180,8 @@ const NotificationPage = () => {
                 "x-internal-request": "true",
             };
 
-            const res = await fetch(`/api/notifications?type=${type}&limit=${LIMIT}&skip=${skip}`, { headers });
+            const categoryQuery = (type === 'personal' && filterCategory !== 'all') ? `&category=${filterCategory}` : '';
+            const res = await fetch(`/api/notifications?type=${type}&limit=${LIMIT}&skip=${skip}${categoryQuery}`, { headers });
             const data = res.ok ? await res.json() : null;
 
             if (data) {
@@ -443,7 +463,7 @@ const NotificationPage = () => {
                         {error}
                     </Box>
                 ) : (
-                    <Tabs variant="soft-rounded" colorScheme="green" isFitted onChange={(index) => setTabIndex(index)}>
+                    <Tabs variant="soft-rounded" colorScheme="green" isFitted defaultIndex={tabIndex} index={tabIndex} onChange={(index) => { setTabIndex(index); updateUrl(index, filterCategory); }}>
                         <TabList
                             bg={tabListBgColor}
                             p={1.5}
@@ -517,7 +537,7 @@ const NotificationPage = () => {
                                             </MenuButton>
                                             <MenuList borderRadius="xl" shadow="lg" py={2}>
                                                 <MenuItem
-                                                    onClick={() => setFilterCategory("all")}
+                                                    onClick={() => { setFilterCategory("all"); updateUrl(tabIndex, "all"); }}
                                                     fontSize="14px"
                                                     fontWeight={filterCategory === "all" ? "600" : "400"}
                                                     color={filterCategory === "all" ? "green.600" : "inherit"}
@@ -525,7 +545,7 @@ const NotificationPage = () => {
                                                     Semua Verifikasi
                                                 </MenuItem>
                                                 <MenuItem
-                                                    onClick={() => setFilterCategory("village_submission")}
+                                                    onClick={() => { setFilterCategory("village_submission"); updateUrl(tabIndex, "village_submission"); }}
                                                     fontSize="14px"
                                                     fontWeight={filterCategory === "village_submission" ? "600" : "400"}
                                                     color={filterCategory === "village_submission" ? "green.600" : "inherit"}
@@ -533,7 +553,7 @@ const NotificationPage = () => {
                                                     Pengajuan Desa
                                                 </MenuItem>
                                                 <MenuItem
-                                                    onClick={() => setFilterCategory("innovator_submission")}
+                                                    onClick={() => { setFilterCategory("innovator_submission"); updateUrl(tabIndex, "innovator_submission"); }}
                                                     fontSize="14px"
                                                     fontWeight={filterCategory === "innovator_submission" ? "600" : "400"}
                                                     color={filterCategory === "innovator_submission" ? "green.600" : "inherit"}
@@ -541,7 +561,7 @@ const NotificationPage = () => {
                                                     Pengajuan Innovator
                                                 </MenuItem>
                                                 <MenuItem
-                                                    onClick={() => setFilterCategory("innovation_submission")}
+                                                    onClick={() => { setFilterCategory("innovation_submission"); updateUrl(tabIndex, "innovation_submission"); }}
                                                     fontSize="14px"
                                                     fontWeight={filterCategory === "innovation_submission" ? "600" : "400"}
                                                     color={filterCategory === "innovation_submission" ? "green.600" : "inherit"}
@@ -549,7 +569,7 @@ const NotificationPage = () => {
                                                     Pengajuan Inovasi
                                                 </MenuItem>
                                                 <MenuItem
-                                                    onClick={() => setFilterCategory("claim_submission")}
+                                                    onClick={() => { setFilterCategory("claim_submission"); updateUrl(tabIndex, "claim_submission"); }}
                                                     fontSize="14px"
                                                     fontWeight={filterCategory === "claim_submission" ? "600" : "400"}
                                                     color={filterCategory === "claim_submission" ? "green.600" : "inherit"}
@@ -562,31 +582,9 @@ const NotificationPage = () => {
                                 )}
                                 <Stack spacing={3}>
                                     {(() => {
-                                        const filteredNotifs = personalNotifs.filter(n => {
-                                            if (filterCategory === "all") return true;
-
-                                            // Smart Mapping for Legacy Data (Fallback based on title keywords)
-                                            let effectiveCategory = n.category;
-                                            const titleLower = n.title.toLowerCase();
-
-                                            if (!effectiveCategory || effectiveCategory === 'profile_submission' || effectiveCategory === 'submission_status') {
-                                                if (titleLower.includes('klaim')) {
-                                                    effectiveCategory = 'claim_submission';
-                                                } else if (titleLower.includes('inovasi')) {
-                                                    effectiveCategory = 'innovation_submission';
-                                                } else if (titleLower.includes('desa')) {
-                                                    effectiveCategory = 'village_submission';
-                                                } else if (titleLower.includes('innovator')) {
-                                                    effectiveCategory = 'innovator_submission';
-                                                }
-                                            }
-
-                                            return effectiveCategory === filterCategory;
-                                        });
-
-                                        return filteredNotifs.length > 0 ? (
+                                        return personalNotifs.length > 0 ? (
                                             <>
-                                                {filteredNotifs.map((notif, i) => (
+                                                {personalNotifs.map((notif, i) => (
                                                     <NotificationCard key={`${notif.id}-${i}`} notif={notif} />
                                                 ))}
                                                 {loadingMore && tabIndex === 1 && (
@@ -713,6 +711,14 @@ const EmptyState = () => {
                 {t("emptyDescription")}
             </Text>
         </Flex>
+    );
+};
+
+const NotificationPage = () => {
+    return (
+        <Suspense fallback={<Flex justify="center" align="center" py={20}><Spinner size="lg" color="green.500" /></Flex>}>
+            <NotificationPageContent />
+        </Suspense>
     );
 };
 
