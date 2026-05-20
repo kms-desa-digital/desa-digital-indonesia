@@ -1,4 +1,4 @@
-{
+﻿{
     "Home": {
         "title": "Digital Village Indonesia",
         "searchPlaceholder": "Search Innovations here...",
@@ -31,7 +31,11 @@
         "financialService": "Financial Services",
         "resourceMgmt": "Resource Management",
         "socialService": "Social Services",
-        "eTourism": "E-Tourism"
+        "eTourism": "E-Tourism",
+        "farm": "Livestock",
+        "forestry": "Forestry",
+        "fishery": "Fishery",
+        "plantation": "Plantation"
     },
     "Components": {
         "rediness": {
@@ -226,7 +230,7 @@
         "profile": "Profile",
         "fillProfile": "Complete Profile",
         "announcement": "Announcements",
-        "chatbotData": "Chatbot Data",
+        "chatbotData": "Chatbot Management",
         "userManagement": "User Management",
         "logout": "Logout",
         "helpFaq": "Help & FAQ",

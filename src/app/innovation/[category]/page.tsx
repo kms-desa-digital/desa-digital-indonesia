@@ -39,6 +39,10 @@ export default function InnovationCategoryPage() {
             case "Pengelolaan Sumber Daya": return tc("resourceMgmt");
             case "Layanan Sosial": return tc("socialService");
             case "E-Tourism": return tc("eTourism");
+            case "Peternakan": return tc("farm");
+            case "Kehutanan": return tc("forestry");
+            case "Perikanan": return tc("fishery");
+            case "Perkebunan": return tc("plantation");
             default: return cat;
         }
     };

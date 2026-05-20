@@ -12,7 +12,6 @@ import {
   useToast,
   VStack,
   Heading,
-  Divider,
   Tabs,
   TabList,
   TabPanels,
@@ -20,43 +19,94 @@ import {
   TabPanel,
   Icon,
   Flex,
-  Spinner,
+  Select,
   useColorModeValue,
 } from "@chakra-ui/react";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { FiUpload, FiPlusCircle, FiFileText } from "react-icons/fi";
+import { FiUpload, FiPlusCircle, FiFileText, FiSettings } from "react-icons/fi";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+interface InnovationData {
+  judul: string;
+  deskripsi: string;
+  perspektif: string;
+  keunggulan_inovasi: string;
+  potensi_aplikasi: string;
+  inovator_nama: string;
+  inovator_status_paten: string;
+  kategori: string;
+  source: string;
+}
+
+interface AiConfig {
+  provider: string;
+  modelName: string;
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const EMPTY_INNOVATION: InnovationData = {
+  judul: "",
+  deskripsi: "",
+  perspektif: "",
+  keunggulan_inovasi: "",
+  potensi_aplikasi: "",
+  inovator_nama: "",
+  inovator_status_paten: "",
+  kategori: "",
+  source: "",
+};
+
+const DEFAULT_AI_CONFIG: AiConfig = {
+  provider: "chatanywhere",
+  modelName: "gpt-4o-mini",
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ChatbotIngestPage() {
   const router = useRouter();
   const toast = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
-
-  const [innovationData, setInnovationData] = useState({
-    judul: "",
-    deskripsi: "",
-    perspektif: "",
-    keunggulan_inovasi: "",
-    potensi_aplikasi: "",
-    inovator_nama: "",
-    inovator_status_paten: "",
-    kategori: "",
-    source: "",
-  });
-
+  const [innovationData, setInnovationData] =
+    useState<InnovationData>(EMPTY_INNOVATION);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [customSourceName, setCustomSourceName] = useState("");
+  const [aiConfig, setAiConfig] = useState<AiConfig>(DEFAULT_AI_CONFIG);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // theme tokens biar konsisten
+  // ── Theme tokens ────────────────────────────────────────────────────────────
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const inputBg = useColorModeValue("gray.50", "gray.700");
-  const hoverBg = useColorModeValue("gray.100", "gray.800");
+  const hoverBg = useColorModeValue("gray.100", "gray.600");
+  const fileInfoBg = useColorModeValue("blue.50", "blue.900");
+  const tabListBg = useColorModeValue("gray.100", "gray.700");
+
+  // ── Load AI config on mount ─────────────────────────────────────────────────
+  React.useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.provider) setAiConfig(data);
+      })
+      .catch((err) => console.error("Error loading config:", err));
+  }, []);
+
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
+  const showToast = (
+    title: string,
+    description: string,
+    status: "success" | "error" | "warning"
+  ) =>
+    toast({ title, description, status, duration: 5000, isClosable: true });
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -68,88 +118,48 @@ export default function ChatbotIngestPage() {
   const handleInnovationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!innovationData.judul || !innovationData.deskripsi) {
-      toast({
-        title: "Error",
-        description: "Judul dan Deskripsi wajib diisi",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+      showToast("Error", "Judul dan Deskripsi wajib diisi", "error");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch("/api/admin/chatbot/ingest-innovation", {
+      const res = await fetch("/api/admin/chatbot/ingest-innovation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(innovationData),
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Berhasil",
-          description: data.message,
-          status: "success",
-          duration: 5000,
-          isClosable: true,
-        });
-
-        setInnovationData({
-          judul: "",
-          deskripsi: "",
-          perspektif: "",
-          keunggulan_inovasi: "",
-          potensi_aplikasi: "",
-          inovator_nama: "",
-          inovator_status_paten: "",
-          kategori: "",
-          source: "",
-        });
-      } else {
-        throw new Error(data.error || "Gagal menyimpan data");
-      }
-    } catch (error: any) {
-      toast({
-        title: "Gagal",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal menyimpan data");
+      showToast("Berhasil", data.message, "success");
+      setInnovationData(EMPTY_INNOVATION);
+    } catch (err: any) {
+      showToast("Gagal", err.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setSelectedFile(e.target.files[0]);
-    }
+    if (e.target.files?.[0]) setSelectedFile(e.target.files[0]);
+  };
+
+  const clearFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleFileUpload = async () => {
     if (!selectedFile) {
-      toast({
-        title: "Peringatan",
-        description: "Pilih file PDF terlebih dahulu",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
+      showToast("Peringatan", "Pilih file PDF terlebih dahulu", "warning");
       return;
     }
-
     if (!customSourceName.trim()) {
-      toast({
-        title: "Peringatan",
-        description: "Masukkan nama dokumen (sumber) terlebih dahulu",
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
+      showToast(
+        "Peringatan",
+        "Masukkan nama dokumen (sumber) terlebih dahulu",
+        "warning"
+      );
       return;
     }
 
@@ -159,204 +169,225 @@ export default function ChatbotIngestPage() {
     formData.append("sourceName", customSourceName);
 
     try {
-      const response = await fetch("/api/admin/chatbot/upload-doc", {
+      const res = await fetch("/api/admin/chatbot/upload-doc", {
         method: "POST",
         body: formData,
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: "Berhasil",
-          description: data.message,
-          status: "success",
-          duration: 5000,
-          isClosable: true,
-        });
-
-        setSelectedFile(null);
-        setCustomSourceName("");
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      } else {
-        throw new Error(data.error || "Gagal memproses file");
-      }
-    } catch (error: any) {
-      toast({
-        title: "Gagal",
-        description: error.message,
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal memproses file");
+      showToast("Berhasil", data.message, "success");
+      setCustomSourceName("");
+      clearFile();
+    } catch (err: any) {
+      showToast("Gagal", err.message, "error");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleConfigSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(aiConfig),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal update config");
+      showToast("Berhasil", data.message, "success");
+    } catch (err: any) {
+      showToast("Gagal", err.message, "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Shared field props for consistency ──────────────────────────────────────
+  const fieldProps = { bg: inputBg, borderRadius: "md", size: "sm" as const };
+  const labelProps = { fontWeight: "medium", fontSize: "xs" as const };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <Container page>
-      <TopBar title="Chatbot Data" onBack={() => router.back()} />
+      <TopBar title="Chatbot Management" onBack={() => router.back()} />
 
-      <Box maxW="900px" mx="auto" pt="50px" px={{ base: 4, md: 6 }}>
-        <VStack spacing={8} align="stretch">
+      <Box maxW="550px" mx="auto" pt="20px" px={{ base: 4, md: 6 }}>
+        <VStack spacing={4} align="stretch">
           {/* Header */}
           <Box textAlign="center">
-            <Heading size="lg" color="green.500">
-              Chatbot Data Ingestion
+            <Heading size="sm" color="green.500">
+              Chatbot Data & AI Management
             </Heading>
-            <Text color="gray.500" fontSize="sm" mt={1}>
+            <Text color="gray.500" fontSize="xs" mt={1}>
               Tambahkan data ke chatbot melalui input manual atau dokumen PDF
             </Text>
           </Box>
 
-          <Tabs
-            isFitted
-            variant="soft-rounded"
-            colorScheme="green"
-            onChange={(index) => setActiveTab(index)}
-          >
+          <Tabs variant="soft-rounded" colorScheme="green">
             <TabList
-              bg={useColorModeValue("gray.100", "gray.700")}
+              bg={tabListBg}
               p={1}
               borderRadius="xl"
+              gap={1}
             >
-              <Tab fontWeight="semibold">
-                <Icon as={FiPlusCircle} mr={2} />
+              <Tab
+                fontWeight="semibold"
+                fontSize="xs"
+                flex={1}
+                whiteSpace="nowrap"
+                gap={1}
+              >
+                <Icon as={FiPlusCircle} />
                 Inovasi
               </Tab>
-              <Tab fontWeight="semibold">
-                <Icon as={FiUpload} mr={2} />
+              <Tab
+                fontWeight="semibold"
+                fontSize="xs"
+                flex={1}
+                whiteSpace="nowrap"
+                gap={1}
+              >
+                <Icon as={FiUpload} />
                 Dokumen
+              </Tab>
+              <Tab
+                fontWeight="semibold"
+                fontSize="xs"
+                flex={1}
+                whiteSpace="nowrap"
+                gap={1}
+              >
+                <Icon as={FiSettings} />
+                AI Config
               </Tab>
             </TabList>
 
             <TabPanels mt={6}>
-              {/* INOVASI */}
+              {/* ── Tab: Inovasi ─────────────────────────────────────────── */}
               <TabPanel p={0}>
                 <form onSubmit={handleInnovationSubmit}>
                   <Stack
-                    spacing={5}
+                    spacing={3}
                     bg={cardBg}
-                    p={{ base: 5, md: 7 }}
-                    borderRadius="2xl"
+                    p={4}
+                    borderRadius="xl"
                     border="1px solid"
                     borderColor={borderColor}
-                    shadow="lg"
+                    shadow="md"
                   >
                     <FormControl isRequired>
-                      <FormLabel fontWeight="medium">Nama Dokumen (Sumber)</FormLabel>
+                      <FormLabel {...labelProps}>
+                        Nama Dokumen (Sumber)
+                      </FormLabel>
                       <Input
                         name="source"
                         value={innovationData.source}
                         onChange={handleInputChange}
                         placeholder="Contoh: Katalog Inovasi Desa 2024"
-                        bg={inputBg}
-                        borderRadius="lg"
+                        {...fieldProps}
                       />
                     </FormControl>
 
                     <FormControl isRequired>
-                      <FormLabel fontWeight="medium">Judul Inovasi</FormLabel>
+                      <FormLabel {...labelProps}>Judul Inovasi</FormLabel>
                       <Input
                         name="judul"
                         value={innovationData.judul}
                         onChange={handleInputChange}
                         placeholder="Contoh: Mesin Pencacah Rumput Otomatis"
-                        bg={inputBg}
-                        borderRadius="lg"
+                        {...fieldProps}
                       />
                     </FormControl>
 
                     <FormControl isRequired>
-                      <FormLabel fontWeight="medium">Deskripsi</FormLabel>
+                      <FormLabel {...labelProps}>Deskripsi</FormLabel>
                       <Textarea
                         name="deskripsi"
                         value={innovationData.deskripsi}
                         onChange={handleInputChange}
                         placeholder="Ringkasan atau detail inovasi yang mencakup cara kerja..."
-                        bg={inputBg}
-                        borderRadius="lg"
-                        rows={4}
+                        rows={3}
+                        {...fieldProps}
                       />
                     </FormControl>
 
                     <FormControl>
-                      <FormLabel fontWeight="medium">Kategori</FormLabel>
+                      <FormLabel {...labelProps}>Kategori</FormLabel>
                       <Input
                         name="kategori"
                         value={innovationData.kategori}
                         onChange={handleInputChange}
                         placeholder="Contoh: PEMBERDAYAAN / PERTANIAN / TEKNOLOGI"
-                        bg={inputBg}
-                        borderRadius="lg"
+                        {...fieldProps}
                       />
                     </FormControl>
 
                     <FormControl>
-                      <FormLabel fontWeight="medium">Perspektif</FormLabel>
+                      <FormLabel {...labelProps}>Perspektif</FormLabel>
                       <Input
                         name="perspektif"
                         value={innovationData.perspektif}
                         onChange={handleInputChange}
                         placeholder="Contoh: Ekonomi, Sosial, atau Lingkungan"
-                        bg={inputBg}
-                        borderRadius="lg"
+                        {...fieldProps}
                       />
                     </FormControl>
 
                     <FormControl>
-                      <FormLabel fontWeight="medium">Keunggulan Inovasi</FormLabel>
+                      <FormLabel {...labelProps}>Keunggulan Inovasi</FormLabel>
                       <Textarea
                         name="keunggulan_inovasi"
                         value={innovationData.keunggulan_inovasi}
                         onChange={handleInputChange}
                         placeholder="Apa yang membedakan inovasi ini dengan yang lain?"
-                        bg={inputBg}
-                        borderRadius="lg"
+                        {...fieldProps}
                       />
                     </FormControl>
 
                     <FormControl>
-                      <FormLabel fontWeight="medium">Potensi Aplikasi</FormLabel>
+                      <FormLabel {...labelProps}>Potensi Aplikasi</FormLabel>
                       <Input
                         name="potensi_aplikasi"
                         value={innovationData.potensi_aplikasi}
                         onChange={handleInputChange}
                         placeholder="Di mana inovasi ini bisa diterapkan?"
-                        bg={inputBg}
-                        borderRadius="lg"
+                        {...fieldProps}
                       />
                     </FormControl>
 
                     <FormControl>
-                      <FormLabel fontWeight="medium">Nama Inovator</FormLabel>
+                      <FormLabel {...labelProps}>Nama Inovator</FormLabel>
                       <Input
                         name="inovator_nama"
                         value={innovationData.inovator_nama}
                         onChange={handleInputChange}
                         placeholder="Nama Individu, Tim, atau Instansi"
-                        bg={inputBg}
-                        borderRadius="lg"
+                        {...fieldProps}
                       />
                     </FormControl>
 
                     <FormControl>
-                      <FormLabel fontWeight="medium">Status Paten</FormLabel>
+                      <FormLabel {...labelProps}>Status Paten</FormLabel>
                       <Input
                         name="inovator_status_paten"
                         value={innovationData.inovator_status_paten}
                         onChange={handleInputChange}
                         placeholder="Sudah Terdaftar / Dalam Proses / Belum Ada"
-                        bg={inputBg}
-                        borderRadius="lg"
+                        {...fieldProps}
                       />
                     </FormControl>
 
                     <Button
                       type="submit"
                       colorScheme="blue"
-                      size="lg"
+                      size="sm"
+                      fontSize="xs"
                       borderRadius="xl"
                       isLoading={loading}
                       loadingText="Menyimpan..."
@@ -367,40 +398,40 @@ export default function ChatbotIngestPage() {
                 </form>
               </TabPanel>
 
-              {/* DOKUMEN */}
+              {/* ── Tab: Dokumen ──────────────────────────────────────────── */}
               <TabPanel p={0}>
                 <VStack
-                  spacing={5}
+                  spacing={3}
                   bg={cardBg}
-                  p={{ base: 5, md: 7 }}
-                  borderRadius="2xl"
+                  p={4}
+                  borderRadius="xl"
                   border="1px solid"
                   borderColor={borderColor}
-                  shadow="lg"
+                  shadow="md"
                   align="stretch"
                 >
                   <FormControl isRequired>
-                    <FormLabel fontWeight="medium">Nama Dokumen</FormLabel>
+                    <FormLabel {...labelProps}>Nama Dokumen</FormLabel>
                     <Input
                       placeholder="Contoh: Dokumen Kebijakan Desa 2024"
                       value={customSourceName}
                       onChange={(e) => setCustomSourceName(e.target.value)}
-                      bg={inputBg}
-                      borderRadius="lg"
+                      {...fieldProps}
                     />
                   </FormControl>
 
-                  {/* Upload Box */}
+                  {/* Upload drop zone */}
                   <Box
                     border="2px dashed"
                     borderColor={selectedFile ? "blue.400" : borderColor}
                     bg={inputBg}
-                    p={10}
-                    borderRadius="xl"
+                    p={6}
+                    borderRadius="md"
                     textAlign="center"
                     cursor="pointer"
                     onClick={() => fileInputRef.current?.click()}
                     _hover={{ bg: hoverBg }}
+                    transition="background 0.2s"
                   >
                     <input
                       type="file"
@@ -409,40 +440,36 @@ export default function ChatbotIngestPage() {
                       ref={fileInputRef}
                       onChange={handleFileChange}
                     />
-
-                    <Icon as={FiFileText} w={10} h={10} mb={3} />
-
-                    <Text fontWeight="medium">
-                      {selectedFile
-                        ? selectedFile.name
-                        : "Klik untuk upload PDF"}
+                    <Icon as={FiFileText} w={6} h={6} mb={2} />
+                    <Text fontWeight="medium" fontSize="xs">
+                      {selectedFile ? selectedFile.name : "Klik untuk upload PDF"}
                     </Text>
-
-                    <Text fontSize="sm" color="gray.500">
+                    <Text fontSize="xs" color="gray.500">
                       Akan diproses per halaman menjadi embedding
                     </Text>
                   </Box>
 
+                  {/* Selected file info bar */}
                   {selectedFile && (
                     <Flex
                       justify="space-between"
                       align="center"
-                      bg="blue.50"
+                      bg={fileInfoBg}
                       p={3}
-                      borderRadius="lg"
+                      borderRadius="md"
                     >
-                      <Text fontSize="sm" fontWeight="medium">
+                      <Text fontSize="xs" fontWeight="medium" noOfLines={1}>
                         {selectedFile.name}
                       </Text>
                       <Button
-                        size="sm"
+                        size="xs"
                         variant="ghost"
                         colorScheme="red"
+                        ml={2}
+                        flexShrink={0}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedFile(null);
-                          if (fileInputRef.current)
-                            fileInputRef.current.value = "";
+                          clearFile();
                         }}
                       >
                         Hapus
@@ -452,25 +479,80 @@ export default function ChatbotIngestPage() {
 
                   <Button
                     colorScheme="blue"
-                    size="lg"
+                    size="sm"
+                    fontSize="xs"
                     borderRadius="xl"
                     leftIcon={<FiUpload />}
                     onClick={handleFileUpload}
                     isLoading={loading}
+                    loadingText="Processing..."
                     isDisabled={!selectedFile}
                   >
                     Mulai Ingestion
                   </Button>
-
-                  {loading && (
-                    <Flex direction="column" align="center" py={3}>
-                      <Spinner />
-                      <Text fontSize="sm" mt={2}>
-                        Processing embedding...
-                      </Text>
-                    </Flex>
-                  )}
                 </VStack>
+              </TabPanel>
+
+              {/* ── Tab: Konfigurasi AI ───────────────────────────────────── */}
+              <TabPanel p={0}>
+                <form onSubmit={handleConfigSubmit}>
+                  <VStack
+                    spacing={4}
+                    bg={cardBg}
+                    p={4}
+                    borderRadius="xl"
+                    border="1px solid"
+                    borderColor={borderColor}
+                    shadow="md"
+                    align="stretch"
+                  >
+                    <FormControl isRequired>
+                      <FormLabel {...labelProps}>Pilih AI Provider</FormLabel>
+                      <Select
+                        value={aiConfig.provider}
+                        onChange={(e) =>
+                          setAiConfig({ ...aiConfig, provider: e.target.value })
+                        }
+                        {...fieldProps}
+                      >
+                        <option value="chatanywhere">
+                          ChatAnywhere (OpenAI)
+                        </option>
+                        <option value="gemini">Google Gemini</option>
+                      </Select>
+                    </FormControl>
+
+                    <FormControl isRequired>
+                      <FormLabel {...labelProps}>Model Name</FormLabel>
+                      <Input
+                        value={aiConfig.modelName}
+                        onChange={(e) =>
+                          setAiConfig({
+                            ...aiConfig,
+                            modelName: e.target.value,
+                          })
+                        }
+                        placeholder="Contoh: gpt-4o-mini, gemma-3-27b-it, llama-3.3-70b-versatile"
+                        {...fieldProps}
+                      />
+                      <Text fontSize="xs" color="gray.500" mt={1}>
+                        Pastikan Model Name sesuai dengan Provider yang dipilih.
+                      </Text>
+                    </FormControl>
+
+                    <Button
+                      type="submit"
+                      colorScheme="green"
+                      size="sm"
+                      fontSize="xs"
+                      borderRadius="xl"
+                      isLoading={loading}
+                      loadingText="Menyimpan..."
+                    >
+                      Update Konfigurasi
+                    </Button>
+                  </VStack>
+                </form>
               </TabPanel>
             </TabPanels>
           </Tabs>

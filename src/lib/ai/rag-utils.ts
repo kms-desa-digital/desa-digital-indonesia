@@ -5,16 +5,69 @@
 
 import { connectToDatabase } from "@/lib/db/mongodb";
 
-// Konfigurasi via environment variables
 const OLLAMA_BASE_URL =
   process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434";
 const OLLAMA_EMBED_MODEL =
-  process.env.OLLAMA_EMBED_MODEL || "embeddinggemma:latest";
+  process.env.OLLAMA_EMBED_MODEL || "";
 const VECTOR_SCORE_THRESHOLD = parseFloat(
-  process.env.VECTOR_SCORE_THRESHOLD || "0.6"
+  process.env.VECTOR_SCORE_THRESHOLD || "0.7"
 );
 const OLLAMA_TIMEOUT_MS = parseInt(
   process.env.OLLAMA_TIMEOUT_MS || "30000",
+  10
+);
+
+/** Batas panjang content (chars) saat hasil retrieval diproses di rag-utils */
+export const CONTEXT_MAX_CHARS = parseInt(
+  process.env.CONTEXT_MAX_CHARS || "800",
+  10
+);
+
+/** Batas jumlah dokumen dari doc_embeddings yang masuk ke prompt */
+export const DOC_RESULT_LIMIT = parseInt(
+  process.env.DOC_RESULT_LIMIT || "3",
+  10
+);
+
+/** Batas jumlah dokumen dari db_embeddings yang masuk ke prompt */
+export const DB_RESULT_LIMIT = parseInt(
+  process.env.DB_RESULT_LIMIT || "3",
+  10
+);
+
+/** Batas panjang jawaban LLM (dalam token) */
+export const LLM_MAX_OUTPUT_TOKENS = parseInt(
+  process.env.LLM_MAX_OUTPUT_TOKENS || "400",
+  10
+);
+
+/** Batas panjang tiap context item saat prompt final dibuat (chars) */
+export const PROMPT_CONTEXT_MAX_CHARS = parseInt(
+  process.env.PROMPT_CONTEXT_MAX_CHARS || "500",
+  10
+);
+
+/** Jumlah pesan history yang dimasukkan ke prompt */
+export const HISTORY_MESSAGE_LIMIT = parseInt(
+  process.env.HISTORY_MESSAGE_LIMIT || "3",
+  10
+);
+
+/** Batas panjang tiap pesan history (chars) */
+export const HISTORY_MESSAGE_MAX_CHARS = parseInt(
+  process.env.HISTORY_MESSAGE_MAX_CHARS || "300",
+  10
+);
+
+/** Jumlah kandidat vector search (internal, tidak perlu di-export) */
+const VECTOR_NUM_CANDIDATES = parseInt(
+  process.env.VECTOR_NUM_CANDIDATES || "50",
+  10
+);
+
+/** Jumlah hasil mentah dari vector search sebelum difilter threshold */
+const VECTOR_SEARCH_LIMIT = parseInt(
+  process.env.VECTOR_SEARCH_LIMIT || "5",
   10
 );
 
@@ -96,7 +149,39 @@ export function normalizeRole(role: string): UserRole {
 
 // Embedding generation
 
+/** Potong dan bersihkan teks agar tidak melebihi CONTEXT_MAX_CHARS */
+function trimContext(text: string, maxChars = CONTEXT_MAX_CHARS): string {
+  const cleaned = (text || "")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (cleaned.length <= maxChars) return cleaned;
+  return cleaned.slice(0, maxChars) + "...";
+}
+
+/**
+ * Tentukan apakah doc_embeddings perlu dicari.
+ * Tujuannya agar tidak semua query selalu menarik dokumen PDF/JSON.
+ */
+function shouldSearchDocEmbeddings(query: string, intent: QueryIntent): boolean {
+  // Stats tidak butuh dokumen
+  if (intent.primary === "stats") return false;
+
+  // Innovator tidak butuh dokumen PDF — cukup dari db_embeddings
+  if (intent.primary === "innovator") return false;
+
+  // Innovation: cari dokumen jika ada keyword inovasi yang mungkin ada di doc_embeddings (IPB, dll)
+  if (intent.primary === "innovation") return true;
+
+  // Village dan general: hanya cari dokumen jika ada keyword yang relevan
+  return /dokumen|pdf|referensi|profil desa|platform|desa digital|panduan|tentang sistem|sejarah|latar belakang/i.test(query);
+}
+
 export async function generateEmbeddings(text: string): Promise<number[]> {
+  if (!OLLAMA_EMBED_MODEL) {
+    throw new Error("[generateEmbeddings] OLLAMA_EMBED_MODEL belum diset di .env");
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
 
@@ -253,8 +338,8 @@ export async function searchDocEmbeddings(query: string): Promise<any[]> {
             index: "vector_index",
             path: "embedding_vector",
             queryVector,
-            numCandidates: 100,
-            limit: 15,
+            numCandidates: VECTOR_NUM_CANDIDATES,
+            limit: VECTOR_SEARCH_LIMIT,
           },
         },
         {
@@ -266,7 +351,15 @@ export async function searchDocEmbeddings(query: string): Promise<any[]> {
       ])
       .toArray();
 
-    const valid = results.filter((r) => r.score > VECTOR_SCORE_THRESHOLD);
+    const valid = results
+      .filter((r) => r.score > VECTOR_SCORE_THRESHOLD)
+      .map((r) => ({
+        ...r,
+        content: trimContext(r.content ?? r.text ?? ""),
+        text: undefined,
+      }))
+      .filter((r) => r.content);
+
     console.log(`[searchDocEmbeddings] Ditemukan ${valid.length} hasil valid`);
     return valid;
   } catch (error) {
@@ -309,8 +402,8 @@ export async function searchDatabaseEmbeddings(
             index: "vector_index_db",
             path: "embedding_vector",
             queryVector,
-            numCandidates: 100,
-            limit: 15,
+            numCandidates: VECTOR_NUM_CANDIDATES,
+            limit: VECTOR_SEARCH_LIMIT,
             filter: {
               source_collection: { $in: collectionFilter },
             },
@@ -325,7 +418,14 @@ export async function searchDatabaseEmbeddings(
       ])
       .toArray();
 
-    const valid = results.filter((r) => r.score > VECTOR_SCORE_THRESHOLD);
+    const valid = results
+      .filter((r) => r.score > VECTOR_SCORE_THRESHOLD)
+      .map((r) => ({
+        ...r,
+        content: trimContext(r.content ?? r.text ?? ""),
+        text: undefined,
+      }))
+      .filter((r) => r.content);
 
     // Defense-in-depth: filter ulang di memory, meski sudah difilter di pipeline
     const safe = enforceRoleFilter(valid, role);
@@ -364,11 +464,21 @@ export async function searchAllSources(
 
   try {
     const intent = detectQueryIntent(query);
+    const shouldSearchDocs = shouldSearchDocEmbeddings(query, intent);
 
-    const [docResults, dbResults] = await Promise.all([
-      searchDocEmbeddings(query),
+    const [docResultsRaw, dbResultsRaw] = await Promise.all([
+      shouldSearchDocs ? searchDocEmbeddings(query) : Promise.resolve([]),
       searchDatabaseEmbeddings(query, intent, role),
     ]);
+
+    // Batasi jumlah hasil sesuai konfigurasi
+    const docResults = [...docResultsRaw]
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      .slice(0, DOC_RESULT_LIMIT);
+
+    const dbResults = [...dbResultsRaw]
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      .slice(0, DB_RESULT_LIMIT);
 
     console.log(
       `\n[searchAllSources] doc=${docResults.length} | db=${dbResults.length}`

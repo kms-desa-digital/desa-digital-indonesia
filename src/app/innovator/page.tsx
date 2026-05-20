@@ -36,7 +36,7 @@ type InnovatorData = {
 export default function InnovatorPage() {
     const t = useTranslations("Innovator");
     const router = useRouter();
-    const ITEMS_PER_PAGE = 20;
+    const ITEMS_PER_PAGE = 10;
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [searchQuery, setSearchQuery] = useState<string>("");
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
