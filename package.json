@@ -49,6 +49,7 @@
     "next-intl": "^4.7.0",
     "nodemailer": "^8.0.2",
     "ollama-ai-provider": "^1.2.0",
+    "openai": "^6.37.0",
     "pdf-parse": "^2.4.5",
     "query-string": "^9.2.0",
     "react": "^19.0.0",

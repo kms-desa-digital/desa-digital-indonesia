@@ -40,7 +40,7 @@ const Village: React.FC = () => {
     const t = useTranslations("Village");
     const router = useRouter();
 
-    const ITEMS_PER_PAGE = 20;
+    const ITEMS_PER_PAGE = 10;
     const [currentPage, setCurrentPage] = useState<number>(1);
 
     /* 

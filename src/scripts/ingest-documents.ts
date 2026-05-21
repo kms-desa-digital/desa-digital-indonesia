@@ -15,7 +15,7 @@ import path from "path";
 const delay = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL?? "http://127.0.0.1:11434";;
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "";
 
 // batasi jumlah proses paralel
 const MAX_CONCURRENT = 3;

@@ -62,10 +62,17 @@ const BestBanner: React.FC = () => {
   }, []);
 
   return (
-    <Box padding="0 14px" pos="relative" >
-      <Text fontSize="16px" fontWeight="700" lineHeight="140%" mb="16px" color="#1F2937">
+    <Box padding="0 14px" pos="relative">
+      <Text
+        fontSize="16px"
+        fontWeight="700"
+        lineHeight="140%"
+        mb="16px"
+        color="#1F2937"
+      >
         {t("bestTitle")}
       </Text>
+
       <Box>
         <Flex position="relative">
           <Fade in={visibleBox === 0}>
@@ -77,17 +84,32 @@ const BestBanner: React.FC = () => {
               padding="23px 23px 14px 23px"
               position="absolute"
             >
-              <Flex justifyContent="space-between">
+              <Flex justifyContent="space-between" alignItems="flex-start">
                 {innovators[1] && (
-                  <Box justifyItems="center" mt="21px">
-                    <Image src={second} />
+                  <Box
+                    width="82px"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    mt="12px"
+                  >
+                    <Image
+                      src={second}
+                      width="40px"
+                      height="40px"
+                      objectFit="contain"
+                    />
+
                     <Text
-                      fontSize="12px"
+                      mt="3px"
+                      fontSize="10px"
                       fontWeight="600"
-                      lineHeight="140%"
+                      lineHeight="115%"
                       textAlign="center"
-                      width="90px"
-                      height="auto"
+                      width="78px"
+                      whiteSpace="normal"
+                      wordBreak="normal"
+                      overflowWrap="break-word"
                       color="#1F2937"
                     >
                       {innovators[1].namaInovator}
@@ -96,14 +118,29 @@ const BestBanner: React.FC = () => {
                 )}
 
                 {innovators[0] && (
-                  <Box justifyItems="center">
-                    <Image src={first} />
+                  <Box
+                    width="82px"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                  >
+                    <Image
+                      src={first}
+                      width="40px"
+                      height="40px"
+                      objectFit="contain"
+                    />
+
                     <Text
-                      fontSize="12px"
+                      mt="3px"
+                      fontSize="10px"
                       fontWeight="600"
-                      lineHeight="140%"
+                      lineHeight="115%"
                       textAlign="center"
-                      width="90px"
+                      width="78px"
+                      whiteSpace="normal"
+                      wordBreak="normal"
+                      overflowWrap="break-word"
                       color="#1F2937"
                     >
                       {innovators[0].namaInovator}
@@ -112,14 +149,30 @@ const BestBanner: React.FC = () => {
                 )}
 
                 {innovators[2] && (
-                  <Box justifyItems="center" mt="21px">
-                    <Image src={third} />
+                  <Box
+                    width="82px"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    mt="12px"
+                  >
+                    <Image
+                      src={third}
+                      width="40px"
+                      height="40px"
+                      objectFit="contain"
+                    />
+
                     <Text
-                      fontSize="12px"
+                      mt="3px"
+                      fontSize="10px"
                       fontWeight="600"
-                      lineHeight="140%"
+                      lineHeight="115%"
                       textAlign="center"
-                      width="90px"
+                      width="78px"
+                      whiteSpace="normal"
+                      wordBreak="normal"
+                      overflowWrap="break-word"
                       color="#1F2937"
                     >
                       {innovators[2].namaInovator}
@@ -139,16 +192,32 @@ const BestBanner: React.FC = () => {
               padding="23px 23px 15px 23px"
               position="absolute"
             >
-              <Flex justifyContent="space-between">
+              <Flex justifyContent="space-between" alignItems="flex-start">
                 {villages[1] && (
-                  <Box justifyItems="center" mt="21px">
-                    <Image src={second} />
+                  <Box
+                    width="82px"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    mt="12px"
+                  >
+                    <Image
+                      src={second}
+                      width="40px"
+                      height="40px"
+                      objectFit="contain"
+                    />
+
                     <Text
-                      fontSize="12px"
+                      mt="3px"
+                      fontSize="10px"
                       fontWeight="600"
-                      lineHeight="140%"
+                      lineHeight="115%"
                       textAlign="center"
-                      width="90px"
+                      width="78px"
+                      whiteSpace="normal"
+                      wordBreak="normal"
+                      overflowWrap="break-word"
                       color="#1F2937"
                     >
                       {villages[1].namaDesa}
@@ -157,14 +226,29 @@ const BestBanner: React.FC = () => {
                 )}
 
                 {villages[0] && (
-                  <Box justifyItems="center">
-                    <Image src={first} />
+                  <Box
+                    width="82px"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                  >
+                    <Image
+                      src={first}
+                      width="40px"
+                      height="40px"
+                      objectFit="contain"
+                    />
+
                     <Text
-                      fontSize="12px"
+                      mt="3px"
+                      fontSize="10px"
                       fontWeight="600"
-                      lineHeight="140%"
+                      lineHeight="115%"
                       textAlign="center"
-                      width="90px"
+                      width="78px"
+                      whiteSpace="normal"
+                      wordBreak="normal"
+                      overflowWrap="break-word"
                       color="#1F2937"
                     >
                       {villages[0].namaDesa}
@@ -173,14 +257,30 @@ const BestBanner: React.FC = () => {
                 )}
 
                 {villages[2] && (
-                  <Box justifyItems="center" mt="21px">
-                    <Image src={third} />
+                  <Box
+                    width="82px"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    mt="12px"
+                  >
+                    <Image
+                      src={third}
+                      width="40px"
+                      height="40px"
+                      objectFit="contain"
+                    />
+
                     <Text
-                      fontSize="12px"
+                      mt="3px"
+                      fontSize="10px"
                       fontWeight="600"
-                      lineHeight="140%"
+                      lineHeight="115%"
                       textAlign="center"
-                      width="90px"
+                      width="78px"
+                      whiteSpace="normal"
+                      wordBreak="normal"
+                      overflowWrap="break-word"
                       color="#1F2937"
                     >
                       {villages[2].namaDesa}

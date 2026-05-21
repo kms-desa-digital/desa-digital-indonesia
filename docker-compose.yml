@@ -1,0 +1,85 @@
+# Semua nilai dikontrol dari .env.local — tidak ada default hardcoded di sini.
+# Variabel yang wajib diisi sebelum menjalankan:
+#   OLLAMA_EMBED_MODEL   → nama model embedding (contoh: mxbai-embed-large:latest)
+#   OLLAMA_BASE_URL      → http://localhost:11434 (lokal) atau URL ngrok (publik)
+#   NGROK_AUTHTOKEN      → hanya jika menjalankan dengan --profile ngrok
+
+services:
+  # ─────────────────────────────────────────
+  # Ollama — embedding server
+  # ─────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: desa-digital-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    # Hapus komentar di bawah jika menggunakan GPU NVIDIA
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  # ─────────────────────────────────────────
+  # Ollama Init — pull model saat pertama kali
+  # Hanya berjalan sekali, lalu berhenti.
+  #
+  # OLLAMA_EMBED_MODEL dibaca dari .env.local via env_file.
+  # Jika kosong, container berhenti dengan pesan error.
+  # ─────────────────────────────────────────
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: desa-digital-ollama-init
+    depends_on:
+      - ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    env_file:
+      - .env.local
+    environment:
+      # OLLAMA_HOST wajib agar ollama CLI tahu ke mana connect
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: >
+      /bin/sh -c "
+        if [ -z \"$$OLLAMA_EMBED_MODEL\" ]; then
+          echo '[ERROR] OLLAMA_EMBED_MODEL belum diset di .env.local';
+          exit 1;
+        fi;
+        echo \"Menunggu Ollama siap...\";
+        sleep 5;
+        echo \"Pulling model: $$OLLAMA_EMBED_MODEL\";
+        ollama pull $$OLLAMA_EMBED_MODEL;
+        echo \"Model $$OLLAMA_EMBED_MODEL berhasil di-pull.\";
+      "
+    restart: "no"
+
+  # ─────────────────────────────────────────
+  # Ngrok — expose Ollama ke publik
+  #
+  # Digunakan saat Ollama perlu diakses dari luar jaringan lokal.
+  # Prasyarat: isi NGROK_AUTHTOKEN di .env.local
+  # URL publik tersedia di: http://localhost:4040
+  # Salin URL ke OLLAMA_BASE_URL di .env.local lalu restart Next.js.
+  # ─────────────────────────────────────────
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: desa-digital-ngrok
+    depends_on:
+      - ollama
+    command: http ollama:11434 --log=stdout
+    ports:
+      - "4040:4040"
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    profiles:
+      - ngrok   # hanya aktif jika dijalankan dengan --profile ngrok
+
+volumes:
+  ollama_data:
+    name: desa-digital-ollama-data
