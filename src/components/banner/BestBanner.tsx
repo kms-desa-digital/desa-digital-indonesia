@@ -95,8 +95,8 @@ const BestBanner: React.FC = () => {
                   >
                     <Image
                       src={second}
-                      width="35px"
-                      height="35px"
+                      width="40px"
+                      height="40px"
                       objectFit="contain"
                     />
 
@@ -126,8 +126,8 @@ const BestBanner: React.FC = () => {
                   >
                     <Image
                       src={first}
-                      width="35px"
-                      height="35px"
+                      width="40px"
+                      height="40px"
                       objectFit="contain"
                     />
 
@@ -158,8 +158,8 @@ const BestBanner: React.FC = () => {
                   >
                     <Image
                       src={third}
-                      width="35px"
-                      height="35px"
+                      width="40px"
+                      height="40px"
                       objectFit="contain"
                     />
 
@@ -203,8 +203,8 @@ const BestBanner: React.FC = () => {
                   >
                     <Image
                       src={second}
-                      width="35px"
-                      height="35px"
+                      width="40px"
+                      height="40px"
                       objectFit="contain"
                     />
 
@@ -234,8 +234,8 @@ const BestBanner: React.FC = () => {
                   >
                     <Image
                       src={first}
-                      width="35px"
-                      height="35px"
+                      width="40px"
+                      height="40px"
                       objectFit="contain"
                     />
 
@@ -266,8 +266,8 @@ const BestBanner: React.FC = () => {
                   >
                     <Image
                       src={third}
-                      width="35px"
-                      height="35px"
+                      width="40px"
+                      height="40px"
                       objectFit="contain"
                     />
 

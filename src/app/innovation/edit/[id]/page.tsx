@@ -60,6 +60,10 @@ const categoryOptions = [
     { value: "Pengelolaan Sumber Daya", label: "Pengelolaan Sumber Daya" },
     { value: "Pertanian Cerdas", label: "Pertanian Cerdas" },
     { value: "Sistem Informasi", label: "Sistem Informasi" },
+    { value: "Peternakan", label: "Peternakan" },
+    { value: "Perikanan", label: "Perikanan" },
+    { value: "Perkebunan", label: "Perkebunan" },
+    { value: "Kehutanan", label: "Kehutanan" },
 ];
 
 const predefinedModels = [
