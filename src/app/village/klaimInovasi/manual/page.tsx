@@ -43,7 +43,7 @@ const KlaimInovasiManualContent: React.FC = () => {
     const [selectedVid, setSelectedVid] = useState<string>("");
     const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
     const [uploadProgress, setUploadProgress] = useState<{ logo: number; innovation: number }>({ logo: 0, innovation: 0 });
-    
+
     const generateObjectId = () => [...Array(24)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
     const [claimId] = useState(() => searchParams.get("editId") || generateObjectId());
     const logoFileRef = useRef<HTMLInputElement>(null);
@@ -56,7 +56,7 @@ const KlaimInovasiManualContent: React.FC = () => {
     const [error, setError] = useState("");
     const [isAdmin, setIsAdmin] = useState(false);
     const modalBody1 = "Apakah Anda yakin ingin mengajukan klaim?";
-    const modalBody2 = "Inovasi sudah ditambahkan. Admin sedang memverifikasi pengajuan klaim inovasi. Silahkan cek pada halaman pengajuan klaim";
+    const modalBody2 = "Inovasi sudah ditambahkan. Admin sedang memverifikasi pengajuan klaim inovasi.";
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
     const { isOpen, onOpen, onClose } = useDisclosure();
@@ -87,7 +87,7 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     const getDynamicModalBody = () => {
         if (editId && claimData?.status === "Terverifikasi") {
-            return "Klaim ini sudah terverifikasi. Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu' dan memerlukan persetujuan ulang dari Admin. Apakah Anda yakin?";
+            return "Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu'. Apakah Anda yakin?";
         }
         return modalBody1;
     };
@@ -164,15 +164,15 @@ const KlaimInovasiManualContent: React.FC = () => {
         setIsUploading(prev => ({ ...prev, logo: true }));
         const storageRef = ref(storage, `claimInnovations/${claimId}/logo/logo_${Date.now()}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
-        uploadTask.on("state_changed", 
+        uploadTask.on("state_changed",
             (snapshot: any) => {
                 const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                 setUploadProgress(prev => ({ ...prev, logo: p }));
-            }, 
-            (err: any) => { 
-                console.error(err); 
-                setIsUploading(prev => ({ ...prev, logo: false })); 
-            }, 
+            },
+            (err: any) => {
+                console.error(err);
+                setIsUploading(prev => ({ ...prev, logo: false }));
+            },
             async () => {
                 const url = await getDownloadURL(uploadTask.snapshot.ref);
                 setLogoFiles([url]);
@@ -188,15 +188,15 @@ const KlaimInovasiManualContent: React.FC = () => {
         setIsUploading(prev => ({ ...prev, innovation: true }));
         const storageRef = ref(storage, `claimInnovations/${claimId}/main/photo_${Date.now()}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
-        uploadTask.on("state_changed", 
+        uploadTask.on("state_changed",
             (snapshot: any) => {
                 const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                 setUploadProgress(prev => ({ ...prev, innovation: p }));
-            }, 
-            (err: any) => { 
-                console.error(err); 
-                setIsUploading(prev => ({ ...prev, innovation: false })); 
-            }, 
+            },
+            (err: any) => {
+                console.error(err);
+                setIsUploading(prev => ({ ...prev, innovation: false }));
+            },
             async () => {
                 const url = await getDownloadURL(uploadTask.snapshot.ref);
                 setInnovationFiles([url]);
@@ -607,13 +607,13 @@ const KlaimInovasiManualContent: React.FC = () => {
                                 <Text1>Video inovasi <span style={{ color: "red" }}>*</span></Text1>
                                 <Text2>Maks 100 mb. Format: mp4</Text2>
                             </Flex>
-                                <VidUpload
-                                    selectedVid={selectedVid}
-                                    setSelectedVid={setSelectedVid}
-                                    selectVidRef={selectedVidRef}
-                                    claimId={claimId}
-                                    disabled={!editable || loading || disabled}
-                                />
+                            <VidUpload
+                                selectedVid={selectedVid}
+                                setSelectedVid={setSelectedVid}
+                                selectVidRef={selectedVidRef}
+                                claimId={claimId}
+                                disabled={!editable || loading || disabled}
+                            />
                         </Field>
                     </Collapse>
                     <Collapse in={selectedCheckboxes.includes("dokumen")} animateOpacity>
@@ -622,13 +622,13 @@ const KlaimInovasiManualContent: React.FC = () => {
                                 <Text1>Dokumen Pendukung <span style={{ color: "red" }}>*</span></Text1>
                                 <Text2>Maks 3 file, 50 mb. Format: pdf, doc, docx</Text2>
                             </Flex>
-                                <DocUpload
-                                    selectedDoc={selectedDoc}
-                                    setSelectedDoc={setSelectedDoc}
-                                    selectDocRef={selectedDocRef}
-                                    claimId={claimId}
-                                    disabled={!editable || loading || disabled}
-                                />
+                            <DocUpload
+                                selectedDoc={selectedDoc}
+                                setSelectedDoc={setSelectedDoc}
+                                selectDocRef={selectedDocRef}
+                                claimId={claimId}
+                                disabled={!editable || loading || disabled}
+                            />
                         </Field>
                     </Collapse>
                     {!editable && claimData?.status === "Menunggu" && (
@@ -705,7 +705,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                                         isOpen={isDeleteModalOpen}
                                         onClose={() => setIsDeleteModalOpen(false)}
                                         onYes={confirmDeleteClaim}
-                                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini? Data yang sudah dihapus tidak dapat dikembalikan."
+                                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini?"
                                         modalTitle="Hapus Klaim"
                                         isLoading={loading}
                                     />

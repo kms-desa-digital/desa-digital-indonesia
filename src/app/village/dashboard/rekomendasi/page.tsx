@@ -5,6 +5,9 @@ import TopBar from "Components/topBar";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getInnovation } from "Services/innovationServices";
+import { getAuth } from "firebase/auth";
+import { getVillageInnovations } from "Services/villageServices";
+import api from "Services/api";
 
 const RekomendasiInovasi = () => {
     const router = useRouter();
@@ -12,15 +15,109 @@ const RekomendasiInovasi = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getInnovation({ status: "Terverifikasi" })
-            .then((res) => {
-                const list = res.innovations || [];
-                // Urutkan berdasarkan jumlahDesa secara descending (leaderboard)
-                const sorted = [...list].sort((a, b) => (b.jumlahDesa || 0) - (a.jumlahDesa || 0));
-                setInnovations(sorted);
-            })
-            .catch((err) => console.error("Error fetching innovations for leaderboard:", err))
-            .finally(() => setLoading(false));
+        const loadPageData = async () => {
+            try {
+                // 1. Ambil list seluruh inovasi terverifikasi untuk pemetaan jumlahDesa dll.
+                const allRes = await getInnovation({ status: "Terverifikasi" });
+                const verifiedList = allRes.innovations || [];
+                
+                const verifiedMap = new Map<string, any>();
+                verifiedList.forEach((inv: any) => {
+                    const key = inv.id || inv._id;
+                    if (key) verifiedMap.set(key, inv);
+                });
+
+                // 2. Cek user login dan klaim inovasi
+                const auth = getAuth();
+                const currentUser = auth.currentUser;
+
+                if (currentUser) {
+                    const resInv: any = await getVillageInnovations(currentUser.uid);
+                    const claimedInnovations = resInv.innovations || resInv.data || [];
+                    const claimedIds: string[] = claimedInnovations.map((c: any) => c.id || c._id).filter(Boolean);
+
+                    if (claimedIds.length > 0) {
+                        // Ambil maksimal 3 klaim terbaru
+                        const activeClaims = claimedIds.slice(0, 3);
+                        const recPromises = activeClaims.map((id: string) => 
+                            api.post("/recommendations", { innovation_id: id, top_n: 10 })
+                                .then(res => res.data?.data || res.data || [])
+                                .catch(err => {
+                                    console.error("Error fetching recommendation for", id, err);
+                                    return [];
+                                })
+                        );
+                        
+                        const recResults = await Promise.all(recPromises);
+                        
+                        // Gabungkan & deduplikasi, filter out inovasi yang sudah diklaim
+                        const seenIds = new Set<string>(claimedIds);
+                        const flattened: any[] = [];
+                        
+                        for (const recList of recResults) {
+                            for (const item of recList) {
+                                const itemId = item.id;
+                                if (itemId && !seenIds.has(itemId)) {
+                                    seenIds.add(itemId);
+                                    flattened.push(item);
+                                }
+                            }
+                        }
+
+                        // Urutkan berdasarkan similarity score
+                        flattened.sort((a, b) => (b.similarity_score || b.score || 0) - (a.similarity_score || a.score || 0));
+
+                        // Petakan dengan data lengkap terverifikasi
+                        const mappedRecs = flattened.map((item: any) => {
+                            const verifiedItem = verifiedMap.get(item.id);
+                            if (verifiedItem) {
+                                return verifiedItem;
+                            }
+                            return {
+                                id: item.id,
+                                namaInovasi: item.inovasi || item.namaInovasi,
+                                deskripsi: item.deskripsi,
+                                kategori: item.kategori,
+                                namaInnovator: item.namaInnovator || "Umum",
+                                jumlahDesa: item.jumlahDesa || 0,
+                                fotoInovasi: item.images || item.fotoInovasi || [],
+                                images: item.images || item.fotoInovasi || []
+                            };
+                        });
+
+                        // Isi sisa slot dari leaderboard terpopuler jika kurang dari 10
+                        const leaderboardSorted = [...verifiedList].sort((a, b) => (b.jumlahDesa || 0) - (a.jumlahDesa || 0));
+                        const finalInnovations = [...mappedRecs];
+                        const finalIds = new Set<string>(finalInnovations.map(inv => inv.id || inv._id).filter(Boolean));
+                        // Pastikan klaim juga dikecualikan
+                        claimedIds.forEach(id => finalIds.add(id));
+
+                        for (const lbItem of leaderboardSorted) {
+                            if (finalInnovations.length >= 10) break;
+                            const lbId = lbItem.id || lbItem._id;
+                            if (lbId && !finalIds.has(lbId)) {
+                                finalIds.add(lbId);
+                                finalInnovations.push(lbItem);
+                            }
+                        }
+
+                        setInnovations(finalInnovations);
+                        setLoading(false);
+                        return;
+                    }
+                }
+
+                // Fallback / Jika tidak ada user/klaim, tampilkan peringkat leaderboard biasa
+                const leaderboardSorted = [...verifiedList].sort((a, b) => (b.jumlahDesa || 0) - (a.jumlahDesa || 0));
+                setInnovations(leaderboardSorted);
+            } catch (err) {
+                console.error("Error loading page data:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadPageData();
     }, []);
 
     const getImageSrc = (item: any) => {
