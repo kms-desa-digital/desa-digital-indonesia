@@ -77,7 +77,6 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
           const response = await fetch("/api/auth/me", {
             headers: {
               Authorization: `Bearer ${token}`,
-              "x-internal-request": "true",
             },
           });
 

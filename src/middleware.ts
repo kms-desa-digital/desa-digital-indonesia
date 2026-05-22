@@ -20,8 +20,9 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // 2. Verifikasi Identitas Internal
-    const isInternalRequest = request.headers.get('x-internal-request') === 'true'
+    // 2. Verifikasi Identitas Internal (Server-Side Only)
+    const apiKey = process.env.INTERNAL_API_KEY
+    const isInternalRequest = !!apiKey && request.headers.get('x-api-key') === apiKey
 
     // 3. Verifikasi Same-Origin
     const isSameOrigin =

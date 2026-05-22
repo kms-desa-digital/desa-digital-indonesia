@@ -137,7 +137,6 @@ const NotificationPageContent = () => {
             const headers: any = {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json",
-                "x-internal-request": "true",
             };
 
             const categoryQuery = filterCategory !== 'all' ? `&category=${filterCategory}` : '';
@@ -177,7 +176,6 @@ const NotificationPageContent = () => {
             const headers: any = {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json",
-                "x-internal-request": "true",
             };
 
             const categoryQuery = (type === 'personal' && filterCategory !== 'all') ? `&category=${filterCategory}` : '';
@@ -219,9 +217,7 @@ const NotificationPageContent = () => {
     }, [tabIndex, hasMoreGeneral, hasMorePersonal, loadingMore, generalSkip, personalSkip]);
     const handleMarkAllAsRead = async () => {
         try {
-            const headers: any = {
-                "x-internal-request": "true"
-            };
+            const headers: any = {};
             if (token) headers.Authorization = `Bearer ${token}`;
             await fetch('/api/notifications/bulk', { method: 'PATCH', headers });
             fetchInitial();
@@ -237,9 +233,7 @@ const NotificationPageContent = () => {
     const confirmDeleteAll = async () => {
         setIsDeleteAllOpen(false);
         try {
-            const headers: any = {
-                "x-internal-request": "true"
-            };
+            const headers: any = {};
             if (token) headers.Authorization = `Bearer ${token}`;
             await fetch('/api/notifications/bulk', { method: 'DELETE', headers });
             fetchInitial();
@@ -258,9 +252,7 @@ const NotificationPageContent = () => {
         setIsDeleteSingleOpen(false);
         if (!selectedNotifId) return;
         try {
-            const headers: any = {
-                "x-internal-request": "true"
-            };
+            const headers: any = {};
             if (token) headers.Authorization = `Bearer ${token}`;
             await fetch(`/api/notifications/${selectedNotifId}`, { method: 'DELETE', headers });
             fetchInitial();
@@ -316,7 +308,6 @@ const NotificationPageContent = () => {
                     headers: {
                         "Authorization": `Bearer ${token}`,
                         "Content-Type": "application/json",
-                        "x-internal-request": "true",
                     },
                 });
             } catch (err) {

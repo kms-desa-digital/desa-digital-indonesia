@@ -14,7 +14,6 @@ const api = axios.create({
   timeout: 60 * 1000, // 60 seconds (increased for dev server cold starts)
   headers: {
     "Content-Type": "application/json",
-    "x-internal-request": "true",
   },
 });
 
