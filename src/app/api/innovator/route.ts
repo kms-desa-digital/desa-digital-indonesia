@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 // GET /api/innovator
 // Ambil semua profil inovator.
@@ -132,6 +133,13 @@ export async function POST(request: NextRequest) {
         },
         { status: 400 }
       )
+    }
+
+    try {
+      validateWordLimit(namaInovator, 10, 'nama inovator');
+      validateWordLimit(deskripsi, 80, 'deskripsi');
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
     }
 
     const db = await connectToDatabase()

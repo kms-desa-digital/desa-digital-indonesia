@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 type Params = Promise<{ id: string }>
 type MongoFilter = { [key: string]: any }
@@ -135,6 +136,13 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
         },
         { status: 400 }
       )
+    }
+
+    try {
+      validateWordLimit(namaInovator, 10, 'nama inovator');
+      validateWordLimit(deskripsi, 80, 'deskripsi');
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
     }
 
     const db = await connectToDatabase()

@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { notifyAllAdmins } from '@/services/notificationServices'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 // Opt out of Next.js static caching so jumlahDesa always reflects live DB state
 export const dynamic = 'force-dynamic'
@@ -139,6 +140,18 @@ export async function POST(request: NextRequest) {
         { message: 'Field wajib tidak lengkap. Pastikan semua data bintang (*) telah diisi.' },
         { status: 400 }
       )
+    }
+
+    try {
+      validateWordLimit(deskripsi, 80, 'deskripsi');
+      validateWordLimit(inputDesaMenerapkan, 20, 'desa yang menerapkan');
+      if (Array.isArray(modelBisnis)) {
+        modelBisnis.forEach((model: string) => {
+          validateWordLimit(model, 5, `model bisnis "${model}"`);
+        });
+      }
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
     }
 
     const db = await connectToDatabase()

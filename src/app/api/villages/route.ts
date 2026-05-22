@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 // =========================================================
 // GET /api/villages
@@ -184,6 +185,7 @@ export async function POST(request: NextRequest) {
       geografisDesa,
       sosialBudaya,
       sumberDaya,
+      infrastrukturDesa,
       whatsapp,
       kondisijalan,
       jaringan,
@@ -195,7 +197,6 @@ export async function POST(request: NextRequest) {
     // Tentukan targetUserId: jika bukan admin, gunakan UID dari token
     const targetUserId = auth.role === "admin" ? userId : auth.uid
 
-    // Comprehensive Validation for Required Fields (matching frontend)
     if (
       !targetUserId || 
       !namaDesa || 
@@ -217,6 +218,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         message: 'Field wajib tidak lengkap. Pastikan semua data bintang (*) telah diisi.' 
       }, { status: 400 })
+    }
+
+    try {
+      validateWordLimit(deskripsi, 100, 'deskripsi');
+      validateWordLimit(geografisDesa, 30, 'kondisi geografis');
+      validateWordLimit(sosialBudaya, 30, 'kondisi sosial dan budaya');
+      validateWordLimit(sumberDaya, 30, 'kondisi sumber daya alam');
+      validateWordLimit(infrastrukturDesa, 30, 'kondisi infrastruktur');
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
     }
 
     const db = await connectToDatabase()

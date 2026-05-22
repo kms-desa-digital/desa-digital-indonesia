@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification, notifyAllAdmins } from '@/services/notificationServices'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 // =========================================================
 // POST /api/villages/claim
@@ -37,14 +38,22 @@ export async function POST(request: NextRequest) {
 
     if (missingFields.length > 0) {
       return new NextResponse(
-        JSON.stringify({ 
-          message: `Field wajib tidak lengkap: ${missingFields.join(', ')} harus diisi.` 
+        JSON.stringify({
+          message: `Field wajib tidak lengkap: ${missingFields.join(', ')} harus diisi.`
         }, null, 2),
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
         }
       )
+    }
+
+    try {
+      validateWordLimit(deskripsiInovasi, 80, 'deskripsi inovasi');
+      validateWordLimit(namaInovasi, 10, 'nama inovasi');
+      validateWordLimit(namaInovator, 10, 'nama inovator');
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
     }
 
     // Validasi buktiFiles terhadap buktiJenis yang dipilih
@@ -137,9 +146,9 @@ export async function POST(request: NextRequest) {
     // Support client-side generated IDs for structured storage consistency
     if (body.id) {
       if (ObjectId.isValid(body.id)) {
-         newClaim._id = new ObjectId(body.id);
+        newClaim._id = new ObjectId(body.id);
       } else {
-         newClaim._id = body.id;
+        newClaim._id = body.id;
       }
     }
 

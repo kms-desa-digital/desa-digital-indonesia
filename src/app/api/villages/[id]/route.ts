@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 type Params = Promise<{ id: string }>
 
@@ -77,6 +78,16 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     const isAdmin = auth.role === 'admin'
     const { id } = await params
     const body = await request.json()
+
+    try {
+      if (body.deskripsi !== undefined) validateWordLimit(body.deskripsi, 100, 'deskripsi');
+      if (body.geografisDesa !== undefined) validateWordLimit(body.geografisDesa, 30, 'kondisi geografis');
+      if (body.sosialBudaya !== undefined) validateWordLimit(body.sosialBudaya, 30, 'kondisi sosial dan budaya');
+      if (body.sumberDaya !== undefined) validateWordLimit(body.sumberDaya, 30, 'kondisi sumber daya alam');
+      if (body.infrastrukturDesa !== undefined) validateWordLimit(body.infrastrukturDesa, 30, 'kondisi infrastruktur');
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
+    }
 
     // Jangan izinkan ubah field sensitif secara langsung
     delete body._id

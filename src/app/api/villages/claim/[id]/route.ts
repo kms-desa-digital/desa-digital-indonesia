@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification } from '@/services/notificationServices'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 type Params = Promise<{ id: string }>
 
@@ -62,6 +63,15 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     const { id } = await params
     const body = await request.json()
+
+    try {
+      if (body.deskripsiInovasi !== undefined) validateWordLimit(body.deskripsiInovasi, 80, 'deskripsi inovasi');
+      if (body.namaInovasi !== undefined) validateWordLimit(body.namaInovasi, 10, 'nama inovasi');
+      if (body.namaInovator !== undefined) validateWordLimit(body.namaInovator, 10, 'nama inovator');
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
+    }
+
     const db = await connectToDatabase()
 
     let query: any = {}
@@ -248,8 +258,8 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
         await notifyAllAdmins({
           type: 'personal',
           category: 'claim_submission',
-          title: isPrevRejected 
-            ? `Pengajuan Ulang Klaim Inovasi: ${claim.namaInovasi}` 
+          title: isPrevRejected
+            ? `Pengajuan Ulang Klaim Inovasi: ${claim.namaInovasi}`
             : `Pembaruan Klaim Inovasi: ${claim.namaInovasi}`,
           description: isPrevRejected
             ? `Desa ${claim.namaDesa || 'unknown'} telah mengajukan ulang klaim untuk inovasi "${claim.namaInovasi}" yang sebelumnya ditolak. Silakan verifikasi kembali.`
