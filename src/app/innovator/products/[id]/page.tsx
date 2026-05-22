@@ -70,7 +70,7 @@ const InnovatorProductsPage = () => {
     return (
         <Container page>
             <TopBar title={t("productsTitle", { name: innovatorName })} onBack={() => router.back()} />
-            <Flex direction="column" p={4}>
+            <Flex direction="column" p={4} pt={10}>
                 <InputGroup mb={4}>
                     <InputLeftElement pointerEvents="none">
                         <SearchIcon color="gray.400" />

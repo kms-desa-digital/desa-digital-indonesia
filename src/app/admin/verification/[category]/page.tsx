@@ -4,7 +4,8 @@ import {
     ChevronDownIcon, 
     SearchIcon, 
     ChevronLeftIcon, 
-    ChevronRightIcon 
+    ChevronRightIcon,
+    CloseIcon
 } from "@chakra-ui/icons";
 import {
     Box,
@@ -13,6 +14,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Menu,
     MenuButton,
     MenuItem,
@@ -244,6 +246,12 @@ const VerificationPageContent: React.FC = () => {
         setSearchTerm(e.target.value);
     };
 
+    const handleClearSearch = () => {
+        setSearchTerm("");
+        setCurrentPage(1);
+        updateUrl(1, selectedFilter, "");
+    };
+
     const handleFilterSelect = (status: string) => {
         setSelectedFilter(status);
         setCurrentPage(1);
@@ -266,7 +274,29 @@ const VerificationPageContent: React.FC = () => {
                                 value={searchTerm}
                                 onChange={handleSearch}
                                 bg="white"
+                                pr={searchTerm ? "40px" : undefined}
                             />
+                            {searchTerm && (
+                                <InputRightElement>
+                                    <Box
+                                        as="button"
+                                        onClick={handleClearSearch}
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        borderRadius="full"
+                                        bg="#6B7280"
+                                        color="white"
+                                        boxSize="18px"
+                                        _hover={{ bg: "gray.600" }}
+                                        _active={{ bg: "gray.700" }}
+                                        cursor="pointer"
+                                        mr="8px"
+                                    >
+                                        <CloseIcon w="6px" h="6px" />
+                                    </Box>
+                                </InputRightElement>
+                            )}
                         </InputGroup>
 
                         <Menu>

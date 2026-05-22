@@ -7,15 +7,20 @@ import {
   InputRightElement,
   Box
 } from "@chakra-ui/react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type SearchBarProps = {
   placeholder?: string;
   onChange?: (keyword: string) => void;
+  initialValue?: string;
 };
 
-const SearchBarVil: React.FC<SearchBarProps> = ({ placeholder, onChange }) => {
-  const [inputValue, setInputValue] = useState("");
+const SearchBarVil: React.FC<SearchBarProps> = ({ placeholder, onChange, initialValue }) => {
+  const [inputValue, setInputValue] = useState(initialValue || "");
+
+  useEffect(() => {
+    setInputValue(initialValue || "");
+  }, [initialValue]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;

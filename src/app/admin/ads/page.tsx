@@ -1,6 +1,6 @@
 "use client";
 
-import { AddIcon, ChevronDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { AddIcon, ChevronDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon, CloseIcon } from "@chakra-ui/icons";
 import {
     Box,
     Button,
@@ -8,6 +8,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Menu,
     MenuButton,
     MenuItem,
@@ -162,6 +163,12 @@ const AdminAdsPageContent: React.FC = () => {
         return () => clearTimeout(timeoutId);
     }, [searchTerm]);
 
+    const handleClearSearch = () => {
+        setSearchTerm("");
+        setCurrentPage(1);
+        updateUrl(1, selectedStatus, "");
+    };
+
     const handleFilterSelect = (status: string) => {
         setSelectedStatus(status);
         setCurrentPage(1);
@@ -221,7 +228,29 @@ const AdminAdsPageContent: React.FC = () => {
                             _placeholder={{ color: "gray.400" }}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            pr={searchTerm ? "40px" : undefined}
                         />
+                        {searchTerm && (
+                            <InputRightElement>
+                                <Box
+                                    as="button"
+                                    onClick={handleClearSearch}
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    borderRadius="full"
+                                    bg="#6B7280"
+                                    color="white"
+                                    boxSize="18px"
+                                    _hover={{ bg: "gray.600" }}
+                                    _active={{ bg: "gray.700" }}
+                                    cursor="pointer"
+                                    mr="8px"
+                                >
+                                    <CloseIcon w="6px" h="6px" />
+                                </Box>
+                            </InputRightElement>
+                        )}
                     </InputGroup>
 
                     <Menu>
