@@ -96,6 +96,9 @@ export default function ProfileVillage() {
                     status: "Terverifikasi",
                 }));
                 toast.success("Profil desa berhasil diverifikasi");
+                if (isAdmin) {
+                    router.replace("/admin/verification/Verifikasi Desa");
+                }
             } else {
                 throw new Error("Village ID is undefined");
             }
@@ -128,6 +131,9 @@ export default function ProfileVillage() {
                     catatanAdmin: modalInput,
                 }));
                 toast.success("Penolakan berhasil");
+                if (isAdmin) {
+                    router.replace("/admin/verification/Verifikasi Desa");
+                }
             } else {
                 throw new Error("Village ID is undefined");
             }

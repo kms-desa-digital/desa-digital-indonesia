@@ -1,19 +1,22 @@
-import { SearchIcon } from "@chakra-ui/icons";
+import { SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import {
     Flex,
     Input,
     InputGroup,
-    InputLeftElement
+    InputLeftElement,
+    InputRightElement,
+    Box
 } from "@chakra-ui/react";
 import React from "react";
 
 type SearchBarInnovProps = {
-  placeholder?: string; // Tambahkan tipe placeholder sebagai props
-  value?: string; // Tambahkan tipe value sebagai props
+  placeholder?: string;
+  value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onClear?: () => void;
 };
 
-const SearchBarinnov: React.FC<SearchBarInnovProps> = ({ placeholder, value, onChange }) => {
+const SearchBarinnov: React.FC<SearchBarInnovProps> = ({ placeholder, value, onChange, onClear }) => {
   return (
     <Flex justify="center" maxW="360px" width="100%">
         <InputGroup>
@@ -41,7 +44,29 @@ const SearchBarinnov: React.FC<SearchBarInnovProps> = ({ placeholder, value, onC
             borderRadius={100}
             maxW="329px"
             width="100%"
+            pr="40px"
           />
+          {value && onClear && (
+            <InputRightElement>
+              <Box
+                as="button"
+                onClick={onClear}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                borderRadius="full"
+                bg="#6B7280"
+                color="white"
+                boxSize="18px"
+                _hover={{ bg: "gray.600" }}
+                _active={{ bg: "gray.700" }}
+                cursor="pointer"
+                mr="8px"
+              >
+                <CloseIcon w="6px" h="6px" />
+              </Box>
+            </InputRightElement>
+          )}
         </InputGroup>
       </Flex>
   );

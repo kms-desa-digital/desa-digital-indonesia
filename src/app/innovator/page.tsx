@@ -137,6 +137,7 @@ export default function InnovatorPage() {
                             value={categoryFilter}
                             onChange={(value, label) => setCategoryFilter(value)}
                             searchPlaceholder="Cari kategori inovator di sini..."
+                            showAllOption={false}
                         />
                         <SearchBarInnov
                             placeholder={t("searchPlaceholder")}
@@ -144,6 +145,7 @@ export default function InnovatorPage() {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 setSearchQuery(e.target.value);
                             }}
+                            onClear={() => setSearchQuery("")}
                         />
                     </Column>
                 </CardContent>

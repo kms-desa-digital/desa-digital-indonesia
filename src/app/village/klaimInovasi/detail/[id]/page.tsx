@@ -140,6 +140,7 @@ const KlaimInovasiDetail: React.FC = () => {
                 await updateClaim(id, { status: "Terverifikasi" });
                 setClaimData((prev: any) => ({ ...prev, status: "Terverifikasi" }));
                 toast.success("Klaim berhasil diverifikasi!");
+                router.replace("/admin/verification/Verifikasi Klaim Inovasi");
             }
         } catch (error) {
             console.error("Failed to verify claim via API:", error);
@@ -168,6 +169,7 @@ const KlaimInovasiDetail: React.FC = () => {
                     catatanAdmin: modalInput
                 }));
                 toast.success("Klaim ditolak");
+                router.replace("/admin/verification/Verifikasi Klaim Inovasi");
             }
         } catch (error) {
             console.error("Failed to reject claim via API:", error);

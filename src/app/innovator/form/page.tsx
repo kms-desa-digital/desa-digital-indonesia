@@ -493,6 +493,7 @@ const InnovatorForm: React.FC = () => {
                                 title="Pilih Kategori Inovator"
                                 searchPlaceholder="Cari kategori inovator di sini..."
                                 disabled={!isEditable || isFormLocked}
+                                showAllOption={false}
                             />
 
                             <FormSection

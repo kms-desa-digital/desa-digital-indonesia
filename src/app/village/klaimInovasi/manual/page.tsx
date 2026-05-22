@@ -396,9 +396,9 @@ const KlaimInovasiManualContent: React.FC = () => {
     const handleSuccessRedirect = (response?: any) => {
         const newClaimId = editId || response?.claimId || response?.data?.claimId || (typeof response === 'string' ? response : "");
         if (newClaimId) {
-            router.push(`/village/klaimInovasi/detail/${newClaimId}`);
+            router.replace(`/village/klaimInovasi/detail/${newClaimId}`);
         } else {
-            router.push(`/village/pengajuan/${user?.uid}`);
+            router.replace(`/village/pengajuan/${user?.uid}`);
         }
     };
 

@@ -147,7 +147,7 @@ const MakeAds: React.FC = () => {
                 isClosable: true,
                 position: "top",
             });
-            router.push("/admin/ads");
+            router.replace("/admin/ads");
         } catch (submitError: any) {
             console.error("Error adding ad: ", submitError);
             setError(submitError?.message || t("adsErrorSubmit"));

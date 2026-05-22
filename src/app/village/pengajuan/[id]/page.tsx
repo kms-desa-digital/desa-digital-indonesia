@@ -9,6 +9,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Menu,
     MenuButton,
     MenuItem,
@@ -19,7 +20,7 @@ import {
     Text,
     Image,
 } from "@chakra-ui/react";
-import { ChevronDownIcon, SearchIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import { useTranslations } from "next-intl";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
@@ -241,7 +242,29 @@ const PengajuanKlaimContent: React.FC = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             bg="white"
                             fontSize="10pt"
+                            pr="40px"
                         />
+                        {searchTerm && (
+                            <InputRightElement>
+                                <Box
+                                    as="button"
+                                    onClick={() => setSearchTerm("")}
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    borderRadius="full"
+                                    bg="#6B7280"
+                                    color="white"
+                                    boxSize="18px"
+                                    _hover={{ bg: "gray.600" }}
+                                    _active={{ bg: "gray.700" }}
+                                    cursor="pointer"
+                                    mr="8px"
+                                >
+                                    <CloseIcon w="6px" h="6px" />
+                                </Box>
+                            </InputRightElement>
+                        )}
                     </InputGroup>
 
                     <Menu>
