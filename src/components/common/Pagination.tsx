@@ -14,7 +14,7 @@ export const paginationContainerStyle = {
   alignItems: "center",
   mt: 4,
   mb: 2,
-  flexWrap: "wrap" as const,
+  flexWrap: "nowrap" as const,
 };
 
 export const paginationButtonStyle = {
@@ -138,15 +138,14 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
   };
 
   return (
-    <Flex sx={paginationContainerStyle} gap={2}>
+    <Flex sx={paginationContainerStyle} gap={1}>
       <Button
         onClick={() => onPageChange(currentPage - 1)}
         isDisabled={currentPage === 1}
         {...paginationButtonStyle}
-        px={3}
-        minW="auto"
+        px={0}
       >
-        <ChevronLeftIcon mr={1} /> Previous
+        <ChevronLeftIcon boxSize={5} />
       </Button>
       
       {renderPageNumbers()}
@@ -155,10 +154,9 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
         onClick={() => onPageChange(currentPage + 1)}
         isDisabled={currentPage === totalPages}
         {...paginationButtonStyle}
-        px={3}
-        minW="auto"
+        px={0}
       >
-        Next <ChevronRightIcon ml={1} />
+        <ChevronRightIcon boxSize={5} />
       </Button>
     </Flex>
   );
