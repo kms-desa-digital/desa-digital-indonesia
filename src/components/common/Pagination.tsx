@@ -14,12 +14,14 @@ export const paginationContainerStyle = {
   alignItems: "center",
   mt: 4,
   mb: 2,
+  flexWrap: "wrap" as const,
 };
 
 export const paginationButtonStyle = {
   size: "sm",
-  minW: "32px",
-  height: "32px",
+  minW: "28px",
+  height: "28px",
+  fontSize: "xs",
   borderRadius: "md",
   bg: "#E8F5F0",
   color: "#244E3B",

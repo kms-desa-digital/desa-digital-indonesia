@@ -59,9 +59,9 @@ const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl" isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent maxW="360px" w="95%" mx="auto">
         <ModalHeader>Sesuaikan Gambar</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
