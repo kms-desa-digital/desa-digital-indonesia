@@ -40,6 +40,7 @@ export default function Home() {
     tahunDibuat?: string;
     innovatorLogo?: string;
     innovatorName?: string;
+    jumlahDesa?: number;
   };
 
   const sortByRelevance = (items: any[], keyword: string) => {
@@ -130,6 +131,7 @@ export default function Home() {
             tahunDibuat: item.tahunDibuat,
             innovatorLogo: item.innovatorLogo,
             innovatorName: item.innovatorName || item.namaInnovator,
+            jumlahDesa: item.jumlahDesa || 0,
           }))
           .filter((item: HomeSuggestion) => Boolean(item.id));
 
@@ -161,7 +163,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!loading && role === "admin") {
-      router.push(paths.ADMIN_PAGE);
+      router.replace(paths.ADMIN_PAGE);
     }
   }, [role, loading, router]);
 
@@ -217,6 +219,7 @@ export default function Home() {
           onSuggestionClick={handleSuggestionClick}
           showSearchButton={true}
           onSearchClick={handleSearchClick}
+          onClear={() => setSearchValue("")}
         />
         <Menu />
         <Flex direction="row" justifyContent="space-between" padding="0 14px">

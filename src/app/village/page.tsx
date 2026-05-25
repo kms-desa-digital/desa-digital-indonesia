@@ -4,8 +4,9 @@ import { Box, Button, Text as ChakraText, Flex } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import CardVillage from "Components/card/village";
 import { paths } from "Consts/path";
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState, useRef, Suspense } from "react";
+import Pagination from "Components/common/Pagination";
+import { useRouter, useSearchParams } from "next/navigation";
 // import { auth, firestore } from "src/firebase/clientApp";
 import {
     CardContent,
@@ -39,9 +40,15 @@ interface Location {
 const Village: React.FC = () => {
     const t = useTranslations("Village");
     const router = useRouter();
+    const searchParams = useSearchParams();
 
-    const ITEMS_PER_PAGE = 20;
-    const [currentPage, setCurrentPage] = useState<number>(1);
+    const initialPage = parseInt(searchParams.get("page") || "1", 10);
+    const initialProvince = searchParams.get("province") || "";
+    const initialRegency = searchParams.get("regency") || "";
+    const initialSearch = searchParams.get("search") || "";
+
+    const ITEMS_PER_PAGE = 10;
+    const [currentPage, setCurrentPage] = useState<number>(initialPage);
 
     /* 
     useEffect(() => {
@@ -62,10 +69,24 @@ const Village: React.FC = () => {
 
     const [provinces, setProvinces] = useState<Location[]>([]);
     const [regencies, setRegencies] = useState<Location[]>([]);
-    const [selectedProvince, setSelectedProvince] = useState<string>("");
-    const [selectedRegency, setSelectedRegency] = useState<string>("");
-    const [searchTerm, setSearchTerm] = useState<string>("");
-    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>("");
+    const [selectedProvince, setSelectedProvince] = useState<string>(initialProvince);
+    const [selectedRegency, setSelectedRegency] = useState<string>(initialRegency);
+    const [searchTerm, setSearchTerm] = useState<string>(initialSearch);
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>(initialSearch);
+
+    const isFirstMount = useRef(true);
+
+    const updateUrl = (page: number, province: string, regency: string, search: string) => {
+        const urlParams = new URLSearchParams();
+        if (page > 1) urlParams.set("page", page.toString());
+        if (province) urlParams.set("province", province);
+        if (regency) urlParams.set("regency", regency);
+        if (search) urlParams.set("search", search);
+        
+        const queryString = urlParams.toString();
+        const newPath = queryString ? `?${queryString}` : window.location.pathname;
+        router.replace(newPath, { scroll: false });
+    };
 
     // const villagesRef = collection(firestore, "villages");
     const [villages, setVillages] = useState<any[]>([]);
@@ -73,6 +94,7 @@ const Village: React.FC = () => {
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchTerm(searchTerm);
+            updateUrl(currentPage, selectedProvince, selectedRegency, searchTerm);
         }, 300);
 
         return () => clearTimeout(timer);
@@ -92,6 +114,12 @@ const Village: React.FC = () => {
         try {
             const provincesData: Location[] = await getProvinces();
             setProvinces(provincesData);
+            if (initialProvince) {
+                const foundProv = provincesData.find(p => p.name.toLowerCase() === initialProvince.toLowerCase());
+                if (foundProv) {
+                    handleFetchRegencies(foundProv.id);
+                }
+            }
         } catch (error) {
             console.error("Error fetching provinces:", error);
         }
@@ -126,10 +154,14 @@ const Village: React.FC = () => {
             setSelectedRegency("");
             setRegencies([]);
             handleFetchRegencies(selected.value);
+            setCurrentPage(1);
+            updateUrl(1, selected.label, "", searchTerm);
         } else {
             setSelectedProvince("");
             setSelectedRegency("");
             setRegencies([]);
+            setCurrentPage(1);
+            updateUrl(1, "", "", searchTerm);
         }
     };
 
@@ -138,8 +170,12 @@ const Village: React.FC = () => {
     ) => {
         if (selected && selected.value !== "") {
             setSelectedRegency(selected.label);
+            setCurrentPage(1);
+            updateUrl(1, selectedProvince, selected.label, searchTerm);
         } else {
             setSelectedRegency("");
+            setCurrentPage(1);
+            updateUrl(1, selectedProvince, "", searchTerm);
         }
     };
 
@@ -174,7 +210,13 @@ const Village: React.FC = () => {
                     provinsi: item.lokasi?.provinsi?.label || item.provinsi || "",
                     kabupatenKota: item.lokasi?.kabupatenKota?.label || item.kabupatenKota || item.kabupaten || "",
                     namaDesa: item.lokasi?.desaKelurahan?.label || item.namaDesa || item.desa || "",
-                }));
+                }))
+                .sort((a: any, b: any) => {
+                    const inovasi = (Number(b.jumlahInovasiDiterapkan) || 0) - (Number(a.jumlahInovasiDiterapkan) || 0);
+                    if (inovasi !== 0) return inovasi;
+                    return (a.namaDesa || "").localeCompare(b.namaDesa || "");
+                });
+                
                 setVillages(villagesData);
                 setIsFetched(true);
             } catch (error) {
@@ -186,7 +228,12 @@ const Village: React.FC = () => {
 
     // Reset to page 1 when filters change
     useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
         setCurrentPage(1);
+        updateUrl(1, selectedProvince, selectedRegency, searchTerm);
     }, [debouncedSearchTerm, selectedProvince, selectedRegency]);
 
     // Calculate paginated data
@@ -197,14 +244,18 @@ const Village: React.FC = () => {
 
     const handlePrevPage = () => {
         if (currentPage > 1) {
-            setCurrentPage(currentPage - 1);
+            const prevPage = currentPage - 1;
+            setCurrentPage(prevPage);
+            updateUrl(prevPage, selectedProvince, selectedRegency, searchTerm);
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
     };
 
     const handleNextPage = () => {
         if (currentPage < totalPages) {
-            setCurrentPage(currentPage + 1);
+            const nextPage = currentPage + 1;
+            setCurrentPage(nextPage);
+            updateUrl(nextPage, selectedProvince, selectedRegency, searchTerm);
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
     };
@@ -247,6 +298,7 @@ const Village: React.FC = () => {
                         <SearchBarVil
                             placeholder={t("searchPlaceholder")}
                             onChange={(keyword: string) => setSearchTerm(keyword)}
+                            initialValue={searchTerm}
                         />
                     </Column1>
                 </CardContent>
@@ -272,6 +324,7 @@ const Village: React.FC = () => {
                                 jumlahInovasiDiterapkan={item.jumlahInovasiDiterapkan}
                                 isHome={false}
                                 highlightQuery={searchTerm}
+                                ranking={searchTerm.trim() ? undefined : (startIndex + idx + 1)}
                                 onClick={() => {
                                     router.push(`/village/detail/${item.userId || item.id}`);
                                 }}
@@ -283,38 +336,26 @@ const Village: React.FC = () => {
                         </Box>
                     )}
                 </GridContainer>
-                {totalPages > 1 && (
-                    <Flex justify="center" mt={2} mb={2} align="center" gap={4}>
-                        <Button
-                            onClick={handlePrevPage}
-                            isDisabled={currentPage === 1}
-                            variant="outline"
-                            size="sm"
-                            borderColor="gray.200"
-                            color="#347357"
-                            _hover={{ bg: "gray.50" }}
-                        >
-                            <ChevronLeftIcon />
-                        </Button>
-                        <ChakraText fontSize="14px" fontWeight="500" color="gray.700">
-                            Halaman {currentPage} dari {totalPages}
-                        </ChakraText>
-                        <Button
-                            onClick={handleNextPage}
-                            isDisabled={currentPage === totalPages}
-                            variant="outline"
-                            size="sm"
-                            borderColor="gray.200"
-                            color="#347357"
-                            _hover={{ bg: "gray.50" }}
-                        >
-                            <ChevronRightIcon />
-                        </Button>
-                    </Flex>
-                )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => {
+                        setCurrentPage(page);
+                        updateUrl(page, selectedProvince, selectedRegency, searchTerm);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                />
             </Containers>
         </Container>
     );
 };
 
-export default Village;
+const VillagePage = () => {
+    return (
+        <Suspense fallback={<Loading />}>
+            <Village />
+        </Suspense>
+    );
+};
+
+export default VillagePage;

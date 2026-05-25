@@ -39,21 +39,27 @@ import ActionDrawer from "Components/drawer/ActionDrawer";
 import Loading from "Components/loading";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
-import { auth } from "src/firebase/clientApp";
+import { auth, storage } from "src/firebase/clientApp";
+import { getDownloadURL, ref, uploadString, uploadBytesResumable } from "firebase/storage";
 import { useUser } from "src/contexts/UserContext";
 import RecommendationDrawer from "Components/drawer/RecommendationDrawer";
+
+import Forbidden from "src/components/Forbidden";
 
 const KlaimInovasiContent: React.FC = () => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [user] = useAuthState(auth);
-    //   const params = useParams();
-    //   const id = params.id as string;
+    const { role, loading: userLoading } = useUser();
+
     const [claimData, setClaimData] = useState<any>(null);
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [selectedDoc, setSelectedDoc] = useState<string[]>([]);
     const [selectedVid, setSelectedVid] = useState<string>("");
     const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
+
+    const generateObjectId = () => [...Array(24)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    const [claimId] = useState(() => searchParams.get("editId") || generateObjectId());
     const selectedFileRef = useRef<HTMLInputElement>(null);
     const selectedVidRef = useRef<HTMLInputElement>(null);
     const selectedDocRef = useRef<HTMLInputElement>(null);
@@ -68,7 +74,7 @@ const KlaimInovasiContent: React.FC = () => {
     });
     const modalBody1 = "Apakah Anda yakin ingin mengajukan klaim?";
     const modalBody2 =
-        "Inovasi sudah ditambahkan. Admin sedang memverifikasi pengajuan klaim inovasi. Silahkan cek pada halaman pengajuan klaim";
+        "Inovasi sudah ditambahkan. Admin sedang memverifikasi pengajuan klaim inovasi.";
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
     const { isOpen, onOpen, onClose } = useDisclosure();
@@ -81,20 +87,25 @@ const KlaimInovasiContent: React.FC = () => {
     } = useDisclosure();
 
     const [isRejectionVisible, setIsRejectionVisible] = useState(true);
-
-
-    //   const location = useLocation();
-    //   const inovasiId = location.state?.id;
     const inovasiId = searchParams.get("inovasiId");
-
-    const { role } = useUser();
     const editId = searchParams.get("editId");
 
     useEffect(() => {
         if (role) {
-            setIsAdmin(role === "admin");
+            setIsAdmin(role === "admin" || role === "ADMIN");
         }
     }, [role]);
+
+    if (userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "village" || normalizedRole === "desa" || normalizedRole === "admin";
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     useEffect(() => {
         const fetchEditData = async () => {
@@ -173,7 +184,7 @@ const KlaimInovasiContent: React.FC = () => {
         try {
             await deleteClaim(itemToDelete);
             toast.success("Klaim berhasil dihapus");
-            router.replace("/village/pengajuan/saya");
+            router.replace(`/village/pengajuan/${user?.uid}`);
         } catch (err) {
             console.error("Error deleting claim:", err);
             toast.error("Gagal menghapus klaim");
@@ -183,69 +194,49 @@ const KlaimInovasiContent: React.FC = () => {
         }
     };
 
-    const onSelectImage = (event: React.ChangeEvent<HTMLInputElement>, maxFiles: number) => {
+    const onSelectImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
-        if (files) {
-            setIsUploading(prev => ({ ...prev, foto: true }));
-            const imagesArray: string[] = [];
-            for (let i = 0; i < files.length; i++) {
-                const reader = new FileReader();
-                reader.onload = (readerEvent) => {
-                    if (readerEvent.target?.result) {
-                        imagesArray.push(readerEvent.target.result as string);
-                        if (imagesArray.length === files.length) {
-                            setSelectedFiles((prev) => {
-                                // Prevent exceeding maxFiles
-                                if (prev.length + imagesArray.length > maxFiles) {
-                                    const availableSlots = maxFiles - prev.length;
-                                    return [...prev, ...imagesArray.slice(0, availableSlots)];
-                                }
-                                return [...prev, ...imagesArray];
-                            });
-                            setIsUploading(prev => ({ ...prev, foto: false }));
-                        }
-                    }
-                };
-                reader.onerror = () => setIsUploading(prev => ({ ...prev, foto: false }));
-                reader.readAsDataURL(files[i]);
-            }
+        if (!files) return;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileName = `${Date.now()}_${file.name}`;
+            const storageRef = ref(storage, `claimInnovations/${claimId}/images/${fileName}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            uploadTask.on("state_changed", null, (error: any) => console.error(error), async () => {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                setSelectedFiles(prev => [...prev, url]);
+            });
         }
     };
 
     const onSelectVid = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const reader = new FileReader();
-        if (event.target.files?.[0]) {
-            setIsUploading(prev => ({ ...prev, video: true }));
-            reader.readAsDataURL(event.target.files[0]);
-        }
-        reader.onload = (readerEvent) => {
-            if (readerEvent.target?.result) {
-                setSelectedVid(readerEvent.target?.result as string);
-                setIsUploading(prev => ({ ...prev, video: false }));
-            }
-        };
-        reader.onerror = () => setIsUploading(prev => ({ ...prev, video: false }));
+        const file = event.target.files?.[0];
+        if (!file) return;
+        setIsUploading(prev => ({ ...prev, video: true }));
+        const storageRef = ref(storage, `claimInnovations/${claimId}/videos/${Date.now()}_${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        uploadTask.on("state_changed", null, (err: any) => { console.error(err); setIsUploading(prev => ({ ...prev, video: false })); }, async () => {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            setSelectedVid(url);
+            setIsUploading(prev => ({ ...prev, video: false }));
+        });
     };
 
     const onSelectDoc = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const doc = event.target.files;
-        if (doc) {
-            setIsUploading(prev => ({ ...prev, dokumen: true }));
-            const docArray: string[] = [];
-            for (let i = 0; i < doc.length; i++) {
-                const reader = new FileReader();
-                reader.onload = (readerEvent) => {
-                    if (readerEvent.target?.result) {
-                        docArray.push(readerEvent.target.result as string);
-                        if (docArray.length === doc.length) {
-                            setSelectedDoc((prev) => [...prev, ...docArray]);
-                            setIsUploading(prev => ({ ...prev, dokumen: false }));
-                        }
-                    }
-                };
-                reader.onerror = () => setIsUploading(prev => ({ ...prev, dokumen: false }));
-                reader.readAsDataURL(doc[i]);
-            }
+        const files = event.target.files;
+        if (!files) return;
+        setIsUploading(prev => ({ ...prev, dokumen: true }));
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const storageRef = ref(storage, `claimInnovations/${claimId}/documents/${Date.now()}_${file.name}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+            uploadTask.on("state_changed", null, (err: any) => { console.error(err); setIsUploading(prev => ({ ...prev, dokumen: false })); }, async () => {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                setSelectedDoc(prev => [...prev, url]);
+                setIsUploading(prev => ({ ...prev, dokumen: false }));
+            });
         }
     };
 
@@ -258,7 +249,7 @@ const KlaimInovasiContent: React.FC = () => {
     const submitClaim = async () => {
         console.log("Submitting claim via API...");
         setLoading(true);
-        setDisabled(true); // Disable buttons immediately
+        setDisabled(true);
 
         if (!user?.uid || !inovasiId) {
             setError("User atau ID inovasi tidak ditemukan");
@@ -268,30 +259,30 @@ const KlaimInovasiContent: React.FC = () => {
         }
 
         try {
-            // Fetch names first for metadata
+            // Fetch metadata for consistency
             const [villageRes, innovationRes]: any = await Promise.all([
                 getVillageById(user.uid),
                 getInnovationById(inovasiId)
             ]);
 
-            const village = villageRes.data || villageRes.village;
-            const innovation = innovationRes.data || innovationRes.innovation;
+            const villageMetadata = villageRes.data || villageRes.village;
+            const innovationMetadata = innovationRes.data || innovationRes.innovation;
 
             const formData = {
+                id: claimId,
                 desaId: user.uid,
-                namaDesa: village?.namaDesa || "",
-                inovasiId: inovasiId,
-                namaInovasi: innovation?.namaInovasi || innovation?.name || "",
-                namaInovator: innovation?.namaInnovator || innovation?.namaInovator || innovation?.inovatorName || "",
-                deskripsiInovasi: innovation?.deskripsi || innovation?.description || innovation?.deskripsiInovasi || "",
-                logoInovator: innovation?.logo || innovation?.innovatorImgURL || innovation?.logoInovator || null,
-                fotoInovasi: innovation?.images?.[0] || innovation?.fotoInovasi || innovation?.image || null,
+                namaDesa: villageMetadata?.namaDesa || claimData?.namaDesa || "",
+                inovasiId: inovasiId || null,
+                namaInovasi: innovationMetadata?.namaInovasi || claimData?.namaInovasi || "",
+                namaInovator: innovationMetadata?.namaInnovator || innovationMetadata?.namaInovator || claimData?.namaInovator || "",
+                deskripsiInovasi: innovationMetadata?.deskripsi || innovationMetadata?.deskripsiInovasi || claimData?.deskripsiInovasi || "",
                 buktiJenis: selectedCheckboxes,
                 buktiFiles: {
                     foto: selectedCheckboxes.includes("foto") ? selectedFiles : [],
                     video: selectedCheckboxes.includes("video") ? [selectedVid] : [],
                     dokumen: selectedCheckboxes.includes("dokumen") ? selectedDoc : []
                 },
+                isManual: false,
                 status: "Menunggu"
             };
 
@@ -303,19 +294,18 @@ const KlaimInovasiContent: React.FC = () => {
 
             setIsModal2Open(true);
 
-            // Still keep toast as backup or secondary confirmation
             toast.success(editId ? "Klaim berhasil diperbarui" : "Klaim inovasi berhasil diajukan", {
                 position: "top-center",
                 autoClose: 3000
             });
 
-            // The actual redirect will happen when user closes SecConfModal or clicks OK
-            // But we can also set a timeout if they don't click anything
-            setTimeout(() => {
-                if (!isModal2Open) { // Only if not already handled
-                    handleSuccessRedirect(response);
-                }
-            }, 5000);
+            if (!inovasiId) {
+                setTimeout(() => {
+                    if (!isModal2Open) {
+                        handleSuccessRedirect(response);
+                    }
+                }, 5000);
+            }
 
         } catch (error: any) {
             console.error("Error submitting claim:", error);
@@ -335,7 +325,7 @@ const KlaimInovasiContent: React.FC = () => {
 
     const getDynamicModalBody = () => {
         if (editId && claimData?.status === "Terverifikasi") {
-            return "Klaim ini sudah terverifikasi. Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu' dan memerlukan persetujuan ulang dari Admin. Apakah Anda yakin?";
+            return "Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu'. Apakah Anda yakin?";
         }
         return modalBody1;
     };
@@ -347,9 +337,9 @@ const KlaimInovasiContent: React.FC = () => {
     const handleSuccessRedirect = (response?: any) => {
         const newClaimId = editId || response?.claimId || response?.data?.claimId || (typeof response === 'string' ? response : "");
         if (newClaimId) {
-            router.push(`/village/klaimInovasi/detail/${newClaimId}`);
+            router.replace(`/village/klaimInovasi/detail/${newClaimId}`);
         } else {
-            router.push(`/village/pengajuan/${user?.uid}`);
+            router.replace(`/village/pengajuan/${user?.uid}`);
         }
     };
 
@@ -360,26 +350,27 @@ const KlaimInovasiContent: React.FC = () => {
 
     const handleModal2Close = () => {
         setIsModal2Open(false);
-        handleSuccessRedirect();
+        if (inovasiId) {
+            router.replace("/");
+        } else {
+            handleSuccessRedirect();
+        }
     };
 
     useEffect(() => {
-        // Jika salah satu modal terbuka, sembunyikan scrollbar
         if (isModal1Open || isModal2Open) {
             document.body.style.overflow = "hidden";
         } else {
-            document.body.style.overflow = ""; // Kembalikan scrollbar jika kedua modal tertutup
+            document.body.style.overflow = "";
         }
     }, [isModal1Open, isModal2Open]);
 
 
     const handleVerify = async () => {
-        // Create page doesn't verify
         return;
     };
 
     const handleReject = async () => {
-        // Create page doesn't reject
         return;
     };
 
@@ -410,8 +401,8 @@ const KlaimInovasiContent: React.FC = () => {
                         <JenisKlaim>
                             <input
                                 style={{
-                                    transform: "scale(1.3)", // Memperbesar checkbox
-                                    marginRight: "8px", // Memberi jarak ke teks
+                                    transform: "scale(1.3)",
+                                    marginRight: "8px",
                                     cursor: (isUploading.foto || !editable || loading || disabled) ? "not-allowed" : "pointer"
                                 }}
                                 type="checkbox"
@@ -424,8 +415,8 @@ const KlaimInovasiContent: React.FC = () => {
                         <JenisKlaim>
                             <input
                                 style={{
-                                    transform: "scale(1.3)", // Memperbesar checkbox
-                                    marginRight: "8px", // Memberi jarak ke teks
+                                    transform: "scale(1.3)",
+                                    marginRight: "8px",
                                     cursor: (isUploading.video || !editable || loading || disabled) ? "not-allowed" : "pointer"
                                 }}
                                 type="checkbox"
@@ -438,8 +429,8 @@ const KlaimInovasiContent: React.FC = () => {
                         <JenisKlaim>
                             <input
                                 style={{
-                                    transform: "scale(1.3)", // Memperbesar checkbox
-                                    marginRight: "8px", // Memberi jarak ke teks
+                                    transform: "scale(1.3)",
+                                    marginRight: "8px",
                                     cursor: (isUploading.dokumen || !editable || loading || disabled) ? "not-allowed" : "pointer"
                                 }}
                                 type="checkbox"
@@ -464,6 +455,7 @@ const KlaimInovasiContent: React.FC = () => {
                                     setSelectedFile={setSelectedFiles}
                                     selectFileRef={selectedFileRef}
                                     onSelectImage={onSelectImage}
+                                    claimId={claimId}
                                     maxFiles={2}
                                     disabled={!editable || loading || disabled}
                                 />
@@ -484,7 +476,7 @@ const KlaimInovasiContent: React.FC = () => {
                                 selectedVid={selectedVid}
                                 setSelectedVid={setSelectedVid}
                                 selectVidRef={selectedVidRef}
-                                onSelectVid={onSelectVid}
+                                claimId={claimId}
                                 disabled={!editable || loading || disabled}
                             />
                         </Field>
@@ -503,7 +495,8 @@ const KlaimInovasiContent: React.FC = () => {
                                 selectedDoc={selectedDoc}
                                 setSelectedDoc={setSelectedDoc}
                                 selectDocRef={selectedDocRef}
-                                onSelectDoc={onSelectDoc} // Ensure this matches the updated DocUploadProps
+                                claimId={claimId}
+                                disabled={!editable || loading || disabled}
                             />
                         </Field>
                     </Collapse>
@@ -517,7 +510,7 @@ const KlaimInovasiContent: React.FC = () => {
                 <div>
                     {isAdmin ? (
                         claimData?.status === "Terverifikasi" ||
-                        claimData?.status === "Ditolak" ? (
+                            claimData?.status === "Ditolak" ? (
                             <StatusCard
                                 status={claimData.status}
                                 message={claimData.catatanAdmin}
@@ -614,7 +607,7 @@ const KlaimInovasiContent: React.FC = () => {
                         isOpen={isDeleteModalOpen}
                         onClose={() => setIsDeleteModalOpen(false)}
                         onYes={confirmDeleteClaim}
-                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini? Data yang sudah dihapus tidak dapat dikembalikan."
+                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini?"
                         modalTitle="Hapus Klaim"
                         isLoading={loading}
                     />
@@ -622,6 +615,8 @@ const KlaimInovasiContent: React.FC = () => {
                         isOpen={isModal2Open}
                         onClose={handleModal2Close}
                         modalBody2={modalBody2} // Mengirimkan teks konten modal
+                        isRegularClaim={!!inovasiId}
+                        innovationId={inovasiId || undefined}
                     />
                     <RejectionModal
                         isOpen={openModal}

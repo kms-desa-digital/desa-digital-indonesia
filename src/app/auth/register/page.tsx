@@ -12,7 +12,7 @@ import { paths } from "Consts/path";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import React, { Suspense, useEffect, useState } from "react";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import icons
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FIREBASE_ERRORS } from "src/firebase/errors";
 import { auth, firestore } from "src/firebase/clientApp";
@@ -34,7 +34,8 @@ const RegisterContent: React.FC = () => {
         password: "",
         role: "",
     });
-    const [confirmPassword, setConfirmPassword] = useState(""); // State untuk konfirmasi kata sandi
+
+    const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -45,7 +46,8 @@ const RegisterContent: React.FC = () => {
     const isGoogleFlow = searchParams.get("google") === "1";
 
     const onTogglePassword = () => setShowPassword((prev) => !prev);
-    const onToggleConfirmPassword = () => setShowConfirmPassword((prev) => !prev);
+    const onToggleConfirmPassword = () =>
+        setShowConfirmPassword((prev) => !prev);
 
     useEffect(() => {
         if (isGoogleFlow && auth.currentUser?.email) {
@@ -56,31 +58,51 @@ const RegisterContent: React.FC = () => {
         }
     }, [isGoogleFlow]);
 
+    const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = event.target;
+
+        setRegisForm((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+
+        if (error) setError("");
+    };
+
+    const handleConfirmPasswordChange = (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        setConfirmPassword(event.target.value);
+
+        if (error) setError("");
+    };
+
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         if (error) setError("");
 
-        if (!regisForm.role) {
-            return setError("Silakan pilih daftar sebagai");
-        }
-
         if (isGoogleFlow) {
+            if (!regisForm.role) {
+                return setError("Silakan pilih daftar sebagai");
+            }
+
             const currentUser = auth.currentUser;
+
             if (!currentUser) {
                 return setError("Sesi Google tidak ditemukan, silakan login ulang");
             }
 
             setLoading(true);
+
             try {
                 const role = regisForm.role.toLowerCase();
+
                 await setDoc(doc(firestore, "users", currentUser.uid), {
                     id: currentUser.uid,
                     email: currentUser.email || regisForm.email || "",
                     role,
                 });
 
-                // Simpan role ke localStorage (bukan data sensitif)
-                // Token dikelola otomatis oleh Firebase SDK via onIdTokenChanged
                 localStorage.setItem("userRole", role);
                 window.dispatchEvent(new Event("auth:tokenChanged"));
                 router.refresh();
@@ -98,18 +120,44 @@ const RegisterContent: React.FC = () => {
             } finally {
                 setLoading(false);
             }
+
             return;
         }
 
-        if (!regisForm.email.includes("@")) return setError("Email tidak valid");
-        if (regisForm.email === "" || regisForm.password === "")
+        if (!regisForm.email && !regisForm.password) {
             return setError("Email dan kata sandi harus diisi");
-        if (regisForm.password.length < 6)
+        }
+
+        if (!regisForm.email) {
+            return setError("Email wajib diisi");
+        }
+
+        if (!regisForm.email.includes("@")) {
+            return setError("Gunakan @ untuk format email");
+        }
+
+        if (!regisForm.password) {
+            return setError("Kata sandi wajib diisi");
+        }
+
+        if (regisForm.password.length < 6) {
             return setError("Kata sandi minimal 6 karakter");
-        if (regisForm.password !== confirmPassword)
-            return setError("konfirmasi kata sandi tidak cocok"); // Cek kesesuaian kata sandi
+        }
+
+        if (!confirmPassword) {
+            return setError("Konfirmasi kata sandi wajib diisi");
+        }
+
+        if (regisForm.password !== confirmPassword) {
+            return setError("Kata sandi dan konfirmasi kata sandi tidak cocok");
+        }
+
+        if (!regisForm.role) {
+            return setError("Silakan pilih role");
+        }
 
         setLoading(true);
+
         try {
             const userCredential = await createUserWithEmailAndPassword(
                 auth,
@@ -134,50 +182,34 @@ const RegisterContent: React.FC = () => {
             setLoading(false);
         }
     };
-    const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = event.target;
-        setRegisForm((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleConfirmPasswordChange = (
-        event: React.ChangeEvent<HTMLInputElement>
-    ) => {
-        setConfirmPassword(event.target.value); // Update konfirmasi kata sandi
-    };
-
-    const validateForm = () => {
-        if (!regisForm.email.includes("@")) return "Email tidak valid";
-        if (!regisForm.email || !regisForm.password)
-            return "Email dan kata sandi harus diisi";
-        if (regisForm.password.length < 6) return "Kata sandi minimal 6 karakter";
-        if (regisForm.password !== confirmPassword)
-            return "Kata sandi dan konfirmasi kata sandi tidak cocok";
-        return "";
-    };
 
     return (
         <Box>
             <TopBar title="" onBack={() => router.back()} />
+
             <Background>
                 <Container>
                     <Title>Halo!</Title>
                     <Description>Silahkan melakukan registrasi akun</Description>
 
-                    <form onSubmit={onSubmit}>
+                    <form onSubmit={onSubmit} noValidate>
                         <Text fontSize="10pt" mt="12px">
                             Email
                         </Text>
+
                         <Input
                             name="email"
-                            type="email"
+                            type="text"
+                            inputMode="email"
+                            autoComplete="email"
                             onChange={onChange}
-                            required={!isGoogleFlow}
                             placeholder="Email"
                             mt="4px"
                             fontSize="10pt"
                             value={regisForm.email}
                             readOnly={isGoogleFlow}
                         />
+
                         {!isGoogleFlow && (
                             <>
                                 <Text fontSize="10pt" mt="12px">
@@ -189,14 +221,19 @@ const RegisterContent: React.FC = () => {
                                         name="password"
                                         type={showPassword ? "text" : "password"}
                                         onChange={onChange}
-                                        required
                                         placeholder="Kata sandi"
                                         fontSize="10pt"
+                                        value={regisForm.password}
                                     />
-                                    <InputRightElement onClick={onTogglePassword} cursor="pointer">
+
+                                    <InputRightElement
+                                        onClick={onTogglePassword}
+                                        cursor="pointer"
+                                    >
                                         {showPassword ? <FaEyeSlash /> : <FaEye />}
                                     </InputRightElement>
                                 </InputGroup>
+
                                 <Text
                                     fontWeight="400"
                                     fontStyle="normal"
@@ -213,14 +250,18 @@ const RegisterContent: React.FC = () => {
 
                                 <InputGroup mt="4px" alignItems="center">
                                     <Input
-                                        name="password"
+                                        name="confirmPassword"
                                         type={showConfirmPassword ? "text" : "password"}
-                                        onChange={handleConfirmPasswordChange} // Gunakan handleConfirmPasswordChange
-                                        required
+                                        onChange={handleConfirmPasswordChange}
                                         placeholder="Tulis ulang kata sandi"
                                         fontSize="10pt"
+                                        value={confirmPassword}
                                     />
-                                    <InputRightElement onClick={onToggleConfirmPassword} cursor="pointer">
+
+                                    <InputRightElement
+                                        onClick={onToggleConfirmPassword}
+                                        cursor="pointer"
+                                    >
                                         {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                                     </InputRightElement>
                                 </InputGroup>
@@ -228,13 +269,14 @@ const RegisterContent: React.FC = () => {
                         )}
 
                         <Label mt={12}>Daftar sebagai:</Label>
+
                         <CheckboxContainer mt={12}>
                             <input
                                 name="role"
                                 type="radio"
                                 value="innovator"
                                 onChange={onChange}
-                                required
+                                checked={regisForm.role === "innovator"}
                             />
                             <Label>Inovator</Label>
                         </CheckboxContainer>
@@ -245,7 +287,7 @@ const RegisterContent: React.FC = () => {
                                 type="radio"
                                 value="village"
                                 onChange={onChange}
-                                required
+                                checked={regisForm.role === "village"}
                             />
                             <Label>Perangkat desa</Label>
                         </CheckboxContainer>
@@ -256,13 +298,18 @@ const RegisterContent: React.FC = () => {
                                 type="radio"
                                 value="ministry"
                                 onChange={onChange}
-                                required
+                                checked={regisForm.role === "ministry"}
                             />
                             <Label>Kementerian</Label>
                         </CheckboxContainer>
 
                         {error && (
-                            <Text textAlign="center" color="red" fontSize="10pt" mt={2}>
+                            <Text
+                                textAlign="center"
+                                color="red"
+                                fontSize="10pt"
+                                mt={2}
+                            >
                                 {error}
                             </Text>
                         )}
@@ -270,6 +317,7 @@ const RegisterContent: React.FC = () => {
                         <Button
                             mt={4}
                             type="submit"
+                            formNoValidate
                             alignItems="center"
                             width="100%"
                             isLoading={loading}
@@ -281,7 +329,9 @@ const RegisterContent: React.FC = () => {
 
                     <ActionContainer mt={16}>
                         <Label>Sudah memiliki akun?</Label>
-                        <Action onClick={() => router.push(paths.LOGIN_PAGE)}>Login</Action>
+                        <Action onClick={() => router.push(paths.LOGIN_PAGE)}>
+                            Login
+                        </Action>
                     </ActionContainer>
                 </Container>
             </Background>

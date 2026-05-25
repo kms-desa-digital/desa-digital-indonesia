@@ -12,12 +12,16 @@ import {
     Image,
     DrawerFooter,
     DrawerHeader,
+    Spinner,
 } from "@chakra-ui/react";
 import { FaSeedling } from "react-icons/fa6";
-import React, { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { paths } from "Consts/path";
+import { getInnovation } from "Services/innovationServices";
+import { getAuth } from "firebase/auth";
+import api from "Services/api";
+import { getVillageInnovations } from "Services/villageServices";
 
 const Rekomendasi = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
@@ -54,6 +58,96 @@ const Rekomendasi = () => {
     const namaInovator = rekomendasi?.innovator || "eFishery";
     const linkDetail = rekomendasi?.id ? `/innovation/detail/${rekomendasi.id}` : "/innovation/detail/8HeAYMhzlFQvdUgoSXpX";
 
+    const [topInnovation, setTopInnovation] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchRecommendation = async () => {
+            const fetchLeaderboardFallback = () => {
+                getInnovation({ status: "Terverifikasi" })
+                    .then((res) => {
+                        const list = res.innovations || [];
+                        const sorted = [...list].sort((a, b) => (b.jumlahDesa || 0) - (a.jumlahDesa || 0));
+                        if (sorted.length > 0) {
+                            setTopInnovation(sorted[0]);
+                        }
+                    })
+                    .catch((err) => console.error("Error fetching top innovation (leaderboard fallback):", err))
+                    .finally(() => setLoading(false));
+            };
+
+            try {
+                const auth = getAuth();
+                const currentUser = auth.currentUser;
+
+                if (currentUser) {
+                    const resInv: any = await getVillageInnovations(currentUser.uid);
+                    const claimedInnovations = resInv.innovations || resInv.data || [];
+                    
+                    if (claimedInnovations.length > 0) {
+                        const latestInnovation = claimedInnovations[0];
+                        const innovationId = latestInnovation.id || latestInnovation._id;
+                        
+                        if (innovationId) {
+                            try {
+                                const recRes = await api.post("/recommendations", {
+                                    innovation_id: innovationId,
+                                    top_n: 1
+                                });
+                                const recList = recRes.data?.data || recRes.data || [];
+                                if (recList.length > 0) {
+                                    const recItem = recList[0];
+                                    setTopInnovation({
+                                        id: recItem.id,
+                                        namaInovasi: recItem.inovasi || recItem.namaInovasi,
+                                        deskripsi: recItem.deskripsi,
+                                        kategori: recItem.kategori,
+                                        namaInnovator: recItem.namaInnovator || "Umum",
+                                        fotoInovasi: recItem.images || recItem.fotoInovasi || [],
+                                        images: recItem.images || recItem.fotoInovasi || []
+                                    });
+                                    setLoading(false);
+                                    return;
+                                }
+                            } catch (apiErr) {
+                                console.error("Failed to fetch recommendation similarity, falling back:", apiErr);
+                            }
+                        }
+                    }
+                }
+                fetchLeaderboardFallback();
+            } catch (err) {
+                console.error("Error in village recommendation check:", err);
+                fetchLeaderboardFallback();
+            }
+        };
+
+        fetchRecommendation();
+    }, []);
+
+    const getImageSrc = (item: any) => {
+        if (!item) return "/images/default-logo.svg";
+        if (item.fotoInovasi && item.fotoInovasi.length > 0) {
+            return item.fotoInovasi[0];
+        }
+        if (item.images && item.images.length > 0) {
+            return item.images[0];
+        }
+        return "/images/default-logo.svg";
+    };
+
+    if (loading) {
+        return (
+            <Flex justify="center" align="center" py={8} w="100%">
+                <Spinner size="md" color="green.700" />
+            </Flex>
+        );
+    }
+
+    if (!topInnovation) {
+        return null; // Sembunyikan jika tidak ada rekomendasi sama sekali
+    }
+
     return (
         <>
             {/* Card Rekomendasi */}
@@ -81,10 +175,10 @@ const Rekomendasi = () => {
                     </Box>
                     <Box>
                         <Text fontSize="md" fontWeight="bold" color="green.700">
-                            {namaInovasi}
+                            {topInnovation.namaInovasi}
                         </Text>
                         <Text fontSize="sm" color="gray.600">
-                            Inovator: {namaInovator}
+                            Inovator: {topInnovation.namaInnovator || "Umum"}
                         </Text>
                     </Box>
                 </Flex>
@@ -144,26 +238,29 @@ const Rekomendasi = () => {
                             py={8}
                         >
                             <Text fontWeight="bold" fontSize="lg">
-                                {namaInovasi}
+                                {topInnovation.namaInovasi}
                             </Text>
                             <Text fontSize="sm" mb={4}>
-                                dari {namaInovator}
+                                dari {topInnovation.namaInnovator || "Umum"}
                             </Text>
 
                             <Box my={6}>
                                 <Image
-                                    src="/images/efishery-logo.jpg"
-                                    alt="eFeeder"
+                                    src={getImageSrc(topInnovation)}
+                                    alt={topInnovation.namaInovasi}
                                     mx="auto"
                                     boxSize="80px"
+                                    borderRadius="full"
+                                    objectFit="cover"
+                                    fallbackSrc="/images/default-logo.svg"
                                 />
                             </Box>
 
                             <Text fontWeight="bold" mb={1}>
                                 Cocok dengan desamu!
                             </Text>
-                            <Text fontSize="sm" color="gray.600">
-                                Saatnya desamu berinovasi! Terapkan inovasi dan buat perubahan besar di desamu
+                            <Text fontSize="sm" color="gray.600" noOfLines={3}>
+                                {topInnovation.deskripsi || "Saatnya desamu berinovasi! Terapkan inovasi dan buat perubahan besar di desamu."}
                             </Text>
                         </Flex>
                     </DrawerBody>
@@ -176,7 +273,7 @@ const Rekomendasi = () => {
                             fontSize="sm"
                             border="2px"
                             _hover={{ bg: "#2e5e4b" }}
-                            onClick={() => router.push(linkDetail)}
+                            onClick={() => router.push(`/innovation/detail/${topInnovation.id}`)}
                         >
                             Detail Inovasi
                         </Button>

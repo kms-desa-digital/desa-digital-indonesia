@@ -9,6 +9,8 @@ export const Container = styled.div`
   max-width: 156px;
   overflow: hidden;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
   height: 100%;
   min-height: 244px;
 `
@@ -21,8 +23,7 @@ export const Background = styled.img`
 
 export const Content = styled.div`
   padding: 8px;
-  height: 100%;
-  max-height: 140px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;

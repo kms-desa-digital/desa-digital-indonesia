@@ -51,9 +51,15 @@ const businessModels = [
     "Layanan Subsidi",
 ];
 
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+import Loading from "Components/loading";
+
 const InnovatorForm: React.FC = () => {
     const router = useRouter();
     const [user] = useAuthState(auth);
+    const { role, loading: userLoading } = useUser();
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
 
     const [selectedCategory, setSelectedCategory] = useState<{
         label: string;
@@ -235,7 +241,7 @@ const InnovatorForm: React.FC = () => {
                 userId,
                 namaInovator: name,
                 deskripsi: description,
-                kategori: selectedCategory?.label,
+                kategori: selectedCategory?.label || "",
                 instagram,
                 website,
                 whatsapp,
@@ -321,7 +327,11 @@ const InnovatorForm: React.FC = () => {
                     if (err?.response?.status !== 404) {
                         console.error("Error fetching data from API:", err);
                     }
+                } finally {
+                    setIsInitialLoading(false);
                 }
+            } else {
+                setIsInitialLoading(false);
             }
         };
         fetchData();
@@ -419,6 +429,17 @@ const InnovatorForm: React.FC = () => {
         }),
     };
 
+    if (isInitialLoading || userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "innovator" || normalizedRole === "admin";
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
+
     return (
         <>
             <TopBar
@@ -443,7 +464,7 @@ const InnovatorForm: React.FC = () => {
                             padding="12px"
                             mb={4}
                             width="100%"
-                            maxWidth="1000px"
+                            maxWidth="360px"
                             mx="auto"
                         >
                             {alertMessage}
@@ -472,6 +493,7 @@ const InnovatorForm: React.FC = () => {
                                 title="Pilih Kategori Inovator"
                                 searchPlaceholder="Cari kategori inovator di sini..."
                                 disabled={!isEditable || isFormLocked}
+                                showAllOption={false}
                             />
 
                             <FormSection
@@ -582,11 +604,12 @@ const InnovatorForm: React.FC = () => {
                             form="InnovatorForm"
                             width="100%"
                             isLoading={loading}
-                            isDisabled={loading || isFormLocked || (status === "Menunggu" && !isEditable)}
-                            onClick={() => {
+                            isDisabled={!isFormValid() || loading || isFormLocked || (status === "Menunggu" && !isEditable)}
+                            onClick={(e) => {
                                 if (isFormValid()) {
-                                    setIsModal1Open(true);
+                                    // Handled by form onSubmit
                                 } else {
+                                    e.preventDefault();
                                     setAlertMessage("Harap isi semua data wajib terlebih dahulu.");
                                     setAlertStatus("error");
                                     window.scrollTo({ top: 0, behavior: "smooth" });

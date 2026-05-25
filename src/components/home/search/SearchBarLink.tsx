@@ -1,4 +1,4 @@
-import { SearchIcon } from "@chakra-ui/icons";
+import { SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
@@ -25,6 +25,7 @@ type SearchSuggestion = {
   tahunDibuat?: string;
   innovatorLogo?: string;
   innovatorName?: string;
+  jumlahDesa?: number;
 };
 
 interface SearchBarLinkProps {
@@ -43,6 +44,7 @@ interface SearchBarLinkProps {
   onSuggestionClick?: (item: SearchSuggestion) => void;
   showSearchButton?: boolean;
   onSearchClick?: () => void;
+  onClear?: () => void;
 }
 
 const SearchBarLink: React.FC<SearchBarLinkProps> = ({
@@ -61,6 +63,7 @@ const SearchBarLink: React.FC<SearchBarLinkProps> = ({
   onSuggestionClick,
   showSearchButton = false,
   onSearchClick,
+  onClear,
 }) => {
   const t = useTranslations("Home");
   const renderHighlightedText = (value: string) => {
@@ -101,7 +104,7 @@ const SearchBarLink: React.FC<SearchBarLinkProps> = ({
             onFocus={onFocus}
             onBlur={onBlur}
             fontSize="10pt"
-            pr={showSearchButton ? "90px" : undefined}
+            pr={showSearchButton ? (value && onClear ? "120px" : "90px") : "40px"}
             _placeholder={{ color: "#9CA3AF" }}
             _hover={{
               bg: "white",
@@ -115,8 +118,26 @@ const SearchBarLink: React.FC<SearchBarLinkProps> = ({
             }}
             borderRadius={100}
           />
-          {showSearchButton && (
-            <InputRightElement width="auto" pr={1}>
+          {showSearchButton ? (
+            <InputRightElement width="auto" pr={1} display="flex" alignItems="center" gap={2} height="100%">
+              {value && onClear && (
+                <Box
+                  as="button"
+                  onClick={onClear}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  borderRadius="full"
+                  bg="#6B7280"
+                  color="white"
+                  boxSize="18px"
+                  _hover={{ bg: "gray.600" }}
+                  _active={{ bg: "gray.700" }}
+                  cursor="pointer"
+                >
+                  <CloseIcon w="6px" h="6px" />
+                </Box>
+              )}
               <Button
                 size="sm"
                 bg="#347357"
@@ -134,6 +155,28 @@ const SearchBarLink: React.FC<SearchBarLinkProps> = ({
                 {t('searchButton')}
               </Button>
             </InputRightElement>
+          ) : (
+            value && onClear && (
+              <InputRightElement>
+                <Box
+                  as="button"
+                  onClick={onClear}
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  borderRadius="full"
+                  bg="#6B7280"
+                  color="white"
+                  boxSize="18px"
+                  _hover={{ bg: "gray.600" }}
+                  _active={{ bg: "gray.700" }}
+                  cursor="pointer"
+                  mr="8px"
+                >
+                  <CloseIcon w="6px" h="6px" />
+                </Box>
+              </InputRightElement>
+            )
           )}
         </InputGroup>
 
@@ -187,6 +230,7 @@ const SearchBarLink: React.FC<SearchBarLinkProps> = ({
                       innovatorLogo={item.innovatorLogo}
                       innovatorName={item.innovatorName}
                       highlightQuery={highlightQuery}
+                      jumlahDesa={item.jumlahDesa}
                     />
                   </Box>
                 ))}

@@ -46,6 +46,7 @@ export const paths = {
     INNOVATOR_FORM: "/innovator/form",
     PRODUK_INOVASI_PAGE: "/innovator/detail/ProdukInovasi",
     PENGAJUAN_INOVASI_PAGE: "/innovator/profile/pengajuanInovasi",
+    PENGAJUAN_INOVASI_DETAIL_PAGE: "/innovator/pengajuan/:id",
     REPORT_INNOVATOR: "/innovator/report",
 
     // ! innovation

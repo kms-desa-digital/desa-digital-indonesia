@@ -38,6 +38,7 @@ import { auth } from "src/firebase/clientApp";
 // import { firestore, storage } from "src/firebase/clientApp";
 import { storage } from "src/firebase/clientApp";
 import { getInnovationById, updateInnovation, deleteInnovation } from "Services/innovationServices";
+import { paths } from "Consts/path";
 import { NavbarButton } from "./_styles";
 import StatusCard from "Components/card/status/StatusCard";
 import Loading from "Components/loading";
@@ -59,6 +60,10 @@ const categoryOptions = [
     { value: "Pengelolaan Sumber Daya", label: "Pengelolaan Sumber Daya" },
     { value: "Pertanian Cerdas", label: "Pertanian Cerdas" },
     { value: "Sistem Informasi", label: "Sistem Informasi" },
+    { value: "Peternakan", label: "Peternakan" },
+    { value: "Perikanan", label: "Perikanan" },
+    { value: "Perkebunan", label: "Perkebunan" },
+    { value: "Kehutanan", label: "Kehutanan" },
 ];
 
 const predefinedModels = [
@@ -75,11 +80,15 @@ const predefinedModels = [
     "Lain-lain",
 ];
 
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+
 const EditInnovation: React.FC = () => {
     const router = useRouter();
     const toast = useToast();
     const params = useParams();
     const id = params.id as string;
+    const { role, uid, firebaseUid, loading: userLoading } = useUser();
 
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const selectFileRef = useRef<HTMLInputElement>(null);
@@ -107,6 +116,7 @@ const EditInnovation: React.FC = () => {
     const cancelRef = useRef<HTMLButtonElement>(null);
     const [isSuccessOpen, setIsSuccessOpen] = useState(false);
     const [isRejectionVisible, setIsRejectionVisible] = useState(true);
+    const [innovatorId, setInnovatorId] = useState("");
 
     const isFormValid = () => {
         const { name, year, description, villages } = textInputsValue;
@@ -114,19 +124,19 @@ const EditInnovation: React.FC = () => {
         if (selectedFiles.length === 0) return false;
         if (selectedModels.length === 0) return false;
         if (selectedModels.includes("Lain-lain") && !otherBusinessModel.trim()) return false;
-        
+
         // Benefit check
         if (benefit.length === 0) return false;
         for (const b of benefit) {
             if (!b.benefit.trim() || !b.description.trim()) return false;
         }
-        
+
         // Requirements check
         if (requirements.length === 0) return false;
         for (const r of requirements) {
             if (!r.trim()) return false;
         }
-        
+
         return true;
     };
 
@@ -149,6 +159,7 @@ const EditInnovation: React.FC = () => {
 
                 if (data) {
                     console.log("Fetched data from API:", data);
+                    setInnovatorId(data.innovatorId || "");
                     setTextInputsValue({
                         name: data.namaInovasi || "",
                         year: data.tahunDibuat || "",
@@ -201,6 +212,17 @@ const EditInnovation: React.FC = () => {
         };
         fetchInnovation();
     }, [id]);
+
+    if (loading || userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "admin" || uid === innovatorId || firebaseUid === innovatorId;
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     const onSelectImage = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -392,8 +414,9 @@ const EditInnovation: React.FC = () => {
                 status: "success",
                 duration: 5000,
                 isClosable: true,
+                position: "top",
             });
-            router.push("/");
+            router.replace(paths.PENGAJUAN_INOVASI_DETAIL_PAGE.replace(":id", innovatorId));
         } catch (error: any) {
             console.error("Error deleting innovation via API:", error);
             if (error.response?.data?.message === "ID tidak valid") {
@@ -415,7 +438,7 @@ const EditInnovation: React.FC = () => {
 
     const handleSuccessClose = () => {
         setIsSuccessOpen(false);
-        router.push(`/innovation/detail/${id}`);
+        router.replace(`/innovation/detail/${id}`);
     };
 
     if (loading) {
@@ -477,6 +500,7 @@ const EditInnovation: React.FC = () => {
                                 title="Pilih Kategori Inovasi"
                                 searchPlaceholder="Cari kategori inovasi di sini..."
                                 disabled={loading || !isEditable}
+                                showAllOption={false}
                             />
                             <Text fontWeight="400" fontSize="14px">
                                 Tahun dibuat inovasi <span style={{ color: "red" }}>*</span>

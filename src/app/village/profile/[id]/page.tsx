@@ -10,7 +10,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import EnlargedImage from "Components/village/Image";
 import { useAuthState } from "react-firebase-hooks/auth";
-
+import { useUser } from "src/contexts/UserContext";
 
 import {
     Accordion,
@@ -64,6 +64,7 @@ export default function ProfileVillage() {
     const [modalInput, setModalInput] = useState("");
 
     const { isAdmin } = useAdminStatus();
+    const { uid: contextUid, firebaseUid: contextFirebaseUid } = useUser();
     const t = useTranslations("Village");
 
     const formatLocation = (villageData: any) => {
@@ -95,6 +96,9 @@ export default function ProfileVillage() {
                     status: "Terverifikasi",
                 }));
                 toast.success("Profil desa berhasil diverifikasi");
+                if (isAdmin) {
+                    router.replace("/admin/verification/Verifikasi Desa");
+                }
             } else {
                 throw new Error("Village ID is undefined");
             }
@@ -127,6 +131,9 @@ export default function ProfileVillage() {
                     catatanAdmin: modalInput,
                 }));
                 toast.success("Penolakan berhasil");
+                if (isAdmin) {
+                    router.replace("/admin/verification/Verifikasi Desa");
+                }
             } else {
                 throw new Error("Village ID is undefined");
             }
@@ -147,9 +154,15 @@ export default function ProfileVillage() {
 
                     if (data) {
                         setVillage(data);
-                        const uid = userLogin?.uid;
-                        const isOwner = data?.userId === uid;
-                        if (uid) {
+                        const isOwner =
+                            data.userId === contextUid ||
+                            data.userId === contextFirebaseUid ||
+                            id === contextUid ||
+                            id === contextFirebaseUid ||
+                            data._id === contextUid ||
+                            data._id === contextFirebaseUid;
+
+                        if (contextUid || contextFirebaseUid) {
                             setOwner(isOwner);
                         }
 
@@ -201,7 +214,7 @@ export default function ProfileVillage() {
         }, 3000);
 
         return () => clearInterval(intervalId);
-    }, [id, userLogin, router]);
+    }, [id, userLogin, router, contextUid, contextFirebaseUid]);
 
     useEffect(() => {
         const fetchVillageInnovationsData = async () => {
@@ -504,7 +517,7 @@ export default function ProfileVillage() {
                                         {t("noInnovations")}
                                     </Text>
                                 ) : (
-                                    innovations.map((innovation, idx) => (
+                                    innovations.slice(0, 5).map((innovation, idx) => (
                                         // @ts-ignore
                                         <CardInnovation
                                             key={idx}
@@ -515,6 +528,7 @@ export default function ProfileVillage() {
                                             tahunDibuat={innovation.tahunDibuat}
                                             innovatorLogo={innovation.innovatorImgURL}
                                             innovatorName={innovation.namaInnovator}
+                                            jumlahDesa={innovation.jumlahDesa || 0}
                                             onClick={() =>
                                                 router.push(`/innovation/detail/${innovation.id}`)
                                             }

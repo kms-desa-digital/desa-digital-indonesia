@@ -1,4 +1,4 @@
-{
+﻿{
     "Home": {
         "title": "Desa Digital Indonesia",
         "searchPlaceholder": "Cari Inovasi di sini...",
@@ -31,7 +31,11 @@
         "financialService": "Layanan Keuangan",
         "resourceMgmt": "Pengelolaan Sumber Daya",
         "socialService": "Layanan Sosial",
-        "eTourism": "E-Tourism"
+        "eTourism": "E-Tourism",
+        "farm": "Peternakan",
+        "forestry": "Kehutanan",
+        "fishery": "Perikanan",
+        "plantation": "Perkebunan"
     },
     "Components": {
         "rediness": {
@@ -154,7 +158,6 @@
         "whatsappNumber": "Nomor WhatsApp",
         "instagramLink": "Link Instagram",
         "websiteLink": "Link Website"
-
     },
     "Village": {
         "selectProvince": "Pilih Provinsi",
@@ -218,7 +221,7 @@
                 "description": "Anda tidak dapat melakukan klaim perorangan. Klaim hanya dapat dilakukan melalui akun desa. Untuk itu desa Anda harus mendaftarkan akun dan melengkapi profil desa sebelum mengajukan klaim inovasi. Setelah melengkapi profil desa, pengajuan klaim dapat dilakukan melalui halaman inovasi yang anda inginkan."
             },
             {
-                "title": "Bagaimana mengklaim inovasi yang belum terdaftar pada KMS?",
+                "title": "Bagaimana jika ingin klaim inovasi, namun inovasi yang diinginkan tidak ditemukan?",
                 "description": "Anda dapat mengklaim inovasi yang belum terdaftar pada website dengan melakukan klaim manual. Klaim manual dapat dilakukan melalui halaman pengajuan klaim. Anda perlu memasukkan bukti klaim, informasi inovasi dan inovator."
             }
         ]
@@ -227,7 +230,7 @@
         "profile": "Profile",
         "fillProfile": "Isi Profil",
         "announcement": "Pengumuman",
-        "chatbotData": "Data Chatbot",
+        "chatbotData": "Manajemen Chatbot",
         "userManagement": "Manajemen Pengguna",
         "logout": "Logout",
         "helpFaq": "Bantuan dan FAQ",

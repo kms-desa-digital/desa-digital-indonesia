@@ -3,21 +3,18 @@ import { getVillages } from 'Services/villageServices';
 import {
   Box, Text, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Flex, Button, Image, IconButton, Menu, MenuButton, MenuList, MenuItem
 } from '@chakra-ui/react';
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@chakra-ui/icons';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import Pagination from '@/components/common/Pagination';
 
 import {
   titleStyle,
   tableHeaderStyle,
   tableCellStyle,
-  tableContainerStyle,
-  paginationContainerStyle,
-  paginationButtonStyle,
-  paginationActiveButtonStyle,
-  paginationEllipsisStyle
+  tableContainerStyle
 } from './_detailVillagesStyle';
 
 import downloadIcon from '@public/icons/icon-download.svg';
@@ -133,7 +130,6 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
     parseFloat(b.idm.replace(',', '.')) - parseFloat(a.idm.replace(',', '.'))
   );
   const currentData = sortedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const goToPage = (page: number) => setCurrentPage(page);
 
   // PDF Download
   const downloadPDF = () => {
@@ -166,8 +162,6 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
     let y = 42;
     doc.text(`Daftar Desa Berdasarkan Kategori: ${selectedCategory}`, 14, y);
     y += 6;
-
-    const sortedData = [...data];
 
     autoTable(doc, {
       startY: y,
@@ -217,27 +211,6 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
     const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
     saveAs(blob, `Daftar_Desa_${selectedCategory}.xlsx`);
-  };
-
-  const getPageNumbers = () => {
-    const pageNumbers = [];
-    const maxPagesToShow = 5;
-    const left = Math.max(currentPage - 1, 1);
-    const right = Math.min(currentPage + 1, totalPages);
-    const showLeftDots = left > 2;
-    const showRightDots = right < totalPages - 1;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
-    } else if (!showLeftDots && showRightDots) {
-      pageNumbers.push(1, 2, 3, '...', totalPages);
-    } else if (showLeftDots && !showRightDots) {
-      pageNumbers.push(1, '...', totalPages - 2, totalPages - 1, totalPages);
-    } else {
-      pageNumbers.push(1, '...', left, currentPage, right, '...', totalPages);
-    }
-
-    return pageNumbers;
   };
 
   return (
@@ -303,30 +276,11 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
                 </Table>
               </TableContainer>
 
-              <Flex sx={paginationContainerStyle}>
-                <Button onClick={() => goToPage(currentPage - 1)} isDisabled={currentPage === 1} {...paginationButtonStyle}>
-                  <ChevronLeftIcon />
-                </Button>
-
-                {getPageNumbers().map((page, i) =>
-                  page === '...' ? (
-                    <Box key={`ellipsis-${i}`} {...paginationEllipsisStyle}>...</Box>
-                  ) : (
-                    <Button
-                      key={`page-${page}`}
-                      onClick={() => goToPage(Number(page))}
-                      {...paginationButtonStyle}
-                      {...(currentPage === page ? paginationActiveButtonStyle : {})}
-                    >
-                      {page}
-                    </Button>
-                  )
-                )}
-
-                <Button onClick={() => goToPage(currentPage + 1)} isDisabled={currentPage === totalPages} {...paginationButtonStyle}>
-                  <ChevronRightIcon />
-                </Button>
-              </Flex>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </>
           )}
         </>

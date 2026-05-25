@@ -38,11 +38,39 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     const uniqueIds = [...new Set(possibleIds)];
 
     // 1. Ambil inovasi dari koleksi 'innovations' yang memiliki desaId ini (penugasan langsung)
+    // dengan jumlah desa yang menerapkan dari claimInnovations
+    const directPipeline: any[] = [
+      { $match: { desaId: { $in: [id] }, status: 'Terverifikasi' } },
+      {
+        $lookup: {
+          from: 'claimInnovations',
+          localField: '_id',
+          foreignField: 'inovasiId',
+          as: 'allClaims',
+        },
+      },
+      {
+        $addFields: {
+          jumlahDesa: {
+            $size: {
+              $filter: {
+                input: '$allClaims',
+                as: 'claim',
+                cond: { $eq: ['$$claim.status', 'Terverifikasi'] },
+              },
+            },
+          },
+        },
+      },
+      { $project: { allClaims: 0 } },
+    ]
+
     const directInnovations = await db.collection('innovations')
       .find({
         desaId: { $in: uniqueIds },
         status: 'Terverifikasi'
       })
+      .aggregate(directPipeline)
       .toArray()
 
     // 2. Ambil SEMUA klaim dari koleksi 'claimInnovations' yang terverifikasi (Manual & Reguler)
@@ -71,10 +99,13 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
         id: doc._id.toString(),
         _id: doc._id.toString(),
         namaInovasi: doc.namaInovasi,
-        namaInnovator: doc.namaInovator || doc.namaInovator,
+        namaInnovator: doc.namaInovator,
+        innovatorImgURL: doc.logoInovator || null, // Map logoInovator to innovatorImgURL for consistency
+        kategori: 'Inovasi Manual', // Default category for manual claims
         deskripsi: doc.deskripsiInovasi || doc.deskripsi,
         images: doc.fotoInovasi ? [doc.fotoInovasi] : (doc.buktiFiles?.foto || []),
-        status: 'Terverifikasi'
+        status: 'Terverifikasi',
+        jumlahDesa: 1, // klaim manual minimal diterapkan oleh desa yang mengklaim
       }))
 
     const finalResult = [...result_direct, ...result_claims]

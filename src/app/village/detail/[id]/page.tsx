@@ -151,7 +151,7 @@ export default function DetailVillagePage() {
                     const villageData = res.village || res.data;
                     if (villageData) {
                         if (villageData.userId === userLogin?.uid) {
-                            router.push("/village/profile/" + id);
+                            router.replace("/village/profile/" + id);
                             return;
                         }
                         setVillage(villageData);
@@ -450,20 +450,20 @@ export default function DetailVillagePage() {
                                     ) : (
                                         innovations.slice(0, 5).map((innovation, idx) => (
                                             <CardInnovation
-                                                key={idx}
+                                                key={innovation.id || innovation._id || idx}
                                                 images={innovation.images}
                                                 namaInovasi={innovation.namaInovasi}
                                                 kategori={innovation.kategori}
                                                 deskripsi={innovation.deskripsi}
                                                 tahunDibuat={innovation.tahunDibuat}
-                                                // innovatorLogo={innovation.innovatorImgURL}
-                                                // innovatorName={innovation.namaInnovator}
+                                                innovatorLogo={innovation.innovatorImgURL}
+                                                innovatorName={innovation.namaInnovator}
+                                                jumlahDesa={innovation.jumlahDesa || 0}
                                                 onClick={() => {
                                                     if (innovation.id) {
                                                         router.push(`/innovation/detail/${innovation.id}`);
                                                     }
                                                 }}
-
                                             />
                                         ))
                                     )}

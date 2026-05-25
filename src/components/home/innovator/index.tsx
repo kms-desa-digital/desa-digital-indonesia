@@ -36,7 +36,13 @@ function Innovator() {
         });
         const fetchedData = res?.data || res?.innovators || [];
         const innovatorsData: InnovatorData[] = (Array.isArray(fetchedData) ? fetchedData : [])
-          .sort((a: any, b: any) => (b.jumlahDesaDampingan || 0) - (a.jumlahDesaDampingan || 0))
+          .sort((a: any, b: any) => {
+            const desa = (b.jumlahDesaDampingan || 0) - (a.jumlahDesaDampingan || 0);
+            if (desa !== 0) return desa;
+            const inovasi = (b.jumlahInovasi || 0) - (a.jumlahInovasi || 0);
+            if (inovasi !== 0) return inovasi;
+            return (a.namaInovator || "").localeCompare(b.namaInovator || "");
+          })
           .slice(0, 5);
 
         setInnovators(innovatorsData);

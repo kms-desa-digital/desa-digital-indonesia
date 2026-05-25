@@ -7,7 +7,8 @@ import {
     EditIcon,
     DeleteIcon,
     ChevronLeftIcon,
-    ChevronRightIcon
+    ChevronRightIcon,
+    CloseIcon
 } from "@chakra-ui/icons";
 import {
     Box,
@@ -16,6 +17,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Menu,
     MenuButton,
     MenuItem,
@@ -173,6 +175,11 @@ const UserManagementPage: React.FC = () => {
     };
 
 
+    const handleClearSearch = () => {
+        setSearchTerm("");
+        setPage(1);
+    };
+
     return (
         <Container page>
             <TopBar title="User Management" onBack={() => router.push("/admin")} />
@@ -195,7 +202,29 @@ const UserManagementPage: React.FC = () => {
                                     setSearchTerm(e.target.value);
                                     setPage(1);
                                 }}
+                                pr={searchTerm ? "40px" : undefined}
                             />
+                            {searchTerm && (
+                                <InputRightElement>
+                                    <Box
+                                        as="button"
+                                        onClick={handleClearSearch}
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        borderRadius="full"
+                                        bg="#6B7280"
+                                        color="white"
+                                        boxSize="18px"
+                                        _hover={{ bg: "gray.600" }}
+                                        _active={{ bg: "gray.700" }}
+                                        cursor="pointer"
+                                        mr="8px"
+                                    >
+                                        <CloseIcon w="6px" h="6px" />
+                                    </Box>
+                                </InputRightElement>
+                            )}
                         </InputGroup>
                     </Flex>
 

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import React, { useEffect, useState, useRef, Suspense } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
     Box,
     Button,
@@ -9,6 +9,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Menu,
     MenuButton,
     MenuItem,
@@ -19,7 +20,7 @@ import {
     Text,
     Image,
 } from "@chakra-ui/react";
-import { ChevronDownIcon, SearchIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import { useTranslations } from "next-intl";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
@@ -44,24 +45,50 @@ const SkeletonCard = () => (
     </Box>
 );
 
-const PengajuanKlaim: React.FC = () => {
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+import Loading from "Components/loading";
+
+const PengajuanKlaimContent: React.FC = () => {
     const params = useParams();
     const id = params.id as string;
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [user] = useAuthState(auth);
+    const { role, loading: userLoading, uid, firebaseUid } = useUser();
     const [data, setData] = useState<any[]>([]);
     const [filteredData, setFilteredData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Initial states from search params
+    const initialPage = parseInt(searchParams.get("page") || "1", 10);
+    const initialFilter = searchParams.get("filter") || "Semua";
+    const initialSearch = searchParams.get("search") || "";
+
     // Pencarian dan filter
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+    const [selectedFilter, setSelectedFilter] = useState<string>(initialFilter);
     const t = useTranslations("Village");
 
     // Pagination Status
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(initialPage);
     const [hasMore, setHasMore] = useState(false);
     const itemsPerPage = 5;
+
+    const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+
+    const isFirstMount = useRef(true);
+
+    const updateUrl = (page: number, filter: string, search: string) => {
+        const urlParams = new URLSearchParams();
+        if (page > 1) urlParams.set("page", page.toString());
+        if (filter !== "Semua") urlParams.set("filter", filter);
+        if (search) urlParams.set("search", search);
+        
+        const queryString = urlParams.toString();
+        const newPath = queryString ? `?${queryString}` : window.location.pathname;
+        router.replace(newPath, { scroll: false });
+    };
 
     const fetchData = async (page = 1) => {
         setLoading(true);
@@ -73,7 +100,7 @@ const PengajuanKlaim: React.FC = () => {
                 selectedFilter && selectedFilter !== "Semua" ? selectedFilter : undefined,
                 itemsPerPage,
                 skipValue,
-                searchTerm || undefined
+                debouncedSearch || undefined
             );
 
             const claimsData = response.claims || response.data?.claims || [];
@@ -91,12 +118,42 @@ const PengajuanKlaim: React.FC = () => {
         }
     };
 
+    // Debounce search
+    useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
+        const timeoutId = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setCurrentPage(1);
+            updateUrl(1, selectedFilter, searchTerm);
+        }, 500);
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
+
+    const handleFilterSelect = (status: string) => {
+        setSelectedFilter(status);
+        setCurrentPage(1);
+        updateUrl(1, status, searchTerm);
+    };
+
     useEffect(() => {
         if (id) {
-            setCurrentPage(1);
-            fetchData(1);
+            fetchData(currentPage);
         }
-    }, [id, selectedFilter, searchTerm]); // Tambah searchTerm ke dependency
+    }, [id, selectedFilter, debouncedSearch, currentPage]);
+
+    if (userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "admin" || uid === id || firebaseUid === id;
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     // Client side UI filtering removed in favor of server side search/filter
 
@@ -104,7 +161,7 @@ const PengajuanKlaim: React.FC = () => {
         if (hasMore) {
             const nextPage = currentPage + 1;
             setCurrentPage(nextPage);
-            await fetchData(nextPage);
+            updateUrl(nextPage, selectedFilter, searchTerm);
         }
     };
 
@@ -112,7 +169,7 @@ const PengajuanKlaim: React.FC = () => {
         if (currentPage > 1) {
             const prevPage = currentPage - 1;
             setCurrentPage(prevPage);
-            await fetchData(prevPage);
+            updateUrl(prevPage, selectedFilter, searchTerm);
         }
     };
 
@@ -185,7 +242,29 @@ const PengajuanKlaim: React.FC = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             bg="white"
                             fontSize="10pt"
+                            pr="40px"
                         />
+                        {searchTerm && (
+                            <InputRightElement>
+                                <Box
+                                    as="button"
+                                    onClick={() => setSearchTerm("")}
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    borderRadius="full"
+                                    bg="#6B7280"
+                                    color="white"
+                                    boxSize="18px"
+                                    _hover={{ bg: "gray.600" }}
+                                    _active={{ bg: "gray.700" }}
+                                    cursor="pointer"
+                                    mr="8px"
+                                >
+                                    <CloseIcon w="6px" h="6px" />
+                                </Box>
+                            </InputRightElement>
+                        )}
                     </InputGroup>
 
                     <Menu>
@@ -209,9 +288,7 @@ const PengajuanKlaim: React.FC = () => {
                                     <MenuItem
                                         key={status}
                                         fontSize={12}
-                                        onClick={() =>
-                                            setSelectedFilter(status === "Semua" ? null : status)
-                                        }
+                                        onClick={() => handleFilterSelect(status)}
                                     >
                                         {statusLabels[status]}
                                     </MenuItem>
@@ -269,6 +346,14 @@ const PengajuanKlaim: React.FC = () => {
                 <Box height="40px" />
             </Stack>
         </Container>
+    );
+};
+
+const PengajuanKlaim = () => {
+    return (
+        <Suspense fallback={<Loading />}>
+            <PengajuanKlaimContent />
+        </Suspense>
     );
 };
 

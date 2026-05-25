@@ -75,6 +75,10 @@ const categoryOptions = [
     { value: "Pengelolaan Sumber Daya", label: "Pengelolaan Sumber Daya" },
     { value: "Pertanian Cerdas", label: "Pertanian Cerdas" },
     { value: "Sistem Informasi", label: "Sistem Informasi" },
+    { value: "Peternakan", label: "Peternakan" },
+    { value: "Perikanan", label: "Perikanan" },
+    { value: "Perkebunan", label: "Perkebunan" },
+    { value: "Kehutanan", label: "Kehutanan" },
 ];
 
 const predefinedModels = [
@@ -91,9 +95,14 @@ const predefinedModels = [
     "Lain-lain",
 ];
 
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+import Loading from "Components/loading";
+
 const AddInnovation: React.FC = () => {
     const router = useRouter();
     const [user] = useAuthState(auth);
+    const { role, loading: userLoading } = useUser();
 
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const selectFileRef = useRef<HTMLInputElement>(null);
@@ -139,6 +148,21 @@ const AddInnovation: React.FC = () => {
         setIsModal1Open(false);
         setIsModal2Open(false);
     };
+    const handleModal2Close = () => {
+        setIsModal2Open(false);
+        router.replace(`/innovator/pengajuan/${user?.uid}`);
+    };
+
+    if (userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "innovator" || normalizedRole === "admin";
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
 
     const handleModal1Yes = () => {
         setIsModal1Open(false);
@@ -445,6 +469,9 @@ const AddInnovation: React.FC = () => {
             setAlertStatus("info");
             
             setIsModal2Open(true);
+            setTimeout(() => {
+                router.replace(`/innovator/pengajuan/${user?.uid}`);
+            }, 5000);
         } catch (error) {
             console.error("Submission error:", error);
             setError("Gagal menyimpan data inovasi ke database.");
@@ -656,6 +683,7 @@ const AddInnovation: React.FC = () => {
                                 title="Pilih Kategori Inovasi"
                                 searchPlaceholder="Cari kategori inovasi di sini..."
                                 disabled={!isEditable || isFormLocked}
+                                showAllOption={false}
                             />
 
                             <Text fontWeight="400" fontSize="14px" mb="-2">
@@ -1035,7 +1063,7 @@ const AddInnovation: React.FC = () => {
             />
             <SecConfModal
                 isOpen={isModal2Open}
-                onClose={closeModal}
+                onClose={handleModal2Close}
                 modalBody2={modalBody2}
             />
         </>

@@ -39,6 +39,10 @@ export default function InnovationCategoryPage() {
             case "Pengelolaan Sumber Daya": return tc("resourceMgmt");
             case "Layanan Sosial": return tc("socialService");
             case "E-Tourism": return tc("eTourism");
+            case "Peternakan": return tc("farm");
+            case "Kehutanan": return tc("forestry");
+            case "Perikanan": return tc("fishery");
+            case "Perkebunan": return tc("plantation");
             default: return cat;
         }
     };
@@ -94,7 +98,7 @@ export default function InnovationCategoryPage() {
                         )
                         .map((item, idx) => (
                             <CardInnovation
-                                key={idx}
+                                key={item.id || item._id || idx}
                                 {...item}
                                 jumlahDesa={item.appliedVillages?.length || item.jumlahDesaDiterapkan || item.jumlahDesa || 0}
                                 innovatorLogo={

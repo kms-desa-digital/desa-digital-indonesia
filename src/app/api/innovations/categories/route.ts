@@ -13,18 +13,49 @@ export async function GET(request: NextRequest) {
     // Jika ada query ?name=<kategori>, kembalikan inovasi terverifikasi di kategori itu
     if (categoryName) {
       const isAll = categoryName === 'Semua Kategori Inovasi'
+
+      const pipeline: any[] = [
+        {
+          $match: {
+            ...(isAll ? {} : { kategori: categoryName }),
+            status: 'Terverifikasi',
+          },
+        },
+        {
+          $lookup: {
+            from: 'claimInnovations',
+            localField: '_id',
+            foreignField: 'inovasiId',
+            as: 'allClaims',
+          },
+        },
+        {
+          $addFields: {
+            jumlahDesa: {
+              $size: {
+                $filter: {
+                  input: '$allClaims',
+                  as: 'claim',
+                  cond: { $eq: ['$$claim.status', 'Terverifikasi'] },
+                },
+              },
+            },
+          },
+        },
+        {
+          $project: { allClaims: 0 },
+        },
+        { $sort: { createdAt: -1 } },
+      ]
+
       const innovations = await db
         .collection('innovations')
-        .find({
-          ...(isAll ? {} : { kategori: categoryName }),
-          status:   'Terverifikasi',
-        })
-        .sort({ createdAt: -1 })
+        .aggregate(pipeline)
         .toArray()
 
       const result = innovations.map((doc) => ({
         ...doc,
-        id:  doc._id.toString(),
+        id: doc._id.toString(),
         _id: doc._id.toString(),
       }))
 

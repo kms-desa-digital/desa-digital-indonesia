@@ -17,16 +17,11 @@ import {
   MenuList,
   MenuItem,
 } from "@chakra-ui/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import {
   titleStyle,
   tableHeaderStyle,
   tableCellStyle,
-  tableContainerStyle,
-  paginationContainerStyle,
-  paginationButtonStyle,
-  paginationActiveButtonStyle,
-  paginationEllipsisStyle,
+  tableContainerStyle
 } from "./_detailInnovationsInnovatorStyle";
 import downloadIcon from "@public/icons/icon-download.svg";
 
@@ -37,6 +32,7 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Pagination from "@/components/common/Pagination";
 
 // Data type
 interface Implementation {
@@ -131,10 +127,6 @@ const DetailInnovations = ({ filterInnovator, onSelectVillage }: DetailInnovatio
     currentPage * itemsPerPage
   );
 
-  const goToPage = (page: number) => {
-    setCurrentPage(page);
-  };
-
   const downloadXLSX = () => {
     const worksheet = XLSX.utils.json_to_sheet(filteredData);
     const workbook = XLSX.utils.book_new();
@@ -209,37 +201,6 @@ const DetailInnovations = ({ filterInnovator, onSelectVillage }: DetailInnovatio
     doc.save(`Detail_Desa_Digital_${filterInnovator || "data"}.pdf`);
   };
 
-  const getPageNumbers = () => {
-    const pageNumbers: (number | string)[] = [];
-    const maxPagesToShow = 5;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      const leftSiblingIndex = Math.max(currentPage - 1, 1);
-      const rightSiblingIndex = Math.min(currentPage + 1, totalPages);
-      const showLeftDots = leftSiblingIndex > 2;
-      const showRightDots = rightSiblingIndex < totalPages - 1;
-
-      if (!showLeftDots && showRightDots) {
-        for (let i = 1; i <= 3; i++) pageNumbers.push(i);
-        pageNumbers.push("...");
-        pageNumbers.push(totalPages);
-      } else if (showLeftDots && !showRightDots) {
-        pageNumbers.push(1, "...");
-        for (let i = totalPages - 2; i <= totalPages; i++) pageNumbers.push(i);
-      } else {
-        pageNumbers.push(1, "...");
-        for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) pageNumbers.push(i);
-        pageNumbers.push("...", totalPages);
-      }
-    }
-
-    return pageNumbers;
-  };
-
   return (
     <Box p={4} maxW="100%" mx="auto">
       <Flex justify="space-between" align="center" mb={2}>
@@ -305,42 +266,11 @@ const DetailInnovations = ({ filterInnovator, onSelectVillage }: DetailInnovatio
             </Table>
           </TableContainer>
 
-          {totalPages > 1 && (
-            <Flex sx={paginationContainerStyle}>
-              <Button
-                aria-label="Previous page"
-                onClick={() => goToPage(Math.max(1, currentPage - 1))}
-                isDisabled={currentPage === 1}
-                {...paginationButtonStyle}
-              >
-                <ChevronLeftIcon />
-              </Button>
-
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <Box key={`ellipsis-${index}`} sx={paginationEllipsisStyle}>...</Box>
-                ) : (
-                  <Button
-                    key={`page-${page}`}
-                    onClick={() => goToPage(Number(page))}
-                    {...paginationButtonStyle}
-                    {...(page === currentPage ? paginationActiveButtonStyle : {})}
-                  >
-                    {page}
-                  </Button>
-                )
-              )}
-
-              <Button
-                aria-label="Next page"
-                onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
-                isDisabled={currentPage === totalPages}
-                {...paginationButtonStyle}
-              >
-                <ChevronRightIcon />
-              </Button>
-            </Flex>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
     </Box>
