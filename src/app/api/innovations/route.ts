@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { notifyAllAdmins } from '@/services/notificationServices'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 // Opt out of Next.js static caching so jumlahDesa always reflects live DB state
 export const dynamic = 'force-dynamic'
@@ -127,17 +128,56 @@ export async function POST(request: NextRequest) {
       tahunDibuat,
       deskripsi,
       innovatorId,
+      statusInovasi,
+      modelBisnis,
+      inputDesaMenerapkan,
+      manfaat,
+      infrastruktur,
     } = body
 
-    // Validasi field wajib
-    if (!namaInovasi || !kategori || !tahunDibuat || !deskripsi || !innovatorId) {
+    // Comprehensive Validation for Required Fields (matching frontend)
+    if (
+      !namaInovasi || 
+      !kategori || 
+      !tahunDibuat || 
+      !deskripsi || 
+      !innovatorId ||
+      !statusInovasi ||
+      !modelBisnis || (Array.isArray(modelBisnis) && modelBisnis.length === 0) ||
+      !inputDesaMenerapkan ||
+      !manfaat || (Array.isArray(manfaat) && manfaat.length === 0) ||
+      !infrastruktur || (Array.isArray(infrastruktur) && infrastruktur.length === 0)
+    ) {
       return NextResponse.json(
-        { message: 'Field wajib tidak lengkap: namaInovasi, kategori, tahunDibuat, deskripsi, innovatorId' },
+        { message: 'Field wajib tidak lengkap. Pastikan semua data bintang (*) telah diisi.' },
         { status: 400 }
       )
     }
 
+    try {
+      validateWordLimit(deskripsi, 80, 'deskripsi');
+      validateWordLimit(inputDesaMenerapkan, 20, 'desa yang menerapkan');
+      if (Array.isArray(modelBisnis)) {
+        modelBisnis.forEach((model: string) => {
+          validateWordLimit(model, 5, `model bisnis "${model}"`);
+        });
+      }
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
+    }
+
     const db = await connectToDatabase()
+
+    // Validate innovator verification status
+    if (auth.role !== 'admin') {
+      const innovator = await db.collection('innovators').findOne({ userId: auth.uid })
+      if (!innovator || innovator.status !== 'Terverifikasi') {
+        return NextResponse.json(
+          { message: 'Profil Inovator Anda belum diverifikasi. Anda tidak dapat menambahkan inovasi.' },
+          { status: 403 }
+        )
+      }
+    }
 
     const newInnovation = {
       ...body,

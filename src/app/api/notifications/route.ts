@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
     const db = await connectToDatabase()
 
     const newNotification = {
+      ...body,
       userId,
       type,
       title,

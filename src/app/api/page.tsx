@@ -207,6 +207,51 @@ const ENDPOINTS: Record<string, Endpoint[]> = {
       body: { type: "broadcast_all | broadcast_role | trigger_ranking", title: "string?", description: "string?" },
       auth: "Bearer Token",
     },
+    {
+      method: "GET",
+      url: "/api/admin/users",
+      desc: "Melihat daftar semua pengguna (users) terpaginasi beserta pencarian.",
+      params: ["search", "role", "page", "limit"],
+    },
+    {
+      method: "POST",
+      url: "/api/admin/users",
+      desc: "Membuat akun user baru dari dashboard admin.",
+      body: { email: "string", password: "string", role: "admin | innovator | village" },
+    },
+    {
+      method: "GET",
+      url: "/api/admin/ads",
+      desc: "Mengambil daftar iklan (ads) beserta statusnya.",
+      params: ["status", "search", "page", "limit"],
+    },
+    {
+      method: "POST",
+      url: "/api/admin/ads",
+      desc: "Membuat iklan (ad) baru.",
+      body: { name: "string", minDate: "date", maxDate: "date", link: "string", image: "string?" },
+    },
+    {
+      method: "GET",
+      url: "/api/admin/ads/[id]",
+      desc: "Mengambil detail satu iklan.",
+    },
+    {
+      method: "PUT",
+      url: "/api/admin/ads/[id]",
+      desc: "Mengubah seluruh informasi (update) iklan.",
+    },
+    {
+      method: "PATCH",
+      url: "/api/admin/ads/[id]",
+      desc: "Mengubah visibilitas (toggle show/hide) iklan.",
+      body: { isVisible: "boolean" },
+    },
+    {
+      method: "DELETE",
+      url: "/api/admin/ads/[id]",
+      desc: "Menghapus iklan.",
+    },
   ],
   Ministry: [
     {
@@ -223,41 +268,33 @@ const ENDPOINTS: Record<string, Endpoint[]> = {
       params: ["status"],
     },
     {
+      method: "POST",
+      url: "/api/innovator",
+      desc: "Membuat profil inovator baru (oleh admin atau inovator sendiri).",
+      body: { namaInovator: "string", deskripsi: "string", kategori: "string", whatsapp: "string", status: "string?" },
+    },
+    {
+      method: "GET",
+      url: "/api/innovator/[id]",
+      desc: "Melihat detail spesifik profil inovator.",
+    },
+    {
+      method: "PUT",
+      url: "/api/innovator/[id]",
+      desc: "Mengupdate data profil inovator.",
+      body: { namaInovator: "string", kategori: "string", etc: "..." },
+    },
+    {
       method: "GET",
       url: "/api/innovator/dashboard",
       desc: "Mengambil data statistik dan performa untuk dashboard inovator.",
     },
+  ],
+  Ads: [
     {
       method: "GET",
-      url: "/api/innovator/profile",
-      desc: "Mengambil profil detail milik inovator yang sedang login.",
-    },
-    {
-      method: "POST",
-      url: "/api/innovator/profile/[id]",
-      desc: "Membuat atau mengupdate profil inovator. Field wajib: namaInovator, deskripsi, kategori, whatsapp.",
-      body: {
-        namaInovator: "string",
-        deskripsi: "string",
-        kategori: "string",
-        whatsapp: "string",
-        instagram: "string?",
-        website: "string?",
-        logo: "string?",
-        status: "string?"
-      },
-    },
-    {
-      method: "GET",
-      url: "/api/innovator/detail",
-      desc: "Melihat detail spesifik data inovator secara terperinci.",
-      params: ["id"],
-    },
-    {
-      method: "PUT",
-      url: "/api/innovator/edit",
-      desc: "Melakukan update terhadap data profil inovator.",
-      body: { namaInovator: "string", kategori: "string", etc: "..." },
+      url: "/api/ads",
+      desc: "Public endpoint — Mengambil daftar iklan yang sedang aktif (sesuai tanggal aktif dan isVisible).",
     },
   ],
   Notifications: [
@@ -326,7 +363,7 @@ export default function ApiDocumentation() {
           <Heading size="md" color="#347357">KMS Desa Digital API</Heading>
           <Text fontSize="sm" color="gray.600">
             Dokumentasi teknis untuk pengembangan sistem Desa Digital Indonesia.
-            Base URL: <Code>http://localhost:3000</Code>
+            Base URL: <Code>http://desa-digital-v3.vercel.app</Code>
           </Text>
         </Box>
 

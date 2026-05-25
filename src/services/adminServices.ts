@@ -51,15 +51,26 @@ export const broadcastNotification = async (data: any) => {
 };
 
 // Ads
-export const createAd = async (body: {
+export interface CreateAdPayload {
   name: string;
   minDate: string;
   maxDate: string;
   link: string;
   image?: string;
   status?: string;
-}) => {
-  return api.post("/admin/ads/make", body);
+}
+
+export interface UpdateAdPayload {
+  name?: string;
+  minDate?: string;
+  maxDate?: string;
+  link?: string;
+  image?: string;
+  status?: string;
+}
+
+export const createAd = async (data: CreateAdPayload) => {
+  return api.post("/admin/ads", data);
 };
 
 export const getAds = async (params?: { page?: number; limit?: number; status?: string; search?: string }) => {
@@ -74,8 +85,8 @@ export const getAdById = async (id: string) => {
   return api.get(`/admin/ads/${id}`);
 };
 
-export const updateAd = async (id: string, body: any) => {
-  return api.put("/admin/ads/edit", { id, ...body });
+export const updateAd = async (id: string, data: UpdateAdPayload) => {
+  return api.put(`/admin/ads/${id}`, data);
 };
 
 export const toggleAdVisibility = async (id: string, isVisible: boolean) => {
