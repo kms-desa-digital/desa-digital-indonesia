@@ -3,9 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Box, Flex, Text, Image, Spinner, Stack } from "@chakra-ui/react";
-import { ChevronRightIcon, ChevronLeftIcon } from "@chakra-ui/icons";
+import { Box, Flex, Text, Image, Spinner, Stack, Input, InputGroup, InputLeftElement, InputRightElement } from "@chakra-ui/react";
+import { ChevronRightIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import { getInnovatorById, getAssistedVillages } from "Services/innovatorServices";
+import TopBar from "Components/topBar";
+import Container from "Components/container";
 
 type VillageData = {
     id: string;
@@ -26,8 +28,10 @@ const InnovatorAssistedVillages = () => {
 
     const [innovatorName, setInnovatorName] = useState<string>("");
     const [villages, setVillages] = useState<VillageData[]>([]);
+    const [filteredVillages, setFilteredVillages] = useState<VillageData[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         if (!id) return;
@@ -44,7 +48,9 @@ const InnovatorAssistedVillages = () => {
 
                 // Fetch Villages
                 const villageRes: any = await getAssistedVillages(id);
-                setVillages(villageRes?.villages || villageRes?.data || []);
+                const fetchedVillages = villageRes?.villages || villageRes?.data || [];
+                setVillages(fetchedVillages);
+                setFilteredVillages(fetchedVillages);
             } catch (err) {
                 console.error("Error fetching villages data:", err);
                 setError("Gagal memuat daftar desa dampingan.");
@@ -56,28 +62,24 @@ const InnovatorAssistedVillages = () => {
         fetchData();
     }, [id]);
 
+    useEffect(() => {
+        if (searchTerm.trim() === "") {
+            setFilteredVillages(villages);
+        } else {
+            const lower = searchTerm.toLowerCase();
+            setFilteredVillages(
+                villages.filter((v) =>
+                    v.namaDesa.toLowerCase().includes(lower) ||
+                    (v.kecamatan || "").toLowerCase().includes(lower) ||
+                    (v.kabupaten || "").toLowerCase().includes(lower)
+                )
+            );
+        }
+    }, [searchTerm, villages]);
+
     return (
-        <Box width="100%" maxWidth="360px" mx="auto" minHeight="100vh" backgroundColor="#f9fafb" pb={8}>
-            {/* Header */}
-            <Flex
-                alignItems="center"
-                justifyContent="center"
-                position="relative"
-                padding="16px"
-                backgroundColor="#347357"
-                color="white"
-            >
-                <ChevronLeftIcon
-                    boxSize={6}
-                    position="absolute"
-                    left="16px"
-                    cursor="pointer"
-                    onClick={() => router.back()}
-                />
-                <Text fontSize="16px" fontWeight="bold">
-                    {t("companionVillages")}
-                </Text>
-            </Flex>
+        <Container page>
+            <TopBar title={t("companionVillages")} onBack={() => router.back()} />
 
             {/* Title */}
             <Box px={5} pt={6} pb={2}>
@@ -89,6 +91,45 @@ const InnovatorAssistedVillages = () => {
                         {t("byInnovator", { name: innovatorName })}
                     </Text>
                 )}
+
+                <InputGroup mt={4}>
+                    <InputLeftElement pointerEvents="none">
+                        <SearchIcon color="gray.400" />
+                    </InputLeftElement>
+                    <Input
+                        placeholder={tInnovation("searchVillage")}
+                        size="md"
+                        borderRadius="xl"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        bg="white"
+                        boxShadow="sm"
+                        border="1px solid"
+                        borderColor="gray.200"
+                        pr="40px"
+                    />
+                    {searchTerm && (
+                        <InputRightElement>
+                            <Box
+                                as="button"
+                                onClick={() => setSearchTerm("")}
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                borderRadius="full"
+                                bg="#6B7280"
+                                color="white"
+                                boxSize="18px"
+                                _hover={{ bg: "gray.600" }}
+                                _active={{ bg: "gray.700" }}
+                                cursor="pointer"
+                                mr="8px"
+                            >
+                                <CloseIcon w="6px" h="6px" />
+                            </Box>
+                        </InputRightElement>
+                    )}
+                </InputGroup>
             </Box>
 
             {/* List Content */}
@@ -101,9 +142,9 @@ const InnovatorAssistedVillages = () => {
                     <Text textAlign="center" mt={10} color="red.500">
                         {error}
                     </Text>
-                ) : villages.length > 0 ? (
+                ) : filteredVillages.length > 0 ? (
                     <Stack spacing={4}>
-                        {villages.map((village) => (
+                        {filteredVillages.map((village) => (
                             <Box
                                 key={village.id}
                                 borderWidth="1px"
@@ -171,11 +212,11 @@ const InnovatorAssistedVillages = () => {
                     </Stack>
                 ) : (
                     <Text textAlign="center" mt={10} color="#9CA3AF" fontSize="14px">
-                        {t("noCompanionVillages")}
+                        {searchTerm ? tInnovation("noMatchingVillages") : t("noCompanionVillages")}
                     </Text>
                 )}
             </Box>
-        </Box>
+        </Container>
     );
 };
 

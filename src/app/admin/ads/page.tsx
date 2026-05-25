@@ -1,6 +1,6 @@
 "use client";
 
-import { AddIcon, ChevronDownIcon, SearchIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { AddIcon, ChevronDownIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import {
     Box,
     Button,
@@ -8,6 +8,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Menu,
     MenuButton,
     MenuItem,
@@ -23,6 +24,7 @@ import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams } from "next/navigation";
 import { paths } from "Consts/path";
 import { getAds } from "Services/adminServices";
+import Pagination from "@/components/common/Pagination";
 
 type Ad = {
     _id: string;
@@ -95,7 +97,7 @@ const AdminAdsPageContent: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState(initialSearch);
     const [selectedStatus, setSelectedStatus] = useState<string>(initialFilter);
     const [currentPage, setCurrentPage] = useState(initialPage);
-    const [hasMore, setHasMore] = useState(false);
+    const [totalPages, setTotalPages] = useState(1);
     const itemsPerPage = 5;
 
     const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
@@ -129,15 +131,15 @@ const AdminAdsPageContent: React.FC = () => {
             
             // Check pagination hasMore from response or length
             const pagination = response?.data?.pagination || response?.pagination;
-            if (pagination) {
-                setHasMore(pagination.hasNextPage || page < (pagination.totalPages || 1));
+            if (pagination && pagination.totalPages) {
+                setTotalPages(pagination.totalPages);
             } else {
-                setHasMore(data.length === itemsPerPage);
+                setTotalPages(1);
             }
         } catch (err) {
             console.error("Error fetching ads:", err);
             setAds([]);
-            setHasMore(false);
+            setTotalPages(1);
         } finally {
             setLoading(false);
         }
@@ -162,26 +164,21 @@ const AdminAdsPageContent: React.FC = () => {
         return () => clearTimeout(timeoutId);
     }, [searchTerm]);
 
+    const handleClearSearch = () => {
+        setSearchTerm("");
+        setCurrentPage(1);
+        updateUrl(1, selectedStatus, "");
+    };
+
     const handleFilterSelect = (status: string) => {
         setSelectedStatus(status);
         setCurrentPage(1);
         updateUrl(1, status, searchTerm);
     };
 
-    const handleNextPage = () => {
-        if (hasMore) {
-            const nextPage = currentPage + 1;
-            setCurrentPage(nextPage);
-            updateUrl(nextPage, selectedStatus, searchTerm);
-        }
-    };
-
-    const handlePrevPage = () => {
-        if (currentPage > 1) {
-            const prevPage = currentPage - 1;
-            setCurrentPage(prevPage);
-            updateUrl(prevPage, selectedStatus, searchTerm);
-        }
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        updateUrl(page, selectedStatus, searchTerm);
     };
 
     return (
@@ -221,7 +218,29 @@ const AdminAdsPageContent: React.FC = () => {
                             _placeholder={{ color: "gray.400" }}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
+                            pr={searchTerm ? "40px" : undefined}
                         />
+                        {searchTerm && (
+                            <InputRightElement>
+                                <Box
+                                    as="button"
+                                    onClick={handleClearSearch}
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    borderRadius="full"
+                                    bg="#6B7280"
+                                    color="white"
+                                    boxSize="18px"
+                                    _hover={{ bg: "gray.600" }}
+                                    _active={{ bg: "gray.700" }}
+                                    cursor="pointer"
+                                    mr="8px"
+                                >
+                                    <CloseIcon w="6px" h="6px" />
+                                </Box>
+                            </InputRightElement>
+                        )}
                     </InputGroup>
 
                     <Menu>
@@ -324,42 +343,12 @@ const AdminAdsPageContent: React.FC = () => {
                 </Stack>
 
                 {/* Pagination Controls */}
-                {!loading && ads.length > 0 && (
-                    <Flex
-                        justifyContent="center"
-                        mt={8}
-                        mb={8}
-                        alignItems="center"
-                        gap={4}
-                    >
-                        <Button
-                            onClick={handlePrevPage}
-                            isDisabled={currentPage === 1}
-                            variant="outline"
-                            size="sm"
-                            borderColor="gray.200"
-                            color="#347357"
-                            _hover={{ bg: "gray.50" }}
-                        >
-                            <ChevronLeftIcon />
-                        </Button>
-                        
-                        <Text textAlign="center" fontWeight="500" fontSize="14px" color="gray.700">
-                            Halaman {currentPage}
-                        </Text>
-                        
-                        <Button
-                            onClick={handleNextPage}
-                            isDisabled={!hasMore}
-                            variant="outline"
-                            size="sm"
-                            borderColor="gray.200"
-                            color="#347357"
-                            _hover={{ bg: "gray.50" }}
-                        >
-                            <ChevronRightIcon />
-                        </Button>
-                    </Flex>
+                {!loading && ads.length > 0 && totalPages > 0 && (
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
                 )}
             </Box>
         </Container>

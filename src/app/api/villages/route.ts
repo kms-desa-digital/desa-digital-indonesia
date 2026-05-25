@@ -69,6 +69,9 @@ export async function GET(request: NextRequest) {
     }
 
     const filter: any = andConditions.length ? { $and: andConditions } : {}
+    
+    // Count total matched documents
+    const totalCount = await db.collection('villages').countDocuments(filter)
 
     const pipeline: any[] = [
       { $match: filter },
@@ -152,8 +155,18 @@ export async function GET(request: NextRequest) {
       id: doc._id.toString(),
       _id: doc._id.toString(),
     }))
+    
+    const totalPages = limitVal > 0 ? Math.ceil(totalCount / limitVal) : 1;
 
-    return new NextResponse(JSON.stringify({ villages: result }, null, 2), {
+    return new NextResponse(JSON.stringify({ 
+      villages: result,
+      pagination: {
+        total: totalCount,
+        totalPages,
+        limit: limitVal,
+        skip: skipVal
+      }
+    }, null, 2), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
     })

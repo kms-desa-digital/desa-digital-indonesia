@@ -275,6 +275,7 @@ function DetailInnovation() {
             }
 
             toast.success("Inovasi berhasil diverifikasi!");
+            router.replace("/admin/verification/Verifikasi Tambah Inovasi");
         } catch (error) {
             console.error("Error verifying innovation via API:", error);
             setError("Error verifying innovation");
@@ -301,6 +302,7 @@ function DetailInnovation() {
                 catatanAdmin: modalInput,
             }));
             toast.success("Penolakan berhasil");
+            router.replace("/admin/verification/Verifikasi Tambah Inovasi");
         } catch (error) {
             console.error("Error rejecting innovation via API:", error);
             setError("Error rejecting innovation");

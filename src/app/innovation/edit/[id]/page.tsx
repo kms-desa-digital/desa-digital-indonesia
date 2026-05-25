@@ -416,7 +416,7 @@ const EditInnovation: React.FC = () => {
                 isClosable: true,
                 position: "top",
             });
-            router.push(paths.PENGAJUAN_INOVASI_DETAIL_PAGE.replace(":id", innovatorId));
+            router.replace(paths.PENGAJUAN_INOVASI_DETAIL_PAGE.replace(":id", innovatorId));
         } catch (error: any) {
             console.error("Error deleting innovation via API:", error);
             if (error.response?.data?.message === "ID tidak valid") {
@@ -438,7 +438,7 @@ const EditInnovation: React.FC = () => {
 
     const handleSuccessClose = () => {
         setIsSuccessOpen(false);
-        router.push(`/innovation/detail/${id}`);
+        router.replace(`/innovation/detail/${id}`);
     };
 
     if (loading) {
@@ -500,6 +500,7 @@ const EditInnovation: React.FC = () => {
                                 title="Pilih Kategori Inovasi"
                                 searchPlaceholder="Cari kategori inovasi di sini..."
                                 disabled={loading || !isEditable}
+                                showAllOption={false}
                             />
                             <Text fontWeight="400" fontSize="14px">
                                 Tahun dibuat inovasi <span style={{ color: "red" }}>*</span>

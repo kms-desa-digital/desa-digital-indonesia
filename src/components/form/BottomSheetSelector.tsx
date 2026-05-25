@@ -33,6 +33,7 @@ interface BottomSheetSelectorProps {
     title: string;
     searchPlaceholder?: string;
     disabled?: boolean;
+    showAllOption?: boolean;
 }
 
 const BottomSheetSelector: React.FC<BottomSheetSelectorProps> = ({
@@ -43,6 +44,7 @@ const BottomSheetSelector: React.FC<BottomSheetSelectorProps> = ({
     title,
     searchPlaceholder = "Cari di sini...",
     disabled = false,
+    showAllOption = true,
 }) => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const [search, setSearch] = useState("");
@@ -124,7 +126,7 @@ const BottomSheetSelector: React.FC<BottomSheetSelectorProps> = ({
 
                     <DrawerBody px={4} pb={6}>
                         <VStack align="stretch" spacing={0} mt={2}>
-                            {!search && (
+                            {showAllOption && !search && (
                                 <Box
                                     py={4}
                                     borderBottomWidth="1px"

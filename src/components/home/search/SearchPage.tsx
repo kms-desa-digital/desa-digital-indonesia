@@ -109,6 +109,7 @@ function SearchPage() {
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           onKeyDown={handleSearchSubmit}
+          onClear={() => setSearchValue("")}
           width="100%"
           maxW="100%"
         />

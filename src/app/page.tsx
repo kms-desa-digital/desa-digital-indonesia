@@ -219,6 +219,7 @@ export default function Home() {
           onSuggestionClick={handleSuggestionClick}
           showSearchButton={true}
           onSearchClick={handleSearchClick}
+          onClear={() => setSearchValue("")}
         />
         <Menu />
         <Flex direction="row" justifyContent="space-between" padding="0 14px">

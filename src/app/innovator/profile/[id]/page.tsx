@@ -100,6 +100,9 @@ const ProfileInnovator: React.FC = () => {
                     prev ? ({ ...prev, status: "Terverifikasi" }) : null
                 );
                 toast.success("Profil Inovator berhasil diverifikasi");
+                if (isAdmin) {
+                    router.replace("/admin/verification/Verifikasi Inovator");
+                }
             }
         } catch (error) {
             console.error("Error verifying user via API:", error);
@@ -125,6 +128,9 @@ const ProfileInnovator: React.FC = () => {
                         catatanAdmin: modalInput,
                     }) : null);
                 toast.success("Penolakan berhasil");
+                if (isAdmin) {
+                    router.replace("/admin/verification/Verifikasi Inovator");
+                }
             }
         } catch (error) {
             console.error("Error rejecting user via API:", error);

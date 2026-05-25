@@ -57,7 +57,7 @@ const KlaimInovasiContent: React.FC = () => {
     const [selectedDoc, setSelectedDoc] = useState<string[]>([]);
     const [selectedVid, setSelectedVid] = useState<string>("");
     const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
-    
+
     const generateObjectId = () => [...Array(24)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
     const [claimId] = useState(() => searchParams.get("editId") || generateObjectId());
     const selectedFileRef = useRef<HTMLInputElement>(null);
@@ -74,7 +74,7 @@ const KlaimInovasiContent: React.FC = () => {
     });
     const modalBody1 = "Apakah Anda yakin ingin mengajukan klaim?";
     const modalBody2 =
-        "Inovasi sudah ditambahkan. Admin sedang memverifikasi pengajuan klaim inovasi. Silahkan cek pada halaman pengajuan klaim";
+        "Inovasi sudah ditambahkan. Admin sedang memverifikasi pengajuan klaim inovasi.";
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
     const { isOpen, onOpen, onClose } = useDisclosure();
@@ -249,7 +249,7 @@ const KlaimInovasiContent: React.FC = () => {
     const submitClaim = async () => {
         console.log("Submitting claim via API...");
         setLoading(true);
-        setDisabled(true); 
+        setDisabled(true);
 
         if (!user?.uid || !inovasiId) {
             setError("User atau ID inovasi tidak ditemukan");
@@ -269,7 +269,7 @@ const KlaimInovasiContent: React.FC = () => {
             const innovationMetadata = innovationRes.data || innovationRes.innovation;
 
             const formData = {
-                id: claimId, 
+                id: claimId,
                 desaId: user.uid,
                 namaDesa: villageMetadata?.namaDesa || claimData?.namaDesa || "",
                 inovasiId: inovasiId || null,
@@ -299,11 +299,13 @@ const KlaimInovasiContent: React.FC = () => {
                 autoClose: 3000
             });
 
-            setTimeout(() => {
-                if (!isModal2Open) { 
-                    handleSuccessRedirect(response);
-                }
-            }, 5000);
+            if (!inovasiId) {
+                setTimeout(() => {
+                    if (!isModal2Open) {
+                        handleSuccessRedirect(response);
+                    }
+                }, 5000);
+            }
 
         } catch (error: any) {
             console.error("Error submitting claim:", error);
@@ -323,7 +325,7 @@ const KlaimInovasiContent: React.FC = () => {
 
     const getDynamicModalBody = () => {
         if (editId && claimData?.status === "Terverifikasi") {
-            return "Klaim ini sudah terverifikasi. Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu' dan memerlukan persetujuan ulang dari Admin. Apakah Anda yakin?";
+            return "Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu'. Apakah Anda yakin?";
         }
         return modalBody1;
     };
@@ -335,9 +337,9 @@ const KlaimInovasiContent: React.FC = () => {
     const handleSuccessRedirect = (response?: any) => {
         const newClaimId = editId || response?.claimId || response?.data?.claimId || (typeof response === 'string' ? response : "");
         if (newClaimId) {
-            router.push(`/village/klaimInovasi/detail/${newClaimId}`);
+            router.replace(`/village/klaimInovasi/detail/${newClaimId}`);
         } else {
-            router.push(`/village/pengajuan/${user?.uid}`);
+            router.replace(`/village/pengajuan/${user?.uid}`);
         }
     };
 
@@ -348,7 +350,11 @@ const KlaimInovasiContent: React.FC = () => {
 
     const handleModal2Close = () => {
         setIsModal2Open(false);
-        handleSuccessRedirect();
+        if (inovasiId) {
+            router.replace("/");
+        } else {
+            handleSuccessRedirect();
+        }
     };
 
     useEffect(() => {
@@ -395,8 +401,8 @@ const KlaimInovasiContent: React.FC = () => {
                         <JenisKlaim>
                             <input
                                 style={{
-                                    transform: "scale(1.3)", 
-                                    marginRight: "8px", 
+                                    transform: "scale(1.3)",
+                                    marginRight: "8px",
                                     cursor: (isUploading.foto || !editable || loading || disabled) ? "not-allowed" : "pointer"
                                 }}
                                 type="checkbox"
@@ -409,8 +415,8 @@ const KlaimInovasiContent: React.FC = () => {
                         <JenisKlaim>
                             <input
                                 style={{
-                                    transform: "scale(1.3)", 
-                                    marginRight: "8px", 
+                                    transform: "scale(1.3)",
+                                    marginRight: "8px",
                                     cursor: (isUploading.video || !editable || loading || disabled) ? "not-allowed" : "pointer"
                                 }}
                                 type="checkbox"
@@ -423,8 +429,8 @@ const KlaimInovasiContent: React.FC = () => {
                         <JenisKlaim>
                             <input
                                 style={{
-                                    transform: "scale(1.3)", 
-                                    marginRight: "8px", 
+                                    transform: "scale(1.3)",
+                                    marginRight: "8px",
                                     cursor: (isUploading.dokumen || !editable || loading || disabled) ? "not-allowed" : "pointer"
                                 }}
                                 type="checkbox"
@@ -504,7 +510,7 @@ const KlaimInovasiContent: React.FC = () => {
                 <div>
                     {isAdmin ? (
                         claimData?.status === "Terverifikasi" ||
-                        claimData?.status === "Ditolak" ? (
+                            claimData?.status === "Ditolak" ? (
                             <StatusCard
                                 status={claimData.status}
                                 message={claimData.catatanAdmin}
@@ -601,7 +607,7 @@ const KlaimInovasiContent: React.FC = () => {
                         isOpen={isDeleteModalOpen}
                         onClose={() => setIsDeleteModalOpen(false)}
                         onYes={confirmDeleteClaim}
-                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini? Data yang sudah dihapus tidak dapat dikembalikan."
+                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini?"
                         modalTitle="Hapus Klaim"
                         isLoading={loading}
                     />
@@ -609,6 +615,8 @@ const KlaimInovasiContent: React.FC = () => {
                         isOpen={isModal2Open}
                         onClose={handleModal2Close}
                         modalBody2={modalBody2} // Mengirimkan teks konten modal
+                        isRegularClaim={!!inovasiId}
+                        innovationId={inovasiId || undefined}
                     />
                     <RejectionModal
                         isOpen={openModal}

@@ -188,11 +188,14 @@ export async function GET(request: NextRequest) {
       id: doc._id.toString(),
       _id: doc._id.toString(),
     }))
+    
+    const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
 
     return new NextResponse(JSON.stringify({ 
       claims: result,
       pagination: {
         total,
+        totalPages,
         limit,
         skip,
         hasMore: total > skip + result.length

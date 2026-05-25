@@ -24,11 +24,7 @@ import {
   titleStyle,
   tableHeaderStyle,
   tableCellStyle,
-  tableContainerStyle,
-  paginationContainerStyle,
-  paginationButtonStyle,
-  paginationActiveButtonStyle,
-  paginationEllipsisStyle,
+  tableContainerStyle
 } from "./_detailVillagesStyle";
 import downloadIcon from "@public/icons/icon-download.svg";
 
@@ -36,6 +32,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import Pagination from "@/components/common/Pagination";
 
 interface Implementation {
   villageId: string;
@@ -216,43 +213,6 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  const goToPage = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const getPageNumbers = () => {
-    const pageNumbers: (number | string)[] = [];
-    const maxPagesToShow = 5;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
-    } else {
-      const leftSiblingIndex = Math.max(currentPage - 1, 1);
-      const rightSiblingIndex = Math.min(currentPage + 1, totalPages);
-
-      const shouldShowLeftDots = leftSiblingIndex > 2;
-      const shouldShowRightDots = rightSiblingIndex < totalPages - 1;
-
-      if (!shouldShowLeftDots && shouldShowRightDots) {
-        for (let i = 1; i <= 3; i++) pageNumbers.push(i);
-        pageNumbers.push("...");
-        pageNumbers.push(totalPages);
-      } else if (shouldShowLeftDots && !shouldShowRightDots) {
-        pageNumbers.push(1);
-        pageNumbers.push("...");
-        for (let i = totalPages - 2; i <= totalPages; i++) pageNumbers.push(i);
-      } else if (shouldShowLeftDots && shouldShowRightDots) {
-        pageNumbers.push(1);
-        pageNumbers.push("...");
-        for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) pageNumbers.push(i);
-        pageNumbers.push("...");
-        pageNumbers.push(totalPages);
-      }
-    }
-
-    return pageNumbers;
-  };
 
   const exportToPDF = () => {
     if (implementationData.length === 0) {
@@ -439,41 +399,11 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
             </Table>
           </TableContainer>
 
-          {totalPages > 1 && (
-            <Flex sx={paginationContainerStyle} mt={2}>
-              <Button
-                sx={paginationButtonStyle}
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                leftIcon={<ChevronLeftIcon />}
-              >
-                Prev
-              </Button>
-              {getPageNumbers().map((page, idx) =>
-                typeof page === "number" ? (
-                  <Button
-                    key={idx}
-                    sx={page === currentPage ? paginationActiveButtonStyle : paginationButtonStyle}
-                    onClick={() => goToPage(page)}
-                  >
-                    {page}
-                  </Button>
-                ) : (
-                  <Text key={idx} sx={paginationEllipsisStyle}>
-                    {page}
-                  </Text>
-                )
-              )}
-              <Button
-                sx={paginationButtonStyle}
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                rightIcon={<ChevronRightIcon />}
-              >
-                Next
-              </Button>
-            </Flex>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
     </Box>

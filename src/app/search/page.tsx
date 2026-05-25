@@ -93,6 +93,7 @@ const SearchContent = () => {
                     value={searchValue}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchValue(e.target.value)}
                     onKeyDown={handleSearchSubmit}
+                    onClear={() => setSearchValue("")}
                     width="100%"
                     maxW="100%"
                 />
