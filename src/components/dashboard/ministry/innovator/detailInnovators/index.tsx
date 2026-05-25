@@ -17,16 +17,11 @@ import {
   Image,
   Button,
 } from "@chakra-ui/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import {
   titleStyle,
   tableHeaderStyle,
   tableCellStyle,
-  tableContainerStyle,
-  paginationContainerStyle,
-  paginationButtonStyle,
-  paginationActiveButtonStyle,
-  paginationEllipsisStyle,
+  tableContainerStyle
 } from "./_detailInnovatorsStyle";
 
 import downloadIcon from "@public/icons/icon-download.svg";
@@ -43,6 +38,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import Pagination from "@/components/common/Pagination";
 
 interface InnovatorData {
   id: string;
@@ -119,8 +115,6 @@ const DetailInnovators = ({ kategoriInovator, onSelectInovator }: DetailInnovato
   useEffect(() => {
     fetchData();
   }, [kategoriInovator]);
-
-  const goToPage = (page: number) => setCurrentPage(page);
 
   const handleDownloadPDF = () => {
     if (!data.length) return;
@@ -209,35 +203,6 @@ const DetailInnovators = ({ kategoriInovator, onSelectInovator }: DetailInnovato
     saveAs(dataBlob, filename);
   };
 
-  const getPageNumbers = () => {
-    const pageNumbers: (number | string)[] = [];
-    const maxPagesToShow = 5;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
-    } else {
-      const left = Math.max(currentPage - 1, 1);
-      const right = Math.min(currentPage + 1, totalPages);
-      const showLeftDots = left > 2;
-      const showRightDots = right < totalPages - 1;
-
-      if (!showLeftDots && showRightDots) {
-        for (let i = 1; i <= 3; i++) pageNumbers.push(i);
-        pageNumbers.push("...");
-        pageNumbers.push(totalPages);
-      } else if (showLeftDots && !showRightDots) {
-        pageNumbers.push(1, "...");
-        for (let i = totalPages - 2; i <= totalPages; i++) pageNumbers.push(i);
-      } else {
-        pageNumbers.push(1, "...");
-        for (let i = left; i <= right; i++) pageNumbers.push(i);
-        pageNumbers.push("...", totalPages);
-      }
-    }
-
-    return pageNumbers;
-  };
-
   return (
     <Box p={4} maxW="100%" mx="auto">
       <Flex justify="space-between" align="center" mb={2}>
@@ -294,44 +259,11 @@ const DetailInnovators = ({ kategoriInovator, onSelectInovator }: DetailInnovato
             </Table>
           </TableContainer>
 
-          {totalPages > 1 && (
-            <Flex sx={paginationContainerStyle}>
-              <Button
-                aria-label="Previous page"
-                onClick={() => goToPage(Math.max(1, currentPage - 1))}
-                isDisabled={currentPage === 1}
-                {...paginationButtonStyle}
-              >
-                <ChevronLeftIcon />
-              </Button>
-
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <Box key={`ellipsis-${index}`} sx={paginationEllipsisStyle}>
-                    ...
-                  </Box>
-                ) : (
-                  <Button
-                    key={`page-${page}`}
-                    onClick={() => goToPage(Number(page))}
-                    {...paginationButtonStyle}
-                    {...(page === currentPage ? paginationActiveButtonStyle : {})}
-                  >
-                    {page}
-                  </Button>
-                )
-              )}
-
-              <Button
-                aria-label="Next page"
-                onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
-                isDisabled={currentPage === totalPages}
-                {...paginationButtonStyle}
-              >
-                <ChevronRightIcon />
-              </Button>
-            </Flex>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
     </Box>

@@ -5,6 +5,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import CardVillage from "Components/card/village";
 import { paths } from "Consts/path";
 import React, { useEffect, useState, useRef, Suspense } from "react";
+import Pagination from "Components/common/Pagination";
 import { useRouter, useSearchParams } from "next/navigation";
 // import { auth, firestore } from "src/firebase/clientApp";
 import {
@@ -335,35 +336,15 @@ const Village: React.FC = () => {
                         </Box>
                     )}
                 </GridContainer>
-                {totalPages > 1 && (
-                    <Flex justify="center" mt={2} mb={2} align="center" gap={4}>
-                        <Button
-                            onClick={handlePrevPage}
-                            isDisabled={currentPage === 1}
-                            variant="outline"
-                            size="sm"
-                            borderColor="gray.200"
-                            color="#347357"
-                            _hover={{ bg: "gray.50" }}
-                        >
-                            <ChevronLeftIcon />
-                        </Button>
-                        <ChakraText fontSize="14px" fontWeight="500" color="gray.700">
-                            Halaman {currentPage} dari {totalPages}
-                        </ChakraText>
-                        <Button
-                            onClick={handleNextPage}
-                            isDisabled={currentPage === totalPages}
-                            variant="outline"
-                            size="sm"
-                            borderColor="gray.200"
-                            color="#347357"
-                            _hover={{ bg: "gray.50" }}
-                        >
-                            <ChevronRightIcon />
-                        </Button>
-                    </Flex>
-                )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => {
+                        setCurrentPage(page);
+                        updateUrl(page, selectedProvince, selectedRegency, searchTerm);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                />
             </Containers>
         </Container>
     );

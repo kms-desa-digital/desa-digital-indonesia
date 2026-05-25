@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
         { namaInnovator: { $regex: escapedSearch, $options: 'i' } },
       ]
     }
+    
+    const totalCount = await db.collection('innovations').countDocuments(filter)
 
     const pipeline: any[] = [
       { $match: filter },
@@ -90,8 +92,18 @@ export async function GET(request: NextRequest) {
       id: doc._id.toString(),
       _id: doc._id.toString(),
     }))
+    
+    const totalPages = limitVal > 0 ? Math.ceil(totalCount / limitVal) : 1;
 
-    return NextResponse.json({ innovations: result }, { status: 200 })
+    return NextResponse.json({ 
+      innovations: result,
+      pagination: {
+        total: totalCount,
+        totalPages,
+        limit: limitVal,
+        skip: skipVal
+      }
+    }, { status: 200 })
   } catch (error) {
     console.error('Error fetching innovations:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })

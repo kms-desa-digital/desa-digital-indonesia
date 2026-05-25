@@ -3,8 +3,6 @@
 import { 
     ChevronDownIcon, 
     SearchIcon, 
-    ChevronLeftIcon, 
-    ChevronRightIcon,
     CloseIcon
 } from "@chakra-ui/icons";
 import {
@@ -34,6 +32,7 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { getVillages, getClaims } from "Services/villageServices";
 import { getInnovators } from "Services/innovatorServices";
 import { getInnovation } from "Services/innovationServices";
+import Pagination from "@/components/common/Pagination";
 
 const SkeletonCard = () => {
     return (
@@ -71,8 +70,8 @@ const VerificationPageContent: React.FC = () => {
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(initialPage);
+    const [totalPages, setTotalPages] = useState(1);
     const [itemsPerPage] = useState(5);
-    const [hasMore, setHasMore] = useState(true);
 
     const isFirstMount = useRef(true);
 
@@ -192,7 +191,13 @@ const VerificationPageContent: React.FC = () => {
 
             const data = response.villages || response.innovators || response.innovations || response.claims || response.data || [];
             
-            setHasMore(data.length === itemsPerPage);
+            const pagination = response.pagination || response.data?.pagination || response.data?.data?.pagination;
+            if (pagination && pagination.totalPages) {
+                setTotalPages(pagination.totalPages);
+            } else {
+                setTotalPages(1);
+            }
+            
             return data;
         } catch (error) {
             console.error("Error fetching data from API:", error);
@@ -226,22 +231,6 @@ const VerificationPageContent: React.FC = () => {
         return () => clearTimeout(timeoutId);
     }, [searchTerm]);
 
-    const handleNextPage = () => {
-        if (hasMore) {
-            const nextPage = currentPage + 1;
-            setCurrentPage(nextPage);
-            updateUrl(nextPage, selectedFilter, searchTerm);
-        }
-    };
-
-    const handlePrevPage = () => {
-        if (currentPage > 1) {
-            const prevPage = currentPage - 1;
-            setCurrentPage(prevPage);
-            updateUrl(prevPage, selectedFilter, searchTerm);
-        }
-    };
-
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
     };
@@ -256,6 +245,11 @@ const VerificationPageContent: React.FC = () => {
         setSelectedFilter(status);
         setCurrentPage(1);
         updateUrl(1, status, searchTerm);
+    };
+    
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        updateUrl(page, selectedFilter, searchTerm);
     };
 
     return (
@@ -359,42 +353,12 @@ const VerificationPageContent: React.FC = () => {
                         </Text>
                     )}
                     
-                    {verifData.length > 0 && (
-                        <Flex
-                            justifyContent="center"
-                            mt={8}
-                            mb={8}
-                            alignItems="center"
-                            gap={4}
-                        >
-                            <Button
-                                onClick={handlePrevPage}
-                                isDisabled={currentPage === 1}
-                                variant="outline"
-                                size="sm"
-                                borderColor="gray.200"
-                                color="#347357"
-                                _hover={{ bg: "gray.50" }}
-                            >
-                                <ChevronLeftIcon />
-                            </Button>
-                            
-                            <Text textAlign="center" fontWeight="500" fontSize="14px" color="gray.700">
-                                {t("verificationPage", { page: currentPage })}
-                            </Text>
-                            
-                            <Button
-                                onClick={handleNextPage}
-                                isDisabled={!hasMore}
-                                variant="outline"
-                                size="sm"
-                                borderColor="gray.200"
-                                color="#347357"
-                                _hover={{ bg: "gray.50" }}
-                            >
-                                <ChevronRightIcon />
-                            </Button>
-                        </Flex>
+                    {!loading && verifData.length > 0 && totalPages > 0 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
                     )}
                 </Stack>
         </Container>

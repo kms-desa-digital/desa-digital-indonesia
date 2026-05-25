@@ -22,6 +22,8 @@ export async function GET(request: NextRequest) {
       const escapedSearch = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
       filter.namaInovator = { $regex: escapedSearch, $options: 'i' }
     }
+    
+    const totalCount = await db.collection('innovators').countDocuments(filter)
 
     const pipeline: any[] = [
       { $match: filter },
@@ -85,8 +87,18 @@ export async function GET(request: NextRequest) {
       id: doc._id?.toString ? doc._id.toString() : doc._id,
       _id: doc._id?.toString ? doc._id.toString() : doc._id,
     }))
+    
+    const totalPages = limitVal > 0 ? Math.ceil(totalCount / limitVal) : 1;
 
-    return NextResponse.json({ data: result }, { status: 200 })
+    return NextResponse.json({ 
+      data: result,
+      pagination: {
+        total: totalCount,
+        totalPages,
+        limit: limitVal,
+        skip: skipVal
+      }
+    }, { status: 200 })
   } catch (error) {
     console.error('Error fetching innovators:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })

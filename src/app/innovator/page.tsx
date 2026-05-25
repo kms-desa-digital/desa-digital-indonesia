@@ -16,6 +16,7 @@ import CardInnovator from "Components/card/innovator";
 import BottomSheetSelector from "Components/form/BottomSheetSelector";
 import SearchBarInnov from "Components/innovator/hero/SearchBarInnov";
 import { useEffect, useState, useRef, Suspense } from "react";
+import Pagination from "Components/common/Pagination";
 import Container from "Components/container";
 import { useTranslations } from "next-intl";
 import { getInnovators } from "Services/innovatorServices";
@@ -197,35 +198,15 @@ function Innovator() {
                         />
                     ))}
                 </GridContainer>
-                {totalPages > 1 && (
-                    <Flex justify="center" mt={2} mb={2} align="center" gap={4}>
-                        <Button
-                            onClick={handlePrevPage}
-                            isDisabled={currentPage === 1}
-                            variant="outline"
-                            size="sm"
-                            borderColor="gray.200"
-                            color="#347357"
-                            _hover={{ bg: "gray.50" }}
-                        >
-                            <ChevronLeftIcon />
-                        </Button>
-                        <ChakraText fontSize="14px" fontWeight="500" color="gray.700">
-                            Halaman {currentPage} dari {totalPages}
-                        </ChakraText>
-                        <Button
-                            onClick={handleNextPage}
-                            isDisabled={currentPage === totalPages}
-                            variant="outline"
-                            size="sm"
-                            borderColor="gray.200"
-                            color="#347357"
-                            _hover={{ bg: "gray.50" }}
-                        >
-                            <ChevronRightIcon />
-                        </Button>
-                    </Flex>
-                )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => {
+                        setCurrentPage(page);
+                        updateUrl(page, categoryFilter, searchQuery);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                />
             </Containers>
         </Container>
     );
