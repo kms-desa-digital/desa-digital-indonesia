@@ -40,7 +40,7 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     // 1. Ambil inovasi dari koleksi 'innovations' yang memiliki desaId ini (penugasan langsung)
     // dengan jumlah desa yang menerapkan dari claimInnovations
     const directPipeline: any[] = [
-      { $match: { desaId: { $in: [id] }, status: 'Terverifikasi' } },
+      { $match: { desaId: { $in: uniqueIds }, status: 'Terverifikasi' } },
       {
         $lookup: {
           from: 'claimInnovations',
@@ -66,10 +66,6 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     ]
 
     const directInnovations = await db.collection('innovations')
-      .find({
-        desaId: { $in: uniqueIds },
-        status: 'Terverifikasi'
-      })
       .aggregate(directPipeline)
       .toArray()
 
