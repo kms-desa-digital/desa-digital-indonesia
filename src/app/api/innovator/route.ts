@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
     const db = await connectToDatabase()
 
     // 1. Validasi keberadaan user dan role di database
-    const targetUser = await db.collection('users').findOne({
+    let targetUser = await db.collection('users').findOne({
       $or: [
         { uid: targetId },
         { firebaseUid: targetId },
@@ -165,6 +165,27 @@ export async function POST(request: NextRequest) {
         { _id: targetId as any }
       ]
     })
+
+    // Auto-sync jika user valid di Firebase Token tetapi belum masuk MongoDB users
+    if (!targetUser && auth.uid === targetId) {
+      console.log(`[Innovator/Create] User ${targetId} not found in MongoDB. Auto-syncing from token info...`)
+      const email = auth.email || '';
+      const newUser = {
+        uid: targetId,
+        firebaseUid: targetId,
+        email: email,
+        role: auth.role,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+      try {
+        const result = await db.collection('users').insertOne(newUser)
+        targetUser = { ...newUser, _id: result.insertedId } as any
+      } catch (insertError) {
+        console.error('[Innovator/Create] Failed to auto-sync user to MongoDB:', insertError)
+      }
+    }
+
     if (!targetUser) {
       return NextResponse.json({ message: 'User tidak ditemukan di sistem' }, { status: 400 })
     }

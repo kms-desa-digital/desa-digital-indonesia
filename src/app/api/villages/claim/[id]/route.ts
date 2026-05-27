@@ -244,6 +244,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
           await createNotification({
             userId: villageId,
             type: 'personal',
+            category: 'claim_submission',
             title: notifTitle,
             description: notifDescription,
             actionType: 'claim_detail',

@@ -124,7 +124,8 @@ const RecommendationDrawer: React.FC<RecommendationDrawerProps> = ({
                   kategori={r.kategori}
                   deskripsi={r.deskripsi}
                   tahunDibuat={r.tahunDibuat}
-                  innovatorName={r.namaInnovator}
+                  innovatorLogo={r.innovatorImgURL || r.logo || r.logoInovator || r.innovatorLogo}
+                  innovatorName={r.namaInnovator || r.namaInovator || r.innovatorName}
                   onClick={() => {
                     onClose();
                     router.push(`/innovation/detail/${r.id}`);

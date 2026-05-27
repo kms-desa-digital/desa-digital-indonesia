@@ -49,10 +49,8 @@ export async function GET(request: NextRequest) {
         // Fallback: create a temporary user object so the request can continue
         user = newUser as any
       }
-    } else if ((!user.role || user.role === 'guest') && role && role !== 'guest') {
-      // Auto-heal: If the user was registered but caught in a race condition (saving to Firestore took longer than token verification),
-      // their role in MongoDB might be permanently stuck as 'guest'. Let's fix it.
-      console.log(`[Auth/Me] Auto-healing user ${uid} role from 'guest' to '${role}'`)
+    } else if (role !== 'guest' && user.role !== role) {
+      console.log(`[Auth/Me] Syncing user role for ${uid} in MongoDB: ${user.role} -> ${role}`)
       try {
         await db.collection('users').updateOne(
           { _id: user._id },
@@ -60,7 +58,7 @@ export async function GET(request: NextRequest) {
         )
         user.role = role
       } catch (updateError) {
-        console.error('[Auth/Me] Failed to auto-heal user role:', updateError)
+        console.error('[Auth/Me] Failed to sync user role in MongoDB:', updateError)
       }
     }
 
@@ -99,7 +97,7 @@ export async function GET(request: NextRequest) {
         uid: userIdString,
         firebaseUid: uid,
         email: user?.email || email,
-        role: user?.role || role,
+        role: role !== 'guest' ? role : (user?.role || role),
         isInnovatorVerified: innovator?.status === 'Terverifikasi',
         isVillageVerified: village?.status === 'Terverifikasi',
         isInnovationVerified: !!verifiedInno,

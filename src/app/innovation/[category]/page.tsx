@@ -102,11 +102,9 @@ export default function InnovationCategoryPage() {
                                 {...item}
                                 jumlahDesa={item.appliedVillages?.length || item.jumlahDesaDiterapkan || item.jumlahDesa || 0}
                                 innovatorLogo={
-                                    item.innovatorImgURL || item.logoInovator || item.logo || (
-                                        <Image src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />
-                                    )
+                                    item.innovatorImgURL || item.logoInovator || item.logo || item.innovatorLogo || "/images/default-logo.svg"
                                 }
-                                innovatorName={item.namaInnovator || item.namaInovator}
+                                innovatorName={item.namaInnovator || item.namaInovator || item.innovatorName}
                                 onClick={() =>
                                     router.push(`/innovation/detail/${item.id || item._id}`)
                                 }

@@ -168,10 +168,11 @@ export async function POST(request: NextRequest) {
         relatedId: claimId,
       })
 
-      // Notify village about submission — gunakan auth.uid (Firebase UID terverifikasi)
+      // Notify village about submission
       await createNotification({
-        userId: auth.uid,  // Firebase UID user desa yang sedang login
+        userId: desaId,  // Gunakan desaId (UID desa) sebagai penerima, bukan auth.uid
         type: 'personal',
+        category: 'claim_submission',
         title: 'Klaim Inovasi Berhasil Diajukan',
         description: `Klaim Anda untuk "${namaInovasi}" telah diajukan dan menunggu verifikasi admin.`,
         actionType: 'claim_detail',
