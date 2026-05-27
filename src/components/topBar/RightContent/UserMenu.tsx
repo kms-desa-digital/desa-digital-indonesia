@@ -294,22 +294,7 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
                   </MenuItem>
                 )}
 
-              {/** Dashboard Access */}
-              {(userRole?.toLowerCase() === "innovator" ||
-                tokenRole?.toLowerCase() === "innovator" ||
-                contextRole?.toLowerCase() === "innovator") && (
-                  <MenuItem onClick={() => router.push(paths.DASHBOARD_INNOVATOR_HOME)}>
-                    Dashboard
-                  </MenuItem>
-                )}
 
-              {(userRole?.toLowerCase() === "village" ||
-                tokenRole?.toLowerCase() === "village" ||
-                contextRole?.toLowerCase() === "village") && (
-                  <MenuItem onClick={() => router.push(paths.VILLAGE_DASHBOARD)}>
-                    Dashboard
-                  </MenuItem>
-                )}
 
               {(userRole?.toLowerCase() === "admin" ||
                 tokenRole?.toLowerCase() === "admin" ||
