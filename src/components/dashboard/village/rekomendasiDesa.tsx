@@ -26,38 +26,6 @@ import { getVillageInnovations } from "Services/villageServices";
 const Rekomendasi = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const router = useRouter();
-    const [rekomendasi, setRekomendasi] = useState<any>(null);
-
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const auth = getAuth();
-                const user = auth.currentUser;
-                if (!user) return;
-
-                const token = await user.getIdToken();
-                const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.recommendations && data.recommendations.length > 0) {
-                        setRekomendasi(data.recommendations[0]);
-                    }
-                }
-            } catch (error) {
-                console.error("Error fetching recommendation:", error);
-            }
-        };
-
-        fetchDashboardData();
-    }, []);
-
-    const namaInovasi = rekomendasi?.name || "eFeeder";
-    const namaInovator = rekomendasi?.innovator || "eFishery";
-    const linkDetail = rekomendasi?.id ? `/innovation/detail/${rekomendasi.id}` : "/innovation/detail/8HeAYMhzlFQvdUgoSXpX";
-
     const [topInnovation, setTopInnovation] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
