@@ -17,19 +17,20 @@ const FORBIDDEN = (message = "Anda tidak memiliki izin untuk mengakses resource 
 export interface AuthResult {
   uid: string;
   role: ValidRole;
+  email?: string | null;
 }
 
 export async function requireAuth(
   req: Request
 ): Promise<AuthResult | NextResponse> {
   const authHeader = req.headers.get("Authorization");
-  const { uid, role } = await verifyRoleFromToken(authHeader);
+  const { uid, role, email } = await verifyRoleFromToken(authHeader);
 
   if (!uid) {
     return UNAUTHORIZED();
   }
 
-  return { uid, role };
+  return { uid, role, email };
 }
 
 export async function requireRole(

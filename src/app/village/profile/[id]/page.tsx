@@ -526,8 +526,8 @@ export default function ProfileVillage() {
                                             kategori={innovation.kategori}
                                             deskripsi={innovation.deskripsi}
                                             tahunDibuat={innovation.tahunDibuat}
-                                            innovatorLogo={innovation.innovatorImgURL}
-                                            innovatorName={innovation.namaInnovator}
+                                            innovatorLogo={innovation.innovatorImgURL || innovation.logoInovator || innovation.logo || innovation.innovatorLogo}
+                                            innovatorName={innovation.namaInnovator || innovation.namaInovator || innovation.innovatorName}
                                             jumlahDesa={innovation.jumlahDesa || 0}
                                             onClick={() =>
                                                 router.push(`/innovation/detail/${innovation.id}`)

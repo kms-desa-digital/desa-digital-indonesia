@@ -49,6 +49,17 @@ export async function GET(request: NextRequest) {
         // Fallback: create a temporary user object so the request can continue
         user = newUser as any
       }
+    } else if (role !== 'guest' && user.role !== role) {
+      console.log(`[Auth/Me] Syncing user role for ${uid} in MongoDB: ${user.role} -> ${role}`)
+      try {
+        await db.collection('users').updateOne(
+          { _id: user._id },
+          { $set: { role: role, updatedAt: new Date() } }
+        )
+        user.role = role
+      } catch (updateError) {
+        console.error('[Auth/Me] Failed to sync user role in MongoDB:', updateError)
+      }
     }
 
     const userIdString = user?._id ? user._id.toString() : uid
@@ -86,7 +97,7 @@ export async function GET(request: NextRequest) {
         uid: userIdString,
         firebaseUid: uid,
         email: user?.email || email,
-        role: user?.role || role,
+        role: role !== 'guest' ? role : (user?.role || role),
         isInnovatorVerified: innovator?.status === 'Terverifikasi',
         isVillageVerified: village?.status === 'Terverifikasi',
         isInnovationVerified: !!verifiedInno,
