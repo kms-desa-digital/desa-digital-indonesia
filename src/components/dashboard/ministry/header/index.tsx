@@ -9,7 +9,7 @@ type HeaderProps = {
 
 const Header: React.FC<HeaderProps> = ({ description, text, isInnovator = false, isMinistry = false }) => {
   return (
-    <Background isInnovator={isInnovator} isMinistry={isMinistry}>
+    <Background $isInnovator={isInnovator} $isMinistry={isMinistry}>
       <Container>
         <Title color="#1A202C">Selamat Datang</Title>
         <Description color="#1A202C">Kementerian</Description>

@@ -19,7 +19,7 @@ import {
   Tooltip,
   Cell,
 } from "recharts";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { Filter } from "lucide-react";
@@ -36,14 +36,21 @@ const SebaranKategoriInovator: React.FC = () => {
   useEffect(() => {
     const fetchKategoriData = async () => {
       try {
-        const db = getFirestore();
-        const innovatorsRef = collection(db, "innovators");
-        const snapshot = await getDocs(innovatorsRef);
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        const headers: Record<string, string> = {};
+        if (currentUser) {
+            const token = await currentUser.getIdToken();
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch("/api/innovator", { headers });
+        const dataRaw = await response.json();
+        const innovators = dataRaw.data || [];
 
         const kategoriCount: Record<string, number> = {};
 
-        snapshot.forEach((doc) => {
-          const data = doc.data();
+        innovators.forEach((data: any) => {
           if (data.kategori) {
             const kategori = data.kategori.trim();
             kategoriCount[kategori] = (kategoriCount[kategori] || 0) + 1;

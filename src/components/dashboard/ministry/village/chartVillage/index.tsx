@@ -26,7 +26,7 @@ import {
 import filterIcon from "@public/icons/icon-filter.svg";
 import downloadIcon from "@public/icons/icon-download.svg";
 
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getVillages } from "Services/villageServices";
 import YearRangeFilter from "./dateFilter";
 
 import { saveAs } from "file-saver";
@@ -52,17 +52,51 @@ const ChartVillage = () => {
     async function fetchData() {
       setLoading(true);
       try {
-        const db = getFirestore();
-        const snapshot = await getDocs(collection(db, "villages"));
+        const responseData = await getVillages();
+        const villages = (responseData as any).villages || [];
 
         // Buat array [tahun]: {Maju: x, Mandiri: x, dst} untuk visualisasi data stacked bar chart
         const yearlyData: Record<number, any> = {};
         const desaData: any[] = [];
 
-        snapshot.forEach((doc) => {
-          const data = doc.data();
-          const yearRaw = data.tahunData?.toString()?.trim();
-          const category = data.kategori;
+        const getYearFromObjectId = (idStr: string) => {
+          if (idStr && idStr.length === 24) {
+            try {
+              const timestamp = parseInt(idStr.substring(0, 8), 16) * 1000;
+              if (!isNaN(timestamp)) {
+                return new Date(timestamp).getFullYear();
+              }
+            } catch (e) {}
+          }
+          return 2026;
+        };
+
+        villages.forEach((data: any) => {
+          let yearRaw = data.tahunData?.toString()?.trim() || data.tahun?.toString()?.trim();
+          if (!yearRaw || yearRaw === "-" || yearRaw.toUpperCase() === "ND") {
+            if (data.createdAt) {
+              yearRaw = new Date(data.createdAt).getFullYear().toString();
+            } else {
+              const idVal = data._id || data.id;
+              if (idVal) {
+                yearRaw = getYearFromObjectId(idVal.toString()).toString();
+              } else {
+                yearRaw = "2026";
+              }
+            }
+          }
+
+          let category = data.kategori || data.kategoriDesa;
+          if (!category || !categories.includes(category)) {
+            const idmVal = parseFloat(String(data.idm || '0').replace(',', '.'));
+            if (!isNaN(idmVal) && idmVal > 0) {
+              if (idmVal > 0.815) category = "Mandiri";
+              else if (idmVal > 0.707) category = "Maju";
+              else if (idmVal > 0.599) category = "Berkembang";
+              else if (idmVal > 0.491) category = "Tertinggal";
+              else category = "Sangat Tertinggal";
+            }
+          }
 
           if (!yearRaw || yearRaw === "-" || yearRaw.toUpperCase() === "ND") return;
           const yearNum = parseInt(yearRaw);
@@ -229,12 +263,12 @@ const ChartVillage = () => {
           Pertumbuhan Desa Digital {"\n"} Tahun {fromYear} – {toYear}
         </Text>
         <Flex justify="flex-end" align="center">
-          <Image src={filterIcon} alt="Filter" boxSize="16px" cursor="pointer" ml={2} onClick={onOpen} />
+          <Image src={filterIcon.src} alt="Filter" boxSize="16px" cursor="pointer" ml={2} onClick={onOpen} />
           <Menu>
             <MenuButton
               as={IconButton}
               aria-label="Download"
-              icon={<Image src={downloadIcon} alt="Download" boxSize="16px" />}
+              icon={<Image src={downloadIcon.src} alt="Download" boxSize="16px" />}
               variant="ghost"
               _hover={{ bg: 'gray.100' }}
             />

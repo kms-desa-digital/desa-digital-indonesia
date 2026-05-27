@@ -14,7 +14,6 @@ import {
   Checkbox,
   SimpleGrid,
 } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import {
@@ -38,7 +37,6 @@ const PerkembanganInovasiDesa: React.FC = () => {
 
   const fetchInovasiData = async () => {
     try {
-      const db = getFirestore();
       const auth = getAuth();
       const user = auth.currentUser;
 
@@ -47,60 +45,26 @@ const PerkembanganInovasiDesa: React.FC = () => {
         return;
       }
 
-      const desaQuery = query(
-        collection(db, "villages"),
-        where("userId", "==", user.uid)
-      );
-      const desaSnap = await getDocs(desaQuery);
-
-      let namaDesa = "";
-      if (!desaSnap.empty) {
-        const desaData = desaSnap.docs[0].data();
-        namaDesa = desaData?.namaDesa?.toLowerCase().trim() || "";
-      } else {
-        console.warn("Desa tidak ditemukan");
-        return;
-      }
-
-      // Ambil data klaim inovasi terkait desa ini
-      const claimQuery = query(
-        collection(db, "claimInnovations"),
-        where("desaId", "==", user.uid)
-      );
-      const claimSnap = await getDocs(claimQuery);
-
-      // Menghitung jumlah klaim per tahun berdasarkan createdAt
-      const yearCount: Record<string, number> = {};
-
-      claimSnap.forEach((doc) => {
-        const data = doc.data();
-        const createdAt = data?.createdAt?.toDate(); // Pastikan createdAt adalah Timestamp yang bisa diubah ke Date
-
-        if (createdAt) {
-          const year = createdAt.getFullYear().toString(); // Ambil tahun dari createdAt
-
-          // Tambahkan jumlah klaim per tahun
-          yearCount[year] = (yearCount[year] || 0) + 1;
-        }
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/villages/dashboard`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
-      // Mengambil semua tahun yang tersedia dan mengurutkannya
-      const allYearsList = Object.keys(yearCount).sort();
-      setAllYears(allYearsList);
+      if (!response.ok) throw new Error("Failed to fetch dashboard data");
+      const data = await response.json();
 
-      // Filter berdasarkan tahun yang dipilih (selectedYears) atau tampilkan semua tahun
-      const filteredYears = selectedYears.length > 0 ? selectedYears : allYearsList;
+      const perkembangan: { year: number; total: number }[] =
+        data.dashboard?.perkembanganInovasi || [];
 
-      // Siapkan data untuk chart
-      const chartData = filteredYears.map((year) => ({
-        name: year,
-        value: yearCount[year] || 0, // Jika tidak ada klaim untuk tahun ini, nilai = 0
+      const chartData = perkembangan.map(p => ({
+        name: String(p.year),
+        value: p.total,
       }));
 
-      console.log("✅ yearCount:", yearCount);
-      console.log("✅ chartData:", chartData);
+      const years = perkembangan.map(p => String(p.year));
 
       setBarData(chartData);
+      setAllYears(years);
     } catch (error) {
       console.error("❌ Error fetching innovation data:", error);
     }

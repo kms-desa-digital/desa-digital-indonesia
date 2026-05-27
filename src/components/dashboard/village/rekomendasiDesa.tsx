@@ -26,7 +26,6 @@ import { getVillageInnovations } from "Services/villageServices";
 const Rekomendasi = () => {
     const { isOpen, onOpen, onClose } = useDisclosure();
     const router = useRouter();
-
     const [topInnovation, setTopInnovation] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 

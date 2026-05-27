@@ -3,15 +3,6 @@
 import { useEffect, useState } from "react";
 import { Box, Stack } from "@chakra-ui/react";
 import { getAuth } from "firebase/auth";
-import {
-    getDoc,
-    doc,
-    collection,
-    query,
-    where,
-    getDocs,
-} from "firebase/firestore";
-import { firestore } from "src/firebase/clientApp";
 import { useRouter } from "next/navigation";
 import Hero from "src/components/home/hero"; // Using path from pages if compatible
 import TopBar from "Components/topBar";
@@ -38,15 +29,14 @@ const DashboardPerangkatDesa: React.FC = () => {
             }
 
             try {
-                const desaQuery = query(
-                    collection(firestore, "villages"),
-                    where("userId", "==", user.uid)
-                );
-                const desaSnap = await getDocs(desaQuery);
+                const token = await user.getIdToken();
+                const response = await fetch('/api/villages/dashboard', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
 
-                if (!desaSnap.empty) {
-                    const desaData = desaSnap.docs[0].data();
-                    setNamaDesa(desaData?.namaDesa || "Desa Tidak Diketahui");
+                if (response.ok) {
+                    const data = await response.json();
+                    setNamaDesa(data.desa?.namaDesa || "Desa Tidak Diketahui");
                 } else {
                     setNamaDesa("Desa Tidak Ditemukan");
                 }

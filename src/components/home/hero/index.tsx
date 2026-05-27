@@ -31,7 +31,7 @@ const Hero: React.FC<HeroProps> = ({
       $isVillage={isVillage}
       $minHeight={minHeight}
     >
-      <Container gapSize={gapSize} >
+      <Container $gapSize={gapSize} >
         <Title color="#1A202C">{customTitle || t("welcome")}</Title>
         <Description color="#1A202C">
           {description} <br /> {text}

@@ -1,6 +1,6 @@
 import { Box, Flex, Text, Link as ChakraLink } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, LabelList, Cell } from "recharts";
 import NextLink from 'next/link';
@@ -68,18 +68,22 @@ const InovasiUnggulan: React.FC = () => {
     useEffect(() => {
         const fetchTopInnovation = async () => {
             try {
-                const db = getFirestore();
-                const innovationRef = collection(db, "innovations"); // Ambil dari collection "innovations"
-                const snapshot = await getDocs(innovationRef);
+                const auth = getAuth();
+                const user = auth.currentUser;
+                if (!user) return;
 
-                // Ambil data inovasi dan urutkan berdasarkan jumlahDesaKlaim (desc)
-                const innovations = snapshot.docs
-                    .map((doc) => ({
-                        name: doc.data().namaInovasi as string, // Ganti "namaDesa" ke "namaInovasi"
-                        value: doc.data().jumlahDesaKlaim as number || 0, // Ganti "jumlahInovasi" ke "jumlahDesaKlaim"
-                    }))
-                    .sort((a, b) => b.value - a.value) // Urutkan dari terbesar ke terkecil
-                    .slice(0, 5); // Ambil top 5 inovasi
+                const token = await user.getIdToken();
+                const response = await fetch('/api/admin/dashboard', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error("Failed to fetch dashboard data");
+                const data = await response.json();
+
+                const innovations = (data.top5Innovations || []).map((item: any) => ({
+                    name: item.name || "-",
+                    value: item.totalKlaim || 0,
+                })).sort((a: any, b: any) => b.value - a.value).slice(0, 5);
 
                 // Urutan khusus untuk ranking (4, 2, 1, 3, 5)
                 const customOrder = [3, 1, 0, 2, 4];
@@ -93,8 +97,6 @@ const InovasiUnggulan: React.FC = () => {
                 }));
 
                 setChartData(rankedInnovations);
-
-                console.log("Ranked Innovations:", rankedInnovations);
             } catch (error) {
                 console.error("Error fetching top innovations:", error);
             }

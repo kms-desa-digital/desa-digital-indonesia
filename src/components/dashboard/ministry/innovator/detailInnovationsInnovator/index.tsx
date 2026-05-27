@@ -25,13 +25,8 @@ import {
 } from "./_detailInnovationsInnovatorStyle";
 import downloadIcon from "@public/icons/icon-download.svg";
 
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+import { getInnovation } from "Services/innovationServices";
+import { getAuth } from "firebase/auth";
 
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -63,36 +58,40 @@ const DetailInnovations = ({ filterInnovator, onSelectVillage }: DetailInnovatio
 
   useEffect(() => {
     const fetchData = async () => {
-      const db = getFirestore();
-
       if (!filterInnovator) return;
       setLoading(true);
 
       try {
-        const innovationsQuery = query(
-          collection(db, "innovations"),
-          where("namaInnovator", "==", filterInnovator)
+        // Fetch innovations by innovator name
+        const innovationRes = await getInnovation();
+        const allInnovations = innovationRes.innovations || [];
+        const innovations = allInnovations.filter(
+          (i: any) => i.namaInnovator === filterInnovator || i.namaInovator === filterInnovator
         );
-        const innovationsSnap = await getDocs(innovationsQuery);
-        const innovations = innovationsSnap.docs.map(doc => ({
-          id: doc.id,
-          namaInovasi: doc.data().namaInovasi,
-        }));
+
+        // Fetch claims
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        const headers: Record<string, string> = {};
+        if (currentUser) {
+          const token = await currentUser.getIdToken();
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const claimRes = await fetch("/api/villages/claim", { headers });
+        const claimDataRaw = await claimRes.json();
+        const allClaims = claimDataRaw.claims || [];
 
         const allData: Implementation[] = [];
 
         for (const innovation of innovations) {
-          const claimQuery = query(
-            collection(db, "claimInnovations"),
-            where("namaInovasi", "==", innovation.namaInovasi)
+          const matchingClaims = allClaims.filter(
+            (c: any) => c.namaInovasi === innovation.namaInovasi
           );
-          const claimSnap = await getDocs(claimQuery);
 
-          claimSnap.docs.forEach(doc => {
-            const data = doc.data();
-            const desa = (data.namaDesa || "").replace(/^Desa\s*/i, "");
-            const createdAt = data.createdAt?.toDate?.();
-            const tahun = createdAt?.getFullYear?.() || 0;
+          matchingClaims.forEach((claim: any) => {
+            const desa = (claim.namaDesa || "").replace(/^Desa\s*/i, "");
+            const tahun = claim.createdAt ? new Date(claim.createdAt).getFullYear() : 0;
 
             allData.push({
               namaInovasi: innovation.namaInovasi,

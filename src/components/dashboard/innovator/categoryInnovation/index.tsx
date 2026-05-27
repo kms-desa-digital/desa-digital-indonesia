@@ -15,10 +15,10 @@ import {
   paginationActiveButtonStyle,
   paginationEllipsisStyle,
 } from "./_categoryInnovationStyle";
-import downloadIcon from "@public/icons/icon-download.svg";
 
-import { getAuth } from "firebase/auth";
-import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
+
+
+import { useAuthToken } from "Hooks/useAuthToken";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -33,10 +33,11 @@ interface Implementation {
 }
 
 const TableInnovator = () => {
-  const auth = getAuth();
-  const user = auth.currentUser;
-  const userName = user?.displayName || "Inovator";
+
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
   const [implementationData, setImplementationData] = useState<Implementation[]>([]);
   const itemsPerPage = 5;
 
@@ -87,58 +88,60 @@ const TableInnovator = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const auth = getAuth();
-      const db = getFirestore();
-      const currentUser = auth.currentUser;
+      if (!authLoaded) return;
+      setLoading(true);
+      setError(null);
 
-      if (!currentUser) return console.warn("User not authenticated");
+      if (!token) {
+        setError("User not authenticated.");
+        setLoading(false);
+        return;
+      }
 
       try {
-        const profilRef = collection(db, "innovators");
-        const qProfil = query(profilRef, where("id", "==", currentUser.uid));
-        const profilSnap = await getDocs(qProfil);
-
-        if (profilSnap.empty) return console.warn("No Inovator found.");
-
-        const profilDoc = profilSnap.docs[0];
-        const profilData = profilDoc.data();
-        const profilInovatorId = profilDoc.id;
-
-        const inovasiRef = collection(db, "innovations");
-        const qInovasi = query(inovasiRef, where("innovatorId", "==", profilInovatorId));
-        const inovasiSnap = await getDocs(qInovasi);
-
-        const fetched: Implementation[] = inovasiSnap.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            namaInovator: data.namaInnovator || "-",
-            namaInovasi: data.namaInovasi || "-",
-            kategoriInovasi: data.kategori || "-",
-            tahunDibuat: data.tahunDibuat || 0,
-          };
+        const response = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
+
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch dashboard data");
+        }
+        const data = await response.json();
+
+        const inovatorName = data.innovator?.namaInovator || "-";
+        
+        // Menggunakan daftarInovasi agar menampilkan semua inovasi milik inovator ini
+        const fetched: Implementation[] = (data.daftarInovasi || []).map((item: any) => ({
+          namaInovator: inovatorName,
+          namaInovasi: item.namaInovasi || "-",
+          kategoriInovasi: item.kategori || "-",
+          tahunDibuat: item.tahunDibuat || "-", 
+        }));
 
         const produkInovator = fetched.map(item => item.namaInovasi).filter(Boolean).join(", ");
 
         setInovatorProfile({
-          namaInovator: profilData.namaInovator || "-",
-          kategoriInovator: profilData.kategori || "-",
-          tahunDibentuk: profilData.tahunDibentuk || "-",
-          targetPengguna: profilData.targetPengguna || "-",
-          modelBisnis: profilData.modelBisnis || "-",
+          namaInovator: inovatorName,
+          kategoriInovator: data.innovator?.kategori || "-",
+          tahunDibentuk: data.innovator?.tahunDibentuk || "-",
+          targetPengguna: data.innovator?.targetPengguna || "-",
+          modelBisnis: data.innovator?.modelBisnis || "-",
           produk: produkInovator || "-",
         });
 
-        setImplementationData(
-          fetched.sort((a, b) => a.namaInovasi.localeCompare(b.namaInovasi))
-        );
+        setImplementationData(fetched);
       } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setError(message);
         console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [authLoaded, token]);
 
   const exportToPDF = () => {
     const doc = new jsPDF();
@@ -147,11 +150,6 @@ const TableInnovator = () => {
       month: "long",
       year: "numeric",
     });
-
-    // Assuming `userName` is defined and `implementationData` is the list of innovations
-    const userProfile = {
-      nama: userName || "-",
-    };
 
     // Header with green background
     doc.setFillColor(0, 128, 0);
@@ -258,7 +256,7 @@ const TableInnovator = () => {
         <Text {...titleStyle}>Daftar Inovasi {inovatorProfile?.namaInovator || "Inovator"}</Text>
         <Menu>
           <MenuButton>
-            <Image src={downloadIcon.src} alt="Download" boxSize="16px" cursor="pointer" marginRight={2} />
+            <Image src="/icons/icon-download.svg" alt="Download" boxSize="16px" cursor="pointer" marginRight={2} />
           </MenuButton>
           <MenuList>
             <MenuItem onClick={exportToPDF}>Download PDF</MenuItem>
@@ -266,6 +264,11 @@ const TableInnovator = () => {
           </MenuList>
         </Menu>
       </Flex>
+      {error && (
+        <Text color="red.500" mb={4}>
+          {error}
+        </Text>
+      )}
 
       <TableContainer {...tableContainerStyle}>
         <Table variant="simple" size="sm" sx={{ tableLayout: "fixed" }}>
@@ -278,16 +281,24 @@ const TableInnovator = () => {
             </Tr>
           </Thead>
           <Tbody>
-            {currentData.map((item, index) => (
-              <Tr key={index}>
-                <Td sx={tableCellStyle}>
-                  {(currentPage - 1) * itemsPerPage + index + 1}
+            {currentData.length > 0 ? (
+              currentData.map((item, index) => (
+                <Tr key={index}>
+                  <Td sx={tableCellStyle}>
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </Td>
+                  <Td sx={tableCellStyle}>{item.namaInovasi}</Td>
+                  <Td sx={tableCellStyle}>{item.kategoriInovasi}</Td>
+                  <Td sx={tableCellStyle}>{item.tahunDibuat}</Td>
+                </Tr>
+              ))
+            ) : (
+              <Tr>
+                <Td colSpan={4} textAlign="center" py={4} color="gray.500">
+                  Belum ada data inovasi
                 </Td>
-                <Td sx={tableCellStyle}>{item.namaInovasi}</Td>
-                <Td sx={tableCellStyle}>{item.kategoriInovasi}</Td>
-                <Td sx={tableCellStyle}>{item.tahunDibuat}</Td>
               </Tr>
-            ))}
+            )}
           </Tbody>
         </Table>
       </TableContainer>

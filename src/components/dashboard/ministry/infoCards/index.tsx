@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { collection, getDocs, query, where, Timestamp, getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { Box, Flex, Text, Image } from "@chakra-ui/react";
 import DateRangeFilter from "./dateFilter";
 import filterIcon from "@public/icons/icon-filter.svg";
@@ -27,92 +27,39 @@ const InfoCards = () => {
     provinces: 0,
   });
 
-  const getCount = async (colName: string, fromT?: Timestamp, toT?: Timestamp) => {
-    const db = getFirestore();
-    let q;
-    if (fromT && toT) {
-      q = query(
-        collection(db, colName),
-        where("createdAt", ">=", fromT),
-        where("createdAt", "<=", toT)
-      );
-    } else {
-      q = collection(db, colName);
-    }
-    const snap = await getDocs(q);
-    return snap.size;
-  };
-
-  const getProvinceCount = async (fromT?: Timestamp, toT?: Timestamp) => {
-    const db = getFirestore();
-    let q;
-    if (fromT && toT) {
-      q = query(
-        collection(db, "villages"),
-        where("createdAt", ">=", fromT),
-        where("createdAt", "<=", toT)
-      );
-    } else {
-      q = collection(db, "villages");
-    }
-    const snap = await getDocs(q);
-    const provinces = new Set<string>();
-
-    const capitalizeWords = (str: string) =>
-      str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
-
-    snap.forEach(doc => {
-      const data = doc.data();
-      if (data.lokasi.provinsi?.label)
-        provinces.add(data.lokasi.provinsi.label);
-    });
-    return provinces.size;
-  };
-
   const calculateTrends = async (fromDate: Date, toDate: Date) => {
-    const fromTimestamp = Timestamp.fromDate(fromDate);
-    const toTimestamp = Timestamp.fromDate(toDate);
+    try {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
 
-    // Calculate previous period (same length, immediately before current)
-    const periodLength = toDate.getTime() - fromDate.getTime();
-    const prevFrom = new Date(fromDate.getTime() - periodLength);
-    const prevTo = new Date(toDate.getTime() - periodLength);
-    const prevFromTimestamp = Timestamp.fromDate(prevFrom);
-    const prevToTimestamp = Timestamp.fromDate(prevTo);
+      const token = await currentUser.getIdToken();
+      const response = await fetch('/api/ministry/dashboard', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-    // Fetch counts for current and previous periods concurrently
-    const [
-      currInnovators, prevInnovators,
-      currInnovations, prevInnovations,
-      currVillages, prevVillages,
-      currProvinces, prevProvinces
-    ] = await Promise.all([
-      getCount("innovators", fromTimestamp, toTimestamp),
-      getCount("innovators", prevFromTimestamp, prevToTimestamp),
+      if (response.ok) {
+        const data = await response.json();
+        setTotals({
+          innovators: data.dashboard?.innovators?.total || 0,
+          innovations: data.dashboard?.innovations?.total || 0,
+          villages: data.dashboard?.villages?.total || 0,
+          provinces: data.dashboard?.provinces || 0,
+        });
 
-      getCount("innovations", fromTimestamp, toTimestamp),
-      getCount("innovations", prevFromTimestamp, prevToTimestamp),
-
-      getCount("villages", fromTimestamp, toTimestamp),
-      getCount("villages", prevFromTimestamp, prevToTimestamp),
-
-      getProvinceCount(fromTimestamp, toTimestamp),
-      getProvinceCount(prevFromTimestamp, prevToTimestamp),
-    ]);
-
-    setTotals({
-      innovators: currInnovators,
-      innovations: currInnovations,
-      villages: currVillages,
-      provinces: currProvinces,
-    });
-
-    setTrends({
-      innovators: currInnovators - prevInnovators,
-      innovations: currInnovations - prevInnovations,
-      villages: currVillages - prevVillages,
-      provinces: currProvinces - prevProvinces,
-    });
+        // API tidak menyediakan history/tren, diset ke 0
+        setTrends({
+          innovators: 0,
+          innovations: 0,
+          villages: 0,
+          provinces: 0,
+        });
+      } else {
+        console.error("Failed to fetch dashboard data:", await response.text());
+      }
+    } catch (err) {
+      console.error("Failed to calculate trends:", err);
+    }
   };
 
   useEffect(() => {

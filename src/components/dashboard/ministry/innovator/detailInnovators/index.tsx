@@ -26,13 +26,7 @@ import {
 
 import downloadIcon from "@public/icons/icon-download.svg";
 
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+import { getInnovators } from "Services/innovatorServices";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -66,31 +60,18 @@ const DetailInnovators = ({ kategoriInovator, onSelectInovator }: DetailInnovato
 
   const fetchData = async () => {
     setLoading(true);
-    const db = getFirestore();
-    let q;
-
-    if (kategoriInovator) {
-      q = query(
-        collection(db, "innovators"),
-        where("kategori", "==", kategoriInovator)
-      );
-    } else {
-      q = query(collection(db, "innovators"));
-    }
 
     try {
-      const snapshot = await getDocs(q);
-      const results: InnovatorData[] = [];
+      const filters = kategoriInovator ? { kategori: kategoriInovator } : {};
+      const responseData = await getInnovators(filters);
+      const innovators = (responseData as any).data || [];
 
-      snapshot.forEach((doc) => {
-        const d = doc.data();
-        results.push({
-          id: doc.id,
-          namaInovator: d.namaInovator || "-",
-          jumlahInovasi: d.jumlahInovasi || 0,
-          jumlahDesaDampingan: d.jumlahDesaDampingan || 0,
-        });
-      });
+      const results: InnovatorData[] = innovators.map((d: any, index: number) => ({
+        id: d._id || d.id || `innovator-${index}`,
+        namaInovator: d.namaInovator || "-",
+        jumlahInovasi: d.jumlahInovasi || 0,
+        jumlahDesaDampingan: d.jumlahDesaDampingan || 0,
+      }));
 
       results.sort((a, b) => {
         if (b.jumlahDesaDampingan !== a.jumlahDesaDampingan) {
