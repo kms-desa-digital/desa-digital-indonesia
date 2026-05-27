@@ -121,8 +121,8 @@ const SearchContent = () => {
                                 kategori={item.kategori}
                                 deskripsi={item.deskripsi}
                                 tahunDibuat={item.tahunDibuat}
-                                innovatorLogo={item.innovatorLogo}
-                                innovatorName={item.innovatorName}
+                                innovatorLogo={item.innovatorImgURL || item.logoInovator || item.logo || item.innovatorLogo}
+                                innovatorName={item.namaInnovator || item.namaInovator || item.innovatorName}
                                 highlightQuery={searchValue}
                                 jumlahDesa={item.jumlahDesa || 0}
                                 onClick={() => handleCardClick(item.id)}

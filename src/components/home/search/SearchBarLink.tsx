@@ -26,6 +26,11 @@ type SearchSuggestion = {
   innovatorLogo?: string;
   innovatorName?: string;
   jumlahDesa?: number;
+  innovatorImgURL?: string;
+  logoInovator?: string;
+  logo?: string;
+  namaInnovator?: string;
+  namaInovator?: string;
 };
 
 interface SearchBarLinkProps {
@@ -227,8 +232,8 @@ const SearchBarLink: React.FC<SearchBarLinkProps> = ({
                       kategori={item.kategori}
                       deskripsi={item.deskripsi}
                       tahunDibuat={item.tahunDibuat}
-                      innovatorLogo={item.innovatorLogo}
-                      innovatorName={item.innovatorName}
+                      innovatorLogo={item.innovatorImgURL || item.logoInovator || item.logo || item.innovatorLogo}
+                      innovatorName={item.namaInnovator || item.namaInovator || item.innovatorName}
                       highlightQuery={highlightQuery}
                       jumlahDesa={item.jumlahDesa}
                     />

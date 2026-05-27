@@ -170,7 +170,8 @@ const ConfModal: React.FC<ClaimModalProps> = ({
                   kategori={r.kategori}
                   deskripsi={r.deskripsi}
                   tahunDibuat={r.tahunDibuat}
-                  innovatorName={r.namaInnovator}
+                   innovatorLogo={r.innovatorImgURL || r.logo || r.logoInovator || r.innovatorLogo}
+                  innovatorName={r.namaInnovator || r.namaInovator || r.innovatorName}
                   jumlahDesa={r.jumlahDesa}
                   onClick={() => {
                     handleClose();

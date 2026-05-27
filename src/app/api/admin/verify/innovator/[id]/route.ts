@@ -69,7 +69,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
       await createNotification({
         userId: targetUserId,
         type: 'personal',
-        category: 'submission_status',
+        category: 'innovator_submission',
         title: notifTitle,
         description: notifDescription,
         actionType: 'profile',

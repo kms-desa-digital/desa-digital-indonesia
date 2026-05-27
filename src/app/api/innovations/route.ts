@@ -75,6 +75,52 @@ export async function GET(request: NextRequest) {
       },
       { $project: { allClaims: 0, _idStr: 0 } },
       {
+        $lookup: {
+          from: 'innovators',
+          let: { innovator_id: '$innovatorId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ['$_id', '$$innovator_id'] },
+                    { $eq: ['$userId', '$$innovator_id'] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'innovatorDetails'
+        }
+      },
+      {
+        $addFields: {
+          innovatorInfo: { $arrayElemAt: ['$innovatorDetails', 0] }
+        }
+      },
+      {
+        $addFields: {
+          namaInnovator: {
+            $ifNull: [
+              '$namaInnovator',
+              {
+                $ifNull: [
+                  '$innovatorInfo.namaInovator',
+                  { $ifNull: ['$innovatorInfo.namaInnovator', '$innovatorInfo.name'] }
+                ]
+              }
+            ]
+          },
+          innovatorImgURL: {
+            $ifNull: [
+              '$innovatorImgURL',
+              { $ifNull: ['$innovatorInfo.logo', '$innovatorInfo.imageUrl'] }
+            ]
+          }
+        }
+      },
+      { $project: { innovatorDetails: 0, innovatorInfo: 0 } },
+      {
         $addFields: {
           sortDate: { $ifNull: ["$updatedAt", { $ifNull: ["$editedAt", "$createdAt"] }] }
         }
@@ -197,8 +243,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Fetch innovator information to auto-populate missing fields
+    let innovatorDoc = null
+    if (innovatorId) {
+      let queryId: any = innovatorId
+      try {
+        if (ObjectId.isValid(innovatorId)) {
+          queryId = new ObjectId(innovatorId)
+        }
+      } catch (e) {}
+
+      innovatorDoc = await db.collection('innovators').findOne({
+        $or: [
+          { _id: queryId },
+          { _id: innovatorId },
+          { userId: innovatorId }
+        ]
+      })
+    }
+
+    const finalNamaInnovator = body.namaInnovator || innovatorDoc?.namaInovator || innovatorDoc?.namaInnovator || innovatorDoc?.name || 'unknown'
+    const finalInnovatorImgURL = body.innovatorImgURL || innovatorDoc?.logo || innovatorDoc?.imageUrl || null
+
     const newInnovation = {
       ...body,
+      namaInnovator:        finalNamaInnovator,
+      innovatorImgURL:      finalInnovatorImgURL,
       status:               'Menunggu',   // status verifikasi admin
       catatanAdmin:         null,
       createdAt:            new Date(),

@@ -128,8 +128,8 @@ const InnovatorProductsPage = () => {
                                 kategori={innovation.kategori}
                                 deskripsi={innovation.deskripsi}
                                 tahunDibuat={innovation.tahunDibuat}
-                                innovatorLogo={innovation.innovatorImgURL}
-                                innovatorName={innovation.namaInnovator || innovatorName}
+                                innovatorLogo={innovation.innovatorImgURL || innovation.logoInovator || innovation.logo || innovation.innovatorLogo}
+                                innovatorName={innovation.namaInnovator || innovation.namaInovator || innovation.innovatorName || innovatorName}
                                 jumlahDesa={innovation.jumlahDesa || 0}
                                 onClick={() => router.push(`/innovation/detail/${innovation.id}`)}
                             />

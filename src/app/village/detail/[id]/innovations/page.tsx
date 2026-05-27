@@ -133,11 +133,9 @@ export default function VillageAppliedInnovationsPage() {
                                 deskripsi={item.deskripsi}
                                 tahunDibuat={item.tahunDibuat}
                                 innovatorLogo={
-                                    item.innovatorImgURL || (
-                                         <ChakraImage src="/images/default-logo.svg" alt="logo" width='20px' height='20px' objectFit='cover' borderRadius="50%" />
-                                    )
+                                    item.innovatorImgURL || item.logoInovator || item.logo || item.innovatorLogo || "/images/default-logo.svg"
                                 }
-                                innovatorName={item.namaInnovator}
+                                innovatorName={item.namaInnovator || item.namaInovator || item.innovatorName}
                                 jumlahDesa={item.jumlahDesa || 0}
                                 onClick={() =>
                                     router.push(`/innovation/detail/${item.id}`)
