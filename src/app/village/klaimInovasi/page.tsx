@@ -363,6 +363,9 @@ const KlaimInovasiContent: React.FC = () => {
         } else {
             document.body.style.overflow = "";
         }
+        return () => {
+            document.body.style.overflow = "";
+        };
     }, [isModal1Open, isModal2Open]);
 
 

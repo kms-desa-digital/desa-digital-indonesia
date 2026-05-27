@@ -474,12 +474,14 @@ const AddInnovation: React.FC = () => {
             }, 5000);
         } catch (error) {
             console.error("Submission error:", error);
-            setError("Gagal menyimpan data inovasi ke database.");
+            const errorMessage = (error as any)?.response?.data?.message || (error as any)?.message || "Gagal menyimpan data inovasi ke database.";
+            setError(errorMessage);
             setLoading(false);
             toast({
                 title: "Gagal menambahkan inovasi",
+                description: errorMessage,
                 status: "error",
-                duration: 3000,
+                duration: 5000,
                 position: "top",
                 isClosable: true,
             });

@@ -24,8 +24,10 @@ export function middleware(request: NextRequest) {
     const apiKey = process.env.INTERNAL_API_KEY
     const isInternalRequest = !!apiKey && request.headers.get('x-api-key') === apiKey
 
-    // 3. Verifikasi Same-Origin
+    // 3. Verifikasi Same-Origin yang lebih kuat untuk browser modern
+    const secFetchSite = request.headers.get('sec-fetch-site')
     const isSameOrigin =
+      (secFetchSite === 'same-origin' || secFetchSite === 'same-site') ||
       (origin && origin.includes(host || '')) ||
       (referer && referer.includes(host || ''))
 

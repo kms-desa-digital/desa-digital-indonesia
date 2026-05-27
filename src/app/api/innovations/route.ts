@@ -170,7 +170,25 @@ export async function POST(request: NextRequest) {
 
     // Validate innovator verification status
     if (auth.role !== 'admin') {
-      const innovator = await db.collection('innovators').findOne({ userId: auth.uid })
+      const user = await db.collection('users').findOne({
+        $or: [
+          { uid: auth.uid },
+          { firebaseUid: auth.uid },
+          { id: auth.uid },
+          { _id: auth.uid as any }
+        ]
+      })
+      const mongoUserId = user?._id ? user._id.toString() : auth.uid
+
+      const innovator = await db.collection('innovators').findOne({
+        $or: [
+          { userId: auth.uid },
+          { userId: mongoUserId },
+          { _id: auth.uid as any },
+          { _id: mongoUserId as any }
+        ]
+      })
+
       if (!innovator || innovator.status !== 'Terverifikasi') {
         return NextResponse.json(
           { message: 'Profil Inovator Anda belum diverifikasi. Anda tidak dapat menambahkan inovasi.' },

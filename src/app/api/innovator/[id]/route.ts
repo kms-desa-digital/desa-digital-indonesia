@@ -128,23 +128,6 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       status,
     } = body
 
-    if (!namaInovator || !deskripsi || !kategori || !whatsapp || !logo || !header) {
-      return NextResponse.json(
-        {
-          message:
-            'Field wajib tidak lengkap: namaInovator, deskripsi, kategori, whatsapp, logo, dan header harus diisi.',
-        },
-        { status: 400 }
-      )
-    }
-
-    try {
-      validateWordLimit(namaInovator, 10, 'nama inovator');
-      validateWordLimit(deskripsi, 80, 'deskripsi');
-    } catch (validationError: any) {
-      return NextResponse.json({ message: validationError.message }, { status: 400 });
-    }
-
     const db = await connectToDatabase()
     const innovatorCollection = db.collection<InnovatorDoc>('innovators')
     const filter = buildFilter(id)
@@ -159,17 +142,42 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       return NextResponse.json({ message: 'Anda tidak memiliki hak untuk mengubah profil ini' }, { status: 403 })
     }
 
+    // Gunakan nilai dari existingDoc sebagai fallback (dukungan update parsial)
+    const namaInovatorValue = namaInovator !== undefined ? namaInovator : existingDoc.namaInovator
+    const deskripsiValue = deskripsi !== undefined ? deskripsi : existingDoc.deskripsi
+    const kategoriValue = kategori !== undefined ? kategori : existingDoc.kategori
+    const whatsappValue = whatsapp !== undefined ? whatsapp : existingDoc.whatsapp
+    const logoValue = logo !== undefined ? logo : existingDoc.logo
+    const headerValue = header !== undefined ? header : existingDoc.header
+
+    if (!namaInovatorValue || !deskripsiValue || !kategoriValue || !whatsappValue || !logoValue || !headerValue) {
+      return NextResponse.json(
+        {
+          message:
+            'Field wajib tidak lengkap: namaInovator, deskripsi, kategori, whatsapp, logo, dan header harus diisi.',
+        },
+        { status: 400 }
+      )
+    }
+
+    try {
+      if (namaInovatorValue) validateWordLimit(namaInovatorValue, 10, 'nama inovator');
+      if (deskripsiValue) validateWordLimit(deskripsiValue, 80, 'deskripsi');
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
+    }
+
     const now = new Date()
     const updatedProfile = {
       ...body,
-      namaInovator,
-      deskripsi,
-      kategori,
-      whatsapp,
+      namaInovator: namaInovatorValue,
+      deskripsi: deskripsiValue,
+      kategori: kategoriValue,
+      whatsapp: whatsappValue,
       instagram: instagram ?? existingDoc.instagram ?? '',
       website: website ?? existingDoc.website ?? '',
-      logo: logo ?? existingDoc.logo ?? null,
-      header: header ?? existingDoc.header ?? null,
+      logo: logoValue ?? null,
+      header: headerValue ?? null,
       desaId: normalizeArray(desaId).length ? normalizeArray(desaId) : existingDoc.desaId ?? [],
       jumlahInovasi:
         typeof jumlahInovasi === 'number' ? jumlahInovasi : existingDoc.jumlahInovasi ?? 0,

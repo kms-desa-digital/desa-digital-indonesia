@@ -423,6 +423,9 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     useEffect(() => {
         document.body.style.overflow = isModal1Open || isModal2Open ? "hidden" : "";
+        return () => {
+            document.body.style.overflow = "";
+        };
     }, [isModal1Open, isModal2Open]);
 
     useEffect(() => {
