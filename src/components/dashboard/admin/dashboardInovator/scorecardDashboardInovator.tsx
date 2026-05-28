@@ -1,5 +1,5 @@
 import { Box, Flex, Grid, Text, Stack, Image } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import { FaUsers } from "react-icons/fa";
 import DesaIcon from "@public/icons/village-active.svg"; // sesuaikan path
@@ -11,21 +11,30 @@ const ScoreCardDashboardInovator: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const db = getFirestore();
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        const headers: Record<string, string> = {};
+        if (currentUser) {
+            const token = await currentUser.getIdToken();
+            headers['Authorization'] = `Bearer ${token}`;
+        }
 
-        // ✅ 1. Ambil inovators dengan namaInovator tidak kosong
-        const innovatorsRef = collection(db, "innovators");
-        const innovatorsQuery = query(innovatorsRef, where("namaInovator", "!=", ""));
-        const innovatorsSnap = await getDocs(innovatorsQuery);
-        setTotalInovators(innovatorsSnap.size);
+        const [innovatorsRes, villagesRes] = await Promise.all([
+          fetch("/api/innovator", { headers }),
+          fetch("/api/villages", { headers })
+        ]);
 
-        // ✅ 2. Ambil desa dari villages dengan jumlahInovasi > 0
-        const villagesRef = collection(db, "villages");
-        const villagesSnap = await getDocs(villagesRef);
+        const innovatorsDataRaw = await innovatorsRes.json();
+        const villagesDataRaw = await villagesRes.json();
+
+        const innovators = innovatorsDataRaw.data || [];
+        const villages = villagesDataRaw.villages || [];
+
+        const validInnovators = innovators.filter((inv: any) => inv.namaInovator && inv.namaInovator.trim() !== "");
+        setTotalInovators(validInnovators.length);
 
         let desaCount = 0;
-        villagesSnap.forEach((doc) => {
-          const data = doc.data();
+        villages.forEach((data: any) => {
           if (typeof data.jumlahInovasiDiterapkan === "number" && data.jumlahInovasiDiterapkan > 0) {
             desaCount++;
           }

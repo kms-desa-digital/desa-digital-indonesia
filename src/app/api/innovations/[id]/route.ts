@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification, notifyAllAdmins } from '@/services/notificationServices'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 type Params = Promise<{ id: string }>
 
@@ -51,7 +52,53 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
           },
         },
       },
-      { $project: { allClaims: 0, _idStr: 0 } }
+      { $project: { allClaims: 0, _idStr: 0 } },
+      {
+        $lookup: {
+          from: 'innovators',
+          let: { innovator_id: '$innovatorId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ['$_id', '$$innovator_id'] },
+                    { $eq: ['$userId', '$$innovator_id'] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'innovatorDetails'
+        }
+      },
+      {
+        $addFields: {
+          innovatorInfo: { $arrayElemAt: ['$innovatorDetails', 0] }
+        }
+      },
+      {
+        $addFields: {
+          namaInnovator: {
+            $ifNull: [
+              '$namaInnovator',
+              {
+                $ifNull: [
+                  '$innovatorInfo.namaInovator',
+                  { $ifNull: ['$innovatorInfo.namaInnovator', '$innovatorInfo.name'] }
+                ]
+              }
+            ]
+          },
+          innovatorImgURL: {
+            $ifNull: [
+              '$innovatorImgURL',
+              { $ifNull: ['$innovatorInfo.logo', '$innovatorInfo.imageUrl'] }
+            ]
+          }
+        }
+      },
+      { $project: { innovatorDetails: 0, innovatorInfo: 0 } }
     ]
 
     const innovations = await db.collection('innovations').aggregate(pipeline).toArray()
@@ -85,6 +132,18 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
 
     const { id } = await params
     const body = await request.json()
+
+    try {
+      if (body.deskripsi !== undefined) validateWordLimit(body.deskripsi, 80, 'deskripsi');
+      if (body.inputDesaMenerapkan !== undefined) validateWordLimit(body.inputDesaMenerapkan, 20, 'desa yang menerapkan');
+      if (Array.isArray(body.modelBisnis)) {
+        body.modelBisnis.forEach((model: string) => {
+          validateWordLimit(model, 5, `model bisnis "${model}"`);
+        });
+      }
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
+    }
 
     const isAdmin = auth.role === 'admin'
 
@@ -149,6 +208,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
           await createNotification({
             userId: innovatorId,
             type: 'personal',
+            category: 'innovation_submission',
             title: notifTitle,
             description: notifDescription,
             actionType: 'innovation_detail',

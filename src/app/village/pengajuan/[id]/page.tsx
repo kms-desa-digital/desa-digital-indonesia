@@ -9,6 +9,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Menu,
     MenuButton,
     MenuItem,
@@ -17,19 +18,16 @@ import {
     SkeletonCircle,
     Stack,
     Text,
-    Image,
 } from "@chakra-ui/react";
-import { ChevronDownIcon, SearchIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import { useTranslations } from "next-intl";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
 import { auth } from "src/firebase/clientApp";
 import { useAuthState } from "react-firebase-hooks/auth";
-// import { auth, firestore } from "src/firebase/clientApp";
 import { getClaims } from "Services/villageServices";
 import CardNotification from "Components/card/notification/CardNotification";
-import Right from "@public/icons/arrow-right.svg";
-import Left from "@public/icons/arrow-left.svg";
+import Pagination from "Components/common/Pagination";
 
 const SkeletonCard = () => (
     <Box borderWidth="1px" borderRadius="lg" padding="4" mb={4} bg="white">
@@ -55,7 +53,6 @@ const PengajuanKlaimContent: React.FC = () => {
     const searchParams = useSearchParams();
     const [user] = useAuthState(auth);
     const { role, loading: userLoading, uid, firebaseUid } = useUser();
-    const [data, setData] = useState<any[]>([]);
     const [filteredData, setFilteredData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -69,9 +66,9 @@ const PengajuanKlaimContent: React.FC = () => {
     const [selectedFilter, setSelectedFilter] = useState<string>(initialFilter);
     const t = useTranslations("Village");
 
-    // Pagination Status
+    // Pagination State
     const [currentPage, setCurrentPage] = useState(initialPage);
-    const [hasMore, setHasMore] = useState(false);
+    const [totalPages, setTotalPages] = useState(1);
     const itemsPerPage = 5;
 
     const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
@@ -83,7 +80,7 @@ const PengajuanKlaimContent: React.FC = () => {
         if (page > 1) urlParams.set("page", page.toString());
         if (filter !== "Semua") urlParams.set("filter", filter);
         if (search) urlParams.set("search", search);
-        
+
         const queryString = urlParams.toString();
         const newPath = queryString ? `?${queryString}` : window.location.pathname;
         router.replace(newPath, { scroll: false });
@@ -105,12 +102,10 @@ const PengajuanKlaimContent: React.FC = () => {
             const claimsData = response.claims || response.data?.claims || [];
             const pagination = response.pagination || response.data?.pagination || {};
 
-            setData(claimsData);
             setFilteredData(claimsData);
-            setHasMore(pagination.hasMore || false);
+            setTotalPages(pagination.totalPages || (pagination.hasMore ? page + 1 : page));
         } catch (err) {
             console.error("Error fetching claims from API:", err);
-            setData([]);
             setFilteredData([]);
         } finally {
             setLoading(false);
@@ -154,22 +149,10 @@ const PengajuanKlaimContent: React.FC = () => {
         return <Forbidden />;
     }
 
-    // Client side UI filtering removed in favor of server side search/filter
-
-    const handleNextPage = async () => {
-        if (hasMore) {
-            const nextPage = currentPage + 1;
-            setCurrentPage(nextPage);
-            updateUrl(nextPage, selectedFilter, searchTerm);
-        }
-    };
-
-    const handlePrevPage = async () => {
-        if (currentPage > 1) {
-            const prevPage = currentPage - 1;
-            setCurrentPage(prevPage);
-            updateUrl(prevPage, selectedFilter, searchTerm);
-        }
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        updateUrl(page, selectedFilter, searchTerm);
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     const formatTimestamp = (dateStr: string) => {
@@ -202,7 +185,7 @@ const PengajuanKlaimContent: React.FC = () => {
                     mt="-4px"
                     backgroundColor="#DCFCE7"
                     alignItems="center"
-                    ml="-16px" // Netralisir padding dari Stack
+                    ml="-16px"
                     mr="-16px">
                     <Text
                         fontSize={12}
@@ -241,7 +224,29 @@ const PengajuanKlaimContent: React.FC = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             bg="white"
                             fontSize="10pt"
+                            pr="40px"
                         />
+                        {searchTerm && (
+                            <InputRightElement>
+                                <Box
+                                    as="button"
+                                    onClick={() => setSearchTerm("")}
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    borderRadius="full"
+                                    bg="#6B7280"
+                                    color="white"
+                                    boxSize="18px"
+                                    _hover={{ bg: "gray.600" }}
+                                    _active={{ bg: "gray.700" }}
+                                    cursor="pointer"
+                                    mr="8px"
+                                >
+                                    <CloseIcon w="6px" h="6px" />
+                                </Box>
+                            </InputRightElement>
+                        )}
                     </InputGroup>
 
                     <Menu>
@@ -277,49 +282,34 @@ const PengajuanKlaimContent: React.FC = () => {
 
                 {loading
                     ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
-                    : filteredData.map((item, idx) => (
-                        <CardNotification
-                            key={idx}
-                            title={item.namaInovasi || "Tanpa Nama Inovasi"}
-                            status={item.status || "Unknown"}
-                            date={formatTimestamp(item.createdAt)}
-                            description={item.deskripsiInovasi || item.deskripsi || "Tidak ada deskripsi"}
-                            onClick={() =>
-                                router.push(`/village/klaimInovasi/detail/${item.id}`)
-                            }
-                        />
-                    ))}
+                    : filteredData.length > 0
+                        ? filteredData.map((item, idx) => (
+                            <CardNotification
+                                key={idx}
+                                title={item.namaInovasi || "Tanpa Nama Inovasi"}
+                                status={item.status || "Unknown"}
+                                date={formatTimestamp(item.createdAt)}
+                                description={item.deskripsiInovasi || item.deskripsi || "Tidak ada deskripsi"}
+                                onClick={() =>
+                                    router.push(`/village/klaimInovasi/detail/${item.id}`)
+                                }
+                            />
+                        ))
+                        : (
+                            <Box textAlign="center" py={8}>
+                                <Text color="gray.500" fontSize="sm">
+                                    Belum ada pengajuan klaim
+                                </Text>
+                            </Box>
+                        )}
 
-                {/* Pagination Buttons */}
-                <Flex gap={4} mt={4} mb={4} alignItems="center" alignSelf="center">
-                    <Button
-                        rightIcon={<Image src={Left.src} alt="back" />}
-                        iconSpacing={0}
-                        onClick={handlePrevPage}
-                        isDisabled={currentPage === 1}
-                        colorScheme="teal"
-                        size="sm"
-                        variant="outline"
-                        borderRadius="md"
-                        width="16px"
-                    >
-                    </Button>
-                    <Text textAlign="center" fontSize="10pt">
-                        {t("pageLabel", { page: currentPage })}
-                    </Text>
-                    <Button
-                        rightIcon={<Image src={Right.src} alt="back" />}
-                        iconSpacing={0}
-                        onClick={handleNextPage}
-                        isDisabled={!hasMore}
-                        colorScheme="teal"
-                        size="sm"
-                        variant="outline"
-                        borderRadius="md"
-                        width="16px"
-                    >
-                    </Button>
-                </Flex>
+                {/* Pagination */}
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
+
                 <Box height="40px" />
             </Stack>
         </Container>

@@ -89,7 +89,7 @@ function DetailInnovation() {
     const villageSafe = Array.isArray(village) ? village : [];
     const villageMap = new Map();
 
-   
+
     useEffect(() => {
         if (id) {
             setLoading(true);
@@ -241,21 +241,28 @@ function DetailInnovation() {
                 throw error;
             }
 
-            console.log("hahahahah:",data);
+            console.log("hahahahah:", data);
             setData({ ...data, status: "Terverifikasi" });
-            
-            const innovatorRes: any = await getInnovatorById(data.innovatorId);
-            const invData = innovatorRes?.innovator ?? innovatorRes?.data?.innovator ?? innovatorRes?.data ?? innovatorRes;
-            // Update innovator's innovation count via API
-            if (data.innovatorId) {
-                const currentCount = invData?.jumlahInovasi ?? innovatorData.jumlahInovasi ?? 0;
-                await updateInnovator(data.innovatorId, {
-                    jumlahInovasi: currentCount + 1,
-                    namaInovator: invData?.namaInovator,
-                    deskripsi: invData?.deskripsi,
-                    kategori: invData?.kategori,
-                    whatsapp: invData?.whatsapp,
-                });
+
+            try {
+                if (data.innovatorId) {
+                    const innovatorRes: any = await getInnovatorById(data.innovatorId);
+                    const invData = innovatorRes?.innovator ?? innovatorRes?.data?.innovator ?? innovatorRes?.data ?? innovatorRes;
+                    if (invData) {
+                        const currentCount = invData?.jumlahInovasi ?? innovatorData.jumlahInovasi ?? 0;
+                        await updateInnovator(data.innovatorId, {
+                            jumlahInovasi: currentCount + 1,
+                            namaInovator: invData?.namaInovator || "",
+                            deskripsi: invData?.deskripsi || "",
+                            kategori: invData?.kategori || "",
+                            whatsapp: invData?.whatsapp || "",
+                            logo: invData?.logo || "",
+                            header: invData?.header || "",
+                        });
+                    }
+                }
+            } catch (innovatorErr) {
+                console.error("Gagal mengupdate jumlah inovasi pada profil inovator:", innovatorErr);
             }
 
             // Update linked villages' innovation count
@@ -265,8 +272,8 @@ function DetailInnovation() {
                         const vRes: any = await getVillageById(v.id || v.userId);
                         const vData = vRes.data || vRes.village;
                         const newValue = (Number(vData?.jumlahInovasiDiterapkan) || 0) + 1;
-                        await updateVillage(v.id || v.userId, { 
-                            jumlahInovasiDiterapkan: newValue 
+                        await updateVillage(v.id || v.userId, {
+                            jumlahInovasiDiterapkan: newValue
                         });
                     } catch (err) {
                         console.error(`Error updating count for village ${v.id}:`, err);
@@ -275,6 +282,7 @@ function DetailInnovation() {
             }
 
             toast.success("Inovasi berhasil diverifikasi!");
+            router.replace("/admin/verification/Verifikasi Tambah Inovasi");
         } catch (error) {
             console.error("Error verifying innovation via API:", error);
             setError("Error verifying innovation");
@@ -301,6 +309,7 @@ function DetailInnovation() {
                 catatanAdmin: modalInput,
             }));
             toast.success("Penolakan berhasil");
+            router.replace("/admin/verification/Verifikasi Tambah Inovasi");
         } catch (error) {
             console.error("Error rejecting innovation via API:", error);
             setError("Error rejecting innovation");
@@ -378,8 +387,18 @@ function DetailInnovation() {
                         <Text fontSize="16px" color="gray.500">
                             {error || "Inovasi tidak ditemukan atau sudah dihapus"}
                         </Text>
-                        <Button mt={4} size="sm" onClick={() => router.push(paths.INNOVATION_PAGE)}>
-                            Kembali ke Daftar Inovasi
+                        <Button
+                            mt={4}
+                            size="sm"
+                            onClick={() => {
+                                if (isAdmin) {
+                                    router.push("/admin/verification/Verifikasi Tambah Inovasi");
+                                } else {
+                                    router.push(paths.INNOVATION_PAGE);
+                                }
+                            }}
+                        >
+                            {isAdmin ? "Kembali ke Verifikasi Inovasi" : "Kembali ke Daftar Inovasi"}
                         </Button>
                     </Box>
                 </Flex>

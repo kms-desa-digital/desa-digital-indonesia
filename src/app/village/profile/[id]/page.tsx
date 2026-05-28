@@ -96,6 +96,9 @@ export default function ProfileVillage() {
                     status: "Terverifikasi",
                 }));
                 toast.success("Profil desa berhasil diverifikasi");
+                if (isAdmin) {
+                    router.replace("/admin/verification/Verifikasi Desa");
+                }
             } else {
                 throw new Error("Village ID is undefined");
             }
@@ -128,6 +131,9 @@ export default function ProfileVillage() {
                     catatanAdmin: modalInput,
                 }));
                 toast.success("Penolakan berhasil");
+                if (isAdmin) {
+                    router.replace("/admin/verification/Verifikasi Desa");
+                }
             } else {
                 throw new Error("Village ID is undefined");
             }
@@ -520,8 +526,8 @@ export default function ProfileVillage() {
                                             kategori={innovation.kategori}
                                             deskripsi={innovation.deskripsi}
                                             tahunDibuat={innovation.tahunDibuat}
-                                            innovatorLogo={innovation.innovatorImgURL}
-                                            innovatorName={innovation.namaInnovator}
+                                            innovatorLogo={innovation.innovatorImgURL || innovation.logoInovator || innovation.logo || innovation.innovatorLogo}
+                                            innovatorName={innovation.namaInnovator || innovation.namaInovator || innovation.innovatorName}
                                             jumlahDesa={innovation.jumlahDesa || 0}
                                             onClick={() =>
                                                 router.push(`/innovation/detail/${innovation.id}`)

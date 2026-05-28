@@ -16,7 +16,7 @@ import {
 } from "@chakra-ui/react";
 
 import { FaUsers, FaSeedling } from "react-icons/fa";
-import { getFirestore, collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NextLink from "next/link";
@@ -25,6 +25,8 @@ import { paths } from "Consts/path";
 import { getAuth } from "firebase/auth";
 import { firestore } from "../../firebase/clientApp";
 import { getInnovation } from "Services/innovationServices";
+import api from "Services/api";
+import { getVillageInnovations } from "Services/villageServices";
 
 const Dashboard = () => {
   const [userRole, setUserRole] = useState(null);
@@ -58,53 +60,87 @@ const Dashboard = () => {
       }
     };
 
-    const fetchInnovatorCount = async () => {
+    const fetchStats = async () => {
       try {
-        const db = getFirestore();
-        const innovatorsRef = collection(db, "innovators");
-        const snapshot = await getDocs(innovatorsRef);
-        setTotalInnovators(snapshot.size);
+        const response = await fetch("/api/stats");
+        if (response.ok) {
+          const data = await response.json();
+          setTotalVillage(data.totalVillage || 0);
+          setTotalInnovators(data.totalInnovators || 0);
+        } else {
+          console.error("Failed to fetch stats from API");
+        }
       } catch (error) {
-        console.error("Error fetching innovator count:", error);
-      }
-    };
-
-    const fetchVillageCount = async () => {
-      try {
-        const db = getFirestore();
-        const villageRef = collection(db, "villages");
-        const snapshot = await getDocs(villageRef);
-        const validVillages = snapshot.docs.filter((doc) => {
-          const data = doc.data();
-          return (
-            data.namaDesa &&
-            data.namaDesa.length > 1 &&
-            data.jumlahInovasi !== 0
-          );
-        });
-        setTotalVillage(validVillages.length);
-      } catch (error) {
-        console.error("Error fetching village count:", error);
+        console.error("Error fetching stats:", error);
       }
     };
 
     fetchUserRole();
-    fetchInnovatorCount();
-    fetchVillageCount();
+    fetchStats();
   }, []);
 
   useEffect(() => {
     if (userRole === "village") {
-      getInnovation({ status: "Terverifikasi" })
-        .then((res) => {
-          const list = res.innovations || [];
-          const sorted = [...list].sort((a, b) => (b.jumlahDesa || 0) - (a.jumlahDesa || 0));
-          if (sorted.length > 0) {
-            setTopInnovation(sorted[0]);
-          }
-        })
-        .catch((err) => console.error("Error fetching dashboard top innovation:", err))
-        .finally(() => setLoadingRecommendation(false));
+      setLoadingRecommendation(true);
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+
+      const fetchLeaderboardFallback = () => {
+        getInnovation({ status: "Terverifikasi" })
+          .then((res) => {
+            const list = res.innovations || [];
+            const sorted = [...list].sort((a, b) => (b.jumlahDesa || 0) - (a.jumlahDesa || 0));
+            if (sorted.length > 0) {
+              setTopInnovation(sorted[0]);
+            }
+          })
+          .catch((err) => console.error("Error fetching dashboard top innovation (leaderboard fallback):", err))
+          .finally(() => setLoadingRecommendation(false));
+      };
+
+      if (currentUser) {
+        getVillageInnovations(currentUser.uid)
+          .then(async (resInv: any) => {
+            const claimedInnovations = resInv.innovations || resInv.data || [];
+            if (claimedInnovations.length > 0) {
+              const latestInnovation = claimedInnovations[0];
+              const innovationId = latestInnovation.id || latestInnovation._id;
+              
+              if (innovationId) {
+                try {
+                  const recRes = await api.post("/recommendations", {
+                    innovation_id: innovationId,
+                    top_n: 1
+                  });
+                  const recList = recRes.data?.data || recRes.data || [];
+                  if (recList.length > 0) {
+                    const recItem = recList[0];
+                    setTopInnovation({
+                      id: recItem.id,
+                      namaInovasi: recItem.inovasi || recItem.namaInovasi,
+                      deskripsi: recItem.deskripsi,
+                      kategori: recItem.kategori,
+                      namaInnovator: recItem.namaInnovator || "Umum",
+                      fotoInovasi: recItem.images || recItem.fotoInovasi || [],
+                      images: recItem.images || recItem.fotoInovasi || []
+                    });
+                    setLoadingRecommendation(false);
+                    return;
+                  }
+                } catch (apiErr) {
+                  console.error("Failed to fetch recommendation similarity, falling back:", apiErr);
+                }
+              }
+            }
+            fetchLeaderboardFallback();
+          })
+          .catch((err) => {
+            console.error("Error fetching village innovations:", err);
+            fetchLeaderboardFallback();
+          });
+      } else {
+        fetchLeaderboardFallback();
+      }
     }
   }, [userRole]);
 

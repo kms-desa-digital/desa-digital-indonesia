@@ -1,7 +1,7 @@
 "use client";
 
 import Hero from "Components/innovator/hero";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Box, Button, Text as ChakraText, Flex } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import {
@@ -15,7 +15,8 @@ import {
 import CardInnovator from "Components/card/innovator";
 import BottomSheetSelector from "Components/form/BottomSheetSelector";
 import SearchBarInnov from "Components/innovator/hero/SearchBarInnov";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
+import Pagination from "Components/common/Pagination";
 import Container from "Components/container";
 import { useTranslations } from "next-intl";
 import { getInnovators } from "Services/innovatorServices";
@@ -33,16 +34,35 @@ type InnovatorData = {
     status: string;
 };
 
-export default function InnovatorPage() {
+function Innovator() {
     const t = useTranslations("Innovator");
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    const initialPage = parseInt(searchParams.get("page") || "1", 10);
+    const initialCategory = searchParams.get("category") || "Semua Kategori";
+    const initialSearch = searchParams.get("search") || "";
+
     const ITEMS_PER_PAGE = 10;
-    const [currentPage, setCurrentPage] = useState<number>(1);
-    const [searchQuery, setSearchQuery] = useState<string>("");
-    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>("");
+    const [currentPage, setCurrentPage] = useState<number>(initialPage);
+    const [searchQuery, setSearchQuery] = useState<string>(initialSearch);
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState<string>(initialSearch);
     const [innovatorsShowed, setInnovatorsShowed] = useState<InnovatorData[]>([]);
-    const [categoryFilter, setCategoryFilter] = useState<string>("Semua Kategori");
+    const [categoryFilter, setCategoryFilter] = useState<string>(initialCategory);
     const [isFetched, setIsFetched] = useState(false);
+
+    const isFirstMount = useRef(true);
+
+    const updateUrl = (page: number, category: string, search: string) => {
+        const urlParams = new URLSearchParams();
+        if (page > 1) urlParams.set("page", page.toString());
+        if (category && category !== "Semua Kategori") urlParams.set("category", category);
+        if (search) urlParams.set("search", search);
+        
+        const queryString = urlParams.toString();
+        const newPath = queryString ? `?${queryString}` : window.location.pathname;
+        router.replace(newPath, { scroll: false });
+    };
 
     const categories = [
         { label: t("allCategory"), value: "Semua Kategori" },
@@ -60,6 +80,7 @@ export default function InnovatorPage() {
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearchQuery(searchQuery);
+            updateUrl(currentPage, categoryFilter, searchQuery);
         }, 300);
 
         return () => clearTimeout(timer);
@@ -94,7 +115,12 @@ export default function InnovatorPage() {
 
     // Reset to page 1 when filters change
     useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
         setCurrentPage(1);
+        updateUrl(1, categoryFilter, searchQuery);
     }, [debouncedSearchQuery, categoryFilter]);
 
     // Calculate paginated data
@@ -105,14 +131,18 @@ export default function InnovatorPage() {
 
     const handlePrevPage = () => {
         if (currentPage > 1) {
-            setCurrentPage(currentPage - 1);
+            const prevPage = currentPage - 1;
+            setCurrentPage(prevPage);
+            updateUrl(prevPage, categoryFilter, searchQuery);
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
     };
 
     const handleNextPage = () => {
         if (currentPage < totalPages) {
-            setCurrentPage(currentPage + 1);
+            const nextPage = currentPage + 1;
+            setCurrentPage(nextPage);
+            updateUrl(nextPage, categoryFilter, searchQuery);
             window.scrollTo({ top: 0, behavior: "smooth" });
         }
     };
@@ -137,6 +167,7 @@ export default function InnovatorPage() {
                             value={categoryFilter}
                             onChange={(value, label) => setCategoryFilter(value)}
                             searchPlaceholder="Cari kategori inovator di sini..."
+                            showAllOption={false}
                         />
                         <SearchBarInnov
                             placeholder={t("searchPlaceholder")}
@@ -144,6 +175,7 @@ export default function InnovatorPage() {
                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 setSearchQuery(e.target.value);
                             }}
+                            onClear={() => setSearchQuery("")}
                         />
                     </Column>
                 </CardContent>
@@ -166,36 +198,24 @@ export default function InnovatorPage() {
                         />
                     ))}
                 </GridContainer>
-                {totalPages > 1 && (
-                    <Flex justify="center" mt={2} mb={2} align="center" gap={4}>
-                        <Button
-                            onClick={handlePrevPage}
-                            isDisabled={currentPage === 1}
-                            variant="outline"
-                            size="sm"
-                            borderColor="gray.200"
-                            color="#347357"
-                            _hover={{ bg: "gray.50" }}
-                        >
-                            <ChevronLeftIcon />
-                        </Button>
-                        <ChakraText fontSize="14px" fontWeight="500" color="gray.700">
-                            Halaman {currentPage} dari {totalPages}
-                        </ChakraText>
-                        <Button
-                            onClick={handleNextPage}
-                            isDisabled={currentPage === totalPages}
-                            variant="outline"
-                            size="sm"
-                            borderColor="gray.200"
-                            color="#347357"
-                            _hover={{ bg: "gray.50" }}
-                        >
-                            <ChevronRightIcon />
-                        </Button>
-                    </Flex>
-                )}
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={(page) => {
+                        setCurrentPage(page);
+                        updateUrl(page, categoryFilter, searchQuery);
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                />
             </Containers>
         </Container>
+    );
+}
+
+export default function InnovatorPage() {
+    return (
+        <Suspense fallback={<Loading />}>
+            <Innovator />
+        </Suspense>
     );
 }

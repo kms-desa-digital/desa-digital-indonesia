@@ -3,9 +3,9 @@
 import dynamic from "next/dynamic";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
+import LanguageSwitcher from "Components/topBar/LanguageSwitcher";
 import Header from "src/components/dashboard/ministry/header";
 import { useRouter } from "next/navigation";
-import LogoutButton from "Components/topBar/RightContent/LogoutButton";
 import { getAuth } from "firebase/auth";
 
 // Dynamic import untuk komponen yang pakai window/browser API
@@ -25,8 +25,8 @@ const DashboardMinistry = () => {
     return (
         <Container page>
             <TopBar
-                title={`Dashboard ${userName}`}
-                rightElement={<LogoutButton />}
+                title="Desa Digital Indonesia"
+                rightElement={<LanguageSwitcher />}
             />
             <Header description="KMS Desa Digital" text="Indonesia" />
             <InfoCards />

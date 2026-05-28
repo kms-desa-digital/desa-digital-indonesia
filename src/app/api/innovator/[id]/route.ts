@@ -1,0 +1,234 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { connectToDatabase } from '@/lib/db/mongodb'
+import { ObjectId } from 'mongodb'
+import { requireRole } from '@/lib/auth/apiAuth'
+import { validateWordLimit } from '@/lib/utils/wordCount'
+
+type Params = Promise<{ id: string }>
+type MongoFilter = { [key: string]: any }
+type InnovatorDoc = { _id: string | ObjectId;[key: string]: any }
+
+const normalizeArray = (value: unknown) => {
+  if (Array.isArray(value)) return value
+  if (value) return [value]
+  return []
+}
+
+const buildFilter = (id: string): MongoFilter => {
+  const conditions: any[] = [{ _id: id }, { userId: id }]
+
+  if (ObjectId.isValid(id)) {
+    conditions.unshift({ _id: new ObjectId(id) })
+  }
+
+  return { $or: conditions }
+}
+
+// GET /api/innovator/:id
+// Ambil detail profil inovator berdasarkan id.
+export async function GET(_request: NextRequest, { params }: { params: Params }) {
+  try {
+    const { id } = await params
+
+    if (!id) {
+      return NextResponse.json({ message: 'Innovator ID is required' }, { status: 400 })
+    }
+
+    const db = await connectToDatabase()
+    const query: any = buildFilter(id)
+
+    const innovators = await db.collection('innovators').aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: 'innovations',
+          let: { innovator_id: { $toString: '$_id' }, user_id: '$userId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $or: [
+                        { $eq: ['$innovatorId', '$$innovator_id'] },
+                        { $eq: ['$innovatorId', '$$user_id'] }
+                      ]
+                    },
+                    { $eq: ['$status', 'Terverifikasi'] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'allInnovations'
+        }
+      },
+      {
+        $addFields: {
+          jumlahInovasi: { $size: '$allInnovations' },
+          uniqueDesas: {
+            $reduce: {
+              input: '$allInnovations',
+              initialValue: [],
+              in: { $setUnion: ['$$value', { $ifNull: ['$$this.desaId', []] }] }
+            }
+          }
+        }
+      },
+      {
+        $addFields: {
+          jumlahDesaDampingan: { $size: '$uniqueDesas' }
+        }
+      }
+    ]).toArray()
+
+    const innovator = innovators[0]
+
+    if (!innovator) {
+      return NextResponse.json({ message: 'Innovator tidak ditemukan' }, { status: 404 })
+    }
+
+    return NextResponse.json(
+      { innovator: { ...innovator, id: innovator._id.toString(), _id: innovator._id.toString() } },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error('Error fetching innovator detail:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// PUT /api/innovator/:id
+// Edit innovator profile in MongoDB.
+export async function PUT(request: NextRequest, { params }: { params: Params }) {
+  try {
+    const auth = await requireRole(request, ["innovator", "admin"]);
+    if (auth instanceof NextResponse) return auth;
+
+    const isAdmin = auth.role === 'admin'
+    const { id } = await params
+
+    if (!id) {
+      return NextResponse.json({ message: 'Innovator ID is required' }, { status: 400 })
+    }
+
+    const body = await request.json()
+    const {
+      namaInovator,
+      deskripsi,
+      kategori,
+      whatsapp,
+      instagram,
+      website,
+      logo,
+      header,
+      desaId,
+      jumlahInovasi,
+      jumlahDesaDampingan,
+      status,
+    } = body
+
+    const db = await connectToDatabase()
+    const innovatorCollection = db.collection<InnovatorDoc>('innovators')
+    const filter = buildFilter(id)
+    const existingDoc = await innovatorCollection.findOne(filter)
+
+    if (!existingDoc) {
+      return NextResponse.json({ message: 'Profil inovator tidak ditemukan' }, { status: 404 })
+    }
+
+    // Validasi kepemilikan: Hanya pemilik profil atau admin yang boleh mengedit
+    if (!isAdmin && existingDoc.userId !== auth.uid) {
+      return NextResponse.json({ message: 'Anda tidak memiliki hak untuk mengubah profil ini' }, { status: 403 })
+    }
+
+    // Gunakan nilai dari existingDoc sebagai fallback (dukungan update parsial)
+    const namaInovatorValue = namaInovator !== undefined ? namaInovator : existingDoc.namaInovator
+    const deskripsiValue = deskripsi !== undefined ? deskripsi : existingDoc.deskripsi
+    const kategoriValue = kategori !== undefined ? kategori : existingDoc.kategori
+    const whatsappValue = whatsapp !== undefined ? whatsapp : existingDoc.whatsapp
+    const logoValue = logo !== undefined ? logo : existingDoc.logo
+    const headerValue = header !== undefined ? header : existingDoc.header
+
+    if (!namaInovatorValue || !deskripsiValue || !kategoriValue || !whatsappValue || !logoValue || !headerValue) {
+      return NextResponse.json(
+        {
+          message:
+            'Field wajib tidak lengkap: namaInovator, deskripsi, kategori, whatsapp, logo, dan header harus diisi.',
+        },
+        { status: 400 }
+      )
+    }
+
+    try {
+      if (namaInovatorValue) validateWordLimit(namaInovatorValue, 10, 'nama inovator');
+      if (deskripsiValue) validateWordLimit(deskripsiValue, 80, 'deskripsi');
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
+    }
+
+    const now = new Date()
+    const updatedProfile = {
+      ...body,
+      namaInovator: namaInovatorValue,
+      deskripsi: deskripsiValue,
+      kategori: kategoriValue,
+      whatsapp: whatsappValue,
+      instagram: instagram ?? existingDoc.instagram ?? '',
+      website: website ?? existingDoc.website ?? '',
+      logo: logoValue ?? null,
+      header: headerValue ?? null,
+      desaId: normalizeArray(desaId).length ? normalizeArray(desaId) : existingDoc.desaId ?? [],
+      jumlahInovasi:
+        typeof jumlahInovasi === 'number' ? jumlahInovasi : existingDoc.jumlahInovasi ?? 0,
+      jumlahDesaDampingan:
+        typeof jumlahDesaDampingan === 'number'
+          ? jumlahDesaDampingan
+          : existingDoc.jumlahDesaDampingan ?? 0,
+      status: existingDoc.status,
+      catatanAdmin: existingDoc.catatanAdmin ?? '',
+      editedAt: now,
+      createdAt: existingDoc.createdAt ?? now,
+    }
+
+    const isResubmission = !isAdmin && existingDoc.status !== 'Menunggu'
+    if (isResubmission) {
+      updatedProfile.status = 'Menunggu'
+      updatedProfile.catatanAdmin = ''
+    }
+
+    if (!isAdmin) {
+      updatedProfile.createdAt = now
+    }
+
+    await innovatorCollection.updateOne(filter, { $set: updatedProfile })
+
+    // Notify admins about update/resubmission
+    try {
+      const { notifyAllAdmins } = await import('@/services/notificationServices')
+      if (isResubmission) {
+        await notifyAllAdmins({
+          type: 'personal',
+          category: 'profile_submission',
+          title: `Pengajuan Ulang Profil Innovator: ${namaInovator}`,
+          description: `Innovator ${namaInovator} telah memperbarui profil. Silakan verifikasi kembali.`,
+          actionType: 'profile',
+          relatedId: id,
+        })
+      }
+    } catch (notifErr) {
+      console.error('Error notifying admins about innovator profile update:', notifErr)
+    }
+
+    return NextResponse.json(
+      {
+        message: 'Profil inovator berhasil diperbarui',
+        profile: { ...existingDoc, ...updatedProfile, id: existingDoc._id.toString() },
+      },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error('Error updating innovator profile:', error)
+    return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
+  }
+}

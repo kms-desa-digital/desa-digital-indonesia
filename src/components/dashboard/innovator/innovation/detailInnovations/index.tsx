@@ -10,16 +10,8 @@ import {
   IconButton,
 } from "@chakra-ui/react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
-import { getAuth } from "firebase/auth";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  QueryDocumentSnapshot,
-  DocumentData
-} from "firebase/firestore";
+import { useAuthToken } from "Hooks/useAuthToken";
+
 import {
   titleStyle,
   tableHeaderStyle,
@@ -30,7 +22,7 @@ import {
   paginationActiveButtonStyle,
   paginationEllipsisStyle,
 } from "./_detailInnovationsStyle";
-import downloadIcon from "@public/icons/icon-download.svg";
+
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -63,149 +55,76 @@ const DetailInnovations: React.FC<DetailInnovationsProps> = ({ onSelectInnovatio
     modelBisnis: "-",
   });
 
-  const auth = getAuth();
-  const db = getFirestore();
-  const [userName, setUserName] = useState<string | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
-    const user = auth.currentUser;
-
-    if (user) {
-      setUserName(user.displayName || user.email || "User");
-    } else {
-      setUserName(null);
-    }
-
-    if (!user) {
-      setImplementationData([]);
-      setLoading(false);
-      return;
-    }
-
     const fetchData = async () => {
+      if (!authLoaded) return;
       setLoading(true);
+
+      if (!token) {
+        setImplementationData([]);
+        setLoading(false);
+        return;
+      }
+
       try {
-        const profilInovatorRef = collection(db, "innovators");
-        const qProfil = query(profilInovatorRef, where("id", "==", user.uid));
-        const profilSnap = await getDocs(qProfil);
-        if (profilSnap.empty) {
-          setImplementationData([]);
-          setLoading(false);
-          return;
-        }
-        const inovatorIds = profilSnap.docs.map((doc) => doc.id);
-
-        const inovasiRef = collection(db, "innovations");
-        const chunkSize = 10;
-        let inovasiDocs: QueryDocumentSnapshot<DocumentData>[] = [];
-        for (let i = 0; i < inovatorIds.length; i += chunkSize) {
-          const chunk = inovatorIds.slice(i, i + chunkSize);
-          const qInovasi = query(inovasiRef, where("innovatorId", "in", chunk));
-          const snapInovasi = await getDocs(qInovasi);
-          inovasiDocs = inovasiDocs.concat(snapInovasi.docs);
-        }
-        if (inovasiDocs.length === 0) {
-          setImplementationData([]);
-          setLoading(false);
-          return;
-        }
-
-        const inovasiMap = new Map<
-          string,
-          { namaInovasi: string; inovatorId: string }
-        >();
-        inovasiDocs.forEach((doc) => {
-          const data = doc.data();
-          inovasiMap.set(doc.id, {
-            namaInovasi: data.namaInovasi,
-            inovatorId: data.innovatorId,
-          });
+        // Dapatkan profil innovator milik user saat ini via dashboard API
+        const dashRes = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        const inovasiIds = Array.from(inovasiMap.keys());
+        if (!dashRes.ok) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
+        }
 
-        const produkInovator = inovasiDocs
-          .map((doc) => doc.data().namaInovasi)
+        const dashData = await dashRes.json();
+        const myProfile = dashData.innovator;
+
+        if (!myProfile) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
+        }
+
+        const inovatorId = myProfile._id?.toString();
+
+        const myInnovations = dashData.daftarInovasi || [];
+
+        if (myInnovations.length === 0) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
+        }
+
+        const produkInovator = myInnovations
+          .map((i: any) => i.namaInovasi)
           .filter(Boolean)
           .join(", ");
 
-        const profileData = profilSnap.docs[0].data();
         setInovatorProfile({
-          namaInovator: profileData.namaInovator || "-",
-          kategoriInovator: profileData.kategori || "-",
-          tahunDibentuk: profileData.tahunDibentuk || "-",
-          targetPengguna: profileData.targetPengguna || "-",
-          modelBisnis: profileData.modelBisnis || "-",
+          namaInovator: myProfile.namaInovator || "-",
+          kategoriInovator: myProfile.kategori || "-",
+          tahunDibentuk: myProfile.tahunDibentuk || "-",
+          targetPengguna: myProfile.targetPengguna || "-",
+          modelBisnis: myProfile.modelBisnis || "-",
           produk: produkInovator || "-",
         });
 
-        const klaimInovasiRef = collection(db, "claimInnovations");
-        let klaimDocs: QueryDocumentSnapshot<DocumentData>[] = [];
-        for (let i = 0; i < inovasiIds.length; i += chunkSize) {
-          const chunk = inovasiIds.slice(i, i + chunkSize);
-          const qKlaim = query(klaimInovasiRef, where("inovasiId", "in", chunk));
-          const snapKlaim = await getDocs(qKlaim);
-          klaimDocs = klaimDocs.concat(snapKlaim.docs);
-        }
-
-        const inovatorIdSet = new Set<string>(
-          Array.from(inovasiMap.values()).map((x) => x.inovatorId)
-        );
-        const inovatorIdList = Array.from(inovatorIdSet);
-
-        const inovatorNameMap = new Map<string, string>();
-        for (let i = 0; i < inovatorIdList.length; i += chunkSize) {
-          const chunk = inovatorIdList.slice(i, i + chunkSize);
-          const qProfilName = query(profilInovatorRef, where("__name__", "in", chunk));
-          const snap = await getDocs(qProfilName);
-          snap.forEach((doc) => {
-            const data = doc.data();
-            inovatorNameMap.set(doc.id, data.namaInovator || "Unknown");
-          });
-        }
-
-        const aggregationMap = new Map<
-          string,
-          { innovationId: string; inovator: string; namaInovasi: string; desaSet: Set<string> }
-        >();
-
-        for (const docSnap of klaimDocs) {
-          const data = docSnap.data();
-          const inovasiId = data.inovasiId;
-          const namaDesa = data.namaDesa;
-          const inovasiData = inovasiMap.get(inovasiId);
-          if (!inovasiData) continue;
-          const inovatorId = inovasiData.inovatorId;
-          const inovatorName = inovatorNameMap.get(inovatorId) || "Unknown";
-          const key = inovasiId;
-
-          if (!aggregationMap.has(key)) {
-            aggregationMap.set(key, {
-              innovationId: key,
-              namaInovasi: inovasiData.namaInovasi,
-              inovator: inovatorName,
-              desaSet: new Set(),
-            });
-          }
-          aggregationMap.get(key)!.desaSet.add(namaDesa);
-        }
-
-        const result: Implementation[] = Array.from(aggregationMap.values()).map(
-          (item) => ({
-            innovationId: item.innovationId,
-            namaInovasi: item.namaInovasi,
-            inovator: item.inovator,
-            jumlahDesa: item.desaSet.size,
-          })
-        );
+        const result: Implementation[] = myInnovations.map((item: any) => ({
+          innovationId: item.innovationId,
+          namaInovasi: item.namaInovasi,
+          inovator: item.inovator,
+          jumlahDesa: item.jumlahDesa,
+        }));
 
         setImplementationData(
           result.sort((a, b) => {
             if (b.jumlahDesa === a.jumlahDesa) {
-              // Kalau jumlahDesa sama, urutkan berdasarkan namaInovasi (A-Z)
               return a.namaInovasi.localeCompare(b.namaInovasi);
             }
-            // Kalau jumlahDesa berbeda, urutkan dari nilai yang terbesar
             return b.jumlahDesa - a.jumlahDesa;
           })
         );
@@ -218,7 +137,7 @@ const DetailInnovations: React.FC<DetailInnovationsProps> = ({ onSelectInnovatio
     };
 
     fetchData();
-  }, [auth.currentUser]);
+  }, [authLoaded, token]);
 
   const totalPages = Math.ceil(implementationData.length / itemsPerPage);
   const currentData = implementationData.slice(
@@ -276,11 +195,6 @@ const DetailInnovations: React.FC<DetailInnovationsProps> = ({ onSelectInnovatio
       month: "long",
       year: "numeric",
     });
-
-    // Assuming `userName` is defined and `implementationData` is the list of innovations
-    const userProfile = {
-      nama: userName || "-",
-    };
 
     // Header with green background
     doc.setFillColor(0, 128, 0);
@@ -395,7 +309,7 @@ const DetailInnovations: React.FC<DetailInnovationsProps> = ({ onSelectInnovatio
             <MenuButton
               as={IconButton}
               aria-label="Download options"
-              icon={<Image src={downloadIcon} alt="Download" boxSize="16px" />}
+              icon={<Image src="/icons/icon-download.svg" alt="Download" boxSize="16px" />}
               variant="ghost"
             />
             <MenuList>

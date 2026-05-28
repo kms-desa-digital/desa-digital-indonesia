@@ -3,7 +3,7 @@ import {
   Box, Flex, Text, Table, Thead, Tbody, Tr, Th, Td, Button,
   TableContainer, Menu, MenuButton, MenuList, MenuItem, Image
 } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs, query, where } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import {
   titleStyle, tableHeaderStyle, tableCellStyle,
@@ -36,55 +36,44 @@ const DetailVillagesInnovation = ({ selectedInovasi, hasRowClicked }: DetailVill
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  const db = getFirestore();
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const inovasiSnap = await getDocs(query(
-          collection(db, "innovations"),
-          where("namaInovasi", "==", selectedInovasi)
-        ));
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        const headers: Record<string, string> = {};
+        if (currentUser) {
+            const token = await currentUser.getIdToken();
+            headers['Authorization'] = `Bearer ${token}`;
+        }
 
-        if (inovasiSnap.empty) {
+        const claimRes = await fetch("/api/villages/claim", { headers });
+        const claimDataRaw = await claimRes.json();
+        const allClaims = claimDataRaw.claims || [];
+
+        const matchingClaims = allClaims.filter((c: any) => c.namaInovasi === selectedInovasi);
+
+        if (matchingClaims.length === 0) {
           setData([]);
           return;
         }
 
-        const inovasiDoc = inovasiSnap.docs[0];
-        const inovatorName = inovasiDoc.data().namaInnovator;
-
-        const profilSnap = await getDocs(query(
-          collection(db, "innovators"),
-          where("namaInovator", "==", inovatorName)
-        ));
-
-        if (profilSnap.empty) {
-          setData([]);
-          return;
-        }
-
-        const claimSnap = await getDocs(query(
-          collection(db, "claimInnovations"),
-          where("namaInovasi", "==", selectedInovasi)
-        ));
-
-        const records: VillageRecord[] = claimSnap.docs.map(doc => {
-          const rawNamaDesa = doc.data().namaDesa || "";
+        const records: VillageRecord[] = matchingClaims.map((doc: any) => {
+          const rawNamaDesa = doc.namaDesa || "";
           const namaDesaCleaned = rawNamaDesa.replace(/^Desa\s+/i, "");
 
           return {
             namaInovasi: selectedInovasi,
-            namaInovator: inovatorName,
+            namaInovator: doc.namaInovator || "-",
             namaDesa: namaDesaCleaned,
-            tanggalPengajuan: doc.data().createdAt?.toDate().getFullYear(),
+            tanggalPengajuan: new Date(doc.createdAt).getFullYear().toString(),
           };
         });
 
         records.sort((a, b) => {
-          const tahunA = typeof a.tanggalPengajuan === "number" ? a.tanggalPengajuan : 0;
-          const tahunB = typeof b.tanggalPengajuan === "number" ? b.tanggalPengajuan : 0;
+          const tahunA = Number(a.tanggalPengajuan) || 0;
+          const tahunB = Number(b.tanggalPengajuan) || 0;
 
           if (tahunB !== tahunA) return tahunB - tahunA; // tahun desc
           return a.namaDesa.localeCompare(b.namaDesa); // nama desa asc
@@ -103,7 +92,7 @@ const DetailVillagesInnovation = ({ selectedInovasi, hasRowClicked }: DetailVill
     } else {
       setData([]);
     }
-  }, [selectedInovasi, db]);
+  }, [selectedInovasi]);
 
   const totalPages = Math.ceil(data.length / itemsPerPage);
   const currentData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);

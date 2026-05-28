@@ -148,6 +148,10 @@ const AddInnovation: React.FC = () => {
         setIsModal1Open(false);
         setIsModal2Open(false);
     };
+    const handleModal2Close = () => {
+        setIsModal2Open(false);
+        router.replace(`/innovator/pengajuan/${user?.uid}`);
+    };
 
     if (userLoading) {
         return <Loading />;
@@ -465,14 +469,19 @@ const AddInnovation: React.FC = () => {
             setAlertStatus("info");
             
             setIsModal2Open(true);
+            setTimeout(() => {
+                router.replace(`/innovator/pengajuan/${user?.uid}`);
+            }, 5000);
         } catch (error) {
             console.error("Submission error:", error);
-            setError("Gagal menyimpan data inovasi ke database.");
+            const errorMessage = (error as any)?.response?.data?.message || (error as any)?.message || "Gagal menyimpan data inovasi ke database.";
+            setError(errorMessage);
             setLoading(false);
             toast({
                 title: "Gagal menambahkan inovasi",
+                description: errorMessage,
                 status: "error",
-                duration: 3000,
+                duration: 5000,
                 position: "top",
                 isClosable: true,
             });
@@ -676,6 +685,7 @@ const AddInnovation: React.FC = () => {
                                 title="Pilih Kategori Inovasi"
                                 searchPlaceholder="Cari kategori inovasi di sini..."
                                 disabled={!isEditable || isFormLocked}
+                                showAllOption={false}
                             />
 
                             <Text fontWeight="400" fontSize="14px" mb="-2">
@@ -1055,7 +1065,7 @@ const AddInnovation: React.FC = () => {
             />
             <SecConfModal
                 isOpen={isModal2Open}
-                onClose={closeModal}
+                onClose={handleModal2Close}
                 modalBody2={modalBody2}
             />
         </>

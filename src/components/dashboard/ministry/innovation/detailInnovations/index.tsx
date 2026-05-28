@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getInnovation } from 'Services/innovationServices';
 import {
   Box, Text, Table, Thead, Tbody, Tr, Th, Td, TableContainer,
   Flex, Button, Image, Menu, MenuButton, MenuList, MenuItem
@@ -57,10 +57,8 @@ const DetailInnovations = ({ selectedCategory, onInnovationSelect }: Props) => {
 
       try {
         setLoading(true);
-        const db = getFirestore();
-
-        const inovasiSnap = await getDocs(collection(db, 'innovations'));
-        const inovasiList: Innovation[] = inovasiSnap.docs.map(doc => doc.data() as Innovation);
+        const responseData = await getInnovation();
+        const inovasiList: Innovation[] = responseData.innovations || [];
 
         const normalize = (str?: string) => (str || '').replace(/\s+/g, '').toLowerCase();
         const normalizedSelected = normalize(selectedCategory);

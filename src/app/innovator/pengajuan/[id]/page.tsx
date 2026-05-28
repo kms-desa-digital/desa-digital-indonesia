@@ -9,6 +9,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Menu,
     MenuButton,
     MenuItem,
@@ -17,17 +18,15 @@ import {
     SkeletonCircle,
     Stack,
     Text,
-    Image,
 } from "@chakra-ui/react";
-import { ChevronDownIcon, SearchIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
 import { auth } from "src/firebase/clientApp";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { getInnovation } from "Services/innovationServices";
 import CardNotification from "Components/card/notification/CardNotification";
-import Right from "@public/icons/arrow-right.svg";
-import Left from "@public/icons/arrow-left.svg";
+import Pagination from "Components/common/Pagination";
 
 const SkeletonCard = () => (
     <Box borderWidth="1px" borderRadius="lg" padding="4" mb={4} bg="white">
@@ -53,7 +52,6 @@ const PengajuanInovasiContent: React.FC = () => {
     const searchParams = useSearchParams();
     const [user] = useAuthState(auth);
     const { role, loading: userLoading, uid, firebaseUid } = useUser();
-    const [data, setData] = useState<any[]>([]);
     const [filteredData, setFilteredData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -66,9 +64,9 @@ const PengajuanInovasiContent: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState(initialSearch);
     const [selectedFilter, setSelectedFilter] = useState<string>(initialFilter);
 
-    // Pagination Status
+    // Pagination State
     const [currentPage, setCurrentPage] = useState(initialPage);
-    const [hasMore, setHasMore] = useState(false);
+    const [totalPages, setTotalPages] = useState(1);
     const itemsPerPage = 5;
 
     const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
@@ -80,7 +78,7 @@ const PengajuanInovasiContent: React.FC = () => {
         if (page > 1) urlParams.set("page", page.toString());
         if (filter !== "Semua") urlParams.set("filter", filter);
         if (search) urlParams.set("search", search);
-        
+
         const queryString = urlParams.toString();
         const newPath = queryString ? `?${queryString}` : window.location.pathname;
         router.replace(newPath, { scroll: false });
@@ -95,20 +93,17 @@ const PengajuanInovasiContent: React.FC = () => {
                 innovatorId: id,
                 status: selectedFilter && selectedFilter !== "Semua" ? selectedFilter : undefined,
                 search: debouncedSearch || undefined,
+                limit: itemsPerPage,
+                skip: skipValue,
             });
-            
+
             const innovationsData = response.innovations || response.data?.innovations || [];
-            
-            // Apply pagination on client since API might not support limit/skip specifically, although if it does, it's better
-            // Depending on the API implementation, we might need to slice
-            const slicedData = innovationsData.slice(skipValue, skipValue + itemsPerPage);
-            
-            setData(innovationsData); // Store all data if API returns all
-            setFilteredData(slicedData);
-            setHasMore(innovationsData.length > skipValue + itemsPerPage);
+            const pagination = response.pagination || response.data?.pagination || {};
+
+            setFilteredData(innovationsData);
+            setTotalPages(pagination.totalPages || 1);
         } catch (err) {
             console.error("Error fetching innovations from API:", err);
-            setData([]);
             setFilteredData([]);
         } finally {
             setLoading(false);
@@ -152,20 +147,10 @@ const PengajuanInovasiContent: React.FC = () => {
         return <Forbidden />;
     }
 
-    const handleNextPage = async () => {
-        if (hasMore) {
-            const nextPage = currentPage + 1;
-            setCurrentPage(nextPage);
-            updateUrl(nextPage, selectedFilter, searchTerm);
-        }
-    };
-
-    const handlePrevPage = async () => {
-        if (currentPage > 1) {
-            const prevPage = currentPage - 1;
-            setCurrentPage(prevPage);
-            updateUrl(prevPage, selectedFilter, searchTerm);
-        }
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        updateUrl(page, selectedFilter, searchTerm);
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     const formatTimestamp = (dateStr: string) => {
@@ -185,11 +170,11 @@ const PengajuanInovasiContent: React.FC = () => {
         <Container page>
             <TopBar title="Pengajuan Inovasi" onBack={() => router.back()} />
             <Stack padding="0 16px" gap={4} mt={6}>
-                <Button 
+                <Button
                     backgroundColor="#347357"
                     color="white"
                     _hover={{ backgroundColor: "#2d634b" }}
-                    size="sm" 
+                    size="sm"
                     onClick={() => router.push("/innovation/add")}
                     borderRadius="md"
                     width="100%"
@@ -209,7 +194,29 @@ const PengajuanInovasiContent: React.FC = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             bg="white"
                             fontSize="10pt"
+                            pr="40px"
                         />
+                        {searchTerm && (
+                            <InputRightElement>
+                                <Box
+                                    as="button"
+                                    onClick={() => setSearchTerm("")}
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    borderRadius="full"
+                                    bg="#6B7280"
+                                    color="white"
+                                    boxSize="18px"
+                                    _hover={{ bg: "gray.600" }}
+                                    _active={{ bg: "gray.700" }}
+                                    cursor="pointer"
+                                    mr="8px"
+                                >
+                                    <CloseIcon w="6px" h="6px" />
+                                </Box>
+                            </InputRightElement>
+                        )}
                     </InputGroup>
 
                     <Menu>
@@ -245,53 +252,39 @@ const PengajuanInovasiContent: React.FC = () => {
 
                 {loading
                     ? Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
-                    : filteredData.map((item, idx) => (
-                        <CardNotification
-                            key={idx}
-                            title={item.namaInovasi || "Tanpa Nama Inovasi"}
-                            status={item.status || "Unknown"}
-                            date={formatTimestamp(item.createdAt)}
-                            description={item.deskripsi || "Tidak ada deskripsi"}
-                            onClick={() => {
-                                if (item.status === "Terverifikasi") {
-                                    router.push(`/innovation/detail/${item.id}`);
-                                } else {
-                                    router.push(`/innovation/edit/${item.id}`);
-                                }
-                            }}
-                        />
-                    ))}
+                    : filteredData.length > 0
+                        ? filteredData.map((item, idx) => (
+                            <CardNotification
+                                key={idx}
+                                title={item.namaInovasi || "Tanpa Nama Inovasi"}
+                                status={item.status || "Unknown"}
+                                date={formatTimestamp(item.createdAt)}
+                                description={item.deskripsi || "Tidak ada deskripsi"}
+                                onClick={() => {
+                                    if (item.status === "Terverifikasi") {
+                                        router.push(`/innovation/detail/${item.id}`);
+                                    } else {
+                                        router.push(`/innovation/edit/${item.id}`);
+                                    }
+                                }}
+                            />
+                        ))
+                        : (
+                            <Box textAlign="center" py={8}>
+                                <Text color="gray.500" fontSize="sm">
+                                    Belum ada pengajuan inovasi
+                                </Text>
+                            </Box>
+                        )}
 
-                {/* Pagination Buttons */}
-                <Flex gap={4} mt={4} mb={4} alignItems="center" alignSelf="center">
-                    <Button
-                        rightIcon={<Image src={Left.src} alt="back" />}
-                        iconSpacing={0}
-                        onClick={handlePrevPage}
-                        isDisabled={currentPage === 1}
-                        colorScheme="teal"
-                        size="sm"
-                        variant="outline"
-                        borderRadius="md"
-                        width="16px"
-                    >
-                    </Button>
-                    <Text textAlign="center" fontSize="10pt">
-                        Halaman {currentPage}
-                    </Text>
-                    <Button
-                        rightIcon={<Image src={Right.src} alt="back" />}
-                        iconSpacing={0}
-                        onClick={handleNextPage}
-                        isDisabled={!hasMore}
-                        colorScheme="teal"
-                        size="sm"
-                        variant="outline"
-                        borderRadius="md"
-                        width="16px"
-                    >
-                    </Button>
-                </Flex>
+                {/* Pagination */}
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
+
+                <Box height="40px" />
             </Stack>
         </Container>
     );

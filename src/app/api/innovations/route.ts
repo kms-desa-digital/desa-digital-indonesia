@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { notifyAllAdmins } from '@/services/notificationServices'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 // Opt out of Next.js static caching so jumlahDesa always reflects live DB state
 export const dynamic = 'force-dynamic'
@@ -41,6 +42,8 @@ export async function GET(request: NextRequest) {
         { namaInnovator: { $regex: escapedSearch, $options: 'i' } },
       ]
     }
+    
+    const totalCount = await db.collection('innovations').countDocuments(filter)
 
     const pipeline: any[] = [
       { $match: filter },
@@ -72,6 +75,52 @@ export async function GET(request: NextRequest) {
       },
       { $project: { allClaims: 0, _idStr: 0 } },
       {
+        $lookup: {
+          from: 'innovators',
+          let: { innovator_id: '$innovatorId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ['$_id', '$$innovator_id'] },
+                    { $eq: ['$userId', '$$innovator_id'] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'innovatorDetails'
+        }
+      },
+      {
+        $addFields: {
+          innovatorInfo: { $arrayElemAt: ['$innovatorDetails', 0] }
+        }
+      },
+      {
+        $addFields: {
+          namaInnovator: {
+            $ifNull: [
+              '$namaInnovator',
+              {
+                $ifNull: [
+                  '$innovatorInfo.namaInovator',
+                  { $ifNull: ['$innovatorInfo.namaInnovator', '$innovatorInfo.name'] }
+                ]
+              }
+            ]
+          },
+          innovatorImgURL: {
+            $ifNull: [
+              '$innovatorImgURL',
+              { $ifNull: ['$innovatorInfo.logo', '$innovatorInfo.imageUrl'] }
+            ]
+          }
+        }
+      },
+      { $project: { innovatorDetails: 0, innovatorInfo: 0 } },
+      {
         $addFields: {
           sortDate: { $ifNull: ["$updatedAt", { $ifNull: ["$editedAt", "$createdAt"] }] }
         }
@@ -90,8 +139,18 @@ export async function GET(request: NextRequest) {
       id: doc._id.toString(),
       _id: doc._id.toString(),
     }))
+    
+    const totalPages = limitVal > 0 ? Math.ceil(totalCount / limitVal) : 1;
 
-    return NextResponse.json({ innovations: result }, { status: 200 })
+    return NextResponse.json({ 
+      innovations: result,
+      pagination: {
+        total: totalCount,
+        totalPages,
+        limit: limitVal,
+        skip: skipVal
+      }
+    }, { status: 200 })
   } catch (error) {
     console.error('Error fetching innovations:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
@@ -115,20 +174,101 @@ export async function POST(request: NextRequest) {
       tahunDibuat,
       deskripsi,
       innovatorId,
+      statusInovasi,
+      modelBisnis,
+      inputDesaMenerapkan,
+      manfaat,
+      infrastruktur,
     } = body
 
-    // Validasi field wajib
-    if (!namaInovasi || !kategori || !tahunDibuat || !deskripsi || !innovatorId) {
+    // Comprehensive Validation for Required Fields (matching frontend)
+    if (
+      !namaInovasi || 
+      !kategori || 
+      !tahunDibuat || 
+      !deskripsi || 
+      !innovatorId ||
+      !statusInovasi ||
+      !modelBisnis || (Array.isArray(modelBisnis) && modelBisnis.length === 0) ||
+      !inputDesaMenerapkan ||
+      !manfaat || (Array.isArray(manfaat) && manfaat.length === 0) ||
+      !infrastruktur || (Array.isArray(infrastruktur) && infrastruktur.length === 0)
+    ) {
       return NextResponse.json(
-        { message: 'Field wajib tidak lengkap: namaInovasi, kategori, tahunDibuat, deskripsi, innovatorId' },
+        { message: 'Field wajib tidak lengkap. Pastikan semua data bintang (*) telah diisi.' },
         { status: 400 }
       )
     }
 
+    try {
+      validateWordLimit(deskripsi, 80, 'deskripsi');
+      validateWordLimit(inputDesaMenerapkan, 20, 'desa yang menerapkan');
+      if (Array.isArray(modelBisnis)) {
+        modelBisnis.forEach((model: string) => {
+          validateWordLimit(model, 5, `model bisnis "${model}"`);
+        });
+      }
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
+    }
+
     const db = await connectToDatabase()
+
+    // Validate innovator verification status
+    if (auth.role !== 'admin') {
+      const user = await db.collection('users').findOne({
+        $or: [
+          { uid: auth.uid },
+          { firebaseUid: auth.uid },
+          { id: auth.uid },
+          { _id: auth.uid as any }
+        ]
+      })
+      const mongoUserId = user?._id ? user._id.toString() : auth.uid
+
+      const innovator = await db.collection('innovators').findOne({
+        $or: [
+          { userId: auth.uid },
+          { userId: mongoUserId },
+          { _id: auth.uid as any },
+          { _id: mongoUserId as any }
+        ]
+      })
+
+      if (!innovator || innovator.status !== 'Terverifikasi') {
+        return NextResponse.json(
+          { message: 'Profil Inovator Anda belum diverifikasi. Anda tidak dapat menambahkan inovasi.' },
+          { status: 403 }
+        )
+      }
+    }
+
+    // Fetch innovator information to auto-populate missing fields
+    let innovatorDoc = null
+    if (innovatorId) {
+      let queryId: any = innovatorId
+      try {
+        if (ObjectId.isValid(innovatorId)) {
+          queryId = new ObjectId(innovatorId)
+        }
+      } catch (e) {}
+
+      innovatorDoc = await db.collection('innovators').findOne({
+        $or: [
+          { _id: queryId },
+          { _id: innovatorId },
+          { userId: innovatorId }
+        ]
+      })
+    }
+
+    const finalNamaInnovator = body.namaInnovator || innovatorDoc?.namaInovator || innovatorDoc?.namaInnovator || innovatorDoc?.name || 'unknown'
+    const finalInnovatorImgURL = body.innovatorImgURL || innovatorDoc?.logo || innovatorDoc?.imageUrl || null
 
     const newInnovation = {
       ...body,
+      namaInnovator:        finalNamaInnovator,
+      innovatorImgURL:      finalInnovatorImgURL,
       status:               'Menunggu',   // status verifikasi admin
       catatanAdmin:         null,
       createdAt:            new Date(),

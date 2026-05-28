@@ -10,6 +10,7 @@ import {
   MenuList,
   useDisclosure,
 } from "@chakra-ui/react";
+import { useAuthToken } from "Hooks/useAuthToken";
 
 import {
   MapContainer,
@@ -23,20 +24,21 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  getDoc,
-  doc,
-} from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+const getCustomIcon = () => {
+    return L.divIcon({
+        html: `<div style="display: flex; justify-content: center; align-items: center; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.35));">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30" fill="#2e7d32">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+            </svg>
+        </div>`,
+        className: 'custom-leaflet-marker',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        popupAnchor: [0, -30]
+    });
+};
 
 import geoData from "@public/indonesia-province-simple.json";
-import filterIcon from "@public/icons/icon-filter.svg";
-import downloadIcon from "@public/icons/icon-download.svg";
 import ProvinceFilter from "./mapFilter";
 
 import jsPDF from "jspdf";
@@ -57,8 +59,18 @@ interface DesaPin {
   lat: number;
   lng: number;
   provinsi: string;
+  rawProvinsi?: string;
+  kabupatenKota?: string;
+  kecamatan?: string;
   inovasiId: string;
   inovasiList: string[];
+}
+
+interface FilterValues {
+  provinsi: string;
+  kabupatenKota: string;
+  kecamatan: string;
+  namaDesa: string;
 }
 
 const cleanName = (name: string) => {
@@ -129,145 +141,91 @@ const Legend = () => {
 };
 
 const MapVillages = () => {
+  const { token, isLoaded: authLoaded } = useAuthToken();
   const [desaPins, setDesaPins] = useState<DesaPin[]>([]);
   const [totals, setTotals] = useState<Record<string, number>>({});
   const [exportData, setExportData] = useState<any[]>([]);
-  const [selectedProvince, setSelectedProvince] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FilterValues>({
+    provinsi: "",
+    kabupatenKota: "",
+    kecamatan: "",
+    namaDesa: "",
+  });
   const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const db = getFirestore();
-  const auth = getAuth();
 
   useEffect(() => {
     const fetchDesaPins = async () => {
-      const currentUID = auth.currentUser?.uid;
-      if (!currentUID) return;
-
-      // Get inovator profile
-      const inovatorSnap = await getDocs(
-        query(collection(db, "innovators"), where("id", "==", currentUID))
-      );
-      const inovatorDoc = inovatorSnap.docs[0];
-      const inovatorId = inovatorDoc?.id;
-      const inovatorData = inovatorDoc?.data();
-      if (!inovatorId || !inovatorData) return;
-
-      // Get inovasi docs by inovatorId
-      const inovasiSnap = await getDocs(
-        query(collection(db, "innovations"), where("innovatorId", "==", inovatorId))
-      );
-      const inovasiDocs = inovasiSnap.docs;
-      const inovasiMap = Object.fromEntries(
-        inovasiDocs.map((doc) => [doc.id, doc.data()])
-      );
-      const inovasiIds = inovasiDocs.map((doc) => doc.id);
-      if (inovasiIds.length === 0) return;
-
-      // Get menerapkanInovasi docs filtered by inovasiId in inovasiIds
-      const claimSnap = await getDocs(
-        query(collection(db, "claimInnovations"), where("inovasiId", "in", inovasiIds))
-      );
-
-      const pinResults: DesaPin[] = [];
-      const dynamicTotals: Record<string, Set<string>> = {};
-      const exportTemp: any[] = [];
-
-      const produkInovator = inovasiDocs
-        .map((doc) => doc.data().namaInovasi)
-        .filter(Boolean)
-        .join(", ");
-
-      for (const docSnap of claimSnap.docs) {
-        const klaimData = docSnap.data();
-        const desaId = klaimData.desaId;
-        const inovasiId = klaimData.inovasiId;
-
-        // Fetch villages data
-        const desaSnap = await getDoc(doc(db, "villages", desaId));
-        if (!desaSnap.exists()) continue;
-        const desaData = desaSnap.data();
-
-        // Fetch inovasi data from map
-        const inovasiData = inovasiMap[inovasiId];
-        if (!inovasiData) continue;
-
-        // Coordinates
-        const lat = desaData.lat || desaData.latitude || desaData.latlong?.[0];
-        const lng = desaData.lng || desaData.longitude || desaData.latlong?.[1];
-        const provinsiRaw = desaData.lokasi.provinsi.label || "Unknown";
-        const provinsi = cleanName(provinsiRaw);
-
-        if (lat && lng) {
-          const existingPin = pinResults.find((p) => p.desaId === desaId);
-
-          if (existingPin) {
-            existingPin.inovasiList = [
-              ...(existingPin.inovasiList || []),
-              inovasiData.namaInovasi,
-            ];
-          } else {
-            pinResults.push({
-              desaId,
-              namaDesa: desaData.namaDesa ?? "Desa",
-              lat,
-              lng,
-              provinsi,
-              inovasiId,
-              inovasiList: [inovasiData.namaInovasi],
-            });
-          }
-
-          if (!dynamicTotals[provinsi]) dynamicTotals[provinsi] = new Set();
-          dynamicTotals[provinsi].add(desaId);
-
-          const capitalizeWords = (str: string) =>
-            str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
-
-          const lokasi = desaData.lokasi || {};
-
-          exportTemp.push({
-            namaDesa: desaData.namaDesa ?? "-",
-            namaInovasi: inovasiData.namaInovasi ?? "-",
-            kategoriInovasi: inovasiData.kategori ?? "-",
-            namaInovator: inovasiData.namaInnovator ?? "-",
-            desaKelurahan: capitalizeWords(desaData.lokasi?.desaKelurahan?.label ?? "-"),
-            kecamatan: capitalizeWords(desaData.lokasi?.kecamatan?.label ?? "-"),
-            kabupatenKota: capitalizeWords(desaData.lokasi?.kabupatenKota?.label ?? "-"),
-            provinsi: capitalizeWords(desaData.lokasi?.provinsi?.label ?? "-"),
-            tanggalKlaim: klaimData.createdAt?.toDate?.().getFullYear?.() ?? "-",
-            kategoriInovator: inovatorData.kategori ?? "-",
-            tahunDibentuk: inovatorData.tahunDibentuk ?? "-",
-            targetPengguna: inovatorData.targetPengguna ?? "-",
-            modelBisnis: inovatorData.modelBisnis ?? "-",
-            produk: produkInovator || "-",
-          });
-        }
+      if (!authLoaded) return;
+      if (!token) {
+        setError("User not authenticated.");
+        return;
       }
 
-      exportTemp.sort((a, b) => {
-        const yearA = typeof a.tanggalKlaim === "number" ? a.tanggalKlaim : 0;
-        const yearB = typeof b.tanggalKlaim === "number" ? b.tanggalKlaim : 0;
+      try {
+        const response = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-        // Mengurutkan data sesuai tahun klaim, kemudian abjad nama desa
-        if (yearB !== yearA) return yearB - yearA;
-        return a.namaDesa.localeCompare(b.namaDesa);
-      });
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch dashboard data");
+        }
+        const data = await response.json();
 
-      setExportData(exportTemp);
-      console.log("Exported Data:", exportTemp);
+        const mapVillages = data.mapVillages || [];
 
-      const totalsCount: Record<string, number> = {};
-      Object.keys(dynamicTotals).forEach((prov) => {
-        totalsCount[prov] = dynamicTotals[prov].size;
-      });
+        const pinResults: DesaPin[] = mapVillages.map((v: any, index: number) => ({
+          desaId: `desa-${index}`,
+          namaDesa: v.name || "Desa",
+          lat: parseFloat(v.lat),
+          lng: parseFloat(v.lng),
+          provinsi: cleanName(v.provinsi || "Unknown"),
+          rawProvinsi: v.provinsi || "Unknown",
+          kabupatenKota: v.kabupatenKota || "",
+          kecamatan: v.kecamatan || "",
+          inovasiId: "-",
+          inovasiList: v.inovasiList || [],
+        }));
 
-      setExportData(exportTemp);
-      setDesaPins(pinResults);
-      setTotals(totalsCount);
+        const exportTemp: any[] = mapVillages.map((v: any) => ({
+          namaDesa: v.name || "-",
+          namaInovasi: v.namaInovasi || "-",
+          kategoriInovasi: v.kategoriInovasi || "-",
+          namaInovator: data.innovator?.namaInovator || "-",
+          desaKelurahan: v.desaKelurahan || v.name || "-",
+          kecamatan: v.kecamatan || "-",
+          kabupatenKota: v.kabupatenKota || "-",
+          provinsi: v.provinsi || "-",
+          tanggalKlaim: "-",
+          kategoriInovator: data.innovator?.kategori || "-",
+          tahunDibentuk: data.innovator?.tahunDibentuk || "-",
+          targetPengguna: data.innovator?.targetPengguna || "-",
+          modelBisnis: data.innovator?.modelBisnis || "-",
+          produk: data.innovator?.produk || "-",
+        }));
+
+        setExportData(exportTemp);
+        setDesaPins(pinResults);
+
+        // Calculate counts of villages per province for GeoJSON mapping
+        const provinceTotals: Record<string, number> = {};
+        mapVillages.forEach((v: any) => {
+          const provName = cleanName(v.provinsi || "");
+          if (provName) {
+            provinceTotals[provName] = (provinceTotals[provName] || 0) + 1;
+          }
+        });
+        setTotals(provinceTotals);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setError(message);
+        console.error("Error fetching map villages:", error);
+      }
     };
 
     fetchDesaPins();
-  }, [auth.currentUser, db]);
+  }, [authLoaded, token]);
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
@@ -394,7 +352,7 @@ const MapVillages = () => {
         <Text {...headerTextStyle}>Peta Sebaran Inovasi {inovatorProfile?.namaInovator || "Inovator"}</Text>
         <Flex gap={2} align="center">
           <Image
-            src={filterIcon}
+            src="/icons/icon-filter.svg"
             alt="Filter"
             boxSize="16px"
             cursor="pointer"
@@ -403,7 +361,7 @@ const MapVillages = () => {
           <Menu>
             <MenuButton>
               <Image
-                src={downloadIcon}
+                src="/icons/icon-download.svg"
                 alt="Download"
                 boxSize="16px"
                 cursor="pointer"
@@ -435,9 +393,15 @@ const MapVillages = () => {
               />
             )}
             {desaPins
-              .filter(d => !selectedProvince || d.provinsi === cleanName(selectedProvince))
+              .filter((d) => {
+                const matchProv = !filters.provinsi || (d.rawProvinsi || d.provinsi) === filters.provinsi;
+                const matchKab = !filters.kabupatenKota || d.kabupatenKota === filters.kabupatenKota;
+                const matchKec = !filters.kecamatan || d.kecamatan === filters.kecamatan;
+                const matchDesa = !filters.namaDesa || d.namaDesa === filters.namaDesa;
+                return matchProv && matchKab && matchKec && matchDesa;
+              })
               .map((desa) => (
-                <Marker key={desa.desaId} position={[desa.lat, desa.lng]}>
+                <Marker key={desa.desaId} position={[desa.lat, desa.lng]} icon={getCustomIcon()}>
                   <Popup>
                     <strong>{desa.namaDesa}</strong>
                     <br />
@@ -453,8 +417,9 @@ const MapVillages = () => {
       <ProvinceFilter
         isOpen={isOpen}
         onClose={onClose}
-        onApply={(province) => setSelectedProvince(province)}
-        provinces={[...new Set(exportData.map((item) => item.provinsi))].sort()}
+        onApply={(newFilters) => setFilters(newFilters)}
+        allPins={desaPins}
+        currentFilters={filters}
       />
     </Box>
   );

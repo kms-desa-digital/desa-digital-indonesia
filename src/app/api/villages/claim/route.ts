@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification, notifyAllAdmins } from '@/services/notificationServices'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 // =========================================================
 // POST /api/villages/claim
@@ -14,9 +15,9 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const body = await request.json()
-    const { 
-      desaId, 
-      namaDesa, 
+    const {
+      desaId,
+      namaDesa,
       inovasiId,      // Optional untuk klaim manual
       namaInovasi,    // Wajib
       namaInovator,   // Wajib
@@ -37,8 +38,8 @@ export async function POST(request: NextRequest) {
 
     if (missingFields.length > 0) {
       return new NextResponse(
-        JSON.stringify({ 
-          message: `Field wajib tidak lengkap: ${missingFields.join(', ')} harus diisi.` 
+        JSON.stringify({
+          message: `Field wajib tidak lengkap: ${missingFields.join(', ')} harus diisi.`
         }, null, 2),
         {
           status: 400,
@@ -47,21 +48,76 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    try {
+      validateWordLimit(deskripsiInovasi, 80, 'deskripsi inovasi');
+      validateWordLimit(namaInovasi, 10, 'nama inovasi');
+      validateWordLimit(namaInovator, 10, 'nama inovator');
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
+    }
+
+    // Validasi buktiFiles terhadap buktiJenis yang dipilih
+    if (!buktiFiles || typeof buktiFiles !== 'object') {
+      return new NextResponse(
+        JSON.stringify({ message: 'Bukti file wajib diisi.' }, null, 2),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    for (const jenis of buktiJenis) {
+      if (jenis === 'foto') {
+        const fotoFiles = buktiFiles.foto;
+        if (!fotoFiles || !Array.isArray(fotoFiles) || fotoFiles.length === 0 || fotoFiles.some((f: any) => !f || typeof f !== 'string' || f.trim() === '')) {
+          return new NextResponse(
+            JSON.stringify({ message: 'Bukti foto harus menyertakan file foto yang valid.' }, null, 2),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+      } else if (jenis === 'video') {
+        const videoFiles = buktiFiles.video;
+        if (!videoFiles || !Array.isArray(videoFiles) || videoFiles.length === 0 || videoFiles.every((v: any) => !v || typeof v !== 'string' || v.trim() === '')) {
+          return new NextResponse(
+            JSON.stringify({ message: 'Bukti video harus menyertakan file video yang valid.' }, null, 2),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+      } else if (jenis === 'dokumen') {
+        const dokumenFiles = buktiFiles.dokumen;
+        if (!dokumenFiles || !Array.isArray(dokumenFiles) || dokumenFiles.length === 0 || dokumenFiles.some((d: any) => !d || typeof d !== 'string' || d.trim() === '')) {
+          return new NextResponse(
+            JSON.stringify({ message: 'Bukti dokumen harus menyertakan file dokumen yang valid.' }, null, 2),
+            { status: 400, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+      }
+    }
+
     const db = await connectToDatabase()
+
+    // Validate village verification status
+    if (auth.role !== 'admin') {
+      const village = await db.collection('villages').findOne({ userId: auth.uid })
+      if (!village || village.status !== 'Terverifikasi') {
+        return new NextResponse(
+          JSON.stringify({ message: 'Profil Desa Anda belum diverifikasi. Anda tidak dapat mengajukan klaim inovasi.' }, null, 2),
+          { status: 403, headers: { 'Content-Type': 'application/json' } }
+        )
+      }
+    }
 
     // Jika ada inovasiId, cek apakah klaim ini sudah pernah diajukan untuk inovasi yang sama
     if (inovasiId) {
-      const existing = await db.collection('claimInnovations').findOne({ 
-        desaId, 
+      const existing = await db.collection('claimInnovations').findOne({
+        desaId,
         inovasiId,
         status: { $ne: 'Ditolak' } // Hanya cek yang belum ditolak
       })
-      
+
       if (existing) {
         return new NextResponse(
           JSON.stringify({ message: 'Inovasi ini sudah dalam proses klaim oleh desa Anda' }, null, 2),
           {
-            status: 400,
+            status: 409,
             headers: { 'Content-Type': 'application/json' },
           }
         )
@@ -69,6 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     const newClaim: any = {
+      ...body,
       desaId,
       namaDesa: namaDesa || '',
       inovasiId: inovasiId || null,
@@ -89,9 +146,9 @@ export async function POST(request: NextRequest) {
     // Support client-side generated IDs for structured storage consistency
     if (body.id) {
       if (ObjectId.isValid(body.id)) {
-         newClaim._id = new ObjectId(body.id);
+        newClaim._id = new ObjectId(body.id);
       } else {
-         newClaim._id = body.id;
+        newClaim._id = body.id;
       }
     }
 
@@ -111,10 +168,11 @@ export async function POST(request: NextRequest) {
         relatedId: claimId,
       })
 
-      // Notify village about submission — gunakan auth.uid (Firebase UID terverifikasi)
+      // Notify village about submission
       await createNotification({
-        userId: auth.uid,  // Firebase UID user desa yang sedang login
+        userId: desaId,  // Gunakan desaId (UID desa) sebagai penerima, bukan auth.uid
         type: 'personal',
+        category: 'claim_submission',
         title: 'Klaim Inovasi Berhasil Diajukan',
         description: `Klaim Anda untuk "${namaInovasi}" telah diajukan dan menunggu verifikasi admin.`,
         actionType: 'claim_detail',
@@ -126,8 +184,8 @@ export async function POST(request: NextRequest) {
     }
 
     return new NextResponse(
-      JSON.stringify({ 
-        message: 'Permohonan klaim inovasi berhasil diajukan', 
+      JSON.stringify({
+        message: 'Permohonan klaim inovasi berhasil diajukan',
         claimId: claimId
       }, null, 2),
       {
@@ -174,7 +232,7 @@ export async function GET(request: NextRequest) {
     }
 
     let query = db.collection('claimInnovations').find(filter).sort({ createdAt: -1 })
-    
+
     // Get total count for pagination metadata
     const total = await db.collection('claimInnovations').countDocuments(filter)
 
@@ -188,11 +246,14 @@ export async function GET(request: NextRequest) {
       id: doc._id.toString(),
       _id: doc._id.toString(),
     }))
+    
+    const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
 
-    return new NextResponse(JSON.stringify({ 
+    return new NextResponse(JSON.stringify({
       claims: result,
       pagination: {
         total,
+        totalPages,
         limit,
         skip,
         hasMore: total > skip + result.length

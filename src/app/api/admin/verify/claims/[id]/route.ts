@@ -110,6 +110,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
         await createNotification({
           userId: targetUserId,
           type: 'personal',
+          category: 'claim_submission',
           title: notifTitle,
           description: notifDescription,
           actionType: 'claim_detail',

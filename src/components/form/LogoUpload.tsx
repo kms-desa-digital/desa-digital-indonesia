@@ -1,7 +1,8 @@
 import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
 import { Button, Flex, Icon, Image, Text } from "@chakra-ui/react";
-import React from "react";
+import React, { useState } from "react";
 import { useTranslations } from "next-intl";
+import ImageCropperModal from "../common/ImageCropperModal";
 
 type LogoUploadProps = {
   selectedLogo: string;
@@ -19,6 +20,35 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
   onSelectLogo,
 }) => {
   const t = useTranslations("Common");
+  
+  const [isCropperOpen, setIsCropperOpen] = useState(false);
+  const [currentImageSrc, setCurrentImageSrc] = useState<string>("");
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCurrentImageSrc(reader.result as string);
+      setIsCropperOpen(true);
+    };
+    reader.readAsDataURL(file);
+    
+    if (selectFileRef.current) {
+      selectFileRef.current.value = "";
+    }
+  };
+
+  const uploadCroppedImage = (file: File) => {
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    const dummyEvent = {
+      target: { files: dataTransfer.files }
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
+    onSelectLogo(dummyEvent);
+  };
 
   return (
     <Flex direction="column" width="100%" wrap="wrap">
@@ -78,9 +108,21 @@ const LogoUpload: React.FC<LogoUploadProps> = ({
             hidden
             accept="image/png,image/jpeg,image/jpg"
             ref={selectFileRef}
-            onChange={onSelectLogo}
+            onChange={handleImageChange}
           />
         </Flex>
+      )}
+      
+      {isCropperOpen && (
+        <ImageCropperModal
+          isOpen={isCropperOpen}
+          onClose={() => setIsCropperOpen(false)}
+          imageSrc={currentImageSrc}
+          aspectRatio={1} // 1:1 for logo
+          onCropComplete={(file) => {
+            uploadCroppedImage(file);
+          }}
+        />
       )}
     </Flex>
   );

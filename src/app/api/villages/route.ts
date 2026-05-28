@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 // =========================================================
 // GET /api/villages
@@ -69,6 +70,9 @@ export async function GET(request: NextRequest) {
     }
 
     const filter: any = andConditions.length ? { $and: andConditions } : {}
+    
+    // Count total matched documents
+    const totalCount = await db.collection('villages').countDocuments(filter)
 
     const pipeline: any[] = [
       { $match: filter },
@@ -152,8 +156,18 @@ export async function GET(request: NextRequest) {
       id: doc._id.toString(),
       _id: doc._id.toString(),
     }))
+    
+    const totalPages = limitVal > 0 ? Math.ceil(totalCount / limitVal) : 1;
 
-    return new NextResponse(JSON.stringify({ villages: result }, null, 2), {
+    return new NextResponse(JSON.stringify({ 
+      villages: result,
+      pagination: {
+        total: totalCount,
+        totalPages,
+        limit: limitVal,
+        skip: skipVal
+      }
+    }, null, 2), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
     })
@@ -173,23 +187,90 @@ export async function POST(request: NextRequest) {
     if (auth instanceof NextResponse) return auth
 
     const body = await request.json()
-    const { userId, namaDesa } = body
+    const { 
+      userId, 
+      namaDesa, 
+      deskripsi, 
+      lokasi, 
+      potensiDesa, 
+      logo, 
+      header,
+      geografisDesa,
+      sosialBudaya,
+      sumberDaya,
+      infrastrukturDesa,
+      whatsapp,
+      kondisijalan,
+      jaringan,
+      listrik,
+      teknologi,
+      kemampuan
+    } = body
 
-    if (!userId || !namaDesa) {
-      return NextResponse.json({ message: 'userId dan namaDesa wajib diisi' }, { status: 400 })
+    // Tentukan targetUserId: jika bukan admin, gunakan UID dari token
+    const targetUserId = auth.role === "admin" ? userId : auth.uid
+
+    if (
+      !targetUserId || 
+      !namaDesa || 
+      !deskripsi || 
+      !potensiDesa || (Array.isArray(potensiDesa) && potensiDesa.length === 0) ||
+      !logo || 
+      !header ||
+      !geografisDesa ||
+      !sosialBudaya ||
+      !sumberDaya ||
+      !whatsapp ||
+      !kondisijalan ||
+      !jaringan ||
+      !listrik ||
+      !teknologi ||
+      !kemampuan ||
+      !lokasi || !lokasi.provinsi || !lokasi.kabupatenKota || !lokasi.kecamatan || !lokasi.desaKelurahan
+    ) {
+      return NextResponse.json({ 
+        message: 'Field wajib tidak lengkap. Pastikan semua data bintang (*) telah diisi.' 
+      }, { status: 400 })
+    }
+
+    try {
+      validateWordLimit(deskripsi, 100, 'deskripsi');
+      validateWordLimit(geografisDesa, 30, 'kondisi geografis');
+      validateWordLimit(sosialBudaya, 30, 'kondisi sosial dan budaya');
+      validateWordLimit(sumberDaya, 30, 'kondisi sumber daya alam');
+      validateWordLimit(infrastrukturDesa, 30, 'kondisi infrastruktur');
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
     }
 
     const db = await connectToDatabase()
+
+    // 1. Validasi keberadaan user dan role di database
+    const targetUser = await db.collection('users').findOne({
+      $or: [
+        { uid: targetUserId },
+        { firebaseUid: targetUserId },
+        { id: targetUserId },
+        { _id: targetUserId as any }
+      ]
+    })
+    if (!targetUser) {
+      return NextResponse.json({ message: 'User tidak ditemukan di sistem' }, { status: 400 })
+    }
+    if (targetUser.role !== 'village') {
+      return NextResponse.json({ message: 'Peran pengguna haruslah perangkat desa (village)' }, { status: 400 })
+    }
     
-    // Cek apakah profil desa untuk userId ini sudah ada
-    const existing = await db.collection('villages').findOne({ userId })
+    // Check if village profile already exists for this user
+    const existing = await db.collection('villages').findOne({ userId: targetUserId })
     if (existing) {
-      return NextResponse.json({ message: 'Profil desa untuk user ini sudah ada' }, { status: 400 })
+      return NextResponse.json({ message: 'Profil desa untuk user ini sudah ada' }, { status: 409 })
     }
 
     const newVillage = {
       ...body,
-      status: 'Menunggu', // Default status verifikasi admin
+      userId: targetUserId, // override to ensure consistency
+      status: 'Menunggu', // Default status for admin verification
       catatanAdmin: '',
       createdAt: new Date(),
       updatedAt: new Date()
@@ -207,7 +288,7 @@ export async function POST(request: NextRequest) {
         title: `Pendaftaran Desa Baru: ${namaDesa}`,
         description: `Sebuah desa baru telah mendaftar: ${namaDesa}. Silakan verifikasi profil desa ini.`,
         actionType: 'profile',
-        relatedId: userId,
+        relatedId: targetUserId,
       })
     } catch (notifErr) {
       console.error('Error notifying admins about new village profile:', notifErr)

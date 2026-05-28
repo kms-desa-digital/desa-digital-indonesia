@@ -93,6 +93,7 @@ const SearchContent = () => {
                     value={searchValue}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchValue(e.target.value)}
                     onKeyDown={handleSearchSubmit}
+                    onClear={() => setSearchValue("")}
                     width="100%"
                     maxW="100%"
                 />
@@ -120,8 +121,8 @@ const SearchContent = () => {
                                 kategori={item.kategori}
                                 deskripsi={item.deskripsi}
                                 tahunDibuat={item.tahunDibuat}
-                                innovatorLogo={item.innovatorLogo}
-                                innovatorName={item.innovatorName}
+                                innovatorLogo={item.innovatorImgURL || item.logoInovator || item.logo || item.innovatorLogo}
+                                innovatorName={item.namaInnovator || item.namaInovator || item.innovatorName}
                                 highlightQuery={searchValue}
                                 jumlahDesa={item.jumlahDesa || 0}
                                 onClick={() => handleCardClick(item.id)}

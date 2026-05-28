@@ -165,7 +165,7 @@ const EditAds: React.FC = () => {
                 position: "top",
             });
 
-            router.push("/admin/ads");
+            router.replace("/admin/ads");
         } catch (submitError: any) {
             console.error("Error updating ad: ", submitError);
             setError(submitError?.message || "Gagal memperbarui iklan. Silakan coba lagi.");

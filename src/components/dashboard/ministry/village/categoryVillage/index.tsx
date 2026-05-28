@@ -1,7 +1,7 @@
 import { Box, Text } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getVillages } from 'Services/villageServices';
 import {
   pieChartWrapperStyle,
   containerStyle,
@@ -22,30 +22,78 @@ const PieChartVillage = ({ onSliceClick }: { onSliceClick: (categoryName: string
 
   useEffect(() => {
     const fetchData = async () => {
-      const db = getFirestore();
-      const snapshot = await getDocs(collection(db, 'villages'));
+      try {
+        const responseData = await getVillages();
+        const villages = (responseData as any).villages || [];
 
-      const counts: Record<string, number> = {};
+        const counts: Record<string, number> = {};
 
-      snapshot.forEach(doc => {
-        const kategori = doc.data().kategori;
+        const resolveKesiapanDigital = (item: any) => {
+          let kategori = item.kesiapanDigital || item.kategori || item.kategoriDesa;
+          if (kategori && kategori !== 'ND' && kategori !== '-' && kategori.trim() !== '') {
+            return kategori;
+          }
+          let score = 0;
+          const jar = String(item.jaringan || '').toLowerCase();
+          if (jar.includes('seluruh') || jar.includes('baik')) score += 3;
+          else if (jar.includes('sebagian') || jar.includes('cukup')) score += 2;
+          else if (jar.includes('tidak') || jar.includes('belum')) score += 1;
 
-        if (kategori && kategori !== 'ND' && kategori !== '-') {
-          counts[kategori] = (counts[kategori] || 0) + 1;
-        }
-      });
+          const lis = String(item.listrik || '').toLowerCase();
+          if (lis.includes('seluruh') || lis.includes('tersedia')) score += 3;
+          else if (lis.includes('sebagian')) score += 2;
+          else if (lis.includes('belum') || lis.includes('tidak')) score += 1;
 
-      const sortedEntries = Object.entries(counts).sort(([, a], [, b]) => b - a);
+          const tek = String(item.teknologi || '').toLowerCase();
+          if (tek.includes('seluruh') || tek.includes('baik') || tek.includes('berkembang')) score += 3;
+          else if (tek.includes('sebagian')) score += 2;
+          else if (tek.includes('belum') || tek.includes('tidak')) score += 1;
 
-      const allData = sortedEntries.map(([name, value], index) => ({
-        id: index + 1,
-        name,
-        value,
-        color: COLORS[index % COLORS.length],
-      }));
+          const kem = String(item.kemampuan || '').toLowerCase();
+          if (kem.includes('sangat') || kem.includes('baik')) score += 3;
+          else if (kem.includes('cukup')) score += 2;
+          else if (kem.includes('belum') || kem.includes('tidak')) score += 1;
 
-      setCategories(allData);
-      setLoading(false);
+          if (score >= 10) return "Sangat Siap";
+          if (score >= 8) return "Siap";
+          if (score >= 6) return "Cukup Siap";
+          if (score >= 4) return "Kurang Siap";
+          return "Belum Siap";
+        };
+
+        villages.forEach((item: any) => {
+          let kategori = resolveKesiapanDigital(item);
+          if (!kategori || kategori === 'ND' || kategori === '-') {
+            const idmVal = parseFloat(String(item.idm || '0').replace(',', '.'));
+            if (!isNaN(idmVal) && idmVal > 0) {
+              if (idmVal > 0.815) kategori = "Mandiri";
+              else if (idmVal > 0.707) kategori = "Maju";
+              else if (idmVal > 0.599) kategori = "Berkembang";
+              else if (idmVal > 0.491) kategori = "Tertinggal";
+              else kategori = "Sangat Tertinggal";
+            }
+          }
+
+          if (kategori && kategori !== 'ND' && kategori !== '-') {
+            counts[kategori] = (counts[kategori] || 0) + 1;
+          }
+        });
+
+        const sortedEntries = Object.entries(counts).sort(([, a], [, b]) => b - a);
+
+        const allData = sortedEntries.map(([name, value], index) => ({
+          id: index + 1,
+          name,
+          value,
+          color: COLORS[index % COLORS.length],
+        }));
+
+        setCategories(allData);
+      } catch (error) {
+        console.error("Error fetching village categories:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();

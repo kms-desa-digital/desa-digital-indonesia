@@ -35,12 +35,12 @@ export async function GET(request: NextRequest) {
       } else if (category === 'innovation_submission') {
           filter.$or = [
               { category: 'innovation_submission' },
-              { category: { $in: [null, 'profile_submission', 'submission_status'] }, title: { $regex: /inovasi/i } }
+              { category: { $in: [null, 'profile_submission', 'submission_status'] }, title: { $regex: /^(?!.*klaim).*inovasi/i } }
           ]
       } else if (category === 'village_submission') {
           filter.$or = [
               { category: 'village_submission' },
-              { category: { $in: [null, 'profile_submission', 'submission_status'] }, title: { $regex: /profil desa|pengajuan desa/i } }
+              { category: { $in: [null, 'profile_submission', 'submission_status'] }, title: { $regex: /profil desa|pengajuan desa|pendaftaran desa/i } }
           ]
       } else if (category === 'innovator_submission') {
           filter.$or = [
@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
     const db = await connectToDatabase()
 
     const newNotification = {
+      ...body,
       userId,
       type,
       title,

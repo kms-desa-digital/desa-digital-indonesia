@@ -1,25 +1,39 @@
-import { SearchIcon } from "@chakra-ui/icons";
+import { SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import {
   Flex,
   Input,
   InputGroup,
-  InputLeftElement
+  InputLeftElement,
+  InputRightElement,
+  Box
 } from "@chakra-ui/react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 type SearchBarProps = {
   placeholder?: string;
   onChange?: (keyword: string) => void;
+  initialValue?: string;
 };
 
-const SearchBarVil: React.FC<SearchBarProps> = ({ placeholder, onChange }) => {
-  const [inputValue, setInputValue] = useState("");
+const SearchBarVil: React.FC<SearchBarProps> = ({ placeholder, onChange, initialValue }) => {
+  const [inputValue, setInputValue] = useState(initialValue || "");
+
+  useEffect(() => {
+    setInputValue(initialValue || "");
+  }, [initialValue]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setInputValue(value);
     if (onChange) {
       onChange(value);
+    }
+  };
+
+  const handleClear = () => {
+    setInputValue("");
+    if (onChange) {
+      onChange("");
     }
   };
 
@@ -48,7 +62,29 @@ const SearchBarVil: React.FC<SearchBarProps> = ({ placeholder, onChange }) => {
           }}
           borderRadius={100}
           width="100%"
+          pr="40px"
         />
+        {inputValue && (
+          <InputRightElement>
+            <Box
+              as="button"
+              onClick={handleClear}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              borderRadius="full"
+              bg="#6B7280"
+              color="white"
+              boxSize="18px"
+              _hover={{ bg: "gray.600" }}
+              _active={{ bg: "gray.700" }}
+              cursor="pointer"
+              mr="8px"
+            >
+              <CloseIcon w="6px" h="6px" />
+            </Box>
+          </InputRightElement>
+        )}
       </InputGroup>
     </Flex>
   );

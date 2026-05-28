@@ -23,7 +23,7 @@ import {
   LabelList,
 } from "recharts";
 import { useEffect, useState } from "react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { ChevronLeftIcon, ChevronRightIcon, DownloadIcon } from "@chakra-ui/icons";
 import * as XLSX from "xlsx";
 
@@ -37,42 +37,28 @@ const Top5Innovations: React.FC = () => {
   useEffect(() => {
     const fetchInnovations = async () => {
       try {
-        const db = getFirestore();
-        const innovationsRef = collection(db, "innovations");
-        const snapshot = await getDocs(innovationsRef);
+        const auth = getAuth();
+        const user = auth.currentUser;
+        if (!user) return;
 
-        // 🧼 Normalisasi data dari Firestore
-        const sortedInnovations = snapshot.docs.map((doc) => {
-          const rawName = doc.data().namaInovasi;
-          return {
-            name:
-              typeof rawName === "object" && rawName !== null && "text" in rawName
-                ? rawName.text
-                : String(rawName),
-            count: doc.data().jumlahKlaim ?? 0,
-          };
+        const token = await user.getIdToken();
+        const response = await fetch('/api/admin/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        // 🛠 Debug: cek jika ada yang bukan string
-        snapshot.docs.forEach((doc) => {
-          const data = doc.data().namaInovasi;
-          if (typeof data !== "string") {
-            console.warn("⚠️ Nama inovasi bukan string:", data);
-          }
-        });
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        const data = await response.json();
 
-        // 🗂 Format for table
-        const innovationsSorted = [...sortedInnovations].sort((a, b) => {
-            if (b.count !== a.count) return b.count - a.count;
-            return a.name.localeCompare(b.name);
-          });
-        const tableFormatted = innovationsSorted.map((item, index) => ({
+        const top5 = data.top5Innovations || [];
+
+        const tableFormatted = top5.map((item: any, index: number) => ({
           no: index + 1,
-          name: item.name,
-          count: item.count,
+          name: item.name || "-",
+          count: item.totalKlaim || 0,
         }));
+        
         setTableData(tableFormatted);
-        const top5 = tableFormatted.slice(0, 5);
+
         const customOrder = [3, 1, 0, 2, 4];
         const customHeights = [20, 40, 50, 35, 15];
         const customRanks = ["4th", "2nd", "1st", "3rd", "5th"];
@@ -80,7 +66,7 @@ const Top5Innovations: React.FC = () => {
         const rankedInnovations = customOrder.map((index, rankIndex) => ({
           name: top5[index]?.name || "",
           value: customHeights[rankIndex],
-          valueAsli: top5[index]?.count || 0,
+          valueAsli: top5[index]?.totalKlaim || 0,
           rank: customRanks[rankIndex],
         }));
 

@@ -1,5 +1,5 @@
 import { Box, Flex, Grid, Text, Stack, Image } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import InnovationActive from "@public/icons/innovation3.svg";
 import { FaUsers } from "react-icons/fa";
@@ -10,26 +10,24 @@ const ScoreCardDashboardInnovations: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const db = getFirestore();
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
+      const token = await currentUser.getIdToken();
 
-      // Fetch innovations
-      const innovationsRef = collection(db, "innovations");
-      const innovationsSnapshot = await getDocs(innovationsRef);
-      setTotalInnovations(innovationsSnapshot.size);
-
-      // Fetch innovators
-      const innovatorsRef = collection(db, "innovators");
-      const innovatorsSnapshot = await getDocs(innovatorsRef);
-      let inovatorCount = 0;
-
-      innovatorsSnapshot.docs.forEach((doc) => {
-        const data = doc.data();
-        if (data.namaInovator) {
-          inovatorCount++;
+      const response = await fetch('/api/admin/dashboard', {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
       });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
+      }
 
-      setTotalInovators(inovatorCount);
+      const data = await response.json();
+      setTotalInnovations(data.totalInnovations || 0);
+      setTotalInovators(data.totalInnovators || 0);
     } catch (error) {
       console.error("❌ Error fetching data:", error);
     }

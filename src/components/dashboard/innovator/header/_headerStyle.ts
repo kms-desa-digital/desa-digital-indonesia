@@ -2,8 +2,8 @@ import styled from "styled-components";
 
 
 interface BackgroundProps {
-  isInnovator?: boolean
-  isMinistry?: boolean
+  $isInnovator?: boolean
+  $isMinistry?: boolean
 }
 
 export const Background = styled.div<BackgroundProps>`
