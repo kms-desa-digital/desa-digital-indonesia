@@ -265,7 +265,7 @@ export default function ProfileVillage() {
                                     backgroundColor="#347357"
                                     color="white"
                                     _hover={{ backgroundColor: "#2d6149" }}
-                                    leftIcon={<Image src="/icons/digital-readiness.svg" alt="trophy" filter="brightness(0) invert(1)" />}
+                                    leftIcon={<Image src="/icons/digital_nudge/badge.svg" alt="trophy" filter="brightness(0) invert(1)" />}
                                 >
                                     Gelar
                                 </Button>

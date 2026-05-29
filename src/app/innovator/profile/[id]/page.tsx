@@ -310,7 +310,7 @@ const ProfileInnovator: React.FC = () => {
                                     {t("InnovationSubmission")}
                                 </Button>
                                 <Button
-                                    leftIcon={<Image src="/icons/digital-readiness.svg" alt="trophy" filter="brightness(0) invert(1)" />}
+                                    leftIcon={<Image src="/icons/digital_nudge/badge.svg" alt="trophy" filter="brightness(0) invert(1)" />}
                                     onClick={() => router.push(`/innovator/profile/${id}/badges`)}
                                     fontSize="12px"
                                     fontWeight="500"

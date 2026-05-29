@@ -43,12 +43,12 @@ const GelarSayaInovator = () => {
     try {
       setLoading(true);
       // Fetch badges evaluation
-      const res: any = await api.get(`/api/innovator/${id}/badges`);
+      const res: any = await api.get(`/innovator/${id}/badges`);
       setActiveBadge(res.activeBadge);
       setBadges(res.badges || []);
 
       // Fetch innovator profile to get innovator name
-      const innovatorRes: any = await api.get(`/api/innovator/${id}`);
+      const innovatorRes: any = await api.get(`/innovator/${id}`);
       const innovatorData = innovatorRes.innovator || innovatorRes.data;
       if (innovatorData) {
         setInnovatorName(innovatorData.namaInovator || "Inovator");
@@ -70,7 +70,7 @@ const GelarSayaInovator = () => {
   const handleUseBadge = async (badgeId: string | null) => {
     try {
       setActionLoading(badgeId || "remove");
-      const res: any = await api.patch(`/api/innovator/${id}/badges`, { badgeId });
+      const res: any = await api.patch(`/innovator/${id}/badges`, { badgeId });
       setActiveBadge(res.activeBadge);
       toast.success(badgeId ? "Gelar berhasil diterapkan!" : "Gelar dilepas!");
       fetchBadgesData();

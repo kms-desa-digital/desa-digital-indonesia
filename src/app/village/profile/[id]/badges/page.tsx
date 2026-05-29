@@ -45,12 +45,12 @@ const GelarSayaDesa = () => {
     try {
       setLoading(true);
       // Fetch badges evaluation
-      const res: any = await api.get(`/api/villages/${id}/badges`);
+      const res: any = await api.get(`/villages/${id}/badges`);
       setActiveBadge(res.activeBadge);
       setBadges(res.badges || []);
 
       // Fetch village profile to get village name
-      const villageRes: any = await api.get(`/api/villages/${id}`);
+      const villageRes: any = await api.get(`/villages/${id}`);
       const villageData = villageRes.village || villageRes.data;
       if (villageData) {
         setVillageName(villageData.namaDesa || "Desa");
@@ -72,7 +72,7 @@ const GelarSayaDesa = () => {
   const handleUseBadge = async (badgeId: string | null) => {
     try {
       setActionLoading(badgeId || "remove");
-      const res: any = await api.patch(`/api/villages/${id}/badges`, { badgeId });
+      const res: any = await api.patch(`/villages/${id}/badges`, { badgeId });
       setActiveBadge(res.activeBadge);
       toast.success(badgeId ? "Gelar berhasil diterapkan!" : "Gelar dilepas!");
       fetchBadgesData();
