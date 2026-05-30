@@ -37,7 +37,7 @@ export const VILLAGE_BADGES_DEF = [
     name: 'Adopter Giat',
     description: 'Diperoleh dengan menerapkan 4 inovasi digital selama 6 bulan berturut-turut',
     icon: '/icons/digital_nudge/Adopter_Giat.svg',
-    target: 6,
+    target: 4,
   },
   {
     id: 'sahabat_inovator',
@@ -94,7 +94,7 @@ export function getConsecutiveMonths(dates: Date[]): number {
     return date.getFullYear() * 12 + date.getMonth();
   });
   const uniqueMonths = [...new Set(yearMonths)].sort((a, b) => a - b);
-  
+
   let maxStreak = 0;
   let currentStreak = 0;
   let lastMonth = -999;
@@ -119,7 +119,7 @@ export async function evaluateVillageBadges(db: Db, villageId: string) {
     if (ObjectId.isValid(villageId)) {
       village = await db.collection('villages').findOne({ _id: new ObjectId(villageId) });
     }
-  } catch (e) {}
+  } catch (e) { }
 
   if (!village) {
     village = await db.collection('villages').findOne({
@@ -197,7 +197,7 @@ export async function evaluateVillageBadges(db: Db, villageId: string) {
   // 4. Adopter Giat (Target 4 inovasi selama 6 bulan berturut-turut)
   const applicationDates = appliedInnovations.map(item => new Date(item.createdAt));
   const consecutiveMonths = getConsecutiveMonths(applicationDates);
-  const progressAdopterGiat = Math.min(consecutiveMonths, 6);
+  const progressAdopterGiat = Math.min(totalApplied, 4);
   const isAdopterGiatUnlocked = totalApplied >= 4 && consecutiveMonths >= 6;
 
   // 5. Sahabat Inovator (Target 10 inovator berbeda)
@@ -247,7 +247,7 @@ export async function evaluateVillageBadges(db: Db, villageId: string) {
       icon: VILLAGE_BADGES_DEF[3].icon,
       isUnlocked: isAdopterGiatUnlocked,
       progress: progressAdopterGiat,
-      target: 6,
+      target: 4,
     },
     {
       id: 'sahabat_inovator',
@@ -273,7 +273,7 @@ export async function evaluateInnovatorBadges(db: Db, innovatorId: string) {
     if (ObjectId.isValid(innovatorId)) {
       innovator = await db.collection('innovators').findOne({ _id: new ObjectId(innovatorId) });
     }
-  } catch (e) {}
+  } catch (e) { }
 
   if (!innovator) {
     innovator = await db.collection('innovators').findOne({

@@ -77,6 +77,7 @@ const Village: React.FC = () => {
                   jumlahInovasiDiterapkan={item.jumlahInovasiDiterapkan}
                   ranking={idx + 1}
                   id={item.id}
+                  activeBadge={item.activeBadge}
                 />
               </Link>
             ))

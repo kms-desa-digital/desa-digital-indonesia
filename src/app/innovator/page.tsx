@@ -32,6 +32,7 @@ type InnovatorData = {
     jumlahInovasi: number;
     jumlahDesaDampingan: number;
     status: string;
+    activeBadge?: string | null;
 };
 
 function Innovator() {

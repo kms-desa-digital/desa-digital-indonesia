@@ -19,6 +19,7 @@ interface InnovatorData {
   header?: string;
   logo?: string;
   status?: string;
+  activeBadge?: string | null;
 }
 
 
@@ -81,6 +82,7 @@ function Innovator() {
                   jumlahDesaDampingan={item.jumlahDesaDampingan}
                   jumlahInovasi={item.jumlahInovasi}
                   ranking={idx + 1}
+                  activeBadge={item.activeBadge}
                 />
               </Link>
             ))

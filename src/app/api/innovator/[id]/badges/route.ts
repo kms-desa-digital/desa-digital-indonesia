@@ -55,7 +55,19 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
 
     // Cek otorisasi
     const isAdmin = auth.role === 'admin';
-    if (!isAdmin && innovator.userId !== auth.uid) {
+    let mongoUserId = "";
+    const userDoc = await db.collection('users').findOne({
+      $or: [{ uid: auth.uid }, { firebaseUid: auth.uid }, { id: auth.uid }, { _id: auth.uid as any }]
+    });
+    if (userDoc) {
+      mongoUserId = userDoc._id.toString();
+    }
+
+    const isOwner = innovator.userId === auth.uid || 
+                    (mongoUserId && innovator.userId === mongoUserId) || 
+                    innovator.firebaseUid === auth.uid;
+
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ message: 'Anda tidak berwenang mengubah profil ini' }, { status: 403 });
     }
 
