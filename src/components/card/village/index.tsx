@@ -76,9 +76,9 @@ function CardVillage(props: CardVillageProps) {
           {ranking == 2 && <img src="/icons/badge-2.svg" alt="badge" />}
           {ranking == 3 && <img src="/icons/badge-3.svg" alt="badge" />}
         </ContBadge>
-        <Title $isHome={isHome}>{renderHighlightedText(namaDesa)}</Title>
+        <Title $isHome={isHome} $hasBadge={!!activeBadge}>{renderHighlightedText(namaDesa)}</Title>
         {activeBadge && (
-          <Flex mt={1.5} mb={1.5}>
+          <Flex mt={1} mb={1}>
             {(() => {
               const configMap: Record<string, { name: string; icon: string; bg: string; border: string; color: string }> = {
                 penggerak_inovasi: {

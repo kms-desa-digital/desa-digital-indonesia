@@ -328,7 +328,6 @@ const ProfileInnovator: React.FC = () => {
                     </Flex>
                     <Title>{innovatorData.namaInovator}</Title>
                     <Flex gap={2} wrap="wrap" mt={1} mb={2}>
-                        <Label style={{ marginTop: 0 }}>{innovatorData.kategori}</Label>
                         {innovatorData.activeBadge && (() => {
                             const badgeId = innovatorData.activeBadge;
                             const configMap: Record<string, { name: string; icon: string; bg: string; border: string; color: string }> = {
@@ -390,6 +389,7 @@ const ProfileInnovator: React.FC = () => {
                                 </Flex>
                             );
                         })()}
+                        <Label style={{ marginTop: 0 }}>{innovatorData.kategori}</Label>
                     </Flex>
                     <Flex direction="row" gap={3} mt={1} alignItems="center">
                         <Icon as={FaWandMagicSparkles} color="#4B5563" />

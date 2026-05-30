@@ -83,9 +83,9 @@ function CardInnovator(props: CardInnovatorProps) {
           {ranking == 2 && <img src="/icons/badge-2.svg" alt="badge" />}
           {ranking == 3 && <img src="/icons/badge-3.svg" alt="badge" />}
         </ContBadge>
-        <Title>{renderHighlightedText(namaInovator)}</Title>
+        <Title $hasBadge={!!activeBadge}>{renderHighlightedText(namaInovator)}</Title>
         {activeBadge && (
-          <Flex mt={1.5} mb={1.5}>
+          <Flex mt={1} mb={1}>
             {(() => {
               const configMap: Record<string, { name: string; icon: string; bg: string; border: string; color: string }> = {
                 terus_berkembang: {
