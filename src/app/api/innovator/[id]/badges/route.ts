@@ -41,12 +41,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
     const db = await connectToDatabase();
 
     // Cari profil innovator berdasarkan id (bisa berupa Firebase UID / userId atau MongoDB _id)
-    let query: any;
-    try {
-      query = { $or: [{ _id: new ObjectId(id) }, { userId: id }] };
-    } catch (e) {
-      query = { userId: id };
+    const conditions: any[] = [{ _id: id }, { userId: id }];
+    if (ObjectId.isValid(id)) {
+      conditions.unshift({ _id: new ObjectId(id) });
     }
+    const query = { $or: conditions };
 
     const innovator = await db.collection('innovators').findOne(query);
 

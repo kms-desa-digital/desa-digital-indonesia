@@ -41,12 +41,11 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
     const db = await connectToDatabase();
 
     // Cari profil desa berdasarkan id (bisa berupa Firebase UID / userId atau MongoDB _id)
-    let query: any;
-    try {
-      query = { $or: [{ _id: new ObjectId(id) }, { userId: id }] };
-    } catch (e) {
-      query = { userId: id };
+    const conditions: any[] = [{ _id: id }, { userId: id }];
+    if (ObjectId.isValid(id)) {
+      conditions.unshift({ _id: new ObjectId(id) });
     }
+    const query = { $or: conditions };
 
     const village = await db.collection('villages').findOne(query);
 

@@ -49,6 +49,7 @@ export const Title = styled.p`
   font-weight: 700;
   position: relative;
   color: #1F2937;
+  margin: 0;
 `;
 export const TagContainer = styled.div`
   display: flex;
@@ -74,6 +75,7 @@ export const Label = styled.p`
   text-align: justify;
   width: fit-content;
   cursor: pointer;
+  margin: 0;
   ${marginStyle}
 `;
 export const Description = styled.div`
