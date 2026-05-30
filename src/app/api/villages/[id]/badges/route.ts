@@ -65,7 +65,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
 
     const isOwner = village.userId === auth.uid || 
                     (mongoUserId && village.userId === mongoUserId) || 
-                    village.firebaseUid === auth.uid;
+                    village.firebaseUid === auth.uid ||
+                    village._id.toString() === auth.uid ||
+                    (mongoUserId && village._id.toString() === mongoUserId);
 
     if (!isAdmin && !isOwner) {
       return NextResponse.json({ message: 'Anda tidak berwenang mengubah profil ini' }, { status: 403 });

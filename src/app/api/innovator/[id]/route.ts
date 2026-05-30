@@ -138,7 +138,8 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     }
 
     // Validasi kepemilikan: Hanya pemilik profil atau admin yang boleh mengedit
-    if (!isAdmin && existingDoc.userId !== auth.uid) {
+    const isOwner = existingDoc.userId === auth.uid || existingDoc._id.toString() === auth.uid;
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ message: 'Anda tidak memiliki hak untuk mengubah profil ini' }, { status: 403 })
     }
 

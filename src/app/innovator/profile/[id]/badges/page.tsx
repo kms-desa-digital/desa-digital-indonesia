@@ -17,6 +17,8 @@ import TopBar from "Components/topBar";
 import Container from "Components/container";
 import api from "Services/api";
 import { toast } from "react-toastify";
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
 
 interface Badge {
   id: string;
@@ -32,6 +34,7 @@ const GelarSayaInovator = () => {
   const params = useParams();
   const id = params.id as string;
   const router = useRouter();
+  const { role, uid, firebaseUid, loading: userLoading } = useUser();
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -82,7 +85,7 @@ const GelarSayaInovator = () => {
     }
   };
 
-  if (loading) {
+  if (userLoading || loading) {
     return (
       <Box minH="100vh">
         <TopBar title="Gelar Saya" onBack={() => router.back()} />
@@ -91,6 +94,13 @@ const GelarSayaInovator = () => {
         </Flex>
       </Box>
     );
+  }
+
+  const normalizedRole = (role || "").toLowerCase();
+  const isAuthorized = normalizedRole === "admin" || uid === id || firebaseUid === id;
+
+  if (!isAuthorized) {
+    return <Forbidden />;
   }
 
   // Get active badge info

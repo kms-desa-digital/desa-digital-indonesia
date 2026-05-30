@@ -9,7 +9,7 @@ export const Container = styled.div.withConfig({
   display: flex;
   width: 100%;
   flex-shrink: 0;
-  height: 197px;
+  height: ${({ $isHome }) => ($isHome ? '225px' : '197px')};
   flex-direction: column;
   align-items: flex-start;
   overflow: hidden;
@@ -61,6 +61,7 @@ export const Title = styled.p.withConfig({
   font-weight: 700;
   color: #1f2937;
   line-height: 140%;
+  height: ${({ $isHome }) => ($isHome ? '34px' : '28px')};
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;

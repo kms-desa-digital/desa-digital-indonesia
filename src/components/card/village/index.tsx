@@ -122,19 +122,20 @@ function CardVillage(props: CardVillageProps) {
               return (
                 <Flex
                   alignItems="center"
-                  gap="4px"
+                  gap="3px"
                   bg={cfg.bg}
                   border={`1px solid ${cfg.border}`}
                   color={cfg.color}
                   borderRadius="full"
-                  px="8px"
-                  py="2px"
-                  fontSize="9px"
+                  px="6px"
+                  py="1.5px"
+                  fontSize="8px"
                   fontWeight="700"
                   boxShadow="xs"
                   width="fit-content"
+                  whiteSpace="nowrap"
                 >
-                  <img src={cfg.icon} alt={cfg.name} style={{ width: "10px", height: "10px" }} />
+                  <img src={cfg.icon} alt={cfg.name} style={{ width: "8px", height: "8px" }} />
                   {cfg.name}
                 </Flex>
               );

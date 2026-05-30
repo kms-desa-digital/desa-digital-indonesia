@@ -111,7 +111,8 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     }
 
     // Validasi kepemilikan: Hanya pemilik profil atau admin yang boleh mengedit
-    if (!isAdmin && existing.userId !== auth.uid) {
+    const isOwner = existing.userId === auth.uid || existing._id.toString() === auth.uid;
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ message: 'Anda tidak memiliki hak untuk mengubah profil ini' }, { status: 403 })
     }
 
@@ -186,7 +187,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
     }
 
     // Validasi kepemilikan: Hanya pemilik profil atau admin yang boleh menghapus
-    if (!isAdmin && existing.userId !== auth.uid) {
+    const isOwner = existing.userId === auth.uid || existing._id.toString() === auth.uid;
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ message: 'Anda tidak memiliki hak untuk menghapus profil ini' }, { status: 403 })
     }
 

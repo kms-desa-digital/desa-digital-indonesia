@@ -18,6 +18,8 @@ import Container from "Components/container";
 import api from "Services/api";
 import { toast } from "react-toastify";
 import { useTranslations } from "next-intl";
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
 
 interface Badge {
   id: string;
@@ -34,6 +36,7 @@ const GelarSayaDesa = () => {
   const id = params.id as string;
   const router = useRouter();
   const t = useTranslations("Village");
+  const { role, uid, firebaseUid, loading: userLoading } = useUser();
 
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -84,7 +87,7 @@ const GelarSayaDesa = () => {
     }
   };
 
-  if (loading) {
+  if (userLoading || loading) {
     return (
       <Box minH="100vh">
         <TopBar title="Gelar Saya" onBack={() => router.back()} />
@@ -93,6 +96,13 @@ const GelarSayaDesa = () => {
         </Flex>
       </Box>
     );
+  }
+
+  const normalizedRole = (role || "").toLowerCase();
+  const isAuthorized = normalizedRole === "admin" || uid === id || firebaseUid === id;
+
+  if (!isAuthorized) {
+    return <Forbidden />;
   }
 
   // Get active badge info

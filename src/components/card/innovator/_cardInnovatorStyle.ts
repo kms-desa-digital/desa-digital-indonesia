@@ -32,7 +32,7 @@ export const CardContent = styled.div`
   align-item: flex-start;
   flex: 1 0 0;
   align-self: stretch;
-  height: 115px;
+  height: 140px;
 `
 export const ContBadge = styled.div`
   display: flex;
@@ -49,6 +49,8 @@ export const Title = styled.p`
   font-size: 12px;
   font-weight: 700;
   color: #1F2937;
+  height: 34px;
+  line-height: 17px;
   
   white-space: wrap;
   overflow: hidden;
