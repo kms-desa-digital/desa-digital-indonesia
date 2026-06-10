@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 
 import { useEffect, useState, useRef } from "react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getInnovators } from "Services/innovatorServices";
 
 import {
   chartContainerStyle,
@@ -43,8 +43,6 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 
-const db = getFirestore();
-
 type BarValue = {
   id: number;
   value: number;
@@ -67,52 +65,59 @@ const ChartInnovator = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [kategoriList, setKategoriList] = useState<string[]>(["Semua"]);
   const [selectedKategori, setSelectedKategori] = useState<string[]>([]);
+  const [allInnovatorsCache, setAllInnovatorsCache] = useState<any[]>([]);
 
   const chartBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      const snapshot = await getDocs(collection(db, "innovators"));
+      try {
+        const responseData = await getInnovators();
+        const innovators = (responseData as any).data || [];
+        setAllInnovatorsCache(innovators);
 
-      const categoryMap: Record<string, { count: number }> = {};
-      const allKategori: Set<string> = new Set();
+        const categoryMap: Record<string, { count: number }> = {};
+        const allKategori: Set<string> = new Set();
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        if (!data.kategori) return;
+        innovators.forEach((data: any) => {
+          if (!data.kategori) return;
 
-        const kategori = data.kategori;
-        allKategori.add(kategori);
+          const kategori = data.kategori;
+          allKategori.add(kategori);
 
-        if (!categoryMap[kategori]) {
-          categoryMap[kategori] = { count: 0 };
-        }
-        categoryMap[kategori].count += 1;
-      });
+          if (!categoryMap[kategori]) {
+            categoryMap[kategori] = { count: 0 };
+          }
+          categoryMap[kategori].count += 1;
+        });
 
-      const filteredCategoryMap =
-        selectedKategori.length === 0 || selectedKategori.includes("Semua")
-          ? categoryMap
-          : Object.fromEntries(
-            Object.entries(categoryMap).filter(([kategori]) =>
-              selectedKategori.includes(kategori)
-            )
-          );
+        const filteredCategoryMap =
+          selectedKategori.length === 0 || selectedKategori.includes("Semua")
+            ? categoryMap
+            : Object.fromEntries(
+              Object.entries(categoryMap).filter(([kategori]) =>
+                selectedKategori.includes(kategori)
+              )
+            );
 
-      const formattedData: ChartGroup[] = Object.entries(filteredCategoryMap)
-        .map(([category, { count }]) => ({
-          category,
-          values: [{ id: 1, value: count, color: "#568A73" }],
-        }))
-        .sort((a, b) => b.values[0].value - a.values[0].value);
+        const formattedData: ChartGroup[] = Object.entries(filteredCategoryMap)
+          .map(([category, { count }]) => ({
+            category,
+            values: [{ id: 1, value: count, color: "#568A73" }],
+          }))
+          .sort((a, b) => b.values[0].value - a.values[0].value);
 
-      const maxCount = Math.max(...formattedData.map((g) => g.values[0].value), 10);
+        const maxCount = Math.max(...formattedData.map((g) => g.values[0].value), 10);
 
-      setChartData(formattedData);
-      setMaxValue(maxCount);
-      setKategoriList(["Semua", ...Array.from(allKategori)]);
-      setLoading(false);
+        setChartData(formattedData);
+        setMaxValue(maxCount);
+        setKategoriList(["Semua", ...Array.from(allKategori)]);
+      } catch (error) {
+        console.error("Error fetching innovator chart data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
@@ -121,8 +126,16 @@ const ChartInnovator = () => {
   const isEmpty = chartData.length === 0 || chartData.every((group) => group.values[0].value === 0);
 
   const exportToPDF = async (selectedYear: number) => {
-    const snapshot = await getDocs(collection(db, "innovators"));
-    const allData = snapshot.docs.map((doc) => doc.data());
+    let allData = allInnovatorsCache;
+    if (allData.length === 0) {
+      try {
+        const responseData = await getInnovators();
+        allData = (responseData as any).data || [];
+      } catch (error) {
+        console.error("Error fetching data for PDF export:", error);
+        return;
+      }
+    }
 
     const doc = new jsPDF({ orientation: "landscape" });
     const downloadDate = new Date().toLocaleDateString("id-ID", {
@@ -150,7 +163,7 @@ const ChartInnovator = () => {
     let y = 42;
     const labelX = 14;
 
-    const grouped = allData.reduce((acc: Record<string, any[]>, item) => {
+    const grouped = allData.reduce((acc: Record<string, any[]>, item: any) => {
       const kategori = item.kategori || "Tidak Diketahui";
       if (!acc[kategori]) acc[kategori] = [];
       acc[kategori].push(item);
@@ -174,7 +187,7 @@ const ChartInnovator = () => {
             "Model Bisnis",
           ],
         ],
-        body: entries.map((item, i) => [
+        body: (entries as any[]).map((item: any, i: number) => [
           i + 1,
           item.namaInovator || "-",
           item.kategori || "-",
@@ -210,10 +223,18 @@ const ChartInnovator = () => {
   };
 
   const exportToExcel = async (selectedYear: number) => {
-    const snapshot = await getDocs(collection(db, "innovators"));
-    const allData = snapshot.docs.map((doc) => doc.data());
+    let allData = allInnovatorsCache;
+    if (allData.length === 0) {
+      try {
+        const responseData = await getInnovators();
+        allData = (responseData as any).data || [];
+      } catch (error) {
+        console.error("Error fetching data for Excel export:", error);
+        return;
+      }
+    }
 
-    const grouped = allData.reduce((acc: Record<string, any[]>, item) => {
+    const grouped = allData.reduce((acc: Record<string, any[]>, item: any) => {
       const kategori = item.kategori || "Tidak Diketahui";
       if (!acc[kategori]) acc[kategori] = [];
       acc[kategori].push(item);
@@ -234,7 +255,7 @@ const ChartInnovator = () => {
         ModelBisnis: "Model Bisnis",
       });
 
-      entries.forEach((item, i) => {
+      (entries as any[]).forEach((item: any, i: number) => {
         worksheetData.push({
           No: i + 1,
           NamaInovator: item.namaInovator || "-",

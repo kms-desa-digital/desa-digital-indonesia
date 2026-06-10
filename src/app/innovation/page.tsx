@@ -12,7 +12,8 @@ import { getInnovation } from "Services/innovationServices";
 import Loading from "Components/loading";
 import { Container as CategoryContainer } from "./_styles";
 import { useTranslations } from "next-intl";
-import { Input, InputGroup, InputLeftElement, Icon, Box } from "@chakra-ui/react";
+import { Input, InputGroup, InputLeftElement, InputRightElement, Icon, Box } from "@chakra-ui/react";
+import { CloseIcon } from "@chakra-ui/icons";
 import { FiSearch } from "react-icons/fi";
 
 type ListProps = {
@@ -110,7 +111,29 @@ function List(props: ListProps) {
                         bg="#F9FAFB"
                         border="1px solid #E5E7EB"
                         height="40px"
+                        pr="40px"
                     />
+                    {searchTerm && (
+                        <InputRightElement height="40px">
+                            <Box
+                                as="button"
+                                onClick={() => setSearchTerm("")}
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                borderRadius="full"
+                                bg="#6B7280"
+                                color="white"
+                                boxSize="18px"
+                                _hover={{ bg: "gray.600" }}
+                                _active={{ bg: "gray.700" }}
+                                cursor="pointer"
+                                mr="8px"
+                            >
+                                <CloseIcon w="6px" h="6px" />
+                            </Box>
+                        </InputRightElement>
+                    )}
                 </InputGroup>
             </Box>
             <Box px="16px" display="flex" flexDirection="column" gap="16px" pb="40px">

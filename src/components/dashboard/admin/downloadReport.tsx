@@ -8,9 +8,11 @@ import {
 } from "@chakra-ui/react";
 import { DownloadIcon } from "@chakra-ui/icons";
 import * as XLSX from "xlsx";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+
+import { getAuth } from "firebase/auth";
 
 // Type Definitions
 interface Village {
@@ -70,53 +72,54 @@ const DownloadReport: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const db = getFirestore();
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+        const token = await currentUser.getIdToken();
+        const headers = { Authorization: `Bearer ${token}` };
+
+        // Fetch All Data concurrently
+        const [villageRes, innovatorRes, innovationRes, claimRes] = await Promise.all([
+          fetch("/api/villages", { headers }),
+          fetch("/api/innovator", { headers }),
+          fetch("/api/innovations", { headers }),
+          fetch("/api/villages/claim?status=Terverifikasi", { headers })
+        ]);
+
+        const villageDataRaw = await villageRes.json();
+        const innovatorDataRaw = await innovatorRes.json();
+        const innovationDataRaw = await innovationRes.json();
+        const claimDataRaw = await claimRes.json();
 
         // 1. Fetch Villages
-        const villageSnapshot = await getDocs(collection(db, "villages"));
-        const villageData = villageSnapshot.docs.map((doc) => {
-            const raw = doc.data();
+        const villageData = (villageDataRaw.villages || []).map((raw: any) => {
             const lokasi = raw.lokasi || {};
             return {
-              desaId: doc.id,
+              desaId: raw._id || raw.id,
               ...raw,
               namaDesa: toTitleCase(lokasi?.desaKelurahan?.label ?? raw.namaDesa ?? "-"),
               kecamatan: toTitleCase(lokasi?.kecamatan?.label ?? raw.kecamatan ?? "-"),
               kabupatenKota: toTitleCase(lokasi?.kabupatenKota?.label ?? raw.kabupatenKota ?? "-"),
               provinsi: toTitleCase(lokasi?.provinsi?.label ?? raw.provinsi ?? "-"),
             } as Village;
-
           })
-          .filter((data) => data.namaDesa && data.namaDesa.trim() !== "");
+          .filter((data: Village) => data.namaDesa && data.namaDesa.trim() !== "");
         setVillagesData(villageData);
 
         // 2. Fetch Innovators
-        const innovatorSnapshot = await getDocs(collection(db, "innovators"));
-        const innovatorData = innovatorSnapshot.docs.map(
-          (doc) => doc.data() as Innovator
-        );
+        const innovatorData = (innovatorDataRaw.data || []) as Innovator[];
         setInnovatorsData(innovatorData);
 
         // 3. Fetch Innovations
-        const innovationSnapshot = await getDocs(collection(db, "innovations"));
-        const innovationData = innovationSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Innovation),
-        }));
+        const innovationData = (innovationDataRaw.innovations || []) as Innovation[];
 
-        // 4. Fetch Claim Innovations with status filter
-        const claimSnapshot = await getDocs(collection(db, "claimInnovations"));
-        const claimData = claimSnapshot.docs
-          .map(
-            (doc) =>
-              doc.data() as {
-                inovasiId: string;
-                desaId: string;
-                status: string;
-                namaDesa?: string;
-              }
-          )
-          .filter((data) => data.status === "Terverifikasi");
+        // 4. Fetch Claim Innovations
+        const claimData = (claimDataRaw.claims || []) as {
+          inovasiId: string;
+          desaId: string;
+          status: string;
+          namaDesa?: string;
+        }[];
 
         // === (A) Hitung klaim per Inovasi (berapa desa yang klaim inovasi itu) ===
         const inovasiClaimCountMap = new Map<string, number>();
@@ -132,7 +135,7 @@ const DownloadReport: React.FC = () => {
         // Merge klaim count ke innovationData
         const innovationsWithClaims = innovationData.map((i) => ({
           ...i,
-          jumlahKlaim: inovasiClaimCountMap.get(i.id) ?? 0,
+          jumlahKlaim: inovasiClaimCountMap.get(i.id!) ?? 0,
         }));
         setInnovationsData(innovationsWithClaims);
 
@@ -427,18 +430,17 @@ const handleDownloadExcel = async () => {
 
   // === 4️⃣ Desa paling banyak dan sedikit klaim ===
   // Ambil klaim inovasi terverifikasi dari Firestore
-  const claimSnapshot = await getDocs(collection(getFirestore(), "claimInnovations"));
-  const claimData = claimSnapshot.docs
-    .map(
-      (doc) =>
-        doc.data() as {
-          inovasiId: string;
-          desaId: string;
-          status: string;
-          namaDesa?: string;
-        }
-    )
-    .filter((data) => data.status === "Terverifikasi");
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
+  let claimData: any[] = [];
+  if (currentUser) {
+    const token = await currentUser.getIdToken();
+    const claimRes = await fetch("/api/villages/claim?status=Terverifikasi", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const claimDataRaw = await claimRes.json();
+    claimData = claimDataRaw.claims || [];
+  }
 
   const desaClaimCountMap = new Map<string, { count: number; namaDesa: string }>();
   claimData.forEach((c) => {

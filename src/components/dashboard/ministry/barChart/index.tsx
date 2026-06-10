@@ -10,7 +10,7 @@ import {
   MenuItem,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { collection, getDocs, getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import YearRangeFilter from "./dateFilter";
 import filterIcon from "@public/icons/icon-filter.svg";
 import downloadIcon from "@public/icons/icon-download.svg";
@@ -29,9 +29,9 @@ import {
 } from "recharts";
 
 const BarChartInovasi = () => {
-  const db = getFirestore();
   const [showFilter, setShowFilter] = useState(false);
-  const [yearRange, setYearRange] = useState<[number, number]>([2015, 2025]);
+  const currentYear = new Date().getFullYear();
+  const [yearRange, setYearRange] = useState<[number, number]>([2015, currentYear]);
   const [dataByYear, setDataByYear] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [detailedData, setDetailedData] = useState<
@@ -42,55 +42,43 @@ const BarChartInovasi = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const profilDesaSnap = await getDocs(collection(db, "villages"));
-        const claimSnap = await getDocs(collection(db, "claimInnovations"));
-        const inovasiSnap = await getDocs(collection(db, "innovations"));
-
-        const claimData = claimSnap.docs.map((doc) => doc.data());
-        const inovasiData = inovasiSnap.docs.map((doc) => doc.data());
-
-        const counts: Record<number, number> = {};
-        const detailed: {
-          namaDesa: string;
-          namaInovasi: string;
-          namaInovator: string;
-          year: number;
-        }[] = [];
-
-        profilDesaSnap.forEach((desaDoc) => {
-          const desaData = desaDoc.data();
-          const namaDesa = desaData.namaDesa;
-          const year = Number(desaData.tahunData);
-
-          if (!isNaN(year) && year >= yearRange[0] && year <= yearRange[1]) {
-            counts[year] = (counts[year] || 0) + 1;
-
-            const foundClaim = claimData.find((m) => m.namaDesa === namaDesa);
-            const namaInovasi = foundClaim?.namaInovasi || "-";
-
-            const foundInovasi = inovasiData.find((i) => i.namaInovasi === namaInovasi);
-            const namaInovator = foundInovasi?.namaInnovator || "-";
-
-            detailed.push({
-              namaDesa,
-              namaInovasi,
-              namaInovator,
-              year,
-            });
-          }
-        });
-
-        // cumulative counts
-        const sortedYears = Object.keys(counts).map(Number).sort((a, b) => a - b);
-        const cumulativeCounts: Record<number, number> = {};
-        let total = 0;
-        for (const year of sortedYears) {
-          total += counts[year];
-          cumulativeCounts[year] = total;
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          setDataByYear({});
+          setLoading(false);
+          return;
         }
 
-        setDataByYear(cumulativeCounts);
-        setDetailedData(detailed);
+        const token = await currentUser.getIdToken();
+        const response = await fetch('/api/ministry/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch dashboard data");
+        const data = await response.json();
+
+        if (data.dashboard?.pertumbuhanDesa) {
+          const list = data.dashboard.pertumbuhanDesa;
+          setDetailedData(list);
+
+          const counts: Record<number, number> = {};
+          for (let y = yearRange[0]; y <= yearRange[1]; y++) {
+            counts[y] = 0;
+          }
+
+          list.forEach((item: any) => {
+            const y = item.year;
+            if (y >= yearRange[0] && y <= yearRange[1]) {
+              counts[y] = (counts[y] || 0) + 1;
+            }
+          });
+
+          setDataByYear(counts);
+        } else {
+          setDataByYear({});
+          setDetailedData([]);
+        }
       } catch (error) {
         console.error("Failed to fetch data:", error);
       }
@@ -204,14 +192,14 @@ const BarChartInovasi = () => {
         <Flex align="center" gap={2}>
           <Image
             onClick={() => setShowFilter(true)}
-            src={filterIcon}
+            src={filterIcon.src}
             alt="Filter"
             boxSize="16px"
             cursor="pointer"
           />
           <Menu>
             <MenuButton as={Box} cursor="pointer" marginRight={2}>
-              <Image src={downloadIcon} alt="Download" boxSize="16px" />
+              <Image src={downloadIcon.src} alt="Download" boxSize="16px" />
             </MenuButton>
             <MenuList>
               <MenuItem onClick={() => exportToPDF(detailedData)}>Download PDF</MenuItem>

@@ -17,7 +17,7 @@ import {
     Button,
     useDisclosure,
 } from '@chakra-ui/react';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Filter } from 'lucide-react';
@@ -44,211 +44,51 @@ const PetaLama: React.FC = () => {
 
     const fetchData = async () => {
         setLoading(true);
-        const db = getFirestore();
-        let colName = '';
-
-        switch (selectedCategory) {
-            case 'desa':
-                colName = 'villages';
-                break;
-            case 'inovator':
-                colName = 'innovators';
-                break;
-            case 'inovasi':
-                colName = 'innovations';
-                break;
-        }
-
         try {
-            const results: MarkerItem[] = [];
+            const auth = getAuth();
+            const user = auth.currentUser;
+            let token = '';
+            if (user) {
+                token = await user.getIdToken();
+            }
 
-            // Untuk kategori desa
+            const response = await fetch('/api/admin/dashboard', {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch dashboard data');
+            const data = await response.json();
+
+            let markersData: MarkerItem[] = [];
+            const allMarkers = data.mapMarkers || [];
+
             if (selectedCategory === 'desa') {
-                const villageSnapshot = await getDocs(collection(db, 'villages'));
-                const claimSnapshot = await getDocs(collection(db, 'claimInnovations'));
-
-                // Filter klaim yang sudah terverifikasi saja
-                const claims = claimSnapshot.docs
-                    .map(doc => doc.data())
-                    .filter(c => c.status === 'Terverifikasi');
-
-                // Loop setiap desa
-                for (const doc of villageSnapshot.docs) {
-                    const data = doc.data();
-                    const lat = parseFloat(data.latitude);
-                    const lon = parseFloat(data.longitude);
-                    const userId = data.userId;
-
-                    if (!isNaN(lat) && !isNaN(lon) && userId) {
-                        // Cocokkan klaim dengan desaId (userId)
-                        const matchedClaims = claims.filter(c => c.desaId === userId);
-
-                        const jumlahInovasi = matchedClaims.length;
-                        const jumlahInovator = new Set(matchedClaims.map(c => c.inovatorId)).size;
-
-                        const details = [
-                            { label: 'Jumlah Inovasi', value: jumlahInovasi },
-                            { label: 'Jumlah Inovator', value: jumlahInovator },
-                        ];
-
-                        const name = data.namaDesa || 'Tanpa Nama';
-
-                        results.push({ name, lat, lon, details, raw: data });
-                    }
-                }
+                markersData = allMarkers
+                    .filter((m: any) => m.type === 'village')
+                    .map((m: any) => ({
+                        name: m.name,
+                        lat: parseFloat(m.lat),
+                        lon: parseFloat(m.lng),
+                        details: [{ label: 'Kategori', value: 'Desa Digital' }],
+                        raw: m
+                    }));
+            } else if (selectedCategory === 'inovator') {
+                markersData = allMarkers
+                    .filter((m: any) => m.type === 'innovator')
+                    .map((m: any) => ({
+                        name: m.name,
+                        lat: parseFloat(m.lat),
+                        lon: parseFloat(m.lng),
+                        details: [{ label: 'Kategori', value: 'Inovator' }],
+                        raw: m
+                    }));
+            } else if (selectedCategory === 'inovasi') {
+                // Endpoint mapMarkers saat ini tidak mengembalikan inovasi karena tidak ada koordinat
+                // Jika ingin tetap render, biarkan array kosong atau ambil dari data inovator terkait
+                markersData = [];
             }
 
-            // Untuk kategori inovator
-            if (selectedCategory === 'inovator') {
-                const villageSnapshot = await getDocs(collection(db, 'villages'));
-                const claimSnapshot = await getDocs(collection(db, 'claimInnovations'));
-                const innovatorSnapshot = await getDocs(collection(db, 'innovators'));
-
-                const claims = claimSnapshot.docs
-                    .map(doc => doc.data())
-                    .filter(c => c.status === 'Terverifikasi');
-
-                const villageMap: { [key: string]: string } = villageSnapshot.docs.reduce((acc, curr) => {
-                    const data = curr.data();
-                    acc[data.userId] = data.namaDesa;
-                    return acc;
-                }, {} as { [key: string]: string });
-
-                const innovatorNameMap: { [key: string]: string } = innovatorSnapshot.docs.reduce((acc, curr) => {
-                    const data = curr.data();
-                    acc[curr.id] = data.namaInovator || 'Nama Inovator Tidak Ditemukan'; // Ensure the correct mapping
-                    return acc;
-                }, {} as { [key: string]: string });
-
-                const innovatorCategoryMap: { [key: string]: string } = innovatorSnapshot.docs.reduce((acc, curr) => {
-                    const data = curr.data();
-                    acc[curr.id] = data.kategori || 'Kategori Tidak Ditemukan'; // Ensure category is mapped
-                    return acc;
-                }, {} as { [key: string]: string });
-
-                for (const doc of villageSnapshot.docs) {
-                    const data = doc.data();
-                    const lat = parseFloat(data.latitude);
-                    const lon = parseFloat(data.longitude);
-                    const userId = data.userId;
-
-                    if (!isNaN(lat) && !isNaN(lon) && userId) {
-                        const matchedClaims = claims.filter(c => c.desaId === userId);
-                        const inovatorIds = new Set(matchedClaims.map(c => c.inovatorId));
-
-                        const namaDesa = villageMap[userId] || 'Nama Desa Tidak Ditemukan';
-
-                        for (const inovatorId of inovatorIds) {
-                            const namaInovator = innovatorNameMap[inovatorId] || 'Tidak diketahui';
-                            const kategori = innovatorCategoryMap[inovatorId] || 'Tidak diketahui';
-
-                            const marker = {
-                                name: namaInovator,
-                                lat,
-                                lon,
-                                kategori,  // Tambahkan kategori sebagai properti terpisah
-                                namaInovator, // Tambahkan namaInovator sebagai properti terpisah
-                                details: [
-                                    { label: 'Nama Desa', value: namaDesa },
-                                    { label: 'Kategori', value: kategori },
-                                ],
-                                raw: {    // Gabungkan data ke dalam satu objek raw
-                                    ...data,      // Menambahkan data asli dari village
-                                    kategori,     // Menambahkan kategori
-                                    namaInovator  // Menambahkan namaInovator
-                                }
-                            };
-
-                            // Gabungkan seluruh data ke dalam results
-                            results.push(marker);
-
-                        }
-                    }
-                }
-            }
-
-            // Untuk kategori inovasi
-            if (selectedCategory === 'inovasi') {
-                const villageSnapshot = await getDocs(collection(db, 'villages'));
-                const claimSnapshot = await getDocs(collection(db, 'claimInnovations'));
-                const innovationSnapshot = await getDocs(collection(db, 'innovations'));
-
-                const claims = claimSnapshot.docs
-                    .map(doc => doc.data())
-                    .filter(c => c.status === 'Terverifikasi');
-
-                // Create a map to store desaId (userId) and its corresponding namaDesa
-                const villageMap: { [key: string]: string } = villageSnapshot.docs.reduce((acc, curr) => {
-                    const data = curr.data();
-                    acc[data.userId] = data.namaDesa; // Map desaId (userId) to namaDesa
-                    return acc;
-                }, {} as { [key: string]: string });
-
-                // Create a map for inovasiId to namaInovasi
-                const innovationMap: { [key: string]: string } = innovationSnapshot.docs.reduce((acc, curr) => {
-                    const data = curr.data();
-                    acc[curr.id] = data.namaInovasi || 'Nama Inovasi Tidak Ditemukan'; // Map inovasiId to namaInovasi
-                    return acc;
-                }, {} as { [key: string]: string });
-
-                // Create a map for inovatorId to namaInovator
-                const innovatorMap: { [key: string]: string } = innovationSnapshot.docs.reduce((acc, curr) => {
-                    const data = curr.data();
-                    acc[curr.id] = data.namaInnovator || 'Nama Inovator Tidak Ditemukan'; // Map inovatorId to namaInovator
-                    return acc;
-                }, {} as { [key: string]: string });
-
-                // Loop through each village to get the relevant claims and related innovations
-                for (const doc of villageSnapshot.docs) {
-                    const data = doc.data();
-                    const lat = parseFloat(data.latitude);
-                    const lon = parseFloat(data.longitude);
-                    const userId = data.userId;
-
-                    if (!isNaN(lat) && !isNaN(lon) && userId) {
-                        // Filter claims that match the desaId (userId)
-                        const matchedClaims = claims.filter(c => c.desaId === userId);
-                        const inovasiIds = new Set(matchedClaims.map(c => c.inovasiId));  // Get unique inovasiIds
-
-                        const namaDesa = villageMap[userId] || 'Nama Desa Tidak Ditemukan';
-
-                        // Loop through each inovasiId to get the inovasi name and inovator name
-                        for (const inovasiId of inovasiIds) {
-                            const namaInovasi = innovationMap[inovasiId] || 'Nama Inovasi Tidak Ditemukan'; // Get inovasi name
-                            const namaInovator = innovatorMap[inovasiId] || 'Nama Inovator Tidak Ditemukan'; // Get inovator name
-                            const tahunDibuat = innovationSnapshot.docs.find(doc => doc.id === inovasiId)?.data().tahunDibuat || 'Tahun Tidak Ditemukan';
-                            const kategori = innovationSnapshot.docs.find(doc => doc.id === inovasiId)?.data().kategori || 'Kategori Tidak Ditemukan';
-
-                            // Create the marker object
-                            const marker = {
-                                name: namaInovasi,
-                                lat,
-                                lon,
-                                namaInovator,  // Add namaInovator as a separate property
-                                namaInovasi,   // Add namaInovasi as a separate property
-                                tahunDibuat,   // Add tahunDibuat to the marker
-                                kategori,      // Add kategori to the marker
-                                details: [
-                                    { label: 'Nama Desa', value: namaDesa },
-                                    { label: 'Nama Inovator', value: namaInovator },
-                                ],
-                                raw: {    // Combine all the data into one raw object
-                                    ...data,      // Add the original village data
-                                    namaInovator,  // Add namaInovator
-                                    namaInovasi,   // Add namaInovasi
-                                    tahunDibuat,   // Add tahunDibuat
-                                    kategori,      // Add kategori
-                                }
-                            };
-
-                            // Push the marker into results
-                            results.push(marker);
-                        }
-                    }
-                }
-            }
-            console.log("Results Sebelum setMarkers:", results);
-            setMarkers(results);
+            setMarkers(markersData);
         } catch (err) {
             console.error('Error fetching markers:', err);
         } finally {

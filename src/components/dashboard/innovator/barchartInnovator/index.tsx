@@ -10,18 +10,9 @@ import {
   MenuItem,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import {
-  collection,
-  getDocs,
-  getFirestore,
-  query,
-  where,
-} from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { useAuthToken } from "Hooks/useAuthToken";
 
 import YearRangeFilter from "./dateFilter";
-import filterIcon from "@public/icons/icon-filter.svg";
-import downloadIcon from "@public/icons/icon-download.svg";
 
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -37,11 +28,12 @@ import {
 } from "recharts";
 
 const BarChartInovasi = () => {
-  const db = getFirestore();
-  const auth = getAuth();
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   const [showFilter, setShowFilter] = useState(false);
-  const [yearRange, setYearRange] = useState<[number, number]>([2010, 2025]);
+  const [error, setError] = useState<string | null>(null);
+  const currentYear = new Date().getFullYear();
+  const [yearRange, setYearRange] = useState<[number, number]>([2010, currentYear]);
   const [dataByYear, setDataByYear] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
 
@@ -60,145 +52,60 @@ const BarChartInovasi = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!authLoaded) return;
       setLoading(true);
+      setError(null);
       try {
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
+        if (!token) {
+          setError("User not authenticated.");
           setDataByYear({});
           setLoading(false);
           return;
         }
 
-        const inovatorQ = query(
-          collection(db, "innovators"),
-          where("id", "==", currentUser.uid)
-        );
-        const inovatorSnap = await getDocs(inovatorQ);
-        const inovatorIds = inovatorSnap.docs.map((doc) => doc.id);
-
-        const inovatorMap: Record<string, string> = {};
-        inovatorSnap.docs.forEach((doc) => {
-          inovatorMap[doc.id] = doc.data().namaInovator || "-";
+        const response = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        if (inovatorIds.length === 0) {
-          setDataByYear({});
-          setLoading(false);
-          return;
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch dashboard data");
         }
+        const data = await response.json();
 
-        // ambil inovasi
-        const inovasiIds: string[] = [];
-        const inovasiMap: Record<string, { namaInovasi: string; inovatorId: string }> = {};
-        const batchSize = 10;
-
-        for (let i = 0; i < inovatorIds.length; i += batchSize) {
-          const batchIds = inovatorIds.slice(i, i + batchSize);
-          const inovasiQ = query(
-            collection(db, "innovations"),
-            where("innovatorId", "in", batchIds)
-          );
-          const inovasiSnap = await getDocs(inovasiQ);
-          inovasiSnap.forEach((doc) => {
-            inovasiIds.push(doc.id);
-            const data = doc.data();
-            inovasiMap[doc.id] = {
-              namaInovasi: data.namaInovasi || "-",
-              inovatorId: data.innovatorId || "-",
-            };
-          });
-        }
-
-        if (inovatorSnap.docs.length > 0) {
-          const inovatorData = inovatorSnap.docs[0].data();
-          setProfilInovator({
-            namaInovator: inovatorData.namaInovator || "-",
-            kategoriInovator: inovatorData.kategori || "-",
-            tahunDibentuk: inovatorData.tahunDibentuk || "-",
-            targetPengguna: inovatorData.targetPengguna || "-",
-            modelBisnis: inovatorData.modelBisnis || "-",
-            produk:
-              Object.values(inovasiMap)
-                .map((i) => i.namaInovasi)
-                .join(", ") || "-",
-          });
-        }
-
-        // Hitung desa per tahun + data untuk export
-        const desaPerTahun: Record<number, Set<string>> = {};
-        const exportMap: Record<string, {
-          namaDesa: string;
-          namaInovator: string;
-          year: number;
-          inovasi: Set<string>;
-        }> = {};
-
-        for (let i = 0; i < inovasiIds.length; i += batchSize) {
-          const batchIds = inovasiIds.slice(i, i + batchSize);
-          const klaimQ = query(
-            collection(db, "claimInnovations"),
-            where("inovasiId", "in", batchIds)
-          );
-          const klaimSnap = await getDocs(klaimQ);
-
-          klaimSnap.forEach((doc) => {
-            const data = doc.data();
-            const createdAt = data.createdAt?.toDate?.();
-            const year = createdAt?.getFullYear?.();
-            const desa = data.namaDesa;
-            const inovasiId = data.inovasiId;
-
-            if (
-              !isNaN(year) &&
-              desa &&
-              year >= yearRange[0] &&
-              year <= yearRange[1]
-            ) {
-              if (!desaPerTahun[year]) desaPerTahun[year] = new Set();
-              desaPerTahun[year].add(desa);
-
-              const inovasiData = inovasiMap[inovasiId] || {};
-              const namaInovasi = inovasiData.namaInovasi || "-";
-              const namaInovator = inovatorMap[inovasiData.inovatorId] || "-";
-
-              // key unik desa + tahun
-              const key = `${desa}-${year}`;
-              if (!exportMap[key]) {
-                exportMap[key] = {
-                  namaDesa: desa,
-                  namaInovator,
-                  year,
-                  inovasi: new Set(),
-                };
-              }
-              exportMap[key].inovasi.add(namaInovasi);
-            }
-          });
-        }
-
-        const exportRows = Object.values(exportMap).map((item) => ({
-          namaDesa: item.namaDesa,
-          namaInovator: item.namaInovator,
-          year: item.year,
-          namaInovasi: Array.from(item.inovasi).join(", "),
-        }));
-
-        const countsByYear: Record<number, number> = {};
-        Object.keys(desaPerTahun).forEach((year) => {
-          countsByYear[Number(year)] = desaPerTahun[Number(year)].size;
+        setProfilInovator({
+          namaInovator: data.innovator?.namaInovator || "-",
+          kategoriInovator: data.innovator?.kategori || "-",
+          tahunDibentuk: data.innovator?.tahunDibentuk || "-",
+          targetPengguna: data.innovator?.targetPengguna || "-",
+          modelBisnis: data.innovator?.modelBisnis || "-",
+          produk: (data.top3Innovations || []).map((i: any) => i.name).join(", ") || "-",
         });
 
-        setDataByYear(countsByYear);
-        setFormattedData(exportRows);
+        const claimsData = data.pertumbuhanDesa || [];
+        
+        // Filter based on selected yearRange
+        const filteredData = claimsData.filter((item: any) => item.year >= yearRange[0] && item.year <= yearRange[1]);
+        setFormattedData(filteredData);
+        
+        const yearCount: Record<number, number> = {};
+        filteredData.forEach((item: any) => {
+          yearCount[item.year] = (yearCount[item.year] || 0) + 1;
+        });
+        
+        setDataByYear(yearCount);
       } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        setError(message);
         console.error("Error:", err);
         setDataByYear({});
+        setFormattedData([]);
       }
       setLoading(false);
     };
 
     fetchData();
-  }, [yearRange, auth.currentUser]);
+  }, [yearRange, authLoaded, token]);
 
   const isEmpty = formattedData.length === 0;
 
@@ -348,7 +255,7 @@ const BarChartInovasi = () => {
         </Text>
         <Flex gap={2}>
           <Image
-            src={filterIcon}
+            src="/icons/icon-filter.svg"
             alt="Filter"
             boxSize="16px"
             cursor="pointer"
@@ -356,7 +263,7 @@ const BarChartInovasi = () => {
           />
           <Menu>
             <MenuButton>
-              <Image src={downloadIcon} alt="Download" boxSize="16px" cursor="pointer" marginRight={2} />
+              <Image src="/icons/icon-download.svg" alt="Download" boxSize="16px" cursor="pointer" marginRight={2} />
             </MenuButton>
             <MenuList>
               <MenuItem onClick={() => { if (profilInovator) exportToPDF(formattedData, profilInovator); }}>

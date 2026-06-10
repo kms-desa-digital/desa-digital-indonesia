@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useTranslations } from "next-intl";
 import {
     Box,
@@ -30,19 +30,27 @@ import {
     Button,
 } from "@chakra-ui/react";
 import {
+    ChevronDownIcon,
+    DeleteIcon,
+    EmailIcon,
+    InfoOutlineIcon,
+    SettingsIcon
+} from "@chakra-ui/icons";
+import {
     ChevronLeft, Bell, CheckCircle2, XCircle, Info, Star,
     ArrowRight, MoreVertical, Trash2, CheckCircle,
     Trophy, Megaphone, Lightbulb, UserPlus
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import TopBar from "Components/topBar";
 import { useAuthToken } from "@/hooks/useAuthToken";
+import { useUser } from "src/contexts/UserContext";
 
 interface NotificationItem {
     id: string;
     userId: string;
     type: "general" | "personal";
-    category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status' | 'innovation_submission' | 'claim_submission' | 'profile_submission';
+    category?: 'ranking' | 'announcement' | 'innovation_recommendation' | 'new_innovator' | 'submission_status' | 'innovation_submission' | 'claim_submission' | 'profile_submission' | 'village_submission' | 'innovator_submission';
     title: string;
     description: string;
     isRead: boolean;
@@ -51,8 +59,9 @@ interface NotificationItem {
     createdAt: string;
 }
 
-const NotificationPage = () => {
+const NotificationPageContent = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { token, isLoaded } = useAuthToken();
     const bgColor = useColorModeValue("white", "gray.800");
     const hoverBg = useColorModeValue("gray.50", "gray.700");
@@ -79,13 +88,32 @@ const NotificationPage = () => {
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [tabIndex, setTabIndex] = useState(0);
+
+    // Initial states from URL params
+    const initialTabIndex = parseInt(searchParams.get("tab") || "0", 10);
+    const initialFilter = searchParams.get("category") || "all";
+
+    const [tabIndex, setTabIndex] = useState(initialTabIndex);
+    const [filterCategory, setFilterCategory] = useState<string>(initialFilter);
+    
+    const { role } = useUser();
+    const isAdmin = role === "admin";
 
     const [isDeleteAllOpen, setIsDeleteAllOpen] = useState(false);
     const [isDeleteSingleOpen, setIsDeleteSingleOpen] = useState(false);
     const [selectedNotifId, setSelectedNotifId] = useState<string | null>(null);
     const cancelRef = React.useRef<HTMLButtonElement>(null);
     const t = useTranslations("NotificationPage");
+
+    const updateUrl = (tab: number, category: string) => {
+        const urlParams = new URLSearchParams();
+        if (tab > 0) urlParams.set("tab", tab.toString());
+        if (category !== "all") urlParams.set("category", category);
+        
+        const queryString = urlParams.toString();
+        const newPath = queryString ? `?${queryString}` : window.location.pathname;
+        router.replace(newPath, { scroll: false });
+    };
 
     useEffect(() => {
         if (!isLoaded) return;
@@ -99,7 +127,7 @@ const NotificationPage = () => {
         }
 
         fetchInitial();
-    }, [token, isLoaded]);
+    }, [token, isLoaded, filterCategory]);
 
     const fetchInitial = async () => {
         try {
@@ -111,9 +139,11 @@ const NotificationPage = () => {
                 "Content-Type": "application/json",
             };
 
+            const categoryQuery = filterCategory !== 'all' ? `&category=${filterCategory}` : '';
+
             const [generalRes, personalRes] = await Promise.all([
                 fetch(`/api/notifications?type=general&limit=${LIMIT}&skip=0`, { headers }),
-                fetch(`/api/notifications?type=personal&limit=${LIMIT}&skip=0`, { headers })
+                fetch(`/api/notifications?type=personal&limit=${LIMIT}&skip=0${categoryQuery}`, { headers })
             ]);
 
             const generalData = generalRes.ok ? await generalRes.json() : { notifications: [], pagination: { hasMore: false }, unreadCount: 0 };
@@ -148,7 +178,8 @@ const NotificationPage = () => {
                 "Content-Type": "application/json",
             };
 
-            const res = await fetch(`/api/notifications?type=${type}&limit=${LIMIT}&skip=${skip}`, { headers });
+            const categoryQuery = (type === 'personal' && filterCategory !== 'all') ? `&category=${filterCategory}` : '';
+            const res = await fetch(`/api/notifications?type=${type}&limit=${LIMIT}&skip=${skip}${categoryQuery}`, { headers });
             const data = res.ok ? await res.json() : null;
 
             if (data) {
@@ -184,10 +215,10 @@ const NotificationPage = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, [tabIndex, hasMoreGeneral, hasMorePersonal, loadingMore, generalSkip, personalSkip]);
-
     const handleMarkAllAsRead = async () => {
         try {
-            const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+            const headers: any = {};
+            if (token) headers.Authorization = `Bearer ${token}`;
             await fetch('/api/notifications/bulk', { method: 'PATCH', headers });
             fetchInitial();
         } catch (error) {
@@ -202,7 +233,8 @@ const NotificationPage = () => {
     const confirmDeleteAll = async () => {
         setIsDeleteAllOpen(false);
         try {
-            const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+            const headers: any = {};
+            if (token) headers.Authorization = `Bearer ${token}`;
             await fetch('/api/notifications/bulk', { method: 'DELETE', headers });
             fetchInitial();
         } catch (error) {
@@ -220,7 +252,8 @@ const NotificationPage = () => {
         setIsDeleteSingleOpen(false);
         if (!selectedNotifId) return;
         try {
-            const headers: any = token ? { Authorization: `Bearer ${token}` } : {};
+            const headers: any = {};
+            if (token) headers.Authorization = `Bearer ${token}`;
             await fetch(`/api/notifications/${selectedNotifId}`, { method: 'DELETE', headers });
             fetchInitial();
             setSelectedNotifId(null);
@@ -242,7 +275,13 @@ const NotificationPage = () => {
         }
 
         // 2. Pengajuan Baru untuk Admin (Bintang)
-        if (category === 'innovation_submission' || category === 'claim_submission' || category === 'profile_submission') {
+        if (
+            category === 'innovation_submission' || 
+            category === 'claim_submission' || 
+            category === 'village_submission' || 
+            category === 'innovator_submission' ||
+            category === 'profile_submission'
+        ) {
             return <Star size={18} color="#F59E0B" />;
         }
 
@@ -324,11 +363,11 @@ const NotificationPage = () => {
                 </Box>
                 <Box flex={1}>
                     <Flex justify="space-between" align="start" mb={1}>
-                        <Text 
-                            fontWeight="800" 
-                            fontSize="15px" 
-                            color={notifTitleColor} 
-                            noOfLines={1} 
+                        <Text
+                            fontWeight="800"
+                            fontSize="15px"
+                            color={notifTitleColor}
+                            noOfLines={1}
                             pr={6} // Padding agar judul tidak mepet tombol hapus
                         >
                             {notif.title}
@@ -341,7 +380,7 @@ const NotificationPage = () => {
                         <Text fontSize="11px" color="gray.400" fontWeight="500">
                             {formatDate(notif.createdAt)}
                         </Text>
-                        
+
                         <Flex align="center" gap={1} color="green.600">
                             <Text fontSize="11px" fontWeight="700">Buka</Text>
                             <ArrowRight size={12} />
@@ -415,13 +454,13 @@ const NotificationPage = () => {
                         {error}
                     </Box>
                 ) : (
-                    <Tabs variant="soft-rounded" colorScheme="green" isFitted onChange={(index) => setTabIndex(index)}>
+                    <Tabs variant="soft-rounded" colorScheme="green" isFitted defaultIndex={tabIndex} index={tabIndex} onChange={(index) => { setTabIndex(index); updateUrl(index, filterCategory); }}>
                         <TabList
                             bg={tabListBgColor}
                             p={1.5}
                             borderRadius="full"
                             shadow="sm"
-                            mb={6}
+                            mb={2}
                         >
                             <Tab
                                 borderRadius="full"
@@ -461,21 +500,94 @@ const NotificationPage = () => {
                                 </Stack>
                             </TabPanel>
                             <TabPanel p={0}>
+                                {isAdmin && (
+                                    <Box mb={4}>
+                                        <Menu matchWidth>
+                                            <MenuButton
+                                                as={Button}
+                                                rightIcon={<ChevronDownIcon />}
+                                                variant="outline"
+                                                w="full"
+                                                borderRadius="xl"
+                                                fontSize="14px"
+                                                h="48px"
+                                                textAlign="left"
+                                                fontWeight="500"
+                                                color="gray.600"
+                                                bg="white"
+                                                borderColor="gray.200"
+                                                _hover={{ bg: "gray.50" }}
+                                                _active={{ bg: "gray.50" }}
+                                                px={4}
+                                            >
+                                                {filterCategory === "all" ? "Semua Verifikasi" :
+                                                    filterCategory === "village_submission" ? "Pengajuan Desa" :
+                                                        filterCategory === "innovator_submission" ? "Pengajuan Innovator" :
+                                                            filterCategory === "innovation_submission" ? "Pengajuan Inovasi" :
+                                                                filterCategory === "claim_submission" ? "Pengajuan Klaim" : "Filter"}
+                                            </MenuButton>
+                                            <MenuList borderRadius="xl" shadow="lg" py={2}>
+                                                <MenuItem
+                                                    onClick={() => { setFilterCategory("all"); updateUrl(tabIndex, "all"); }}
+                                                    fontSize="14px"
+                                                    fontWeight={filterCategory === "all" ? "600" : "400"}
+                                                    color={filterCategory === "all" ? "green.600" : "inherit"}
+                                                >
+                                                    Semua Verifikasi
+                                                </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => { setFilterCategory("village_submission"); updateUrl(tabIndex, "village_submission"); }}
+                                                    fontSize="14px"
+                                                    fontWeight={filterCategory === "village_submission" ? "600" : "400"}
+                                                    color={filterCategory === "village_submission" ? "green.600" : "inherit"}
+                                                >
+                                                    Pengajuan Desa
+                                                </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => { setFilterCategory("innovator_submission"); updateUrl(tabIndex, "innovator_submission"); }}
+                                                    fontSize="14px"
+                                                    fontWeight={filterCategory === "innovator_submission" ? "600" : "400"}
+                                                    color={filterCategory === "innovator_submission" ? "green.600" : "inherit"}
+                                                >
+                                                    Pengajuan Innovator
+                                                </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => { setFilterCategory("innovation_submission"); updateUrl(tabIndex, "innovation_submission"); }}
+                                                    fontSize="14px"
+                                                    fontWeight={filterCategory === "innovation_submission" ? "600" : "400"}
+                                                    color={filterCategory === "innovation_submission" ? "green.600" : "inherit"}
+                                                >
+                                                    Pengajuan Inovasi
+                                                </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => { setFilterCategory("claim_submission"); updateUrl(tabIndex, "claim_submission"); }}
+                                                    fontSize="14px"
+                                                    fontWeight={filterCategory === "claim_submission" ? "600" : "400"}
+                                                    color={filterCategory === "claim_submission" ? "green.600" : "inherit"}
+                                                >
+                                                    Pengajuan Klaim
+                                                </MenuItem>
+                                            </MenuList>
+                                        </Menu>
+                                    </Box>
+                                )}
                                 <Stack spacing={3}>
-                                    {personalNotifs.length > 0 ? (
-                                        <>
-                                            {personalNotifs.map((notif, i) => (
-                                                <NotificationCard key={`${notif.id}-${i}`} notif={notif} />
-                                            ))}
-                                            {loadingMore && tabIndex === 1 && (
-                                                <Flex justify="center" py={4}>
-                                                    <Spinner size="sm" color="green.500" />
-                                                </Flex>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <EmptyState />
-                                    )}
+                                    {(() => {
+                                        return personalNotifs.length > 0 ? (
+                                            <>
+                                                {personalNotifs.map((notif, i) => (
+                                                    <NotificationCard key={`${notif.id}-${i}`} notif={notif} />
+                                                ))}
+                                                {loadingMore && tabIndex === 1 && (
+                                                    <Flex justify="center" py={4}>
+                                                        <Spinner size="sm" color="green.500" />
+                                                    </Flex>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <EmptyState />
+                                        );
+                                    })()}
                                 </Stack>
                             </TabPanel>
                         </TabPanels>
@@ -590,6 +702,14 @@ const EmptyState = () => {
                 {t("emptyDescription")}
             </Text>
         </Flex>
+    );
+};
+
+const NotificationPage = () => {
+    return (
+        <Suspense fallback={<Flex justify="center" align="center" py={20}><Spinner size="lg" color="green.500" /></Flex>}>
+            <NotificationPageContent />
+        </Suspense>
     );
 };
 

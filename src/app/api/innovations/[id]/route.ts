@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification, notifyAllAdmins } from '@/services/notificationServices'
+import { validateWordLimit } from '@/lib/utils/wordCount'
 
 type Params = Promise<{ id: string }>
 
@@ -51,7 +52,53 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
           },
         },
       },
-      { $project: { allClaims: 0, _idStr: 0 } }
+      { $project: { allClaims: 0, _idStr: 0 } },
+      {
+        $lookup: {
+          from: 'innovators',
+          let: { innovator_id: '$innovatorId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ['$_id', '$$innovator_id'] },
+                    { $eq: ['$userId', '$$innovator_id'] }
+                  ]
+                }
+              }
+            }
+          ],
+          as: 'innovatorDetails'
+        }
+      },
+      {
+        $addFields: {
+          innovatorInfo: { $arrayElemAt: ['$innovatorDetails', 0] }
+        }
+      },
+      {
+        $addFields: {
+          namaInnovator: {
+            $ifNull: [
+              '$namaInnovator',
+              {
+                $ifNull: [
+                  '$innovatorInfo.namaInovator',
+                  { $ifNull: ['$innovatorInfo.namaInnovator', '$innovatorInfo.name'] }
+                ]
+              }
+            ]
+          },
+          innovatorImgURL: {
+            $ifNull: [
+              '$innovatorImgURL',
+              { $ifNull: ['$innovatorInfo.logo', '$innovatorInfo.imageUrl'] }
+            ]
+          }
+        }
+      },
+      { $project: { innovatorDetails: 0, innovatorInfo: 0 } }
     ]
 
     const innovations = await db.collection('innovations').aggregate(pipeline).toArray()
@@ -86,6 +133,18 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     const { id } = await params
     const body = await request.json()
 
+    try {
+      if (body.deskripsi !== undefined) validateWordLimit(body.deskripsi, 80, 'deskripsi');
+      if (body.inputDesaMenerapkan !== undefined) validateWordLimit(body.inputDesaMenerapkan, 20, 'desa yang menerapkan');
+      if (Array.isArray(body.modelBisnis)) {
+        body.modelBisnis.forEach((model: string) => {
+          validateWordLimit(model, 5, `model bisnis "${model}"`);
+        });
+      }
+    } catch (validationError: any) {
+      return NextResponse.json({ message: validationError.message }, { status: 400 });
+    }
+
     const isAdmin = auth.role === 'admin'
 
     // Field yang TIDAK boleh diubah oleh user biasa
@@ -113,11 +172,15 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
     }
 
-    // Jika inovasi diedit ulang oleh pemilik dan status sebelumnya Ditolak, reset ke Menunggu
-    const isResubmission = !isAdmin && existing.status === 'Ditolak'
+    // Jika inovasi diedit ulang oleh pemilik dan status sebelumnya bukan Menunggu, reset ke Menunggu
+    const isResubmission = !isAdmin && existing.status !== 'Menunggu'
     if (isResubmission) {
       body.status = 'Menunggu'
       body.catatanAdmin = null
+    }
+
+    if (!isAdmin) {
+      body.createdAt = new Date()
     }
 
     const result = await db.collection('innovations').updateOne(
@@ -145,6 +208,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
           await createNotification({
             userId: innovatorId,
             type: 'personal',
+            category: 'innovation_submission',
             title: notifTitle,
             description: notifDescription,
             actionType: 'innovation_detail',
@@ -157,8 +221,9 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       if (isResubmission) {
         await notifyAllAdmins({
           type: 'personal',
-          title: `Pengajuan Ulang: ${existing.namaInovasi}`,
-          description: `Innovator ${existing.namaInnovator || 'unknown'} telah mengajukan ulang inovasi yang sebelumnya ditolak. Silakan verifikasi kembali.`,
+          category: 'innovation_submission',
+          title: `Pengajuan Ulang Inovasi: ${existing.namaInovasi}`,
+          description: `Innovator ${existing.namaInovator || 'unknown'} telah memperbarui inovasi "${existing.namaInovasi}". Silakan verifikasi kembali.`,
           actionType: 'innovation_detail',
           relatedId: existing._id.toString(),
         })
@@ -189,7 +254,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
     const { id } = await params
     const db = await connectToDatabase()
     
-    // Gunakan try-catch
+    // Define query to find innovation by ObjectId or string ID
     let query: any;
     try {
       query = { $or: [{ _id: new ObjectId(id) }, { _id: id }] }
@@ -197,10 +262,45 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
       query = { _id: id }
     }
 
-    const result = await db.collection('innovations').deleteOne(query)
+    // 1. Find the innovation to ensure it exists and get its ID as string
+    const existing = await db.collection('innovations').findOne(query)
+    if (!existing) {
+      return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
+    }
+
+    const inovasiIdStr = existing._id.toString()
+
+    // 2. Handle associated claims cleanup
+    try {
+        // Find verified claims to decrement village counts
+        const verifiedClaims = await db.collection('claimInnovations').find({
+            inovasiId: inovasiIdStr,
+            status: 'Terverifikasi'
+        }).toArray()
+
+        if (verifiedClaims.length > 0) {
+            // Group by desaId to handle multiple claims from same village (though unlikely for same innovation)
+            for (const claim of verifiedClaims) {
+                await db.collection('villages').updateOne(
+                    { $or: [{ userId: claim.desaId }, { desaId: claim.desaId }] },
+                    { $inc: { jumlahInovasiDiterapkan: -1 } }
+                ).catch(err => console.error(`Failed to decrement count for village ${claim.desaId}:`, err))
+            }
+        }
+
+        // Delete all associated claims (Verified, Menunggu, or Ditolak)
+        await db.collection('claimInnovations').deleteMany({ inovasiId: inovasiIdStr })
+        
+    } catch (cleanupErr) {
+        console.error('Error during associated claims cleanup:', cleanupErr)
+        // We continue deleting the innovation even if cleanup fails
+    }
+
+    // 3. Delete the innovation itself
+    const result = await db.collection('innovations').deleteOne({ _id: existing._id })
 
     if (result.deletedCount === 0) {
-      return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
+      return NextResponse.json({ message: 'Gagal menghapus inovasi' }, { status: 500 })
     }
 
     return NextResponse.json({ message: 'Inovasi berhasil dihapus' }, { status: 200 })

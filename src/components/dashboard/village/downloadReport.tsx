@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { IconButton } from "@chakra-ui/react";
 import { DownloadIcon } from "@chakra-ui/icons";
-import { getFirestore, collection, getDocs, query, where, doc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -43,7 +42,6 @@ const DownloadReport: React.FC<DownloadReportProps> = ({
   // Fungsi untuk mengambil data dari Firestore
   const fetchData = async () => {
     try {
-      const db = getFirestore();
       const auth = getAuth();
       const user = auth.currentUser;
 
@@ -52,123 +50,65 @@ const DownloadReport: React.FC<DownloadReportProps> = ({
         return;
       }
 
-      const desaQuery = query(
-        collection(db, "villages"),
-        where("userId", "==", user.uid)
-      );
-      const desaSnap = await getDocs(desaQuery);
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/villages/dashboard?desaId=${user.uid}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-      let namaDesa = "";
-      let desaMeta: any = {};
+      if (!response.ok) throw new Error("Failed to fetch dashboard data");
+      const data = await response.json();
 
-      if (!desaSnap.empty) {
-        const desaData = desaSnap.docs[0].data();
-        namaDesa = normalizeNamaDesaFinal(desaData.namaDesa || "");
-
-        desaMeta = {
-          namaDesa: normalizeNamaDesaFinal(desaData.namaDesa || ""),
-          kecamatan: toTitleCase(desaData.lokasi?.kecamatan?.label || ""),
-          kabupatenKota: toTitleCase(desaData.lokasi?.kabupatenKota?.label || ""),
-          provinsi: toTitleCase(desaData.lokasi?.provinsi?.label || ""),
-          potensiDesa: desaData.potensiDesa || [],
-          kondisijalan: desaData.kondisijalan || "",
-          jaringan: desaData.jaringan || "",
-          listrik: desaData.listrik || "",
-          geografisDesa: desaData.geografisDesa || "",
-          kesiapanDigital: desaData.kesiapanDigital || "Data Masih Kosong",
-          pemantapanPelayanan: desaData.pemantapanPelayanan || "Data Masih Kosong",
-          sosialBudaya: desaData.sosialBudaya || "Data Masih Kosong",
-          sumberDaya: desaData.sumberDaya || "",
-          perkembanganTeknologi: desaData.teknologi || "",
-          kemampuanTeknologi: desaData.kemampuan || ""
-        };
-      } else {
-        console.warn("Desa tidak ditemukan untuk user ini");
-        return;
-      }
-
-      // Mengambil data inovasi yang hanya terkait dengan desa yang sedang login
-      const fetchInovasiData = async () => {
-        const villageSnapshot = await getDocs(collection(db, "villages"));
-        const claimSnapshot = await getDocs(collection(db, "claimInnovations"));
-        const innovationSnapshot = await getDocs(collection(db, "innovations"));
-        const innovatorSnapshot = await getDocs(collection(db, "innovators"));
-
-        // Membuat peta desaId -> namaDesa
-        const villageMap: { [key: string]: string } = villageSnapshot.docs.reduce((acc, curr) => {
-          const data = curr.data();
-          acc[data.userId] = data.namaDesa;
-          return acc;
-        }, {} as { [key: string]: string });
-
-        // Membuat peta inovasiId -> namaInovasi
-        const innovationMap: { [key: string]: string } = innovationSnapshot.docs.reduce((acc, curr) => {
-          const data = curr.data();
-          acc[curr.id] = data.namaInovasi || "Nama Inovasi Tidak Ditemukan";
-          return acc;
-        }, {} as { [key: string]: string });
-
-        // Membuat peta inovatorId -> namaInovator
-        const innovatorMap: { [key: string]: string } = innovatorSnapshot.docs.reduce((acc, curr) => {
-          const data = curr.data();
-          acc[curr.id] = data.namaInovator || "Nama Inovator Tidak Ditemukan";
-          return acc;
-        }, {} as { [key: string]: string });
-
-        // Ambil data klaim yang terverifikasi
-        const claims = claimSnapshot.docs
-          .map(doc => doc.data())
-          .filter(c => c.status === "Terverifikasi");
-
-        const inovatorData: InovatorReportData[] = [];
-
-        // Loop melalui setiap klaim dan hanya ambil yang sesuai dengan desaId yang sedang login
-        claims.forEach((claim, index) => {
-          const desaId = claim.desaId; // Ambil desaId dari klaim
-
-          if (desaId === desaSnap.docs[0].id) { // Hanya ambil klaim yang sesuai dengan desaId dari desa yang login
-            const namaDesa = villageMap[desaId] || "Nama Desa Tidak Ditemukan";
-
-            // Ambil inovasiId terkait dengan klaim
-            const inovasiId = claim.inovasiId;
-            const inovasiData = innovationSnapshot.docs.find(doc => doc.id === inovasiId)?.data();
-
-            if (inovasiData) {
-              const namaInovasi = inovasiData.namaInovasi || "Nama Inovasi Tidak Ditemukan";
-              const kategori = inovasiData.kategori || "-";
-              const tahun = inovasiData.tahunDibuat || "Tidak Ada Tahun";
-
-              // Ambil inovatorId terkait dengan inovasi
-              const inovatorId = inovasiData.innovatorId;
-              const namaInovator = innovatorMap[inovatorId] || "Nama Inovator Tidak Ditemukan";
-
-              // Ambil daftar desa lain yang juga menerapkan inovasi ini
-              const desaDampingan = claims
-                .filter(c => c.inovasiId === inovasiId && c.desaId !== desaId) // Mencari klaim inovasi yang tidak berasal dari desa ini
-                .map(c => villageMap[c.desaId]) // Ambil nama desa dari desaId
-                .filter(Boolean) // Hanya ambil nama desa yang valid
-                .join(", "); // Gabungkan desa-desa dengan koma
-
-              // Menambahkan data inovator ke dalam array inovatorData
-              inovatorData.push({
-                no: index + 1,
-                namaInovator,
-                namaInovasi,
-                kategori,
-                tahun,
-                namaDesa: desaDampingan || "-",
-                jumlahInovasi: 1,
-                jumlahDesaDampingan: desaDampingan ? desaDampingan.split(",").length : 0,
-              });
-            }
-          }
-        });
-
-        // Mengurutkan data berdasarkan jumlahInovasi secara descending
-        setInovatorData(inovatorData.sort((a, b) => b.jumlahInovasi - a.jumlahInovasi));
+      let desaMeta: any = data.desa ? {
+        namaDesa: data.desa.namaDesa || "Desa",
+        kecamatan: data.desa.kecamatan || "-",
+        kabupatenKota: data.desa.kabupaten || "-",
+        provinsi: data.desa.provinsi || "-",
+        potensiDesa: data.desa.potensiDesa || [],
+        kondisijalan: data.desa.kondisijalan || "-",
+        jaringan: data.desa.jaringan || "-",
+        listrik: data.desa.listrik || "-",
+        geografisDesa: data.desa.geografisDesa || "-",
+        kesiapanDigital: data.desa.kesiapanDigital || "Data Masih Kosong",
+        pemantapanPelayanan: data.desa.pemantapanPelayanan || "Data Masih Kosong",
+        sosialBudaya: data.desa.sosialBudaya || "Data Masih Kosong",
+        sumberDaya: data.desa.sumberDaya || "-",
+        perkembanganTeknologi: data.desa.teknologi || "-",
+        kemampuanTeknologi: data.desa.kemampuan || "-"
+      } : {
+        namaDesa: "Desa",
+        kecamatan: "-",
+        kabupatenKota: "-",
+        provinsi: "-",
+        potensiDesa: [],
+        kondisijalan: "-",
+        jaringan: "-",
+        listrik: "-",
+        geografisDesa: "-",
+        kesiapanDigital: "Data Masih Kosong",
+        pemantapanPelayanan: "Data Masih Kosong",
+        sosialBudaya: "Data Masih Kosong",
+        sumberDaya: "-",
+        perkembanganTeknologi: "-",
+        kemampuanTeknologi: "-"
       };
 
-      fetchInovasiData();
+      const innovationsResponse = await fetch(`/api/villages/${data.desa?._id || user.uid}/innovations`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const innovationsData = innovationsResponse.ok ? await innovationsResponse.json() : { innovations: [] };
+
+      const inovatorData: InovatorReportData[] = (innovationsData.innovations || []).map((item: any, index: number) => ({
+        no: index + 1,
+        namaInovator: item.namaInnovator || item.namaInovator || "-",
+        namaInovasi: item.namaInovasi || "-",
+        kategori: item.kategori || "-",
+        tahun: item.tahunDibuat || (item.createdAt ? new Date(item.createdAt).getFullYear().toString() : "-"),
+        namaDesa: "-",
+        jumlahInovasi: 0,
+        jumlahDesaDampingan: 0,
+      }));
+
+      setInovatorData(inovatorData);
       setDesaMetadata(desaMeta);
 
     } catch (error) {

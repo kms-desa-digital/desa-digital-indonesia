@@ -9,6 +9,7 @@ import { auth, firestore } from "src/firebase/clientApp";
 
 type UserContextType = {
   uid: string | null;
+  firebaseUid: string | null;
   role: string | null;
   isInnovatorVerified: boolean;
   isVillageVerified: boolean;
@@ -19,6 +20,7 @@ type UserContextType = {
 
 const UserContext = createContext<UserContextType>({
   uid: null,
+  firebaseUid: null,
   role: null,
   isInnovatorVerified: false,
   isVillageVerified: false,
@@ -32,6 +34,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [authUser, loadingAuth, authError] = useAuthState(auth);
   const [uid, setUid] = useState<string | null>(null);
+  const [firebaseUid, setFirebaseUid] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [isInnovatorVerified, setInnovatorVerified] = useState(false);
   const [isVillageVerified, setVillageVerified] = useState(false);
@@ -63,6 +66,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       try {
         if (!authUser && !loadingAuth) {
           setUid(null);
+          setFirebaseUid(null);
           setRole(null);
           setInnovatorVerified(false);
           setVillageVerified(false);
@@ -82,6 +86,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
             const userData = data.user;
             
             setUid(userData.uid);
+            setFirebaseUid(userData.firebaseUid);
             setRole(userData.role);
             setInnovatorVerified(userData.isInnovatorVerified);
             setVillageVerified(userData.isVillageVerified);
@@ -90,6 +95,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
             // Fallback to minimal data from auth object if API fails
             console.warn("Failed to fetch user data from API, falling back to auth object");
             setUid(authUser.uid);
+            setFirebaseUid(authUser.uid);
             
             // Still try to check Firestore as last resort (legacy compatibility)
             const userSnap = await getDoc(doc(firestore, "users", authUser.uid));
@@ -118,6 +124,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
     <UserContext.Provider
       value={{
         uid,
+        firebaseUid,
         role,
         isInnovatorVerified,
         isVillageVerified,

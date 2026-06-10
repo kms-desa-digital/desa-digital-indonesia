@@ -144,6 +144,7 @@ export default function AdminPage() {
                     onSuggestionClick={handleSuggestionClick}
                     showSearchButton={true}
                     onSearchClick={handleSearchClick}
+                    onClear={() => setSearchValue("")}
                 />
                 <Menu isAdmin={true} />
                 <Flex direction="row" justifyContent="space-between" padding="0 14px">

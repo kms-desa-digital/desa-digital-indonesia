@@ -17,32 +17,22 @@ import {
   Image,
   Button,
 } from "@chakra-ui/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import {
   titleStyle,
   tableHeaderStyle,
   tableCellStyle,
-  tableContainerStyle,
-  paginationContainerStyle,
-  paginationButtonStyle,
-  paginationActiveButtonStyle,
-  paginationEllipsisStyle,
+  tableContainerStyle
 } from "./_detailInnovatorsStyle";
 
 import downloadIcon from "@public/icons/icon-download.svg";
 
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+import { getInnovators } from "Services/innovatorServices";
 
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import Pagination from "@/components/common/Pagination";
 
 interface InnovatorData {
   id: string;
@@ -70,31 +60,18 @@ const DetailInnovators = ({ kategoriInovator, onSelectInovator }: DetailInnovato
 
   const fetchData = async () => {
     setLoading(true);
-    const db = getFirestore();
-    let q;
-
-    if (kategoriInovator) {
-      q = query(
-        collection(db, "innovators"),
-        where("kategori", "==", kategoriInovator)
-      );
-    } else {
-      q = query(collection(db, "innovators"));
-    }
 
     try {
-      const snapshot = await getDocs(q);
-      const results: InnovatorData[] = [];
+      const filters = kategoriInovator ? { kategori: kategoriInovator } : {};
+      const responseData = await getInnovators(filters);
+      const innovators = (responseData as any).data || [];
 
-      snapshot.forEach((doc) => {
-        const d = doc.data();
-        results.push({
-          id: doc.id,
-          namaInovator: d.namaInovator || "-",
-          jumlahInovasi: d.jumlahInovasi || 0,
-          jumlahDesaDampingan: d.jumlahDesaDampingan || 0,
-        });
-      });
+      const results: InnovatorData[] = innovators.map((d: any, index: number) => ({
+        id: d._id || d.id || `innovator-${index}`,
+        namaInovator: d.namaInovator || "-",
+        jumlahInovasi: d.jumlahInovasi || 0,
+        jumlahDesaDampingan: d.jumlahDesaDampingan || 0,
+      }));
 
       results.sort((a, b) => {
         if (b.jumlahDesaDampingan !== a.jumlahDesaDampingan) {
@@ -119,8 +96,6 @@ const DetailInnovators = ({ kategoriInovator, onSelectInovator }: DetailInnovato
   useEffect(() => {
     fetchData();
   }, [kategoriInovator]);
-
-  const goToPage = (page: number) => setCurrentPage(page);
 
   const handleDownloadPDF = () => {
     if (!data.length) return;
@@ -209,35 +184,6 @@ const DetailInnovators = ({ kategoriInovator, onSelectInovator }: DetailInnovato
     saveAs(dataBlob, filename);
   };
 
-  const getPageNumbers = () => {
-    const pageNumbers: (number | string)[] = [];
-    const maxPagesToShow = 5;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
-    } else {
-      const left = Math.max(currentPage - 1, 1);
-      const right = Math.min(currentPage + 1, totalPages);
-      const showLeftDots = left > 2;
-      const showRightDots = right < totalPages - 1;
-
-      if (!showLeftDots && showRightDots) {
-        for (let i = 1; i <= 3; i++) pageNumbers.push(i);
-        pageNumbers.push("...");
-        pageNumbers.push(totalPages);
-      } else if (showLeftDots && !showRightDots) {
-        pageNumbers.push(1, "...");
-        for (let i = totalPages - 2; i <= totalPages; i++) pageNumbers.push(i);
-      } else {
-        pageNumbers.push(1, "...");
-        for (let i = left; i <= right; i++) pageNumbers.push(i);
-        pageNumbers.push("...", totalPages);
-      }
-    }
-
-    return pageNumbers;
-  };
-
   return (
     <Box p={4} maxW="100%" mx="auto">
       <Flex justify="space-between" align="center" mb={2}>
@@ -294,44 +240,11 @@ const DetailInnovators = ({ kategoriInovator, onSelectInovator }: DetailInnovato
             </Table>
           </TableContainer>
 
-          {totalPages > 1 && (
-            <Flex sx={paginationContainerStyle}>
-              <Button
-                aria-label="Previous page"
-                onClick={() => goToPage(Math.max(1, currentPage - 1))}
-                isDisabled={currentPage === 1}
-                {...paginationButtonStyle}
-              >
-                <ChevronLeftIcon />
-              </Button>
-
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <Box key={`ellipsis-${index}`} sx={paginationEllipsisStyle}>
-                    ...
-                  </Box>
-                ) : (
-                  <Button
-                    key={`page-${page}`}
-                    onClick={() => goToPage(Number(page))}
-                    {...paginationButtonStyle}
-                    {...(page === currentPage ? paginationActiveButtonStyle : {})}
-                  >
-                    {page}
-                  </Button>
-                )
-              )}
-
-              <Button
-                aria-label="Next page"
-                onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
-                isDisabled={currentPage === totalPages}
-                {...paginationButtonStyle}
-              >
-                <ChevronRightIcon />
-              </Button>
-            </Flex>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
     </Box>

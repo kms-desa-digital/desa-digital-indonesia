@@ -12,7 +12,7 @@ export default function NotFound() {
       position="relative"
       bg="#f3f9f6"
       display="flex"
-      alignItems="flex-start"
+      alignItems="center"
       justifyContent="center"
       overflow="hidden"
     >
@@ -20,8 +20,11 @@ export default function NotFound() {
         w="100%"
         maxW="360px"
         position="relative"
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        justifyContent="center"
         h="100%"
-        pt={10}
       >
         <Box position="relative" w="100%" h="100%">
           <Image
@@ -30,7 +33,7 @@ export default function NotFound() {
             fill
             style={{
               objectFit: 'contain',
-              objectPosition: 'top center'
+              objectPosition: 'center'
             }}
             priority
           />
@@ -40,8 +43,8 @@ export default function NotFound() {
           as={Link}
           href="/"
           position="absolute"
-          top="23%"
-          right="12%"
+          top="56.5%"
+          right="26%"
           colorScheme="green"
           bg="#337456"
           _hover={{ bg: '#285e45' }}

@@ -1,23 +1,20 @@
 import { useEffect, useState } from 'react';
-import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
+import { getVillages } from 'Services/villageServices';
 import {
   Box, Text, Table, Thead, Tbody, Tr, Th, Td, TableContainer, Flex, Button, Image, IconButton, Menu, MenuButton, MenuList, MenuItem
 } from '@chakra-ui/react';
-import { ChevronLeftIcon, ChevronRightIcon, ChevronDownIcon } from '@chakra-ui/icons';
+import { ChevronDownIcon } from '@chakra-ui/icons';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import Pagination from '@/components/common/Pagination';
 
 import {
   titleStyle,
   tableHeaderStyle,
   tableCellStyle,
-  tableContainerStyle,
-  paginationContainerStyle,
-  paginationButtonStyle,
-  paginationActiveButtonStyle,
-  paginationEllipsisStyle
+  tableContainerStyle
 } from './_detailVillagesStyle';
 
 import downloadIcon from '@public/icons/icon-download.svg';
@@ -47,33 +44,82 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
       if (!selectedCategory) return;
 
       setLoading(true);
-      const db = getFirestore();
-      const desaRef = collection(db, 'villages');
-      const q = query(desaRef, where('kategori', '==', selectedCategory));
-      const snapshot = await getDocs(q);
+      try {
+        const responseData = await getVillages();
+        const villages = (responseData as any).villages || [];
 
-      const capitalizeWords = (str: string) =>
-        str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+        const capitalizeWords = (str: string) =>
+          str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 
-      const list: Implementation[] = snapshot.docs
-        .map((doc) => {
-          const d = doc.data();
-          const lokasi = d.lokasi ?? {};
+        const resolveKesiapanDigital = (item: any) => {
+          let kategori = item.kesiapanDigital || item.kategori || item.kategoriDesa;
+          if (kategori && kategori !== 'ND' && kategori !== '-' && kategori.trim() !== '') {
+            return kategori;
+          }
+          let score = 0;
+          const jar = String(item.jaringan || '').toLowerCase();
+          if (jar.includes('seluruh') || jar.includes('baik')) score += 3;
+          else if (jar.includes('sebagian') || jar.includes('cukup')) score += 2;
+          else if (jar.includes('tidak') || jar.includes('belum')) score += 1;
 
-          return {
-            desa: capitalizeWords(lokasi.desaKelurahan?.label ?? "-"),
-            provinsi: capitalizeWords(lokasi.provinsi?.label ?? "-"),
-            kabupaten: capitalizeWords(lokasi.kabupatenKota?.label ?? "-"),
-            kecamatan: capitalizeWords(lokasi.kecamatan?.label ?? "-"),
-            potensi: d.potensi ?? "-",
-            idm: String(d.idm) ?? "-",
-          };
-        })
-        .filter(d => d.desa && d.provinsi && d.idm && d.idm !== 'ND' && d.idm !== '-' && d.idm !== '');
+          const lis = String(item.listrik || '').toLowerCase();
+          if (lis.includes('seluruh') || lis.includes('tersedia')) score += 3;
+          else if (lis.includes('sebagian')) score += 2;
+          else if (lis.includes('belum') || lis.includes('tidak')) score += 1;
 
-      setData(list);
-      setCurrentPage(1);
-      setLoading(false);
+          const tek = String(item.teknologi || '').toLowerCase();
+          if (tek.includes('seluruh') || tek.includes('baik') || tek.includes('berkembang')) score += 3;
+          else if (tek.includes('sebagian')) score += 2;
+          else if (tek.includes('belum') || tek.includes('tidak')) score += 1;
+
+          const kem = String(item.kemampuan || '').toLowerCase();
+          if (kem.includes('sangat') || kem.includes('baik')) score += 3;
+          else if (kem.includes('cukup')) score += 2;
+          else if (kem.includes('belum') || kem.includes('tidak')) score += 1;
+
+          if (score >= 10) return "Sangat Siap";
+          if (score >= 8) return "Siap";
+          if (score >= 6) return "Cukup Siap";
+          if (score >= 4) return "Kurang Siap";
+          return "Belum Siap";
+        };
+
+        const list: Implementation[] = villages
+          .filter((d: any) => {
+            let kategori = resolveKesiapanDigital(d);
+            if (!kategori || kategori === 'ND' || kategori === '-') {
+              const idmVal = parseFloat(String(d.idm || '0').replace(',', '.'));
+              if (!isNaN(idmVal) && idmVal > 0) {
+                if (idmVal > 0.815) kategori = "Mandiri";
+                else if (idmVal > 0.707) kategori = "Maju";
+                else if (idmVal > 0.599) kategori = "Berkembang";
+                else if (idmVal > 0.491) kategori = "Tertinggal";
+                else kategori = "Sangat Tertinggal";
+              }
+            }
+            return kategori === selectedCategory;
+          })
+          .map((d: any) => {
+            const lokasi = d.lokasi ?? {};
+
+            return {
+              desa: capitalizeWords(lokasi.desaKelurahan?.label ?? "-"),
+              provinsi: capitalizeWords(lokasi.provinsi?.label ?? "-"),
+              kabupaten: capitalizeWords(lokasi.kabupatenKota?.label ?? "-"),
+              kecamatan: capitalizeWords(lokasi.kecamatan?.label ?? "-"),
+              potensi: d.potensi ?? "-",
+              idm: String(d.idm) ?? "-",
+            };
+          })
+          .filter((d: Implementation) => d.desa && d.provinsi && d.idm && d.idm !== 'ND' && d.idm !== '-' && d.idm !== '');
+
+        setData(list);
+        setCurrentPage(1);
+      } catch (error) {
+        console.error("Error fetching village data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
@@ -84,7 +130,6 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
     parseFloat(b.idm.replace(',', '.')) - parseFloat(a.idm.replace(',', '.'))
   );
   const currentData = sortedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const goToPage = (page: number) => setCurrentPage(page);
 
   // PDF Download
   const downloadPDF = () => {
@@ -117,8 +162,6 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
     let y = 42;
     doc.text(`Daftar Desa Berdasarkan Kategori: ${selectedCategory}`, 14, y);
     y += 6;
-
-    const sortedData = [...data];
 
     autoTable(doc, {
       startY: y,
@@ -168,27 +211,6 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
     const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
     const blob = new Blob([wbout], { type: 'application/octet-stream' });
     saveAs(blob, `Daftar_Desa_${selectedCategory}.xlsx`);
-  };
-
-  const getPageNumbers = () => {
-    const pageNumbers = [];
-    const maxPagesToShow = 5;
-    const left = Math.max(currentPage - 1, 1);
-    const right = Math.min(currentPage + 1, totalPages);
-    const showLeftDots = left > 2;
-    const showRightDots = right < totalPages - 1;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
-    } else if (!showLeftDots && showRightDots) {
-      pageNumbers.push(1, 2, 3, '...', totalPages);
-    } else if (showLeftDots && !showRightDots) {
-      pageNumbers.push(1, '...', totalPages - 2, totalPages - 1, totalPages);
-    } else {
-      pageNumbers.push(1, '...', left, currentPage, right, '...', totalPages);
-    }
-
-    return pageNumbers;
   };
 
   return (
@@ -254,30 +276,11 @@ const DetailVillages = ({ selectedCategory, onRowClick }: Props) => {
                 </Table>
               </TableContainer>
 
-              <Flex sx={paginationContainerStyle}>
-                <Button onClick={() => goToPage(currentPage - 1)} isDisabled={currentPage === 1} {...paginationButtonStyle}>
-                  <ChevronLeftIcon />
-                </Button>
-
-                {getPageNumbers().map((page, i) =>
-                  page === '...' ? (
-                    <Box key={`ellipsis-${i}`} {...paginationEllipsisStyle}>...</Box>
-                  ) : (
-                    <Button
-                      key={`page-${page}`}
-                      onClick={() => goToPage(Number(page))}
-                      {...paginationButtonStyle}
-                      {...(currentPage === page ? paginationActiveButtonStyle : {})}
-                    >
-                      {page}
-                    </Button>
-                  )
-                )}
-
-                <Button onClick={() => goToPage(currentPage + 1)} isDisabled={currentPage === totalPages} {...paginationButtonStyle}>
-                  <ChevronRightIcon />
-                </Button>
-              </Flex>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
             </>
           )}
         </>

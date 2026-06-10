@@ -45,9 +45,13 @@ interface Option {
     label: string;
 }
 
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+
 const AddVillage: React.FC = () => {
     const router = useRouter();
     const [user] = useAuthState(auth);
+    const { role, loading: userLoading } = useUser();
 
     const [selectedLogo, setSelectedLogo] = useState<string>("");
     const [selectedHeader, setSelectedHeader] = useState<string>("");
@@ -570,8 +574,15 @@ const AddVillage: React.FC = () => {
         return () => clearInterval(intervalId);
     }, [user, router]);
 
-    if (isInitialLoading) {
+    if (isInitialLoading || userLoading) {
         return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "village" || normalizedRole === "desa" || normalizedRole === "admin";
+
+    if (!isAuthorized) {
+        return <Forbidden />;
     }
 
     return (

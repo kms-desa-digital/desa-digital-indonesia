@@ -13,7 +13,7 @@ import {
   SimpleGrid,
   Checkbox,
 } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { Filter } from "lucide-react";
 import { DownloadIcon } from "@chakra-ui/icons";
 import React, { useEffect, useState } from "react";
@@ -31,14 +31,21 @@ const SebaranKategoriInnovations: React.FC = () => {
 
   const fetchKategoriData = async () => {
     try {
-      const db = getFirestore();
-      const innovationsRef = collection(db, "innovations");
-      const snapshot = await getDocs(innovationsRef);
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      const headers: Record<string, string> = {};
+      if (currentUser) {
+        const token = await currentUser.getIdToken();
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/innovations", { headers });
+      const dataRaw = await response.json();
+      const innovations = dataRaw.innovations || [];
 
       const kategoriCount: Record<string, number> = {};
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+      innovations.forEach((data: any) => {
         if (data.kategori) {
           const kategoriText = data.kategori.trim();
           kategoriCount[kategoriText] = (kategoriCount[kategoriText] || 0) + 1;

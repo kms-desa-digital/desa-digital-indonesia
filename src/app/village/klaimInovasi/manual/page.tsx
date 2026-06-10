@@ -13,7 +13,8 @@ import SecConfModal from "src/components/confirmModal/secConfModal";
 import DocUpload from "src/components/form/DocUpload";
 import ImageUpload from "src/components/form/ImageUpload";
 import VidUpload from "src/components/form/VideoUpload";
-import { auth } from "src/firebase/clientApp";
+import { auth, storage } from "src/firebase/clientApp";
+import { getDownloadURL, ref, uploadString, uploadBytesResumable } from "firebase/storage";
 import { getVillageById, claimInnovation, updateVillage, getClaimById, updateClaim, deleteClaim } from "Services/villageServices";
 
 import {
@@ -41,6 +42,10 @@ const KlaimInovasiManualContent: React.FC = () => {
     const [selectedDoc, setSelectedDoc] = useState<string[]>([]);
     const [selectedVid, setSelectedVid] = useState<string>("");
     const [selectedCheckboxes, setSelectedCheckboxes] = useState<string[]>([]);
+    const [uploadProgress, setUploadProgress] = useState<{ logo: number; innovation: number }>({ logo: 0, innovation: 0 });
+
+    const generateObjectId = () => [...Array(24)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+    const [claimId] = useState(() => searchParams.get("editId") || generateObjectId());
     const logoFileRef = useRef<HTMLInputElement>(null);
     const innovationFileRef = useRef<HTMLInputElement>(null);
     const buktiFotoRef = useRef<HTMLInputElement>(null);
@@ -51,7 +56,7 @@ const KlaimInovasiManualContent: React.FC = () => {
     const [error, setError] = useState("");
     const [isAdmin, setIsAdmin] = useState(false);
     const modalBody1 = "Apakah Anda yakin ingin mengajukan klaim?";
-    const modalBody2 = "Inovasi sudah ditambahkan. Admin sedang memverifikasi pengajuan klaim inovasi. Silahkan cek pada halaman pengajuan klaim";
+    const modalBody2 = "Inovasi sudah ditambahkan. Admin sedang memverifikasi pengajuan klaim inovasi.";
     const [openModal, setOpenModal] = useState(false);
     const [modalInput, setModalInput] = useState("");
     const { isOpen, onOpen, onClose } = useDisclosure();
@@ -82,7 +87,7 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     const getDynamicModalBody = () => {
         if (editId && claimData?.status === "Terverifikasi") {
-            return "Klaim ini sudah terverifikasi. Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu' dan memerlukan persetujuan ulang dari Admin. Apakah Anda yakin?";
+            return "Jika Anda mengeditnya, status akan kembali menjadi 'Menunggu'. Apakah Anda yakin?";
         }
         return modalBody1;
     };
@@ -143,7 +148,7 @@ const KlaimInovasiManualContent: React.FC = () => {
         try {
             await deleteClaim(itemToDelete);
             toast.success("Klaim berhasil dihapus");
-            router.replace("/village/pengajuan/saya");
+            router.replace(`/village/pengajuan/${user?.uid}`);
         } catch (err) {
             console.error("Error deleting manual claim:", err);
             toast.error("Gagal menghapus klaim");
@@ -153,95 +158,171 @@ const KlaimInovasiManualContent: React.FC = () => {
         }
     };
 
-    const onSelectLogo = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onSelectLogo = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        setIsUploading(prev => ({ ...prev, logo: true }));
+        const storageRef = ref(storage, `claimInnovations/${claimId}/logo/logo_${Date.now()}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        uploadTask.on("state_changed",
+            (snapshot: any) => {
+                const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(prev => ({ ...prev, logo: p }));
+            },
+            (err: any) => {
+                console.error(err);
+                setIsUploading(prev => ({ ...prev, logo: false }));
+            },
+            async () => {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                setLogoFiles([url]);
+                setIsUploading(prev => ({ ...prev, logo: false }));
+                setUploadProgress(prev => ({ ...prev, logo: 0 }));
+            }
+        );
+    };
+
+    const onSelectInnovationPhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        setIsUploading(prev => ({ ...prev, innovation: true }));
+        const storageRef = ref(storage, `claimInnovations/${claimId}/main/photo_${Date.now()}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        uploadTask.on("state_changed",
+            (snapshot: any) => {
+                const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setUploadProgress(prev => ({ ...prev, innovation: p }));
+            },
+            (err: any) => {
+                console.error(err);
+                setIsUploading(prev => ({ ...prev, innovation: false }));
+            },
+            async () => {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                setInnovationFiles([url]);
+                setIsUploading(prev => ({ ...prev, innovation: false }));
+                setUploadProgress(prev => ({ ...prev, innovation: 0 }));
+            }
+        );
+    };
+
+    const onSelectBuktiFoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
-        if (files?.[0]) {
-            setIsUploading(prev => ({ ...prev, logo: true }));
-            const reader = new FileReader();
-            reader.onload = (readerEvent) => {
-                if (readerEvent.target?.result) {
-                    setLogoFiles([readerEvent.target.result as string]);
-                    setIsUploading(prev => ({ ...prev, logo: false }));
-                }
-            };
-            reader.onerror = () => setIsUploading(prev => ({ ...prev, logo: false }));
-            reader.readAsDataURL(files[0]);
+        if (!files) return;
+        setIsUploading(prev => ({ ...prev, foto: true }));
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const storageRef = ref(storage, `claimInnovations/${claimId}/evidence/images/foto_${Date.now()}_${i}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+            uploadTask.on("state_changed", null, (err: any) => { console.error(err); setIsUploading(prev => ({ ...prev, foto: false })); }, async () => {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                setBuktiFoto(prev => [...prev, url].slice(0, 2));
+                setIsUploading(prev => ({ ...prev, foto: false }));
+            });
         }
     };
 
-    const onSelectInnovationPhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onSelectVid = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        setIsUploading(prev => ({ ...prev, video: true }));
+        const storageRef = ref(storage, `claimInnovations/${claimId}/evidence/videos/video_${Date.now()}_${file.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        uploadTask.on("state_changed", null, (err: any) => { console.error(err); setIsUploading(prev => ({ ...prev, video: false })); }, async () => {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            setSelectedVid(url);
+            setIsUploading(prev => ({ ...prev, video: false }));
+        });
+    };
+
+    const onSelectDoc = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
-        if (files?.[0]) {
-            setIsUploading(prev => ({ ...prev, innovation: true }));
-            const reader = new FileReader();
-            reader.onload = (readerEvent) => {
-                if (readerEvent.target?.result) {
-                    setInnovationFiles([readerEvent.target.result as string]);
-                    setIsUploading(prev => ({ ...prev, innovation: false }));
-                }
-            };
-            reader.onerror = () => setIsUploading(prev => ({ ...prev, innovation: false }));
-            reader.readAsDataURL(files[0]);
+        if (!files) return;
+        setIsUploading(prev => ({ ...prev, dokumen: true }));
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const storageRef = ref(storage, `claimInnovations/${claimId}/evidence/documents/doc_${Date.now()}_${i}`);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+            uploadTask.on("state_changed", null, (err: any) => { console.error(err); setIsUploading(prev => ({ ...prev, dokumen: false })); }, async () => {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                setSelectedDoc(prev => [...prev, url]);
+                setIsUploading(prev => ({ ...prev, dokumen: false }));
+            });
         }
     };
 
-    const onSelectBuktiFoto = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (files) {
-            setIsUploading(prev => ({ ...prev, foto: true }));
-            const imagesArray: string[] = [];
-            for (let i = 0; i < files.length; i++) {
-                const reader = new FileReader();
-                reader.onload = (readerEvent) => {
-                    if (readerEvent.target?.result) {
-                        imagesArray.push(readerEvent.target.result as string);
-                        if (imagesArray.length === files.length) {
-                            setBuktiFoto((prev) => [...prev, ...imagesArray].slice(0, 2));
-                            setIsUploading(prev => ({ ...prev, foto: false }));
-                        }
-                    }
-                };
-                reader.onerror = () => setIsUploading(prev => ({ ...prev, foto: false }));
-                reader.readAsDataURL(files[i]);
+    const uploadFilesToStorage = async (
+        claimId: string,
+        data: {
+            logoInovator: string | null,
+            fotoInovasi: string | null,
+            buktiFiles: {
+                foto: string[],
+                video: string[],
+                dokumen: string[]
             }
         }
-    };
-
-    const onSelectVid = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const reader = new FileReader();
-        if (event.target.files?.[0]) {
-            setIsUploading(prev => ({ ...prev, video: true }));
-            reader.readAsDataURL(event.target.files[0]);
-        }
-        reader.onload = (readerEvent) => {
-            if (readerEvent.target?.result) {
-                setSelectedVid(readerEvent.target?.result as string);
-                setIsUploading(prev => ({ ...prev, video: false }));
-            }
+    ) => {
+        const uploadResults: any = {
+            logoInovator: data.logoInovator,
+            fotoInovasi: data.fotoInovasi,
+            buktiFiles: { foto: [], video: [], dokumen: [] }
         };
-        reader.onerror = () => setIsUploading(prev => ({ ...prev, video: false }));
-    };
 
-    const onSelectDoc = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const doc = event.target.files;
-        if (doc) {
-            setIsUploading(prev => ({ ...prev, dokumen: true }));
-            const docArray: string[] = [];
-            for (let i = 0; i < doc.length; i++) {
-                const reader = new FileReader();
-                reader.onload = (readerEvent) => {
-                    if (readerEvent.target?.result) {
-                        docArray.push(readerEvent.target.result as string);
-                        if (docArray.length === doc.length) {
-                            setSelectedDoc((prev) => [...prev, ...docArray]);
-                            setIsUploading(prev => ({ ...prev, dokumen: false }));
-                        }
-                    }
-                };
-                reader.onerror = () => setIsUploading(prev => ({ ...prev, dokumen: false }));
-                reader.readAsDataURL(doc[i]);
+        // Upload Logo Inovator
+        if (data.logoInovator?.startsWith('data:')) {
+            const storageRef = ref(storage, `claimInnovations/${claimId}/logo/logo_${Date.now()}`);
+            await uploadString(storageRef, data.logoInovator, 'data_url');
+            uploadResults.logoInovator = await getDownloadURL(storageRef);
+        }
+
+        // Upload Foto Inovasi (Main)
+        if (data.fotoInovasi?.startsWith('data:')) {
+            const storageRef = ref(storage, `claimInnovations/${claimId}/main/photo_${Date.now()}`);
+            await uploadString(storageRef, data.fotoInovasi, 'data_url');
+            uploadResults.fotoInovasi = await getDownloadURL(storageRef);
+        }
+
+        // Upload Bukti Foto
+        for (let i = 0; i < data.buktiFiles.foto.length; i++) {
+            const file = data.buktiFiles.foto[i];
+            if (file.startsWith('data:')) {
+                const storageRef = ref(storage, `claimInnovations/${claimId}/evidence/images/foto_${Date.now()}_${i}`);
+                await uploadString(storageRef, file, 'data_url');
+                const url = await getDownloadURL(storageRef);
+                uploadResults.buktiFiles.foto.push(url);
+            } else {
+                uploadResults.buktiFiles.foto.push(file);
             }
         }
+
+        // Upload Bukti Video
+        for (let i = 0; i < data.buktiFiles.video.length; i++) {
+            const file = data.buktiFiles.video[i];
+            if (file.startsWith('data:')) {
+                const storageRef = ref(storage, `claimInnovations/${claimId}/evidence/videos/video_${Date.now()}_${i}`);
+                await uploadString(storageRef, file, 'data_url');
+                const url = await getDownloadURL(storageRef);
+                uploadResults.buktiFiles.video.push(url);
+            } else {
+                uploadResults.buktiFiles.video.push(file);
+            }
+        }
+
+        // Upload Bukti Dokumen
+        for (let i = 0; i < data.buktiFiles.dokumen.length; i++) {
+            const file = data.buktiFiles.dokumen[i];
+            if (file.startsWith('data:')) {
+                const storageRef = ref(storage, `claimInnovations/${claimId}/evidence/documents/doc_${Date.now()}_${i}`);
+                await uploadString(storageRef, file, 'data_url');
+                const url = await getDownloadURL(storageRef);
+                uploadResults.buktiFiles.dokumen.push(url);
+            } else {
+                uploadResults.buktiFiles.dokumen.push(file);
+            }
+        }
+
+        return uploadResults;
     };
 
     const onSubmitForm = async (event: React.FormEvent<HTMLElement>) => {
@@ -266,6 +347,7 @@ const KlaimInovasiManualContent: React.FC = () => {
             const village = villageRes.data || villageRes.village;
 
             const formData = {
+                id: claimId, // Use pre-generated ID
                 desaId: user.uid,
                 namaDesa: village?.namaDesa || "",
                 namaInovator: textInputsValue.inovatorName,
@@ -286,6 +368,8 @@ const KlaimInovasiManualContent: React.FC = () => {
             const response: any = editId
                 ? await updateClaim(editId as string, formData)
                 : await claimInnovation(formData);
+
+            console.log("Response from server:", response);
 
             setIsModal2Open(true);
             toast.success(editId ? "Klaim manual berhasil diperbarui" : "Klaim inovasi manual berhasil diajukan", {
@@ -312,9 +396,9 @@ const KlaimInovasiManualContent: React.FC = () => {
     const handleSuccessRedirect = (response?: any) => {
         const newClaimId = editId || response?.claimId || response?.data?.claimId || (typeof response === 'string' ? response : "");
         if (newClaimId) {
-            router.push(`/village/klaimInovasi/detail/${newClaimId}`);
+            router.replace(`/village/klaimInovasi/detail/${newClaimId}`);
         } else {
-            router.push(`/village/pengajuan/${user?.uid}`);
+            router.replace(`/village/pengajuan/${user?.uid}`);
         }
     };
 
@@ -339,6 +423,9 @@ const KlaimInovasiManualContent: React.FC = () => {
 
     useEffect(() => {
         document.body.style.overflow = isModal1Open || isModal2Open ? "hidden" : "";
+        return () => {
+            document.body.style.overflow = "";
+        };
     }, [isModal1Open, isModal2Open]);
 
     useEffect(() => {
@@ -503,12 +590,16 @@ const KlaimInovasiManualContent: React.FC = () => {
                     <Collapse in={selectedCheckboxes.includes("foto")} animateOpacity>
                         <Field>
                             <Flex flexDirection="column" gap="2px">
-                                <Text1>Foto Inovasi <span style={{ color: "red" }}>*</span></Text1>
+                                <Text1>Foto Bukti Klaim <span style={{ color: "red" }}>*</span></Text1>
                                 <Text2>Maks 2 foto. format: png, jpg</Text2>
                                 <ImageUpload
-                                    selectedFile={buktiFoto} setSelectedFile={setBuktiFoto}
-                                    selectFileRef={buktiFotoRef} onSelectImage={onSelectBuktiFoto} maxFiles={2}
-                                    disabled={!editable || loading}
+                                    selectedFile={buktiFoto}
+                                    setSelectedFile={setBuktiFoto}
+                                    selectFileRef={buktiFotoRef}
+                                    onSelectImage={onSelectBuktiFoto}
+                                    claimId={claimId}
+                                    maxFiles={2}
+                                    disabled={!editable || loading || disabled}
                                 />
                             </Flex>
                         </Field>
@@ -520,9 +611,11 @@ const KlaimInovasiManualContent: React.FC = () => {
                                 <Text2>Maks 100 mb. Format: mp4</Text2>
                             </Flex>
                             <VidUpload
-                                selectedVid={selectedVid} setSelectedVid={setSelectedVid}
-                                selectVidRef={selectedVidRef} onSelectVid={onSelectVid}
-                                disabled={!editable || loading}
+                                selectedVid={selectedVid}
+                                setSelectedVid={setSelectedVid}
+                                selectVidRef={selectedVidRef}
+                                claimId={claimId}
+                                disabled={!editable || loading || disabled}
                             />
                         </Field>
                     </Collapse>
@@ -533,9 +626,11 @@ const KlaimInovasiManualContent: React.FC = () => {
                                 <Text2>Maks 3 file, 50 mb. Format: pdf, doc, docx</Text2>
                             </Flex>
                             <DocUpload
-                                selectedDoc={selectedDoc} setSelectedDoc={setSelectedDoc}
-                                selectDocRef={selectedDocRef} onSelectDoc={onSelectDoc}
-                                disabled={!editable || loading}
+                                selectedDoc={selectedDoc}
+                                setSelectedDoc={setSelectedDoc}
+                                selectDocRef={selectedDocRef}
+                                claimId={claimId}
+                                disabled={!editable || loading || disabled}
                             />
                         </Field>
                     </Collapse>
@@ -587,15 +682,15 @@ const KlaimInovasiManualContent: React.FC = () => {
                                     </Box>
                                 )}
                                 <Flex gap={2} w="100%">
-                                        <Button
-                                            flex={1}
-                                            isLoading={loading}
-                                            onClick={handleAjukanKlaim}
-                                            type="button"
-                                            isDisabled={!isFormValid() || disabled || Object.values(isUploading).some(v => v)}
-                                            colorScheme="green"
-                                            fontSize="14px"
-                                        >
+                                    <Button
+                                        flex={1}
+                                        isLoading={loading}
+                                        onClick={handleAjukanKlaim}
+                                        type="button"
+                                        isDisabled={!isFormValid() || disabled || Object.values(isUploading).some(v => v)}
+                                        colorScheme="green"
+                                        fontSize="14px"
+                                    >
                                         {claimData?.status === "Ditolak" ? "Ajukan Ulang" : editId ? "Perbarui Klaim" : "Ajukan Klaim"}
                                     </Button>
                                     <ConfModal
@@ -613,7 +708,7 @@ const KlaimInovasiManualContent: React.FC = () => {
                                         isOpen={isDeleteModalOpen}
                                         onClose={() => setIsDeleteModalOpen(false)}
                                         onYes={confirmDeleteClaim}
-                                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini? Data yang sudah dihapus tidak dapat dikembalikan."
+                                        modalBody1="Apakah Anda yakin ingin menghapus pengajuan klaim ini?"
                                         modalTitle="Hapus Klaim"
                                         isLoading={loading}
                                     />

@@ -17,31 +17,22 @@ import {
   MenuList,
   MenuItem,
 } from "@chakra-ui/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import {
   titleStyle,
   tableHeaderStyle,
   tableCellStyle,
-  tableContainerStyle,
-  paginationContainerStyle,
-  paginationButtonStyle,
-  paginationActiveButtonStyle,
-  paginationEllipsisStyle,
+  tableContainerStyle
 } from "./_detailInnovationsInnovatorStyle";
 import downloadIcon from "@public/icons/icon-download.svg";
 
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+import { getInnovation } from "Services/innovationServices";
+import { getAuth } from "firebase/auth";
 
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Pagination from "@/components/common/Pagination";
 
 // Data type
 interface Implementation {
@@ -67,36 +58,40 @@ const DetailInnovations = ({ filterInnovator, onSelectVillage }: DetailInnovatio
 
   useEffect(() => {
     const fetchData = async () => {
-      const db = getFirestore();
-
       if (!filterInnovator) return;
       setLoading(true);
 
       try {
-        const innovationsQuery = query(
-          collection(db, "innovations"),
-          where("namaInnovator", "==", filterInnovator)
+        // Fetch innovations by innovator name
+        const innovationRes = await getInnovation();
+        const allInnovations = innovationRes.innovations || [];
+        const innovations = allInnovations.filter(
+          (i: any) => i.namaInnovator === filterInnovator || i.namaInovator === filterInnovator
         );
-        const innovationsSnap = await getDocs(innovationsQuery);
-        const innovations = innovationsSnap.docs.map(doc => ({
-          id: doc.id,
-          namaInovasi: doc.data().namaInovasi,
-        }));
+
+        // Fetch claims
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        const headers: Record<string, string> = {};
+        if (currentUser) {
+          const token = await currentUser.getIdToken();
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const claimRes = await fetch("/api/villages/claim", { headers });
+        const claimDataRaw = await claimRes.json();
+        const allClaims = claimDataRaw.claims || [];
 
         const allData: Implementation[] = [];
 
         for (const innovation of innovations) {
-          const claimQuery = query(
-            collection(db, "claimInnovations"),
-            where("namaInovasi", "==", innovation.namaInovasi)
+          const matchingClaims = allClaims.filter(
+            (c: any) => c.namaInovasi === innovation.namaInovasi
           );
-          const claimSnap = await getDocs(claimQuery);
 
-          claimSnap.docs.forEach(doc => {
-            const data = doc.data();
-            const desa = (data.namaDesa || "").replace(/^Desa\s*/i, "");
-            const createdAt = data.createdAt?.toDate?.();
-            const tahun = createdAt?.getFullYear?.() || 0;
+          matchingClaims.forEach((claim: any) => {
+            const desa = (claim.namaDesa || "").replace(/^Desa\s*/i, "");
+            const tahun = claim.createdAt ? new Date(claim.createdAt).getFullYear() : 0;
 
             allData.push({
               namaInovasi: innovation.namaInovasi,
@@ -131,10 +126,6 @@ const DetailInnovations = ({ filterInnovator, onSelectVillage }: DetailInnovatio
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  const goToPage = (page: number) => {
-    setCurrentPage(page);
-  };
 
   const downloadXLSX = () => {
     const worksheet = XLSX.utils.json_to_sheet(filteredData);
@@ -210,37 +201,6 @@ const DetailInnovations = ({ filterInnovator, onSelectVillage }: DetailInnovatio
     doc.save(`Detail_Desa_Digital_${filterInnovator || "data"}.pdf`);
   };
 
-  const getPageNumbers = () => {
-    const pageNumbers: (number | string)[] = [];
-    const maxPagesToShow = 5;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      const leftSiblingIndex = Math.max(currentPage - 1, 1);
-      const rightSiblingIndex = Math.min(currentPage + 1, totalPages);
-      const showLeftDots = leftSiblingIndex > 2;
-      const showRightDots = rightSiblingIndex < totalPages - 1;
-
-      if (!showLeftDots && showRightDots) {
-        for (let i = 1; i <= 3; i++) pageNumbers.push(i);
-        pageNumbers.push("...");
-        pageNumbers.push(totalPages);
-      } else if (showLeftDots && !showRightDots) {
-        pageNumbers.push(1, "...");
-        for (let i = totalPages - 2; i <= totalPages; i++) pageNumbers.push(i);
-      } else {
-        pageNumbers.push(1, "...");
-        for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) pageNumbers.push(i);
-        pageNumbers.push("...", totalPages);
-      }
-    }
-
-    return pageNumbers;
-  };
-
   return (
     <Box p={4} maxW="100%" mx="auto">
       <Flex justify="space-between" align="center" mb={2}>
@@ -306,42 +266,11 @@ const DetailInnovations = ({ filterInnovator, onSelectVillage }: DetailInnovatio
             </Table>
           </TableContainer>
 
-          {totalPages > 1 && (
-            <Flex sx={paginationContainerStyle}>
-              <Button
-                aria-label="Previous page"
-                onClick={() => goToPage(Math.max(1, currentPage - 1))}
-                isDisabled={currentPage === 1}
-                {...paginationButtonStyle}
-              >
-                <ChevronLeftIcon />
-              </Button>
-
-              {getPageNumbers().map((page, index) =>
-                page === "..." ? (
-                  <Box key={`ellipsis-${index}`} sx={paginationEllipsisStyle}>...</Box>
-                ) : (
-                  <Button
-                    key={`page-${page}`}
-                    onClick={() => goToPage(Number(page))}
-                    {...paginationButtonStyle}
-                    {...(page === currentPage ? paginationActiveButtonStyle : {})}
-                  >
-                    {page}
-                  </Button>
-                )
-              )}
-
-              <Button
-                aria-label="Next page"
-                onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
-                isDisabled={currentPage === totalPages}
-                {...paginationButtonStyle}
-              >
-                <ChevronRightIcon />
-              </Button>
-            </Flex>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
     </Box>

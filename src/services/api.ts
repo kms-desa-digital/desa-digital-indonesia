@@ -51,14 +51,7 @@ const onRequest = async (config: InternalAxiosRequestConfig) => {
   return config;
 };
 
-/**
- * Request interceptor
- */
 
-
-/**
- * Response interceptor
- */
 const onResponseSuccess = (response: AxiosResponse): AxiosResponse =>
   response.data;
 const onResponseError = (error: AxiosError): Promise<AxiosError> => {

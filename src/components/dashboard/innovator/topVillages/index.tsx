@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Box, Text, Flex, Link, Spinner } from "@chakra-ui/react";
-import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { useAuthToken } from "Hooks/useAuthToken";
 import NextLink from 'next/link';
 import { paths } from "Consts/path";
 import {
@@ -23,129 +22,75 @@ type TopItem = {
 const TopVillages = () => {
   const [topVillages, setTopVillages] = useState<TopItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [inovatorProfile, setInovatorProfile] = useState<{ namaInovator?: string } | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
     const fetchTopVillages = async () => {
+      if (!authLoaded) return;
       setLoading(true);
-      const db = getFirestore();
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
+      setError(null);
 
-      if (!currentUser) return console.warn("User not authenticated");
+      if (!token) {
+        setError("User not authenticated.");
+        setTopVillages([]);
+        setLoading(false);
+        return;
+      }
 
       try {
-        const innovatorQuery = query(
-          collection(db, "innovators"),
-          where("id", "==", currentUser.uid)
-        );
-        const innovatorSnapshot = await getDocs(innovatorQuery);
-
-        if (innovatorSnapshot.empty) {
-          setTopVillages([]);
-          setLoading(false);
-          return;
-        }
-
-        const profilDoc = innovatorSnapshot.docs[0];
-        const inovatorId = profilDoc.id;
-        setInovatorProfile(profilDoc.data());
-
-        const inovasiQuery = query(
-          collection(db, "innovations"),
-          where("innovatorId", "==", inovatorId)
-        );
-        const inovasiSnapshot = await getDocs(inovasiQuery);
-
-        if (inovasiSnapshot.empty) {
-          setTopVillages([]);
-          setLoading(false);
-          return;
-        }
-
-        const inovasiIds = inovasiSnapshot.docs.map((doc) => doc.id);
-
-        const chunkArray = <T,>(arr: T[], size: number): T[][] => {
-          const chunks: T[][] = [];
-          for (let i = 0; i < arr.length; i += size) {
-            chunks.push(arr.slice(i, i + size));
-          }
-          return chunks;
-        };
-
-        const chunks = chunkArray(inovasiIds, 10);
-        let desaDocs: { desaId: string; namaDesa: string }[] = [];
-
-        for (const chunk of chunks) {
-          const desaQuery = query(
-            collection(db, "claimInnovations"),
-            where("inovasiId", "in", chunk)
-          );
-          const snapshot = await getDocs(desaQuery);
-          desaDocs.push(
-            ...snapshot.docs.map(
-              (doc) => doc.data() as { desaId: string; namaDesa: string }
-            )
-          );
-        }
-
-        const countMap: Record<string, { namaDesa: string; count: number }> = {};
-        desaDocs.forEach((item) => {
-          if (item.desaId) {
-            if (!countMap[item.desaId]) {
-              countMap[item.desaId] = { namaDesa: item.namaDesa, count: 0 };
-            }
-            countMap[item.desaId].count++;
-          }
+        const response = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        const sorted = Object.entries(countMap)
-          .sort((a, b) => {
-            if (b[1].count === a[1].count) {
-              return a[1].namaDesa.localeCompare(b[1].namaDesa);
-            }
-            return b[1].count - a[1].count;
-          })
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch dashboard data");
+        }
+        const data = await response.json();
+
+        setInovatorProfile({ namaInovator: "Inovator" });
+
+        // Menggunakan data desaDampingan yang sudah diurutkan berdasarkan jumlah klaim (inovasi)
+        const villages = (data.desaDampingan || [])
+          .sort((a: any, b: any) => b.jumlahInovasi - a.jumlahInovasi)
           .slice(0, 3)
-          .map(([desaId, value]) => ({
-            id: desaId,
-            name: value.namaDesa,
-            count: value.count,
+          .map((item: any) => ({
+            id: item.villageId || item.namaDesa,
+            name: item.namaDesa,
+            count: item.jumlahInovasi || 1
           }));
 
-        if (sorted.length === 0) {
+        if (villages.length === 0) {
           setTopVillages([]);
           setLoading(false);
           return;
         }
 
-        const topThree = sorted.slice(0, 3);
-
-        // Cek apakah semua count sama
-        const allSameCount = topThree.every(item => item.count === topThree[0].count);
+        const topThree = villages;
+        const allSameCount = topThree.every((item: any) => item.count === topThree[0].count);
 
         let ranked;
 
         if (allSameCount) {
-          // Semua rank 1
-          ranked = topThree.map((item) => ({
+          ranked = topThree.map((item: any) => ({
             ...item,
             rank: 1,
             label: "1st",
           }));
         } else {
-          // Saat nilai count berbeda
           let currentRank = 1;
           let lastCount: number | null = null;
 
-          ranked = topThree.map((item) => {
+          ranked = topThree.map((item: any) => {
             if (lastCount !== null && item.count !== lastCount) {
               currentRank++;
             }
             lastCount = item.count;
 
             return {
-              ...item, //spread operator, menyalin data dalam ke dalam data baru
+              ...item,
               rank: currentRank,
               label: `${currentRank}${["st", "nd", "rd"][currentRank - 1] || "th"}`
             };
@@ -154,15 +99,17 @@ const TopVillages = () => {
 
         setTopVillages(ranked);
       } catch (error) {
-        console.error("Error fetching top villages:", error);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setError(message);
         setTopVillages([]);
+        console.error("Error fetching top villages:", error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTopVillages();
-  }, []);
+  }, [authLoaded, token]);
 
   return (
     <Box p={4}>
@@ -177,6 +124,14 @@ const TopVillages = () => {
         {loading ? (
           <Flex justify="center" align="center" h="100%">
             <Spinner size="lg" />
+          </Flex>
+        ) : error ? (
+          <Flex justify="center" align="center" h="100%">
+            <Text color="red.500">{error}</Text>
+          </Flex>
+        ) : topVillages.length === 0 ? (
+          <Flex justify="center" align="center" h="100%">
+            <Text color="gray.500" fontSize="md">Belum ada data desa unggulan</Text>
           </Flex>
         ) : (
           <Flex

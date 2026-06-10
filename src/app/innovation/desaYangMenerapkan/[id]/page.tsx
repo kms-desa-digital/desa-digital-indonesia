@@ -3,9 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Box, Flex, Text, Image, Spinner, Stack, Input, InputGroup, InputLeftElement } from "@chakra-ui/react";
-import { ChevronRightIcon, ChevronLeftIcon, SearchIcon } from "@chakra-ui/icons";
+import { Box, Flex, Text, Image, Spinner, Stack, Input, InputGroup, InputLeftElement, InputRightElement } from "@chakra-ui/react";
+import { ChevronRightIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import { getAppliedVillages, getInnovationById } from "Services/innovationServices";
+import TopBar from "Components/topBar";
+import Container from "Components/container";
 
 type VillageData = {
     id: string;
@@ -75,27 +77,8 @@ const InovasiDesaYangMenerapkan = () => {
     }, [searchTerm, villages]);
 
     return (
-        <Box width="100%" maxWidth="480px" mx="auto" minHeight="100vh" backgroundColor="#f9fafb" pb={8}>
-            {/* Header */}
-            <Flex
-                alignItems="center"
-                justifyContent="center"
-                position="relative"
-                padding="16px"
-                backgroundColor="#347357"
-                color="white"
-            >
-                <ChevronLeftIcon
-                    boxSize={6}
-                    position="absolute"
-                    left="16px"
-                    cursor="pointer"
-                    onClick={() => router.back()}
-                />
-                <Text fontSize="16px" fontWeight="bold">
-                    {t("appliedVillages")}
-                </Text>
-            </Flex>
+        <Container page>
+            <TopBar title={t("appliedVillages")} onBack={() => router.back()} />
 
             {/* Title & Search */}
             <Box px={5} pt={6} pb={2}>
@@ -122,7 +105,29 @@ const InovasiDesaYangMenerapkan = () => {
                         boxShadow="sm"
                         border="1px solid"
                         borderColor="gray.200"
+                        pr="40px"
                     />
+                    {searchTerm && (
+                        <InputRightElement>
+                            <Box
+                                as="button"
+                                onClick={() => setSearchTerm("")}
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                borderRadius="full"
+                                bg="#6B7280"
+                                color="white"
+                                boxSize="18px"
+                                _hover={{ bg: "gray.600" }}
+                                _active={{ bg: "gray.700" }}
+                                cursor="pointer"
+                                mr="8px"
+                            >
+                                <CloseIcon w="6px" h="6px" />
+                            </Box>
+                        </InputRightElement>
+                    )}
                 </InputGroup>
             </Box>
 
@@ -184,7 +189,7 @@ const InovasiDesaYangMenerapkan = () => {
                     </Text>
                 )}
             </Box>
-        </Box>
+        </Container>
     );
 };
 

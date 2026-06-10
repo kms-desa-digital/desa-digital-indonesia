@@ -1,6 +1,6 @@
 import { Box, Flex, Text, Icon, Link as ChakraLink } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, LabelList, Cell } from "recharts";
 import NextLink from 'next/link';
@@ -55,18 +55,31 @@ const DesaDigitalUnggulan: React.FC = () => {
     useEffect(() => {
         const fetchTopVillages = async () => {
             try {
-                const db = getFirestore();
-                const villageRef = collection(db, "villages");
-                const snapshot = await getDocs(villageRef);
+                const auth = getAuth();
+                const currentUser = auth.currentUser;
+                if (!currentUser) return;
+                const token = await currentUser.getIdToken();
 
-                // Ambil data desa dan urutkan berdasarkan jumlahInovasi (desc)
-                const villages = snapshot.docs
-                    .map((doc) => ({
-                        name: doc.data().namaDesa as string,
-                        value: doc.data().jumlahInovasiDiterapkan as number || 0,
-                    }))
-                    .sort((a, b) => b.value - a.value)
-                    .slice(0, 5); // Top 5
+                const response = await fetch('/api/admin/dashboard', {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch dashboard data');
+                }
+
+                const data = await response.json();
+                const villages = data.top5Villages.map((v: any) => ({
+                    name: v.name,
+                    value: v.totalInovasi
+                }));
+
+                // Pad with empty objects if less than 5
+                while(villages.length < 5) {
+                    villages.push({ name: '', value: 0 });
+                }
 
                 // Urutan khusus untuk ranking (4, 2, 1, 3, 5)
                 const customOrder = [3, 1, 0, 2, 4];

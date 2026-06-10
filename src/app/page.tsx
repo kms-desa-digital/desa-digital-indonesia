@@ -163,7 +163,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!loading && role === "admin") {
-      router.push(paths.ADMIN_PAGE);
+      router.replace(paths.ADMIN_PAGE);
     }
   }, [role, loading, router]);
 
@@ -219,6 +219,7 @@ export default function Home() {
           onSuggestionClick={handleSuggestionClick}
           showSearchButton={true}
           onSearchClick={handleSearchClick}
+          onClear={() => setSearchValue("")}
         />
         <Menu />
         <Flex direction="row" justifyContent="space-between" padding="0 14px">

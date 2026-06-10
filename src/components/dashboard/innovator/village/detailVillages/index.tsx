@@ -11,31 +11,21 @@ import {
 } from "@chakra-ui/react";
 import Image from "next/image";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
-import { getAuth } from "firebase/auth";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  QueryDocumentSnapshot, DocumentData
-} from "firebase/firestore";
+import { useAuthToken } from "Hooks/useAuthToken";
+
 import {
   titleStyle,
   tableHeaderStyle,
   tableCellStyle,
-  tableContainerStyle,
-  paginationContainerStyle,
-  paginationButtonStyle,
-  paginationActiveButtonStyle,
-  paginationEllipsisStyle,
+  tableContainerStyle
 } from "./_detailVillagesStyle";
-import downloadIcon from "@public/icons/icon-download.svg";
+
 
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import Pagination from "@/components/common/Pagination";
 
 interface Implementation {
   villageId: string;
@@ -64,195 +54,91 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
     modelBisnis: "-",
   });
 
-  const auth = getAuth();
-  const db = getFirestore();
-  const currentUser = auth.currentUser;
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
-    if (!currentUser) {
-      setImplementationData([]);
-      setLoading(false);
-      setUserName("");
-      return;
-    }
-
-    // Set userName from auth displayName or email fallback
-    setUserName(
-      currentUser.displayName
-        ? currentUser.displayName
-        : currentUser.email
-          ? currentUser.email.split("@")[0]
-          : "User"
-    );
-
     const fetchData = async () => {
+      if (!authLoaded) return;
       setLoading(true);
+
+      if (!token) {
+        setImplementationData([]);
+        setLoading(false);
+        setUserName("");
+        return;
+      }
+
       try {
-        const uid = currentUser.uid;
-
-        // Fetch inovator IDs for current user
-        const profilInovatorRef = collection(db, "innovators");
-        const qProfil = query(profilInovatorRef, where("id", "==", uid));
-        const profilSnap = await getDocs(qProfil);
-        if (profilSnap.empty) {
-          setImplementationData([]);
-          setLoading(false);
-          return;
-        }
-        const inovatorIds = profilSnap.docs.map((doc) => doc.id);
-
-        const inovasiRef = collection(db, "innovations");
-        const chunkSize = 10;
-        let inovasiDocs: QueryDocumentSnapshot<DocumentData>[] = [];
-        for (let i = 0; i < inovatorIds.length; i += chunkSize) {
-          const chunk = inovatorIds.slice(i, i + chunkSize);
-          const qInovasi = query(inovasiRef, where("innovatorId", "in", chunk));
-          const snapInovasi = await getDocs(qInovasi);
-          inovasiDocs = inovasiDocs.concat(snapInovasi.docs);
-        }
-        if (inovasiDocs.length === 0) {
-          setImplementationData([]);
-          setLoading(false);
-          return;
-        }
-
-        // Map inovasiId -> { namaDesa, inovatorId }
-        const inovasiMap = new Map<
-          string,
-          { namaInovasi: string; inovatorId: string }
-        >();
-        inovasiDocs.forEach((doc) => {
-          const data = doc.data();
-          inovasiMap.set(doc.id, {
-            namaInovasi: data.namaInovasi,
-            inovatorId: data.inovatorId,
-          });
+        // Dapatkan profil innovator milik user saat ini via dashboard API
+        const dashRes = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        const inovasiIds = Array.from(inovasiMap.keys());
+        if (!dashRes.ok) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
+        }
 
-        const produkInovator = inovasiDocs
-          .map((doc) => doc.data().namaInovasi)
+        const dashData = await dashRes.json();
+        const myProfile = dashData.innovator;
+
+        if (!myProfile) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
+        }
+
+        const inovatorId = myProfile._id?.toString();
+        setUserName(myProfile.namaInovator || "");
+
+        const result: Implementation[] = dashData.desaDampingan || [];
+
+        const myInnovations = dashData.daftarInovasi || [];
+        const produkInovator = myInnovations
+          .map((i: any) => i.namaInovasi)
           .filter(Boolean)
           .join(", ");
 
-        const profileData = profilSnap.docs[0].data();
         setInovatorProfile({
-          namaInovator: profileData.namaInovator || "-",
-          kategoriInovator: profileData.kategori || "-",
-          tahunDibentuk: profileData.tahunDibentuk || "-",
-          targetPengguna: profileData.targetPengguna || "-",
-          modelBisnis: profileData.modelBisnis || "-",
+          namaInovator: myProfile.namaInovator || "-",
+          kategoriInovator: myProfile.kategori || "-",
+          tahunDibentuk: myProfile.tahunDibentuk || "-",
+          targetPengguna: myProfile.targetPengguna || "-",
+          modelBisnis: myProfile.modelBisnis || "-",
           produk: produkInovator || "-",
         });
 
-        const klaimInovasiRef = collection(db, "claimInnovations");
-        let klaimDocs: QueryDocumentSnapshot<DocumentData>[] = [];
-
-        for (let i = 0; i < inovasiIds.length; i += chunkSize) {
-          const chunk = inovasiIds.slice(i, i + chunkSize);
-          const qKlaim = query(klaimInovasiRef, where("inovasiId", "in", chunk));
-          const snapKlaim = await getDocs(qKlaim);
-          klaimDocs = klaimDocs.concat(snapKlaim.docs);
+        if (result.length === 0) {
+          setImplementationData([]);
+          setLoading(false);
+          return;
         }
-
-        const desaMap = new Map<
-          string,
-          {
-            desaId: string;
-            namaDesa: string;
-            inovasiIdSet: Set<string>
-          }
-        >();
-
-        for (const docSnap of klaimDocs) {
-          const data = docSnap.data();
-          const desaId = data.desaId;
-          const namaDesa = data.namaDesa;
-          const inovasiId = data.inovasiId;
-
-          if (!desaMap.has(desaId)) {
-            desaMap.set(desaId, {
-              desaId,
-              namaDesa,
-              inovasiIdSet: new Set<string>(),
-            });
-          }
-          desaMap.get(desaId)!.inovasiIdSet.add(inovasiId);
-        }
-
-        const result: Implementation[] = Array.from(desaMap.values()).map((data) => {
-          return {
-            namaDesa: data.namaDesa,
-            namaInovator: profileData.namaInovator || "-",
-            jumlahInovasi: data.inovasiIdSet.size,
-            villageId: data.desaId || "",
-          };
-        });
 
         setImplementationData(
           result.sort((a, b) => {
             if (b.jumlahInovasi === a.jumlahInovasi) {
-              // Kalau jumlahInovasi sama, urutkan berdasarkan namaDesa (A-Z)
               return a.namaDesa.localeCompare(b.namaDesa);
             }
-            // Kalau jumlahInovasi berbeda, urutkan dari nilai yang terbesar
             return b.jumlahInovasi - a.jumlahInovasi;
           })
         );
 
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching villages or profile data:", error instanceof Error ? error.message : error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [currentUser]);
+  }, [authLoaded, token]);
 
   const totalPages = Math.ceil(implementationData.length / itemsPerPage);
   const currentData = implementationData.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
-
-  const goToPage = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const getPageNumbers = () => {
-    const pageNumbers: (number | string)[] = [];
-    const maxPagesToShow = 5;
-
-    if (totalPages <= maxPagesToShow) {
-      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
-    } else {
-      const leftSiblingIndex = Math.max(currentPage - 1, 1);
-      const rightSiblingIndex = Math.min(currentPage + 1, totalPages);
-
-      const shouldShowLeftDots = leftSiblingIndex > 2;
-      const shouldShowRightDots = rightSiblingIndex < totalPages - 1;
-
-      if (!shouldShowLeftDots && shouldShowRightDots) {
-        for (let i = 1; i <= 3; i++) pageNumbers.push(i);
-        pageNumbers.push("...");
-        pageNumbers.push(totalPages);
-      } else if (shouldShowLeftDots && !shouldShowRightDots) {
-        pageNumbers.push(1);
-        pageNumbers.push("...");
-        for (let i = totalPages - 2; i <= totalPages; i++) pageNumbers.push(i);
-      } else if (shouldShowLeftDots && shouldShowRightDots) {
-        pageNumbers.push(1);
-        pageNumbers.push("...");
-        for (let i = leftSiblingIndex; i <= rightSiblingIndex; i++) pageNumbers.push(i);
-        pageNumbers.push("...");
-        pageNumbers.push(totalPages);
-      }
-    }
-
-    return pageNumbers;
-  };
 
   const exportToPDF = () => {
     if (implementationData.length === 0) {
@@ -267,11 +153,6 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
       month: "long",
       year: "numeric",
     });
-
-    // Assuming `userName` is defined and `implementationData` is the list of innovations
-    const userProfile = {
-      nama: userName || "-",
-    };
 
     // Header with green background
     doc.setFillColor(0, 128, 0);
@@ -390,7 +271,7 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
               aria-label="Download options"
               icon={(
                 <Image
-                  src={downloadIcon}
+                  src="/icons/icon-download.svg"
                   alt="Download"
                   width={16}
                   height={16}
@@ -439,41 +320,11 @@ const DetailVillages: React.FC<DetailVillagesProps> = ({ onSelectVillage }) => {
             </Table>
           </TableContainer>
 
-          {totalPages > 1 && (
-            <Flex sx={paginationContainerStyle} mt={2}>
-              <Button
-                sx={paginationButtonStyle}
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                leftIcon={<ChevronLeftIcon />}
-              >
-                Prev
-              </Button>
-              {getPageNumbers().map((page, idx) =>
-                typeof page === "number" ? (
-                  <Button
-                    key={idx}
-                    sx={page === currentPage ? paginationActiveButtonStyle : paginationButtonStyle}
-                    onClick={() => goToPage(page)}
-                  >
-                    {page}
-                  </Button>
-                ) : (
-                  <Text key={idx} sx={paginationEllipsisStyle}>
-                    {page}
-                  </Text>
-                )
-              )}
-              <Button
-                sx={paginationButtonStyle}
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                rightIcon={<ChevronRightIcon />}
-              >
-                Next
-              </Button>
-            </Flex>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
     </Box>

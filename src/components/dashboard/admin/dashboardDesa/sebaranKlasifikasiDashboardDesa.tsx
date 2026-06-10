@@ -4,12 +4,12 @@ import {
     Text,
     Button,
 } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import { PieChart, Pie, Tooltip, Cell } from "recharts";
 import { useRouter } from "next/navigation";
-import { DownloadIcon } from "@chakra-ui/icons"; // ⬅️ Tambah icon download
-import * as XLSX from "xlsx"; // ⬅️ Import xlsx
+import { DownloadIcon } from "@chakra-ui/icons";
+import * as XLSX from "xlsx";
 
 const SebaranKlasifikasiDashboardDesa: React.FC = () => {
     const router = useRouter();
@@ -24,9 +24,17 @@ const SebaranKlasifikasiDashboardDesa: React.FC = () => {
 
     const fetchGeoData = async () => {
         try {
-            const db = getFirestore();
-            const villagesRef = collection(db, "villages");
-            const snapshot = await getDocs(villagesRef);
+            const auth = getAuth();
+            const currentUser = auth.currentUser;
+            const headers: Record<string, string> = {};
+            if (currentUser) {
+                const token = await currentUser.getIdToken();
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch("/api/villages", { headers });
+            const dataRaw = await response.json();
+            const villages = dataRaw.villages || [];
 
             const geoCount: Record<string, number> = {
                 "Dataran Tinggi": 0,
@@ -34,8 +42,7 @@ const SebaranKlasifikasiDashboardDesa: React.FC = () => {
                 "Dataran Sedang": 0
             };
 
-            snapshot.forEach((doc) => {
-                const data = doc.data();
+            villages.forEach((data: any) => {
                 if (data.geografisDesa) {
                     const geoText = data.geografisDesa.toLowerCase();
                     if (geoText.includes("dataran tinggi")) {

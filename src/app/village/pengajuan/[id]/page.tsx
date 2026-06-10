@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import React, { useEffect, useState, useRef, Suspense } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
     Box,
     Button,
@@ -9,6 +9,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Menu,
     MenuButton,
     MenuItem,
@@ -17,19 +18,16 @@ import {
     SkeletonCircle,
     Stack,
     Text,
-    Image,
 } from "@chakra-ui/react";
-import { ChevronDownIcon, SearchIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons";
 import { useTranslations } from "next-intl";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
 import { auth } from "src/firebase/clientApp";
 import { useAuthState } from "react-firebase-hooks/auth";
-// import { auth, firestore } from "src/firebase/clientApp";
 import { getClaims } from "Services/villageServices";
 import CardNotification from "Components/card/notification/CardNotification";
-import Right from "@public/icons/arrow-right.svg";
-import Left from "@public/icons/arrow-left.svg";
+import Pagination from "Components/common/Pagination";
 
 const SkeletonCard = () => (
     <Box borderWidth="1px" borderRadius="lg" padding="4" mb={4} bg="white">
@@ -44,24 +42,49 @@ const SkeletonCard = () => (
     </Box>
 );
 
-const PengajuanKlaim: React.FC = () => {
+import { useUser } from "src/contexts/UserContext";
+import Forbidden from "src/components/Forbidden";
+import Loading from "Components/loading";
+
+const PengajuanKlaimContent: React.FC = () => {
     const params = useParams();
     const id = params.id as string;
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [user] = useAuthState(auth);
-    const [data, setData] = useState<any[]>([]);
+    const { role, loading: userLoading, uid, firebaseUid } = useUser();
     const [filteredData, setFilteredData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Initial states from search params
+    const initialPage = parseInt(searchParams.get("page") || "1", 10);
+    const initialFilter = searchParams.get("filter") || "Semua";
+    const initialSearch = searchParams.get("search") || "";
+
     // Pencarian dan filter
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+    const [selectedFilter, setSelectedFilter] = useState<string>(initialFilter);
     const t = useTranslations("Village");
 
-    // Pagination Status
-    const [currentPage, setCurrentPage] = useState(1);
-    const [hasMore, setHasMore] = useState(false);
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(initialPage);
+    const [totalPages, setTotalPages] = useState(1);
     const itemsPerPage = 5;
+
+    const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+
+    const isFirstMount = useRef(true);
+
+    const updateUrl = (page: number, filter: string, search: string) => {
+        const urlParams = new URLSearchParams();
+        if (page > 1) urlParams.set("page", page.toString());
+        if (filter !== "Semua") urlParams.set("filter", filter);
+        if (search) urlParams.set("search", search);
+
+        const queryString = urlParams.toString();
+        const newPath = queryString ? `?${queryString}` : window.location.pathname;
+        router.replace(newPath, { scroll: false });
+    };
 
     const fetchData = async (page = 1) => {
         setLoading(true);
@@ -73,47 +96,63 @@ const PengajuanKlaim: React.FC = () => {
                 selectedFilter && selectedFilter !== "Semua" ? selectedFilter : undefined,
                 itemsPerPage,
                 skipValue,
-                searchTerm || undefined
+                debouncedSearch || undefined
             );
 
             const claimsData = response.claims || response.data?.claims || [];
             const pagination = response.pagination || response.data?.pagination || {};
 
-            setData(claimsData);
             setFilteredData(claimsData);
-            setHasMore(pagination.hasMore || false);
+            setTotalPages(pagination.totalPages || (pagination.hasMore ? page + 1 : page));
         } catch (err) {
             console.error("Error fetching claims from API:", err);
-            setData([]);
             setFilteredData([]);
         } finally {
             setLoading(false);
         }
     };
 
+    // Debounce search
     useEffect(() => {
-        if (id) {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
+        const timeoutId = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
             setCurrentPage(1);
-            fetchData(1);
-        }
-    }, [id, selectedFilter, searchTerm]); // Tambah searchTerm ke dependency
+            updateUrl(1, selectedFilter, searchTerm);
+        }, 500);
+        return () => clearTimeout(timeoutId);
+    }, [searchTerm]);
 
-    // Client side UI filtering removed in favor of server side search/filter
-
-    const handleNextPage = async () => {
-        if (hasMore) {
-            const nextPage = currentPage + 1;
-            setCurrentPage(nextPage);
-            await fetchData(nextPage);
-        }
+    const handleFilterSelect = (status: string) => {
+        setSelectedFilter(status);
+        setCurrentPage(1);
+        updateUrl(1, status, searchTerm);
     };
 
-    const handlePrevPage = async () => {
-        if (currentPage > 1) {
-            const prevPage = currentPage - 1;
-            setCurrentPage(prevPage);
-            await fetchData(prevPage);
+    useEffect(() => {
+        if (id) {
+            fetchData(currentPage);
         }
+    }, [id, selectedFilter, debouncedSearch, currentPage]);
+
+    if (userLoading) {
+        return <Loading />;
+    }
+
+    const normalizedRole = (role || "").toLowerCase();
+    const isAuthorized = normalizedRole === "admin" || uid === id || firebaseUid === id;
+
+    if (!isAuthorized) {
+        return <Forbidden />;
+    }
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        updateUrl(page, selectedFilter, searchTerm);
+        window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
     const formatTimestamp = (dateStr: string) => {
@@ -146,7 +185,7 @@ const PengajuanKlaim: React.FC = () => {
                     mt="-4px"
                     backgroundColor="#DCFCE7"
                     alignItems="center"
-                    ml="-16px" // Netralisir padding dari Stack
+                    ml="-16px"
                     mr="-16px">
                     <Text
                         fontSize={12}
@@ -185,7 +224,29 @@ const PengajuanKlaim: React.FC = () => {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             bg="white"
                             fontSize="10pt"
+                            pr="40px"
                         />
+                        {searchTerm && (
+                            <InputRightElement>
+                                <Box
+                                    as="button"
+                                    onClick={() => setSearchTerm("")}
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                    borderRadius="full"
+                                    bg="#6B7280"
+                                    color="white"
+                                    boxSize="18px"
+                                    _hover={{ bg: "gray.600" }}
+                                    _active={{ bg: "gray.700" }}
+                                    cursor="pointer"
+                                    mr="8px"
+                                >
+                                    <CloseIcon w="6px" h="6px" />
+                                </Box>
+                            </InputRightElement>
+                        )}
                     </InputGroup>
 
                     <Menu>
@@ -209,9 +270,7 @@ const PengajuanKlaim: React.FC = () => {
                                     <MenuItem
                                         key={status}
                                         fontSize={12}
-                                        onClick={() =>
-                                            setSelectedFilter(status === "Semua" ? null : status)
-                                        }
+                                        onClick={() => handleFilterSelect(status)}
                                     >
                                         {statusLabels[status]}
                                     </MenuItem>
@@ -223,52 +282,45 @@ const PengajuanKlaim: React.FC = () => {
 
                 {loading
                     ? Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)
-                    : filteredData.map((item, idx) => (
-                        <CardNotification
-                            key={idx}
-                            title={item.namaInovasi || "Tanpa Nama Inovasi"}
-                            status={item.status || "Unknown"}
-                            date={formatTimestamp(item.createdAt)}
-                            description={item.deskripsiInovasi || item.deskripsi || "Tidak ada deskripsi"}
-                            onClick={() =>
-                                router.push(`/village/klaimInovasi/detail/${item.id}`)
-                            }
-                        />
-                    ))}
+                    : filteredData.length > 0
+                        ? filteredData.map((item, idx) => (
+                            <CardNotification
+                                key={idx}
+                                title={item.namaInovasi || "Tanpa Nama Inovasi"}
+                                status={item.status || "Unknown"}
+                                date={formatTimestamp(item.createdAt)}
+                                description={item.deskripsiInovasi || item.deskripsi || "Tidak ada deskripsi"}
+                                onClick={() =>
+                                    router.push(`/village/klaimInovasi/detail/${item.id}`)
+                                }
+                            />
+                        ))
+                        : (
+                            <Box textAlign="center" py={8}>
+                                <Text color="gray.500" fontSize="sm">
+                                    Belum ada pengajuan klaim
+                                </Text>
+                            </Box>
+                        )}
 
-                {/* Pagination Buttons */}
-                <Flex gap={4} mt={4} mb={4} alignItems="center" alignSelf="center">
-                    <Button
-                        rightIcon={<Image src={Left.src} alt="back" />}
-                        iconSpacing={0}
-                        onClick={handlePrevPage}
-                        isDisabled={currentPage === 1}
-                        colorScheme="teal"
-                        size="sm"
-                        variant="outline"
-                        borderRadius="md"
-                        width="16px"
-                    >
-                    </Button>
-                    <Text textAlign="center" fontSize="10pt">
-                        {t("pageLabel", { page: currentPage })}
-                    </Text>
-                    <Button
-                        rightIcon={<Image src={Right.src} alt="back" />}
-                        iconSpacing={0}
-                        onClick={handleNextPage}
-                        isDisabled={!hasMore}
-                        colorScheme="teal"
-                        size="sm"
-                        variant="outline"
-                        borderRadius="md"
-                        width="16px"
-                    >
-                    </Button>
-                </Flex>
+                {/* Pagination */}
+                <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
+
                 <Box height="40px" />
             </Stack>
         </Container>
+    );
+};
+
+const PengajuanKlaim = () => {
+    return (
+        <Suspense fallback={<Loading />}>
+            <PengajuanKlaimContent />
+        </Suspense>
     );
 };
 

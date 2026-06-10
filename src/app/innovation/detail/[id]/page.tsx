@@ -38,7 +38,7 @@ import { paths } from "Consts/path";
 import { auth } from "src/firebase/clientApp";
 import { getInnovationById, getAppliedVillages, updateInnovation } from "Services/innovationServices";
 import { getInnovatorById, updateInnovator } from "Services/innovatorServices";
-import { getVillageById, getClaims, updateVillage } from "Services/villageServices";
+import { getVillageById, getClaims, updateVillage, getClaimById } from "Services/villageServices";
 import {
     ActionContainer,
     BenefitContainer,
@@ -78,6 +78,7 @@ function DetailInnovation() {
     const [isClaimed, setIsClaimed] = useState(false);
     const [claimId, setClaimId] = useState("");
     const [claimStatus, setClaimStatus] = useState("");
+    const [isRedirecting, setIsRedirecting] = useState(false);
 
     const getApiErrorInfo = (err: any) => {
         const status = err?.status || err?.response?.status;
@@ -88,10 +89,12 @@ function DetailInnovation() {
     const villageSafe = Array.isArray(village) ? village : [];
     const villageMap = new Map();
 
-   
+
     useEffect(() => {
         if (id) {
             setLoading(true);
+            let redirecting = false;
+
             getInnovationById(id)
                 .then((res: any) => {
                     const innovationData = res.innovation || res.data || res;
@@ -99,20 +102,36 @@ function DetailInnovation() {
                         setData(innovationData);
                         setError("");
                     } else {
-                        setError("Inovasi tidak ditemukan atau sudah dihapus");
+                        throw new Error("404");
                     }
                 })
-                .catch((error) => {
-                    const { status, message } = getApiErrorInfo(error);
-                    if (status === 404) {
+                .catch(async (error: any) => {
+                    const { status } = getApiErrorInfo(error);
+                    if (status === 404 || error.message === "404") {
+                        // Innovation not found, try to check if it's a manual claim
+                        try {
+                            const claimRes: any = await getClaimById(id);
+                            const claimData = claimRes.data;
+                            if (claimData && !claimData.inovasiId) {
+                                // It's a manual claim, redirect to its specific detail page
+                                redirecting = true;
+                                setIsRedirecting(true);
+                                router.replace(`/village/klaimInovasi/detail/${id}`);
+                                return;
+                            }
+                        } catch (claimErr) {
+                            console.error("Not a claim either:", claimErr);
+                        }
                         setError("Inovasi tidak ditemukan atau sudah dihapus");
                     } else {
-                        console.error("Error fetching innovation details:", { status, message });
+                        console.error("Error fetching innovation details:", error);
                         setError("Gagal memuat detail inovasi");
                     }
                 })
                 .finally(() => {
-                    setLoading(false);
+                    if (!redirecting) {
+                        setLoading(false);
+                    }
                 });
         }
     }, [id]);
@@ -222,21 +241,28 @@ function DetailInnovation() {
                 throw error;
             }
 
-            console.log("hahahahah:",data);
+            console.log("hahahahah:", data);
             setData({ ...data, status: "Terverifikasi" });
-            
-            const innovatorRes: any = await getInnovatorById(data.innovatorId);
-            const invData = innovatorRes?.innovator ?? innovatorRes?.data?.innovator ?? innovatorRes?.data ?? innovatorRes;
-            // Update innovator's innovation count via API
-            if (data.innovatorId) {
-                const currentCount = invData?.jumlahInovasi ?? innovatorData.jumlahInovasi ?? 0;
-                await updateInnovator(data.innovatorId, {
-                    jumlahInovasi: currentCount + 1,
-                    namaInovator: invData?.namaInovator,
-                    deskripsi: invData?.deskripsi,
-                    kategori: invData?.kategori,
-                    whatsapp: invData?.whatsapp,
-                });
+
+            try {
+                if (data.innovatorId) {
+                    const innovatorRes: any = await getInnovatorById(data.innovatorId);
+                    const invData = innovatorRes?.innovator ?? innovatorRes?.data?.innovator ?? innovatorRes?.data ?? innovatorRes;
+                    if (invData) {
+                        const currentCount = invData?.jumlahInovasi ?? innovatorData.jumlahInovasi ?? 0;
+                        await updateInnovator(data.innovatorId, {
+                            jumlahInovasi: currentCount + 1,
+                            namaInovator: invData?.namaInovator || "",
+                            deskripsi: invData?.deskripsi || "",
+                            kategori: invData?.kategori || "",
+                            whatsapp: invData?.whatsapp || "",
+                            logo: invData?.logo || "",
+                            header: invData?.header || "",
+                        });
+                    }
+                }
+            } catch (innovatorErr) {
+                console.error("Gagal mengupdate jumlah inovasi pada profil inovator:", innovatorErr);
             }
 
             // Update linked villages' innovation count
@@ -246,8 +272,8 @@ function DetailInnovation() {
                         const vRes: any = await getVillageById(v.id || v.userId);
                         const vData = vRes.data || vRes.village;
                         const newValue = (Number(vData?.jumlahInovasiDiterapkan) || 0) + 1;
-                        await updateVillage(v.id || v.userId, { 
-                            jumlahInovasiDiterapkan: newValue 
+                        await updateVillage(v.id || v.userId, {
+                            jumlahInovasiDiterapkan: newValue
                         });
                     } catch (err) {
                         console.error(`Error updating count for village ${v.id}:`, err);
@@ -256,6 +282,7 @@ function DetailInnovation() {
             }
 
             toast.success("Inovasi berhasil diverifikasi!");
+            router.replace("/admin/verification/Verifikasi Tambah Inovasi");
         } catch (error) {
             console.error("Error verifying innovation via API:", error);
             setError("Error verifying innovation");
@@ -282,6 +309,7 @@ function DetailInnovation() {
                 catatanAdmin: modalInput,
             }));
             toast.success("Penolakan berhasil");
+            router.replace("/admin/verification/Verifikasi Tambah Inovasi");
         } catch (error) {
             console.error("Error rejecting innovation via API:", error);
             setError("Error rejecting innovation");
@@ -310,7 +338,7 @@ function DetailInnovation() {
         }
     };
 
-    if (loading) {
+    if (loading || isRedirecting) {
         return (
             <Box>
                 <TopBar title={t("detailTitle")} onBack={() => router.back()} />
@@ -359,8 +387,18 @@ function DetailInnovation() {
                         <Text fontSize="16px" color="gray.500">
                             {error || "Inovasi tidak ditemukan atau sudah dihapus"}
                         </Text>
-                        <Button mt={4} size="sm" onClick={() => router.push(paths.INNOVATION_PAGE)}>
-                            Kembali ke Daftar Inovasi
+                        <Button
+                            mt={4}
+                            size="sm"
+                            onClick={() => {
+                                if (isAdmin) {
+                                    router.push("/admin/verification/Verifikasi Tambah Inovasi");
+                                } else {
+                                    router.push(paths.INNOVATION_PAGE);
+                                }
+                            }}
+                        >
+                            {isAdmin ? "Kembali ke Verifikasi Inovasi" : "Kembali ke Daftar Inovasi"}
                         </Button>
                     </Box>
                 </Flex>
@@ -689,7 +727,7 @@ function DetailInnovation() {
                             style={{ cursor: "pointer" }}
                         >
                             <Logo
-                                src={desa.logo || innovatorData.logo}
+                                src={desa.logo || "/images/default-logo.svg"}
                                 alt="logo"
                                 style={{
                                     borderRadius: "50%",

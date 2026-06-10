@@ -70,7 +70,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
         await createNotification({
           userId: innovatorId,
           type: 'personal',
-          category: 'submission_status',
+          category: 'innovation_submission',
           title: notifTitle,
           description: notifDescription,
           actionType: 'innovation_detail',

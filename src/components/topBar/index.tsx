@@ -45,6 +45,7 @@ function TopBar(props: TopBarProps) {
     paths.ADMIN_PAGE,
     paths.VILLAGE_PAGE,
     paths.INNOVATOR_PAGE,
+    paths.DASHBOARD_MINISTRY_HOME,
     "/admin",
     "/village",
     "/innovator",

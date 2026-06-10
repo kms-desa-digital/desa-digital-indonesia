@@ -7,7 +7,7 @@ import {
     Link as ChakraLink
 } from "@chakra-ui/react";
 import { useRouter } from 'next/navigation';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { paths } from 'Consts/path';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, Cell } from 'recharts';
 
@@ -85,45 +85,36 @@ const Leaderboard: React.FC = () => {
 
     useEffect(() => {
         const fetchData = async () => {
-            const db = getFirestore();
-            let collectionName = '';
-            let nameField = '';
-            let valueField = '';
-
-            switch (selectedCategory) {
-                case 'desa':
-                    collectionName = 'villages';
-                    nameField = 'namaDesa';
-                    valueField = 'jumlahInovasiDiterapkan';
-                    break;
-                case 'inovator':
-                    collectionName = 'innovators';
-                    nameField = 'namaInovator';
-                    valueField = 'jumlahInovasi';
-                    break;
-                case 'inovasi':
-                    collectionName = 'innovations';
-                    nameField = 'namaInovasi';
-                    valueField = 'jumlahKlaim';
-                    break;
-            }
-
             try {
-                const querySnapshot = await getDocs(collection(db, collectionName));
-                const items: LeaderboardItem[] = querySnapshot.docs
-                    .map(doc => ({
-                        name: doc.data()[nameField] || "",
-                        value: doc.data()[valueField] || 0,
-                        valueAsli: doc.data()[valueField] || 0,
-                        rank: ""
-                    }))
-                    .sort((a, b) => {
-                        if (b.value === a.value) {
-                            return a.name.localeCompare(b.name);
-                        }
-                        return b.value - a.value;
-                    })
-                    .slice(0, 5);
+                const auth = getAuth();
+                const user = auth.currentUser;
+                let token = '';
+                if (user) {
+                    token = await user.getIdToken();
+                }
+
+                const response = await fetch('/api/admin/dashboard', {
+                    headers: token ? { Authorization: `Bearer ${token}` } : undefined
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch dashboard data');
+                const result = await response.json();
+
+                let apiData: any[] = [];
+                if (selectedCategory === 'desa') {
+                    apiData = result.top5Villages || [];
+                } else if (selectedCategory === 'inovator') {
+                    apiData = result.top5Innovators || [];
+                } else if (selectedCategory === 'inovasi') {
+                    apiData = result.top5Innovations || [];
+                }
+
+                const items: LeaderboardItem[] = apiData.map(item => ({
+                    name: item.name || "",
+                    value: item.totalInovasi ?? item.totalKlaim ?? 0,
+                    valueAsli: item.totalInovasi ?? item.totalKlaim ?? 0,
+                    rank: ""
+                })).sort((a, b) => b.value - a.value).slice(0, 5);
 
                 const customOrder = [3, 1, 0, 2, 4];
                 const customHeights = selectedCategory === 'inovator' ? [20, 38, 44, 35, 15] : [20, 40, 50, 35, 15];

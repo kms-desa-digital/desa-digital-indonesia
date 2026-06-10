@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { Box, Text, Flex, Link, Spinner } from "@chakra-ui/react";
 import NextLink from 'next/link';
-import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { useAuthToken } from "Hooks/useAuthToken";
 import { paths } from "Consts/path";
 import {
   podiumWrapperStyle,
@@ -18,87 +17,39 @@ const TopInnovations = () => {
     { name: string; count: number; rank: number; label: string }[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [inovatorProfile, setInovatorProfile] = useState<{ namaInovator?: string } | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
     const fetchTopInnovations = async () => {
+      if (!authLoaded) return;
       setLoading(true);
-      const db = getFirestore();
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
+      setError(null);
 
-      if (!currentUser) return console.warn("User not authenticated");
+      if (!token) {
+        setError("User not authenticated.");
+        setTopInnovations([]);
+        setLoading(false);
+        return;
+      }
 
       try {
-        const profilQuery = query(
-          collection(db, "innovators"),
-          where("id", "==", currentUser.uid)
-        );
-        const profilSnapshot = await getDocs(profilQuery);
-
-        if (profilSnapshot.empty) {
-          console.warn("Inovator tidak ditemukan");
-          setTopInnovations([]);
-          setLoading(false);
-          return;
-        }
-
-        const profilDoc = profilSnapshot.docs[0];
-        const inovatorId = profilDoc.id;
-        setInovatorProfile(profilDoc.data());
-
-        const inovasiQuery = query(
-          collection(db, "innovations"),
-          where("innovatorId", "==", inovatorId)
-        );
-        const inovasiSnapshot = await getDocs(inovasiQuery);
-
-        if (inovasiSnapshot.empty) {
-          setTopInnovations([]);
-          setLoading(false);
-          return;
-        }
-
-        // Map inovasiId -> namaInovasi
-        const inovasiMap: Record<string, string> = {};
-        const inovasiIds = inovasiSnapshot.docs.map((doc) => {
-          inovasiMap[doc.id] = doc.data().namaInovasi;
-          return doc.id;
+        const response = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Query claimInnovations berdasarkan inovasiId
-        const chunkArray = <T,>(arr: T[], size: number): T[][] => {
-          const chunks: T[][] = [];
-          for (let i = 0; i < arr.length; i += size) {
-            chunks.push(arr.slice(i, i + size));
-          }
-          return chunks;
-        };
-
-        const chunks = chunkArray(inovasiIds, 10);
-        let claimDocs: { inovasiId?: string }[] = [];
-
-        for (const chunk of chunks) {
-          const claimQuery = query(
-            collection(db, "claimInnovations"),
-            where("inovasiId", "in", chunk)
-          );
-          const claimSnapshot = await getDocs(claimQuery);
-          claimDocs.push(...claimSnapshot.docs.map((doc) => doc.data()));
+        if (!response.ok) {
+          const message = await response.text();
+          throw new Error(message || "Failed to fetch dashboard data");
         }
 
-        // Hitung frekuensi inovasiId
-        const countMap: Record<string, number> = {};
-        claimDocs.forEach((item) => {
-          const inovasiId = item.inovasiId;
-          if (inovasiId) {
-            countMap[inovasiId] = (countMap[inovasiId] || 0) + 1;
-          }
-        });
+        const data = await response.json();
+        setInovatorProfile({ namaInovator: "Inovator" });
 
-        const countInovasi = Object.entries(countMap).map(([id, count]) => ({
-          name: inovasiMap[id] || "Unknown",
-          count,
+        const countInovasi = (data.top3Innovations || []).map((item: any) => ({
+          name: item.name || "Unknown",
+          count: item.totalKlaim || 0,
         }));
 
         if (countInovasi.length === 0) {
@@ -139,7 +90,7 @@ const TopInnovations = () => {
             lastCount = item.count;
 
             return {
-              ...item, //spread operator, menyalin data dalam ke dalam data baru
+              ...item,
               rank: currentRank,
               label: `${currentRank}${["st", "nd", "rd"][currentRank - 1] || "th"}`
             };
@@ -148,14 +99,16 @@ const TopInnovations = () => {
 
         setTopInnovations(ranked);
       } catch (error) {
-        console.error("Error fetching innovations:", error);
+        const message = error instanceof Error ? error.message : "Unknown error";
+        setError(message);
+        console.error("Error fetching innovations:", error instanceof Error ? error.message : error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTopInnovations();
-  }, []);
+  }, [authLoaded, token]);
 
   return (
     <Box p={4}>
@@ -170,6 +123,14 @@ const TopInnovations = () => {
         {loading ? (
           <Flex justify="center" align="center" h="100%">
             <Spinner size="lg" />
+          </Flex>
+        ) : error ? (
+          <Flex justify="center" align="center" h="100%">
+            <Text color="red.500">{error}</Text>
+          </Flex>
+        ) : topInnovations.length === 0 ? (
+          <Flex justify="center" align="center" h="100%">
+            <Text color="gray.500" fontSize="md">Belum ada data inovasi unggulan</Text>
           </Flex>
         ) : (
           <Flex

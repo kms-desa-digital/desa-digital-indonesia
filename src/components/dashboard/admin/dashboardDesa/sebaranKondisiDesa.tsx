@@ -12,7 +12,7 @@ import {
   TableContainer,
   Icon
 } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import * as XLSX from "xlsx";
@@ -45,19 +45,25 @@ const SebaranKondisiDesa: React.FC = () => {
 
   const fetchDesaData = async () => {
     try {
-      const db = getFirestore();
-      const villagesRef = collection(db, "villages");
-      const snapshot = await getDocs(villagesRef);
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      const headers: Record<string, string> = {};
+      if (currentUser) {
+        const token = await currentUser.getIdToken();
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/villages", { headers });
+      const dataRaw = await response.json();
+      const villages = dataRaw.villages || [];
 
       const desaList: DesaData[] = [];
       let i = 1;
 
-      snapshot.docs.forEach((doc) => {
-        const data = doc.data();
-
+      villages.forEach((data: any) => {
         desaList.push({
           no: i++,
-          namaDesa: limitWords(data.namaDesa),
+          namaDesa: limitWords(data.namaDesa?.label || data.namaDesa),
           kondisiJalan: limitWords(data.kondisijalan),
           jaringanInternet: limitWords(data.jaringan),
           ketersediaanListrik: limitWords(data.listrik),

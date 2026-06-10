@@ -104,10 +104,10 @@ export async function POST(request: NextRequest) {
       // Logic for ranking broadcast
       const db = await connectToDatabase()
 
-      // Top 3 Desa
+      // Top 3 Desa (Sorted by innovations DESC, then name ASC)
       const villages = await db.collection('villages')
         .find({ status: 'Terverifikasi' })
-        .sort({ jumlahInovasiDiterapkan: -1 })
+        .sort({ jumlahInovasiDiterapkan: -1, namaDesa: 1 })
         .limit(3)
         .toArray()
 
@@ -122,10 +122,15 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      // Top 3 Innovator
+      // Top 3 Innovator (Sorted by villages DESC, then innovations DESC, then name ASC)
       const innovators = await db.collection('innovators')
         .find({ status: 'Terverifikasi' })
-        .sort({ totalInovasi: -1 })
+        .sort({ 
+          jumlahDesaDampingan: -1, 
+          jumlahInovasi: -1, 
+          totalInovasi: -1, // Fallback for old field name
+          namaInovator: 1 
+        })
         .limit(3)
         .toArray()
 

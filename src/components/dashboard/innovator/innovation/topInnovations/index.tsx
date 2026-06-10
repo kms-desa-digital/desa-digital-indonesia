@@ -1,12 +1,7 @@
 import { useEffect, useState } from "react";
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs
-} from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { useAuthToken } from "Hooks/useAuthToken";
+import { getInnovation } from "Services/innovationServices";
+import { getClaims } from "Services/villageServices";
 import { podiumStyles } from "./_topInnovationsStyle";
 
 const TopInnovations = () => {
@@ -15,79 +10,81 @@ const TopInnovations = () => {
   >([]);
   const [loading, setLoading] = useState(true);
   const [inovatorProfile, setInovatorProfile] = useState<{ namaInovator?: string } | null>(null);
+  const { token, isLoaded: authLoaded } = useAuthToken();
 
   useEffect(() => {
     const fetchTopInnovations = async () => {
+      if (!authLoaded) return;
       setLoading(true);
-      const db = getFirestore();
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
 
-      if (!currentUser) return;
+      if (!token) {
+        setTopInnovations([]);
+        setLoading(false);
+        return;
+      }
 
       try {
-        const profilQuery = query(
-          collection(db, "innovators"),
-          where("id", "==", currentUser.uid)
-        );
-        const profilSnapshot = await getDocs(profilQuery);
+        // Dapatkan profil innovator milik user saat ini via dashboard API
+        const dashRes = await fetch('/api/innovator/dashboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-        if (profilSnapshot.empty) {
+        if (!dashRes.ok) {
           setTopInnovations([]);
           setLoading(false);
           return;
         }
 
-        const profilDoc = profilSnapshot.docs[0];
-        const inovatorId = profilDoc.id;
-        setInovatorProfile(profilDoc.data());
+        const dashData = await dashRes.json();
+        const myProfile = dashData.innovator;
 
-        // Ambil semua inovasi dari inovator
-        const inovasiQuery = query(
-          collection(db, "innovations"),
-          where("innovatorId", "==", inovatorId)
-        );
-        const inovasiSnapshot = await getDocs(inovasiQuery);
-
-        const inovasiData = inovasiSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as { namaInovasi: string }),
-        }));
-
-        if (inovasiData.length === 0) {
+        if (!myProfile) {
           setTopInnovations([]);
+          setLoading(false);
           return;
         }
 
-        // Ambil semua data berdasarkan inovasiId
-        const inovasiIds = inovasiData.map((item) => item.id);
+        const inovatorId = myProfile._id?.toString();
+        setInovatorProfile(myProfile);
 
-        const claimQuery = query(
-          collection(db, "claimInnovations"),
-          where("inovasiId", "in", inovasiIds)
+        // Fetch innovations by this innovator
+        const innovationRes = await getInnovation();
+        const allInnovations = innovationRes.innovations || [];
+        const myInnovations = allInnovations.filter(
+          (i: any) => i.innovatorId === inovatorId
         );
-        const claimSnapshot = await getDocs(claimQuery);
 
-        // Hitung frekuensi inovasiId
+        if (myInnovations.length === 0) {
+          setTopInnovations([]);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch claims
+        const claimsRes = await getClaims();
+        const allClaims = (claimsRes as any).claims || [];
+
+        // Count claims per inovasiId
+        const inovasiIds = myInnovations.map((i: any) => i._id || i.id);
         const freqMap: Record<string, number> = {};
-        claimSnapshot.forEach((doc) => {
-          const data = doc.data();
-          if (data.inovasiId) {
-            freqMap[data.inovasiId] = (freqMap[data.inovasiId] || 0) + 1;
+        allClaims.forEach((claim: any) => {
+          if (claim.inovasiId && inovasiIds.includes(claim.inovasiId)) {
+            freqMap[claim.inovasiId] = (freqMap[claim.inovasiId] || 0) + 1;
           }
         });
 
-        // Gabungkan ID dengan nama inovasi
-        const countInovasi = inovasiData
-          .filter((item) => item.namaInovasi)
-          .map((item) => ({
+        // Combine with innovation names
+        const countInovasi = myInnovations
+          .filter((item: any) => item.namaInovasi)
+          .map((item: any) => ({
             name: item.namaInovasi,
-            count: freqMap[item.id] || 0,
+            count: freqMap[item._id || item.id] || 0,
           }))
-          .filter((item) => item.count > 0);
+          .filter((item: any) => item.count > 0);
 
         if (countInovasi.length === 0) {
           setTopInnovations([]);
+          setLoading(false);
           return;
         }
 
@@ -127,13 +124,14 @@ const TopInnovations = () => {
         setTopInnovations(ranked);
       } catch (error) {
         console.error("Error fetching innovations:", error);
+        setTopInnovations([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTopInnovations();
-  }, []);
+  }, [authLoaded, token]);
 
   // === Penentuan tinggi & urutan podium ===
   const getPodiumOrder = (arr: typeof topInnovations) => {

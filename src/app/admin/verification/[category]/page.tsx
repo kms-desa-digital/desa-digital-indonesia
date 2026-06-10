@@ -3,8 +3,7 @@
 import { 
     ChevronDownIcon, 
     SearchIcon, 
-    ChevronLeftIcon, 
-    ChevronRightIcon 
+    CloseIcon
 } from "@chakra-ui/icons";
 import {
     Box,
@@ -13,6 +12,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Menu,
     MenuButton,
     MenuItem,
@@ -26,12 +26,13 @@ import CardNotification from "Components/card/notification/CardNotification";
 import Container from "Components/container";
 import TopBar from "Components/topBar";
 import { paths } from "Consts/path";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { getVillages, getClaims } from "Services/villageServices";
 import { getInnovators } from "Services/innovatorServices";
 import { getInnovation } from "Services/innovationServices";
+import Pagination from "@/components/common/Pagination";
 
 const SkeletonCard = () => {
     return (
@@ -48,8 +49,9 @@ const SkeletonCard = () => {
     );
 };
 
-const VerificationPage: React.FC = () => {
+const VerificationPageContent: React.FC = () => {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const t = useTranslations("Admin");
     const tc = useTranslations("Categories");
     const params = useParams() as { category: string };
@@ -57,14 +59,32 @@ const VerificationPage: React.FC = () => {
     const [verifData, setVerifData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Initial states from search params
+    const initialPage = parseInt(searchParams.get("page") || "1", 10);
+    const initialFilter = searchParams.get("filter") || "Semua";
+    const initialSearch = searchParams.get("search") || "";
+
     // Pencarian dan filter
-    const [searchTerm, setSearchTerm] = useState("");
-    const [selectedFilter, setSelectedFilter] = useState<string>("Semua");
+    const [searchTerm, setSearchTerm] = useState(initialSearch);
+    const [selectedFilter, setSelectedFilter] = useState<string>(initialFilter);
 
     // Pagination states
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(initialPage);
+    const [totalPages, setTotalPages] = useState(1);
     const [itemsPerPage] = useState(5);
-    const [hasMore, setHasMore] = useState(true);
+
+    const isFirstMount = useRef(true);
+
+    const updateUrl = (page: number, filter: string, search: string) => {
+        const urlParams = new URLSearchParams();
+        if (page > 1) urlParams.set("page", page.toString());
+        if (filter !== "Semua") urlParams.set("filter", filter);
+        if (search) urlParams.set("search", search);
+        
+        const queryString = urlParams.toString();
+        const newPath = queryString ? `?${queryString}` : window.location.pathname;
+        router.replace(newPath, { scroll: false });
+    };
 
     const formatShortDate = (dateSource: any) => {
         if (!dateSource) return "-";
@@ -171,7 +191,13 @@ const VerificationPage: React.FC = () => {
 
             const data = response.villages || response.innovators || response.innovations || response.claims || response.data || [];
             
-            setHasMore(data.length === itemsPerPage);
+            const pagination = response.pagination || response.data?.pagination || response.data?.data?.pagination;
+            if (pagination && pagination.totalPages) {
+                setTotalPages(pagination.totalPages);
+            } else {
+                setTotalPages(1);
+            }
+            
             return data;
         } catch (error) {
             console.error("Error fetching data from API:", error);
@@ -190,35 +216,40 @@ const VerificationPage: React.FC = () => {
         load();
     }, [category, selectedFilter, currentPage]);
 
-    // Reset page when filter changes
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [selectedFilter]);
-
     // Search optimization: delay search
     useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
         const timeoutId = setTimeout(async () => {
             setCurrentPage(1);
+            updateUrl(1, selectedFilter, searchTerm);
             const data = await fetchData(1);
             setVerifData(data || []);
         }, 500);
         return () => clearTimeout(timeoutId);
     }, [searchTerm]);
 
-    const handleNextPage = () => {
-        if (hasMore) setCurrentPage(prev => prev + 1);
-    };
-
-    const handlePrevPage = () => {
-        if (currentPage > 1) setCurrentPage(prev => prev - 1);
-    };
-
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
     };
 
+    const handleClearSearch = () => {
+        setSearchTerm("");
+        setCurrentPage(1);
+        updateUrl(1, selectedFilter, "");
+    };
+
     const handleFilterSelect = (status: string) => {
         setSelectedFilter(status);
+        setCurrentPage(1);
+        updateUrl(1, status, searchTerm);
+    };
+    
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        updateUrl(page, selectedFilter, searchTerm);
     };
 
     return (
@@ -237,7 +268,29 @@ const VerificationPage: React.FC = () => {
                                 value={searchTerm}
                                 onChange={handleSearch}
                                 bg="white"
+                                pr={searchTerm ? "40px" : undefined}
                             />
+                            {searchTerm && (
+                                <InputRightElement>
+                                    <Box
+                                        as="button"
+                                        onClick={handleClearSearch}
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                        borderRadius="full"
+                                        bg="#6B7280"
+                                        color="white"
+                                        boxSize="18px"
+                                        _hover={{ bg: "gray.600" }}
+                                        _active={{ bg: "gray.700" }}
+                                        cursor="pointer"
+                                        mr="8px"
+                                    >
+                                        <CloseIcon w="6px" h="6px" />
+                                    </Box>
+                                </InputRightElement>
+                            )}
                         </InputGroup>
 
                         <Menu>
@@ -280,7 +333,7 @@ const VerificationPage: React.FC = () => {
 
                             return (
                                 <CardNotification
-                                    key={index}
+                                    key={data.id || data._id || index}
                                     title={
                                         data.namaDesa ||
                                         data.namaInovator ||
@@ -300,45 +353,23 @@ const VerificationPage: React.FC = () => {
                         </Text>
                     )}
                     
-                    {verifData.length > 0 && (
-                        <Flex
-                            justifyContent="center"
-                            mt={8}
-                            mb={8}
-                            alignItems="center"
-                            gap={4}
-                        >
-                            <Button
-                                onClick={handlePrevPage}
-                                isDisabled={currentPage === 1}
-                                variant="outline"
-                                size="sm"
-                                borderColor="gray.200"
-                                color="#347357"
-                                _hover={{ bg: "gray.50" }}
-                            >
-                                <ChevronLeftIcon />
-                            </Button>
-                            
-                            <Text textAlign="center" fontWeight="500" fontSize="14px" color="gray.700">
-                                {t("verificationPage", { page: currentPage })}
-                            </Text>
-                            
-                            <Button
-                                onClick={handleNextPage}
-                                isDisabled={!hasMore}
-                                variant="outline"
-                                size="sm"
-                                borderColor="gray.200"
-                                color="#347357"
-                                _hover={{ bg: "gray.50" }}
-                            >
-                                <ChevronRightIcon />
-                            </Button>
-                        </Flex>
+                    {!loading && verifData.length > 0 && totalPages > 0 && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                        />
                     )}
                 </Stack>
         </Container>
+    );
+};
+
+const VerificationPage = () => {
+    return (
+        <Suspense fallback={<Skeleton height="100vh" />}>
+            <VerificationPageContent />
+        </Suspense>
     );
 };
 

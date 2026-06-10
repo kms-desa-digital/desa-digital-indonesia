@@ -73,3 +73,26 @@ main {
   min-height: 100vh;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+
+/* Toast constraints to match project width */
+.chakra-toast__container {
+  max-width: 360px !important;
+  width: 90% !important;
+  margin: 0 auto !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+.chakra-toast__inner {
+  width: 100% !important;
+  max-width: 360px !important;
+}
+
+.Toastify__toast-container {
+  max-width: 360px !important;
+  width: 90% !important;
+}
+
+.Toastify__toast {
+  max-width: 360px !important;
+}

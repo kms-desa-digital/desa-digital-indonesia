@@ -1,6 +1,6 @@
 import { Box, Text } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import { getInnovators } from 'Services/innovatorServices';
 import {
   pieChartWrapperStyle,
   containerStyle,
@@ -22,35 +22,39 @@ const PieChartInnovator = ({ onSliceClick }: { onSliceClick: (categoryName: stri
 
   useEffect(() => {
     const fetchData = async () => {
-      const db = getFirestore();
-      const snapshot = await getDocs(collection(db, 'innovators'));
+      try {
+        const responseData = await getInnovators();
+        const innovators = (responseData as any).data || [];
 
-      const counts: Record<string, number> = {};
+        const counts: Record<string, number> = {};
 
-      snapshot.forEach(doc => {
-        const kategori = doc.data()?.kategori;
+        innovators.forEach((item: any) => {
+          const kategori = item?.kategori;
 
-        if (kategori && kategori !== 'ND' && kategori !== '-') {
-          counts[kategori] = (counts[kategori] || 0) + 1;
-        }
-      });
+          if (kategori && kategori !== 'ND' && kategori !== '-') {
+            counts[kategori] = (counts[kategori] || 0) + 1;
+          }
+        });
 
-      const sortedData = Object.entries(counts)
-        .sort(([, a], [, b]) => b - a)
-        .map(([name, value], index) => ({
-          id: index + 1,
-          name,
-          value,
-          color: COLORS[index % COLORS.length],
-        }));
+        const sortedData = Object.entries(counts)
+          .sort(([, a], [, b]) => b - a)
+          .map(([name, value], index) => ({
+            id: index + 1,
+            name,
+            value,
+            color: COLORS[index % COLORS.length],
+          }));
 
-      setCategories(sortedData);
-      setLoading(false);
+        setCategories(sortedData);
+      } catch (error) {
+        console.error("Error fetching innovator categories:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    console.log("Fetched Categories:", categories);
     fetchData();
-  }, [categories]);
+  }, []);
 
   const total = categories.reduce((sum, category) => sum + category.value, 0);
 

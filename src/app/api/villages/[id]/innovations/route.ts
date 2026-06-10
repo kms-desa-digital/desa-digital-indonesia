@@ -13,10 +13,34 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     const { id } = await params
     const db = await connectToDatabase()
 
+    // Temukan dokumen desa berdasarkan id (bisa berupa Firebase UID atau MongoDB _id)
+    let village = null;
+    try {
+      if (ObjectId.isValid(id)) {
+        village = await db.collection('villages').findOne({ _id: new ObjectId(id) });
+      }
+    } catch (e) {}
+
+    if (!village) {
+      village = await db.collection('villages').findOne({
+        $or: [
+          { userId: id },
+          { _id: id as any }
+        ]
+      });
+    }
+
+    const possibleIds = [id];
+    if (village) {
+      possibleIds.push(village._id.toString());
+      if (village.userId) possibleIds.push(village.userId);
+    }
+    const uniqueIds = [...new Set(possibleIds)];
+
     // 1. Ambil inovasi dari koleksi 'innovations' yang memiliki desaId ini (penugasan langsung)
     // dengan jumlah desa yang menerapkan dari claimInnovations
     const directPipeline: any[] = [
-      { $match: { desaId: { $in: [id] }, status: 'Terverifikasi' } },
+      { $match: { desaId: { $in: uniqueIds }, status: 'Terverifikasi' } },
       {
         $lookup: {
           from: 'claimInnovations',
@@ -48,7 +72,7 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     // 2. Ambil SEMUA klaim dari koleksi 'claimInnovations' yang terverifikasi (Manual & Reguler)
     const verifiedClaims = await db.collection('claimInnovations')
       .find({
-        desaId: id,
+        desaId: { $in: uniqueIds },
         status: 'Terverifikasi'
       })
       .toArray()
@@ -71,11 +95,13 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
         id: doc._id.toString(),
         _id: doc._id.toString(),
         namaInovasi: doc.namaInovasi,
-        namaInnovator: doc.namaInovator || doc.namaInovator,
+        namaInnovator: doc.namaInovator,
+        innovatorImgURL: doc.logoInovator || null, // Map logoInovator to innovatorImgURL for consistency
+        kategori: 'Inovasi Manual', // Default category for manual claims
         deskripsi: doc.deskripsiInovasi || doc.deskripsi,
         images: doc.fotoInovasi ? [doc.fotoInovasi] : (doc.buktiFiles?.foto || []),
         status: 'Terverifikasi',
-        jumlahDesa: 0, // klaim manual tidak punya inovasiId untuk di-lookup
+        jumlahDesa: 1, // klaim manual minimal diterapkan oleh desa yang mengklaim
       }))
 
     const finalResult = [...result_direct, ...result_claims]

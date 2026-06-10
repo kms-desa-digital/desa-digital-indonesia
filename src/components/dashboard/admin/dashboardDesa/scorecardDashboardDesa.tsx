@@ -1,5 +1,5 @@
 import { Box, Flex, Grid, Text, Stack, Image } from "@chakra-ui/react";
-import { getFirestore, collection, getDocs } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 
 import ProvinceIcon from "@public/icons/province.svg";
@@ -15,19 +15,24 @@ const ScoreCardDashboardDesa: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const db = getFirestore();
-      const villagesRef = collection(db, "villages");
-      const snapshot = await getDocs(villagesRef);
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      const headers: Record<string, string> = {};
+      if (currentUser) {
+        const token = await currentUser.getIdToken();
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch("/api/villages", { headers });
+      const dataRaw = await response.json();
+      const villages = dataRaw.villages || [];
 
       const villageSet = new Set();
       const provinceSet = new Set();
       const kabupatenSet = new Set();
       const kecamatanSet = new Set();
 
-      // ---------------------------  UNTUK FIREBASE PRODUCTION ----------------------------------------------------- 
-      snapshot.docs.forEach((doc) => {
-        const data = doc.data();
-
+      villages.forEach((data: any) => {
         if (typeof data.namaDesa === "string" && data.namaDesa.length > 1) {
           villageSet.add(data.namaDesa);
         } else if (
@@ -47,36 +52,6 @@ const ScoreCardDashboardDesa: React.FC = () => {
             kecamatanSet.add(data.lokasi.kecamatan.label);
         }
       });
-
-      // ---------- UNTUK FIREBASE EMULATOR -------------------------------------------
-      // snapshot.docs.forEach((doc) => {
-      //   const data = doc.data();
-
-      //   if (typeof data.jumlahInovasi === "number" && data.jumlahInovasi > 0) {
-      //     if (typeof data.namaDesa === "string" && data.namaDesa.length > 1) {
-      //       villageSet.add(data.namaDesa);
-      //     } else if (
-      //       data.namaDesa?.label &&
-      //       typeof data.namaDesa.label === "string" &&
-      //       data.namaDesa.label.length > 1
-      //     ) {
-      //       villageSet.add(data.namaDesa.label);
-      //     }
-      //   }
-
-      //   // Sesuai struktur tabel: string langsung, bukan .label
-      //   if (typeof data.provinsi === "string" && data.provinsi.length > 1) {
-      //     provinceSet.add(data.provinsi);
-      //   }
-
-      //   if (typeof data.kabupatenKota === "string" && data.kabupatenKota.length > 1) {
-      //     kabupatenSet.add(data.kabupatenKota);
-      //   }
-
-      //   if (typeof data.kecamatan === "string" && data.kecamatan.length > 1) {
-      //     kecamatanSet.add(data.kecamatan);
-      //   }
-      // });
 
       setTotalVillage(villageSet.size);
       setTotalProvince(provinceSet.size);

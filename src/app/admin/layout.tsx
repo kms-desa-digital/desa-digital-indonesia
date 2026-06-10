@@ -6,48 +6,46 @@ import { useRouter } from "next/navigation";
 import React, { useEffect } from "react";
 import { useUser } from "src/contexts/UserContext";
 
+import Forbidden from "src/components/Forbidden";
+
 type AdminLayoutProps = {
   children: React.ReactNode;
 };
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
-  const { role, loading } = useUser();
+  const { role, loading, uid } = useUser();
   const normalizedRole = (role || "").toLowerCase();
   const isAuthorized = normalizedRole === "admin";
+
   const postLogoutRedirectKey = "postLogoutRedirect";
 
   useEffect(() => {
-    if (!loading && !isAuthorized) {
-      localStorage.removeItem("token");
-      localStorage.setItem("userRole", normalizedRole);
-      window.dispatchEvent(new Event("auth:tokenChanged"));
+    const shouldRedirect = sessionStorage.getItem(postLogoutRedirectKey);
+    if (shouldRedirect) {
+      sessionStorage.removeItem(postLogoutRedirectKey);
+      router.replace(paths.LANDING_PAGE);
+    }
+  }, [router]);
 
-      const postLogoutRedirect = sessionStorage.getItem(postLogoutRedirectKey);
-      if (postLogoutRedirect === "landing") {
-        sessionStorage.removeItem(postLogoutRedirectKey);
-        router.replace(paths.LANDING_PAGE);
-        return;
-      }
-
+  useEffect(() => {
+    // Only redirect to login if NOT logged in at all (no role and no uid)
+    if (!loading && !role && !uid) {
       router.replace(paths.LOGIN_PAGE);
     }
-  }, [isAuthorized, loading, normalizedRole, postLogoutRedirectKey, router]);
+  }, [role, uid, loading, router]);
 
   if (loading) {
     return (
-      <Center minH="100vh">
-        <Spinner size="lg" />
+      <Center minH="100vh" bg="#f3f9f6">
+        <Spinner size="lg" color="green.500" />
       </Center>
     );
   }
 
+  // If logged in but not admin, show Forbidden
   if (!isAuthorized) {
-    return (
-      <Center minH="100vh">
-        <Spinner size="lg" />
-      </Center>
-    );
+    return <Forbidden />;
   }
 
   return <>{children}</>;
