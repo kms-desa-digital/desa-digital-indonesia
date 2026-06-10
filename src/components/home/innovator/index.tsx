@@ -5,7 +5,6 @@ import CardInnovator from "Components/card/innovator";
 import { paths } from "Consts/path";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CardContainer, Horizontal, Title } from "./_innovatorStyle";
 import { useTranslations } from "next-intl";
 import { getInnovators } from "Services/innovatorServices";
@@ -24,7 +23,6 @@ interface InnovatorData {
 
 function Innovator() {
   const t = useTranslations("Home");
-  const router = useRouter();
   const [innovators, setInnovators] = useState<InnovatorData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +33,7 @@ function Innovator() {
           status: "Terverifikasi",
         });
         const fetchedData = res?.data || res?.innovators || [];
-        const innovatorsData: InnovatorData[] = (Array.isArray(fetchedData) ? fetchedData : [])
+        const innovatorsData: InnovatorData[] = [...(Array.isArray(fetchedData) ? fetchedData : [])]
           .sort((a: any, b: any) => {
             const desa = (b.jumlahDesaDampingan || 0) - (a.jumlahDesaDampingan || 0);
             if (desa !== 0) return desa;

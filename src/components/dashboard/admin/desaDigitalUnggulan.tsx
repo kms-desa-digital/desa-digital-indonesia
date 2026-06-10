@@ -81,8 +81,6 @@ const DesaDigitalUnggulan: React.FC = () => {
                 }));
 
                 setChartData(rankedVillages);
-
-                console.log("Ranked Villages:", rankedVillages);
             } catch (error) {
                 console.error("Error fetching top villages:", error);
             }

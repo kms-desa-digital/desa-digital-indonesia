@@ -21,7 +21,7 @@ const BestBanner: React.FC = () => {
         // Innovators from MongoDB API 
         const innovatorRes: any = await getInnovators({ status: "Terverifikasi" });
         const fetchedInnovators = innovatorRes?.data || innovatorRes?.innovators || [];
-        const sortedInnovators = (Array.isArray(fetchedInnovators) ? fetchedInnovators : [])
+        const sortedInnovators = [...(Array.isArray(fetchedInnovators) ? fetchedInnovators : [])]
           .sort((a: any, b: any) => {
             const desa = (b.jumlahDesaDampingan || 0) - (a.jumlahDesaDampingan || 0);
             if (desa !== 0) return desa;
@@ -35,7 +35,7 @@ const BestBanner: React.FC = () => {
         // Villages now use MongoDB API 
         const response: any = await getVillages("Terverifikasi");
         const fetchedVillages = response.villages || response.data || [];
-        const sortedVillages = fetchedVillages
+        const sortedVillages = [...(Array.isArray(fetchedVillages) ? fetchedVillages : [])]
           .sort((a: any, b: any) => {
             const inovasi = (b.jumlahInovasiDiterapkan || 0) - (a.jumlahInovasiDiterapkan || 0);
             if (inovasi !== 0) return inovasi;
