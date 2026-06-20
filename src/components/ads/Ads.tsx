@@ -29,7 +29,6 @@ const Ads: React.FC = () => {
         }
         const json = await res.json();
         const ads: AdItem[] = Array.isArray(json?.data) ? json.data : [];
-        console.log("[Ads] Active ads loaded:", ads.length, ads);
         setActiveAds(ads);
       } catch (err) {
         console.error("[Ads] Failed to load active ads:", err);
