@@ -2,16 +2,13 @@ import { Box } from "@chakra-ui/react";
 import CardVillage from "Components/card/village";
 import { paths } from "Consts/path";
 import React, { useEffect, useState } from "react";
-import { useQuery } from "react-query";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { getVillages } from "Services/villageServices";
 import { CardContainer, Horizontal, Title } from "./_villagesStyle";
 import { useTranslations } from "next-intl";
 
 const Village: React.FC = () => {
   const t = useTranslations("Home");
-  const router = useRouter();
   const [villages, setVillages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +28,7 @@ const Village: React.FC = () => {
         }));
 
         // Sort manually by valid "jumlahInovasiDiterapkan" descending
-        const sortedVillages = mapped
+        const sortedVillages = [...mapped]
           .sort((a: any, b: any) => {
             const inovasi = (Number(b.jumlahInovasiDiterapkan) || 0) - (Number(a.jumlahInovasiDiterapkan) || 0);
             if (inovasi !== 0) return inovasi;

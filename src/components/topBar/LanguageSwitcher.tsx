@@ -13,8 +13,6 @@ export default function LanguageSwitcher() {
         { code: "en", label: "EN", flag: "https://flagcdn.com/w40/gb.png" },
     ];
 
-    const currentLang = languages.find((lang) => lang.code === locale) || languages[0];
-
     return (
         <Menu>
             <MenuButton
@@ -44,7 +42,7 @@ export default function LanguageSwitcher() {
                                     alt={lang.label}
                                     width={16}
                                     height={11}
-                                    style={{ objectFit: "cover" }}
+                                    style={{ width: "16px", height: "11px", objectFit: "cover" }}
                                 />
                             </Box>
                             <Text color="black" fontSize="12px" fontWeight="600">

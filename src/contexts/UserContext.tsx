@@ -49,6 +49,7 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
       if (user) {
         // Cukup dispatch event — useAuthToken akan ambil token fresh dari Firebase
         window.dispatchEvent(new Event("auth:tokenChanged"));
+        
       } else {
         localStorage.removeItem("userRole");
         window.dispatchEvent(new Event("auth:tokenChanged"));

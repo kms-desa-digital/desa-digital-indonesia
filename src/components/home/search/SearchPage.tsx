@@ -67,10 +67,7 @@ function SearchPage() {
         search: keyword || undefined,
         status: "Terverifikasi",
       });
-      console.log("[SearchPage] raw res keys:", Object.keys(res || {}));
-      console.log("[SearchPage] first innovation:", res?.innovations?.[0] ? { name: res.innovations[0].namaInovasi, jumlahDesa: res.innovations[0].jumlahDesa } : "none");
       const innovations = sortByRelevance(res.innovations || [], keyword);
-      console.log("[SearchPage] sample jumlahDesa:", innovations.slice(0,3).map((i:any)=>({name:i.namaInovasi, jumlahDesa:i.jumlahDesa})));
       setResults(innovations);
     } catch (error) {
       console.error("Error fetching data via API:", error);
