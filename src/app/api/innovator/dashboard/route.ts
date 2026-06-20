@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { getCachedData, setCachedData } from '@/lib/utils/cache'
 
 const provinceCoords: Record<string, { lat: number; lng: number }> = {
   'ACEH': { lat: 4.695135, lng: 96.749399 },
@@ -80,6 +81,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const queriedInnovatorId = searchParams.get('innovatorId')
+    const targetInnovatorId = queriedInnovatorId || auth.uid
+
+    const cacheKey = `cache:innovator:dashboard:${targetInnovatorId}`
+    const cached = await getCachedData<any>(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached, { status: 200 })
+    }
 
     const db = await connectToDatabase()
 
@@ -342,7 +350,7 @@ export async function GET(request: NextRequest) {
       year: new Date(c.createdAt).getFullYear() || new Date().getFullYear()
     }));
 
-    return NextResponse.json({
+    const responsePayload = {
       innovator,
       totalInnovations,
       totalInovasi: totalInnovations,
@@ -356,7 +364,11 @@ export async function GET(request: NextRequest) {
       pertumbuhanDesa,
       daftarInovasi,
       desaDampingan
-    })
+    }
+
+    await setCachedData(cacheKey, responsePayload, 300)
+
+    return NextResponse.json(responsePayload)
   } catch (error) {
     console.error('Error fetching innovator dashboard:', error)
     return NextResponse.json(

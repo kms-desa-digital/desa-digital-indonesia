@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification, notifyRole } from '@/services/notificationServices'
+import { invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 type Params = Promise<{ id: string }>
 
@@ -55,6 +56,19 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Profil inovator tidak ditemukan' }, { status: 404 })
     }
+
+    const targetUserId = innovator.userId || innovator.firebaseUid || id;
+    await invalidateCachePattern('cache:innovators:list:*')
+    await invalidateCacheKeys([
+      `cache:innovator:detail:${id}`,
+      `cache:innovator:detail:${targetUserId}`,
+      `cache:innovator:dashboard:${id}`,
+      `cache:innovator:dashboard:${targetUserId}`,
+      `cache:auth:me:${id}`,
+      `cache:auth:me:${targetUserId}`,
+      `cache:user:role:${id}`,
+      `cache:user:role:${targetUserId}`
+    ])
 
     // Create notification for the Innovator owner
     try {

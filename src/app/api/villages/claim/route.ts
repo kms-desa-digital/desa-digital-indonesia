@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification, notifyAllAdmins } from '@/services/notificationServices'
 import { validateWordLimit } from '@/lib/utils/wordCount'
+import { getCachedData, setCachedData, invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 // =========================================================
 // POST /api/villages/claim
@@ -153,8 +154,16 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await db.collection('claimInnovations').insertOne(newClaim)
-
     const claimId = result.insertedId.toString()
+
+    // Invalidate list of claims, village details and dashboard caches
+    await invalidateCachePattern('cache:claims:list:*')
+    if (desaId) {
+      await invalidateCacheKeys([
+        `cache:village:detail:${desaId}`,
+        `cache:village:dashboard:${desaId}`
+      ])
+    }
 
     // Create notifications for admins and village
     try {
@@ -223,6 +232,15 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '0')
     const skip = parseInt(searchParams.get('skip') || '0')
 
+    const cacheKey = `cache:claims:list:desaId=${desaId || 'all'}:status=${status || 'all'}:search=${search || 'all'}:limit=${limit}:skip=${skip}`
+    const cached = await getCachedData<any>(cacheKey)
+    if (cached) {
+      return new NextResponse(JSON.stringify(cached, null, 2), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     const db = await connectToDatabase()
     const filter: any = {}
     if (desaId) filter.desaId = desaId
@@ -249,7 +267,7 @@ export async function GET(request: NextRequest) {
     
     const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
 
-    return new NextResponse(JSON.stringify({
+    const responsePayload = {
       claims: result,
       pagination: {
         total,
@@ -258,7 +276,11 @@ export async function GET(request: NextRequest) {
         skip,
         hasMore: total > skip + result.length
       }
-    }, null, 2), {
+    }
+
+    await setCachedData(cacheKey, responsePayload, 300)
+
+    return new NextResponse(JSON.stringify(responsePayload, null, 2), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     })

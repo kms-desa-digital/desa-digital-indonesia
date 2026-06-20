@@ -5,6 +5,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification } from '@/services/notificationServices'
+import { invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 type Params = Promise<{ id: string }>
 
@@ -56,6 +57,22 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
     }
+
+    // Invalidate caches
+    await invalidateCachePattern('cache:claims:list:*')
+    await invalidateCacheKeys([
+      `cache:claim:detail:${id}`,
+      `cache:claim:detail:${claim._id.toString()}`,
+      `cache:village:detail:${claim.desaId}`,
+      `cache:village:dashboard:${claim.desaId}`,
+      `cache:auth:me:${claim.desaId}`,
+      ...(claim.inovasiId ? [
+        `cache:innovation:detail:${claim.inovasiId}`
+      ] : [])
+    ])
+    await invalidateCachePattern('cache:innovator:dashboard:*')
+    await invalidateCachePattern('cache:innovations:list:*')
+    await invalidateCachePattern('cache:villages:list:*')
 
     // Sync data if verified
     if (desiredStatus === 'Terverifikasi') {

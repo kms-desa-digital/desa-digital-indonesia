@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { notifyAllAdmins } from '@/services/notificationServices'
 import { validateWordLimit } from '@/lib/utils/wordCount'
+import { getCachedData, setCachedData, invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 // Opt out of Next.js static caching so jumlahDesa always reflects live DB state
 export const dynamic = 'force-dynamic'
@@ -26,6 +27,12 @@ export async function GET(request: NextRequest) {
     const search      = searchParams.get('search')
     const limitVal    = parseInt(searchParams.get('limit') || '0')
     const skipVal     = parseInt(searchParams.get('skip') || '0')
+
+    const cacheKey = `cache:innovations:list:category=${category || 'all'}:status=${status || 'all'}:innovatorId=${innovatorId || 'all'}:search=${search || 'all'}:limit=${limitVal}:skip=${skipVal}`
+    const cached = await getCachedData<any>(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached, { status: 200 })
+    }
 
     const db = await connectToDatabase()
     const filter: Record<string, any> = {}
@@ -142,7 +149,7 @@ export async function GET(request: NextRequest) {
     
     const totalPages = limitVal > 0 ? Math.ceil(totalCount / limitVal) : 1;
 
-    return NextResponse.json({ 
+    const responsePayload = { 
       innovations: result,
       pagination: {
         total: totalCount,
@@ -150,7 +157,11 @@ export async function GET(request: NextRequest) {
         limit: limitVal,
         skip: skipVal
       }
-    }, { status: 200 })
+    }
+
+    await setCachedData(cacheKey, responsePayload, 300)
+
+    return NextResponse.json(responsePayload, { status: 200 })
   } catch (error) {
     console.error('Error fetching innovations:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
@@ -276,8 +287,17 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await db.collection('innovations').insertOne(newInnovation)
-
     const innovationId = result.insertedId.toString()
+
+    // Invalidate list caches, recommendations cache and innovator dashboard cache
+    await invalidateCachePattern('cache:innovations:list:*')
+    await invalidateCachePattern('cache:recommendations:*')
+    if (innovatorId) {
+      await invalidateCacheKeys([
+        `cache:innovator:dashboard:${innovatorId}`,
+        `cache:auth:me:${innovatorId}`
+      ])
+    }
 
     // Notify admins about new innovation (innovator tidak perlu notif untuk aksi sendiri)
     try {
