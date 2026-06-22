@@ -56,8 +56,8 @@ const ChatMessage = ({ message, isLoading = false, onSuggestionClick, onRetry }:
     const linkCards = message.extra?.linkCards ?? [];
     const suggestions = message.extra?.suggestions ?? [];
 
-    const hasCards = !isUser && !isLoading && linkCards.length > 0;
-    const hasSuggestions = !isUser && !isLoading && suggestions.length > 0;
+    const hasCards = !isUser && !isLoading && !message.error && linkCards.length > 0;
+    const hasSuggestions = !isUser && !isLoading && !message.error && suggestions.length > 0;
 
     useEffect(() => {
         const timestamp = message.createdAt || new Date();

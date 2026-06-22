@@ -34,7 +34,7 @@ export type GuardResult =
 // Konstanta
 // ---------------------------------------------------------------------------
 
-const MIN_LENGTH = 3;
+const MIN_LENGTH = 5;
 const MAX_LENGTH = 500;
 
 const GUARD_PROVIDER = process.env.GUARD_LLM_PROVIDER ?? "auto";
@@ -361,11 +361,12 @@ export async function validateQuery(rawInput: string): Promise<GuardResult> {
     }
     // Ada konteks desa TAPI juga ada kata off-domain (misal "desa saya... buatkan kode")
     // → kirim ke LLM guard untuk keputusan lebih akurat
-    console.log(`[QueryGuard] Ambigu (ada konteks desa + off-domain keyword) → LLM guard`);
-    const llmResult = await checkWithLlm(sanitized);
-    if (llmResult) return llmResult;
+    // [DISABLED] LLM guard dinonaktifkan sementara
+    // console.log(`[QueryGuard] Ambigu (ada konteks desa + off-domain keyword) → LLM guard`);
+    // const llmResult = await checkWithLlm(sanitized);
+    // if (llmResult) return llmResult;
     // LLM tidak tersedia atau timeout → tolak secara konservatif
-    console.warn(`[QueryGuard] LLM tidak tersedia, tolak query ambigu secara konservatif`);
+    console.warn(`[QueryGuard] LLM guard disabled, tolak query ambigu secara konservatif`);
     return {
       allowed: false,
       reason: "off_domain",
@@ -380,8 +381,9 @@ export async function validateQuery(rawInput: string): Promise<GuardResult> {
   }
 
   // Lapis 2: LLM guard — untuk kasus ambigu yang tidak tertangkap di atas
-  const llmResult = await checkWithLlm(sanitized);
-  if (llmResult) return llmResult;
+  // [DISABLED] LLM guard dinonaktifkan sementara
+  // const llmResult = await checkWithLlm(sanitized);
+  // if (llmResult) return llmResult;
 
   console.log(`[QueryGuard] Diizinkan`);
   return { allowed: true, sanitized };
