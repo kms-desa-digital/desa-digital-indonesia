@@ -97,6 +97,16 @@ const KlaimInovasiManualContent: React.FC = () => {
         setIsAdmin(role === "admin");
     }, [role]);
 
+    useEffect(() => {
+        const innovationName = searchParams.get("innovationName") || searchParams.get("inovationName");
+        if (innovationName && !editId) {
+            setTextInputsValue(prev => ({
+                ...prev,
+                inovationName: innovationName
+            }));
+        }
+    }, [searchParams, editId]);
+
     const handleCheckboxChange = (checkbox: string) => {
         if (isUploading[checkbox as keyof typeof isUploading]) return;
 
