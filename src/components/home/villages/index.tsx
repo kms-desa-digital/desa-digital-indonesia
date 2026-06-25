@@ -53,7 +53,7 @@ const Village: React.FC = () => {
         <Horizontal>
           {loading ? (
              [1, 2, 3].map((i) => (
-              <Box key={i} width="38%" flexShrink={0}>
+              <Box key={i} width="43%" flexShrink={0}>
                 <Box height="150px" bg="gray.100" borderRadius="12px" />
               </Box>
             ))
@@ -62,7 +62,7 @@ const Village: React.FC = () => {
               <Link
                 href={paths.DETAIL_VILLAGE_PAGE.replace(':id', item.id)}
                 key={item.id || idx}
-                style={{ textDecoration: 'none', width: '38%', flexShrink: 0, display: 'block' }}
+                style={{ textDecoration: 'none', width: '43%', flexShrink: 0, display: 'block' }}
               >
                 <CardVillage
                   isHome={true}
@@ -74,6 +74,7 @@ const Village: React.FC = () => {
                   jumlahInovasiDiterapkan={item.jumlahInovasiDiterapkan}
                   ranking={idx + 1}
                   id={item.id}
+                  activeBadge={item.activeBadge}
                 />
               </Link>
             ))

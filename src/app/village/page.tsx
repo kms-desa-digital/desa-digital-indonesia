@@ -325,6 +325,7 @@ const Village: React.FC = () => {
                                 isHome={false}
                                 highlightQuery={searchTerm}
                                 ranking={searchTerm.trim() ? undefined : (startIndex + idx + 1)}
+                                activeBadge={item.activeBadge}
                                 onClick={() => {
                                     router.push(`/village/detail/${item.userId || item.id}`);
                                 }}

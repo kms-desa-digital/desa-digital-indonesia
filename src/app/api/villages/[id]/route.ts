@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { validateWordLimit } from '@/lib/utils/wordCount'
+import { getCachedData, setCachedData, invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 type Params = Promise<{ id: string }>
 
@@ -13,6 +14,13 @@ type Params = Promise<{ id: string }>
 export async function GET(_request: NextRequest, { params }: { params: Params }) {
   try {
     const { id } = await params
+
+    const cacheKey = `cache:village:detail:${id}`
+    const cached = await getCachedData<any>(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached, { status: 200 })
+    }
+
     const db = await connectToDatabase()
 
     // Mengecek ObjectId
@@ -48,17 +56,18 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
 
     const totalVerified = manualClaimCount + standardCount;
 
-    return NextResponse.json(
-      {
-        village: {
-          ...village,
-          id: village._id.toString(),
-          _id: village._id.toString(),
-          jumlahInovasiDiterapkan: totalVerified
-        }
-      },
-      { status: 200 }
-    )
+    const responsePayload = {
+      village: {
+        ...village,
+        id: village._id.toString(),
+        _id: village._id.toString(),
+        jumlahInovasiDiterapkan: totalVerified
+      }
+    }
+
+    await setCachedData(cacheKey, responsePayload, 300)
+
+    return NextResponse.json(responsePayload, { status: 200 })
 
   } catch (error) {
     console.error('Error fetching village detail:', error)
@@ -111,7 +120,8 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     }
 
     // Validasi kepemilikan: Hanya pemilik profil atau admin yang boleh mengedit
-    if (!isAdmin && existing.userId !== auth.uid) {
+    const isOwner = existing.userId === auth.uid || existing._id.toString() === auth.uid;
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ message: 'Anda tidak memiliki hak untuk mengubah profil ini' }, { status: 403 })
     }
 
@@ -134,6 +144,20 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
     }
+
+    // Invalidate caches
+    const targetUserId = existing.userId || id
+    await invalidateCachePattern('cache:villages:list:*')
+    await invalidateCacheKeys([
+      `cache:village:detail:${id}`,
+      `cache:village:detail:${targetUserId}`,
+      `cache:village:dashboard:${id}`,
+      `cache:village:dashboard:${targetUserId}`,
+      `cache:auth:me:${id}`,
+      `cache:auth:me:${targetUserId}`,
+      `cache:user:role:${id}`,
+      `cache:user:role:${targetUserId}`
+    ])
 
     // Notify admins about update/resubmission
     try {
@@ -186,7 +210,8 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
     }
 
     // Validasi kepemilikan: Hanya pemilik profil atau admin yang boleh menghapus
-    if (!isAdmin && existing.userId !== auth.uid) {
+    const isOwner = existing.userId === auth.uid || existing._id.toString() === auth.uid;
+    if (!isAdmin && !isOwner) {
       return NextResponse.json({ message: 'Anda tidak memiliki hak untuk menghapus profil ini' }, { status: 403 })
     }
 
@@ -195,6 +220,20 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
     if (result.deletedCount === 0) {
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
     }
+
+    // Invalidate caches
+    const targetUserId = existing.userId || id
+    await invalidateCachePattern('cache:villages:list:*')
+    await invalidateCacheKeys([
+      `cache:village:detail:${id}`,
+      `cache:village:detail:${targetUserId}`,
+      `cache:village:dashboard:${id}`,
+      `cache:village:dashboard:${targetUserId}`,
+      `cache:auth:me:${id}`,
+      `cache:auth:me:${targetUserId}`,
+      `cache:user:role:${id}`,
+      `cache:user:role:${targetUserId}`
+    ])
 
     return NextResponse.json({ message: 'Profil desa berhasil dihapus' }, { status: 200 })
 

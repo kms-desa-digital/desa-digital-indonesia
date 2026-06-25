@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification, notifyAllAdmins } from '@/services/notificationServices'
 import { validateWordLimit } from '@/lib/utils/wordCount'
+import { getCachedData, setCachedData, invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 type Params = Promise<{ id: string }>
 
@@ -14,6 +15,13 @@ type Params = Promise<{ id: string }>
 export async function GET(_request: NextRequest, { params }: { params: Params }) {
   try {
     const { id } = await params
+
+    const cacheKey = `cache:innovation:detail:${id}`
+    const cached = await getCachedData<any>(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached, { status: 200 })
+    }
+
     const db = await connectToDatabase()
     
     // Gunakan try-catch alih-alih ObjectId.isValid
@@ -108,10 +116,11 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
     }
 
-    return NextResponse.json(
-      { innovation: { ...doc, id: doc._id.toString(), _id: doc._id.toString() } },
-      { status: 200 }
-    )
+    const responsePayload = { innovation: { ...doc, id: doc._id.toString(), _id: doc._id.toString() } }
+
+    await setCachedData(cacheKey, responsePayload, 300)
+
+    return NextResponse.json(responsePayload, { status: 200 })
   } catch (error) {
     console.error('Error fetching innovation:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
@@ -192,6 +201,19 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
     }
 
+    // Invalidate caches
+    const targetInnovatorId = existing.innovatorId || existing.userId
+    await invalidateCachePattern('cache:innovations:list:*')
+    await invalidateCachePattern('cache:recommendations:*')
+    await invalidateCacheKeys([
+      `cache:innovation:detail:${id}`,
+      `cache:innovation:detail:${existing._id.toString()}`,
+      ...(targetInnovatorId ? [
+        `cache:innovator:dashboard:${targetInnovatorId}`,
+        `cache:auth:me:${targetInnovatorId}`
+      ] : [])
+    ])
+
     // Kirim notifikasi
     try {
       // 1. Jika admin mengubah status verifikasi → notif ke innovator
@@ -271,9 +293,10 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
     const inovasiIdStr = existing._id.toString()
 
     // 2. Handle associated claims cleanup
+    let verifiedClaims: any[] = []
     try {
         // Find verified claims to decrement village counts
-        const verifiedClaims = await db.collection('claimInnovations').find({
+        verifiedClaims = await db.collection('claimInnovations').find({
             inovasiId: inovasiIdStr,
             status: 'Terverifikasi'
         }).toArray()
@@ -301,6 +324,28 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ message: 'Gagal menghapus inovasi' }, { status: 500 })
+    }
+
+    // Invalidate caches
+    const targetInnovatorId = existing.innovatorId || existing.userId
+    await invalidateCachePattern('cache:innovations:list:*')
+    await invalidateCachePattern('cache:recommendations:*')
+    await invalidateCacheKeys([
+      `cache:innovation:detail:${id}`,
+      `cache:innovation:detail:${existing._id.toString()}`,
+      ...(targetInnovatorId ? [
+        `cache:innovator:dashboard:${targetInnovatorId}`,
+        `cache:auth:me:${targetInnovatorId}`
+      ] : [])
+    ])
+
+    // Invalidate caches for all affected villages
+    if (typeof verifiedClaims !== 'undefined' && Array.isArray(verifiedClaims) && verifiedClaims.length > 0) {
+      const villageKeys = verifiedClaims.flatMap(claim => [
+        `cache:village:detail:${claim.desaId}`,
+        `cache:village:dashboard:${claim.desaId}`
+      ])
+      await invalidateCacheKeys(villageKeys)
     }
 
     return NextResponse.json({ message: 'Inovasi berhasil dihapus' }, { status: 200 })

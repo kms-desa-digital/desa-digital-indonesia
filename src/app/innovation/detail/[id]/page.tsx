@@ -241,7 +241,6 @@ function DetailInnovation() {
                 throw error;
             }
 
-            console.log("hahahahah:", data);
             setData({ ...data, status: "Terverifikasi" });
 
             try {

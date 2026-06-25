@@ -1,8 +1,11 @@
 import { MongoClient } from "mongodb";
 
+const maxPoolSize = parseInt(process.env.MONGODB_MAX_POOL_SIZE || '100', 10);
+
 const options = {
   serverSelectionTimeoutMS: 5000,
   connectTimeoutMS: 10000,
+  maxPoolSize,
 };
 
 // ambil URL MongoDB dari env

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { getCachedData, setCachedData } from '@/lib/utils/cache'
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,6 +10,12 @@ export async function GET(request: NextRequest) {
     if (auth instanceof NextResponse) return auth;
 
     const firebaseUid = auth.uid;
+    const cacheKey = `cache:village:dashboard:${firebaseUid}`
+    const cached = await getCachedData<any>(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached, { status: 200 })
+    }
+
     const db = await connectToDatabase();
 
     // 1. Temukan dokumen desa berdasarkan Firebase UID
@@ -192,7 +199,7 @@ export async function GET(request: NextRequest) {
     const systemTotalInnovations = await db.collection('innovations').countDocuments();
     const systemTotalInnovators = await db.collection('innovators').countDocuments();
 
-    return NextResponse.json({
+    const responsePayload = {
       desa: desaInfo,
       desaFound: !!village,
       dashboard: {
@@ -206,7 +213,11 @@ export async function GET(request: NextRequest) {
         perkembanganInovasi,
         recommendations,
       },
-    }, { status: 200 });
+    }
+
+    await setCachedData(cacheKey, responsePayload, 300)
+
+    return NextResponse.json(responsePayload, { status: 200 })
 
   } catch (error) {
     console.error('Error fetching village dashboard:', error)

@@ -48,6 +48,7 @@ export const Title = styled.p`
   font-size: 18px;
   font-weight: 700;
   margin-top: 48px;
+  margin-bottom: 0;
   position: relative;
   color: #1f2937;
 `;
@@ -75,6 +76,7 @@ export const Label = styled.p<MarginProps>`
   text-align: justify;
   width: fit-content;
   cursor: pointer;
+  margin: 0;
   ${marginStyle}
 `;
 export const Description = styled.p`

@@ -275,9 +275,72 @@ const DetailInnovator: React.FC = () => {
                 </Box>
             </Flex>
             <ContentContainer>
-                <Stack gap={3} mt={4}>
+                <Stack gap={2} mt={4}>
                     <Title>{innovatorData.namaInovator}</Title>
-                    <Label>{innovatorData.kategori}</Label>
+                    <Flex gap={2} wrap="wrap" mt={0.5} mb={0.5}>
+                        <Label style={{ marginTop: 0 }}>{innovatorData.kategori}</Label>
+                        {innovatorData.activeBadge && (() => {
+                            const badgeId = innovatorData.activeBadge;
+                            const configMap: Record<string, { name: string; icon: string; bg: string; border: string; color: string }> = {
+                                terus_berkembang: {
+                                    name: "Terus Berkembang",
+                                    icon: "/icons/digital_nudge/TerusBerkembang.svg",
+                                    bg: "#EFF6FF",
+                                    border: "#3B82F6",
+                                    color: "#1D4ED8"
+                                },
+                                si_inovatif: {
+                                    name: "Si Inovatif",
+                                    icon: "/icons/digital_nudge/SiInovatif.svg",
+                                    bg: "#FFF7ED",
+                                    border: "#F97316",
+                                    color: "#C2410C"
+                                },
+                                kolaborator_handal: {
+                                    name: "Kolaborator Handal",
+                                    icon: "/icons/digital_nudge/KolaboratorHandal.svg",
+                                    bg: "#F5F3FF",
+                                    border: "#8B5CF6",
+                                    color: "#6D28D9"
+                                },
+                                sahabat_desa: {
+                                    name: "Sahabat Desa",
+                                    icon: "/icons/digital_nudge/SahabatDesa.svg",
+                                    bg: "#FDF2F8",
+                                    border: "#EC4899",
+                                    color: "#BE185D"
+                                },
+                                pemimpin_pasar: {
+                                    name: "Pemimpin Pasar",
+                                    icon: "/icons/digital_nudge/PemimpinPasar.svg",
+                                    bg: "#FEF9C3",
+                                    border: "#EAB308",
+                                    color: "#A16207"
+                                }
+                            };
+                            const cfg = configMap[badgeId];
+                            if (!cfg) return null;
+                            return (
+                                <Flex
+                                    alignItems="center"
+                                    gap="6px"
+                                    bg={cfg.bg}
+                                    border={`1px solid ${cfg.border}`}
+                                    color={cfg.color}
+                                    borderRadius="full"
+                                    px="12px"
+                                    py="4px"
+                                    fontSize="10px"
+                                    fontWeight="700"
+                                    boxShadow="sm"
+                                    height="20px"
+                                >
+                                    <Image src={cfg.icon} alt={cfg.name} boxSize="12px" />
+                                    {cfg.name}
+                                </Flex>
+                            );
+                        })()}
+                    </Flex>
                     <Flex direction="row" gap={3} mt={0} alignItems="center">
                         <Icon as={FaWandMagicSparkles} color="#4B5563" />
                         <Text fontSize="12px" fontWeight="400" color="#4B5563">
