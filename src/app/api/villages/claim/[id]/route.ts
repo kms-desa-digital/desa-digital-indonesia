@@ -4,6 +4,7 @@ import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification } from '@/services/notificationServices'
 import { validateWordLimit } from '@/lib/utils/wordCount'
+import { getCachedData, setCachedData, invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 type Params = Promise<{ id: string }>
 
@@ -17,6 +18,16 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
     if (auth instanceof NextResponse) return auth;
 
     const { id } = await params
+
+    const cacheKey = `cache:claim:detail:${id}`
+    const cached = await getCachedData<any>(cacheKey)
+    if (cached) {
+      return new NextResponse(JSON.stringify(cached, null, 2), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     const db = await connectToDatabase()
 
     // Try finding by ObjectId first, then by string _id (migrated data), then by 'id' field
@@ -37,15 +48,16 @@ export async function GET(_request: NextRequest, { params }: { params: Params })
       return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
     }
 
-    return new NextResponse(
-      JSON.stringify({
-        data: { ...claim, id: claim._id.toString(), _id: claim._id.toString() }
-      }, null, 2),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
+    const responsePayload = {
+      data: { ...claim, id: claim._id.toString(), _id: claim._id.toString() }
+    }
+
+    await setCachedData(cacheKey, responsePayload, 300)
+
+    return new NextResponse(JSON.stringify(responsePayload, null, 2), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
 
   } catch (error) {
     console.error('Error fetching claim detail:', error)
@@ -158,6 +170,18 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Klaim tidak ditemukan' }, { status: 404 })
     }
+
+    // Invalidate caches
+    await invalidateCachePattern('cache:claims:list:*')
+    await invalidateCacheKeys([
+      `cache:claim:detail:${id}`,
+      `cache:claim:detail:${claim._id.toString()}`,
+      `cache:village:detail:${claim.desaId}`,
+      `cache:village:dashboard:${claim.desaId}`,
+      `cache:auth:me:${claim.desaId}`
+    ])
+    // Invalidate innovator dashboards to update stats
+    await invalidateCachePattern('cache:innovator:dashboard:*')
 
     // Sync data if status changed TO Terverifikasi
     if (claim.status !== 'Terverifikasi' && nextStatus === 'Terverifikasi') {
@@ -314,6 +338,18 @@ export async function DELETE(request: NextRequest, { params }: { params: Params 
     if (result.deletedCount === 0) {
       return NextResponse.json({ message: 'Gagal menghapus klaim' }, { status: 500 })
     }
+
+    // Invalidate caches
+    await invalidateCachePattern('cache:claims:list:*')
+    await invalidateCacheKeys([
+      `cache:claim:detail:${id}`,
+      `cache:claim:detail:${claim._id.toString()}`,
+      `cache:village:detail:${claim.desaId}`,
+      `cache:village:dashboard:${claim.desaId}`,
+      `cache:auth:me:${claim.desaId}`
+    ])
+    // Invalidate innovator dashboards to update stats
+    await invalidateCachePattern('cache:innovator:dashboard:*')
 
     // Sync data if DELETED claim was Terverifikasi
     if (claim.status === 'Terverifikasi') {

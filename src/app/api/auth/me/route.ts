@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { verifyRoleFromToken } from '@/lib/auth/verifyRole'
 import { ObjectId } from 'mongodb'
+import { getCachedData, setCachedData } from '@/lib/utils/cache'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,6 +16,13 @@ export async function GET(request: NextRequest) {
 
     if (!uid) {
       return NextResponse.json({ message: 'Invalid or expired token' }, { status: 401 })
+    }
+
+    // Check Redis cache first
+    const meCacheKey = `cache:auth:me:${uid}`
+    const cachedMe = await getCachedData<any>(meCacheKey)
+    if (cachedMe) {
+      return NextResponse.json(cachedMe, { status: 200 })
     }
 
     const db = await connectToDatabase()
@@ -92,7 +100,7 @@ export async function GET(request: NextRequest) {
       status: 'Terverifikasi' 
     })
 
-    return NextResponse.json({
+    const responsePayload = {
       user: {
         uid: userIdString,
         firebaseUid: uid,
@@ -102,7 +110,12 @@ export async function GET(request: NextRequest) {
         isVillageVerified: village?.status === 'Terverifikasi',
         isInnovationVerified: !!verifiedInno,
       }
-    }, { status: 200 })
+    }
+
+    // Cache selama 30 detik
+    await setCachedData(meCacheKey, responsePayload, 30)
+
+    return NextResponse.json(responsePayload, { status: 200 })
 
   } catch (error) {
     console.error('Auth verification error:', error)

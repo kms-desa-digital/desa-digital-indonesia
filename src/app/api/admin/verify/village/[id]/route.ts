@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 type Params = Promise<{ id: string }>
 
@@ -54,6 +55,19 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Profil desa tidak ditemukan' }, { status: 404 })
     }
+
+    const targetUserId = village.userId || village.firebaseUid || id
+    await invalidateCachePattern('cache:villages:list:*')
+    await invalidateCacheKeys([
+      `cache:village:detail:${id}`,
+      `cache:village:detail:${targetUserId}`,
+      `cache:village:dashboard:${id}`,
+      `cache:village:dashboard:${targetUserId}`,
+      `cache:auth:me:${id}`,
+      `cache:auth:me:${targetUserId}`,
+      `cache:user:role:${id}`,
+      `cache:user:role:${targetUserId}`
+    ])
 
     // Create notification for the Village owner
     try {

@@ -32,7 +32,7 @@ export const CardContent = styled.div`
   align-item: flex-start;
   flex: 1 0 0;
   align-self: stretch;
-  height: 115px;
+  height: 130px;
 `
 export const ContBadge = styled.div`
   display: flex;
@@ -45,16 +45,20 @@ export const ContBadge = styled.div`
 
 `
 
-export const Title = styled.p`
+export const Title = styled.p.withConfig({
+  shouldForwardProp: (prop) => prop !== '$hasBadge'
+})<{ $hasBadge?: boolean }>`
   font-size: 12px;
   font-weight: 700;
   color: #1F2937;
+  height: ${({ $hasBadge }) => ($hasBadge ? '17px' : '34px')};
+  line-height: 17px;
   
   white-space: wrap;
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: ${({ $hasBadge }) => ($hasBadge ? 1 : 2)};
   align-self: stretch;
   text-overflow: ellipsis;
 `

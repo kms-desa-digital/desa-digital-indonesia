@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { validateWordLimit } from '@/lib/utils/wordCount'
+import { getCachedData, setCachedData, invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 // GET /api/innovator
 // Ambil semua profil inovator.
@@ -13,6 +14,12 @@ export async function GET(request: NextRequest) {
     const kategori = searchParams.get('kategori')
     const limitVal = parseInt(searchParams.get('limit') || '0')
     const skipVal = parseInt(searchParams.get('skip') || '0')
+
+    const cacheKey = `cache:innovators:list:status=${status || 'all'}:kategori=${kategori || 'all'}:search=${search || 'all'}:limit=${limitVal}:skip=${skipVal}`
+    const cached = await getCachedData<any>(cacheKey)
+    if (cached) {
+      return NextResponse.json(cached, { status: 200 })
+    }
 
     const db = await connectToDatabase()
     const filter: any = {}
@@ -92,7 +99,7 @@ export async function GET(request: NextRequest) {
     
     const totalPages = limitVal > 0 ? Math.ceil(totalCount / limitVal) : 1;
 
-    return NextResponse.json({ 
+    const responsePayload = { 
       data: result,
       pagination: {
         total: totalCount,
@@ -100,7 +107,11 @@ export async function GET(request: NextRequest) {
         limit: limitVal,
         skip: skipVal
       }
-    }, { status: 200 })
+    }
+
+    await setCachedData(cacheKey, responsePayload, 300)
+
+    return NextResponse.json(responsePayload, { status: 200 })
   } catch (error) {
     console.error('Error fetching innovators:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
@@ -228,6 +239,10 @@ export async function POST(request: NextRequest) {
     }
 
     await innovatorCollection.insertOne(newDoc)
+
+    // Invalidate innovator caches and auth status cache
+    await invalidateCachePattern('cache:innovators:list:*')
+    await invalidateCacheKeys([`cache:auth:me:${targetId}`, `cache:user:role:${targetId}`])
 
     // Notify all admins about new registered innovator profile
     try {

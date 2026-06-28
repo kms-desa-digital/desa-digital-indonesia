@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { validateWordLimit } from '@/lib/utils/wordCount'
+import { getCachedData, setCachedData, invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 // =========================================================
 // GET /api/villages
@@ -17,6 +18,16 @@ export async function GET(request: NextRequest) {
     const kabupatenKota = searchParams.get('kabupatenKota')
     const limitVal = parseInt(searchParams.get('limit') || '0')
     const skipVal = parseInt(searchParams.get('skip') || '0')
+
+    const cacheKey = `cache:villages:list:status=${status || 'all'}:search=${search || 'all'}:provinsi=${provinsi || 'all'}:kabupatenKota=${kabupatenKota || 'all'}:limit=${limitVal}:skip=${skipVal}`
+    const cached = await getCachedData<any>(cacheKey)
+    if (cached) {
+      return new NextResponse(JSON.stringify(cached, null, 2), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     const db = await connectToDatabase()
     const andConditions: any[] = []
 
@@ -159,7 +170,7 @@ export async function GET(request: NextRequest) {
     
     const totalPages = limitVal > 0 ? Math.ceil(totalCount / limitVal) : 1;
 
-    return new NextResponse(JSON.stringify({ 
+    const responsePayload = { 
       villages: result,
       pagination: {
         total: totalCount,
@@ -167,7 +178,11 @@ export async function GET(request: NextRequest) {
         limit: limitVal,
         skip: skipVal
       }
-    }, null, 2), {
+    }
+
+    await setCachedData(cacheKey, responsePayload, 300)
+
+    return new NextResponse(JSON.stringify(responsePayload, null, 2), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
     })
@@ -278,6 +293,10 @@ export async function POST(request: NextRequest) {
 
     const result = await db.collection('villages').insertOne(newVillage)
     const villageId = result.insertedId.toString()
+
+    // Invalidate village caches and auth status cache
+    await invalidateCachePattern('cache:villages:list:*')
+    await invalidateCacheKeys([`cache:auth:me:${targetUserId}`, `cache:user:role:${targetUserId}`])
 
     // Notify all admins about new registered village profile
     try {

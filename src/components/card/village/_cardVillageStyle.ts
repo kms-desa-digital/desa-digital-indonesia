@@ -9,7 +9,7 @@ export const Container = styled.div.withConfig({
   display: flex;
   width: 100%;
   flex-shrink: 0;
-  height: 197px;
+  height: ${({ $isHome }) => ($isHome ? '215px' : '197px')};
   flex-direction: column;
   align-items: flex-start;
   overflow: hidden;
@@ -55,16 +55,17 @@ export const ContBadge = styled.div`
 `;
 
 export const Title = styled.p.withConfig({
-  shouldForwardProp: (prop) => prop !== '$isHome'
-})<{ $isHome?: boolean }>`
+  shouldForwardProp: (prop) => prop !== '$isHome' && prop !== '$hasBadge'
+})<{ $isHome?: boolean; $hasBadge?: boolean }>`
   font-size: ${({ $isHome }) => ($isHome ? '12px' : '10px')};
   font-weight: 700;
   color: #1f2937;
   line-height: 140%;
+  height: ${({ $isHome }) => ($isHome ? '17px' : '14px')};
   overflow: hidden;
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   align-self: stretch;
   text-overflow: ellipsis;
 `;

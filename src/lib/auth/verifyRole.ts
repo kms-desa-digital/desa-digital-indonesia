@@ -1,5 +1,6 @@
 import { getFirebaseAdminAuth, getFirebaseAdminFirestore } from "@/lib/firebase/admin";
 import { connectToDatabase } from "@/lib/db/mongodb";
+import { getCachedData, setCachedData } from "@/lib/utils/cache";
 
 const VALID_ROLES = ["admin", "kementerian", "innovator", "village", "guest", "ministry"] as const;
 export type ValidRole = (typeof VALID_ROLES)[number];
@@ -25,6 +26,13 @@ export async function verifyRoleFromToken(
 
     if (!uid) {
       return { uid: null, role: "guest", email: null };
+    }
+
+    // Check Redis cache first
+    const cacheKey = `cache:user:role:${uid}`;
+    const cached = await getCachedData<{ role: ValidRole; email: string | null }>(cacheKey);
+    if (cached) {
+      return { uid, role: cached.role, email: cached.email };
     }
 
     let role: ValidRole = "guest";
@@ -58,6 +66,9 @@ export async function verifyRoleFromToken(
         console.error("[verifyRoleFromToken] Firestore lookup failed:", firestoreError);
       }
     }
+
+    // Cache the resolved role for 1 hour (3600 seconds)
+    await setCachedData(cacheKey, { role, email }, 3600);
 
     return { uid, role, email };
   } catch (error: any) {

@@ -18,6 +18,7 @@ interface InnovatorData {
   header?: string;
   logo?: string;
   status?: string;
+  activeBadge?: string | null;
 }
 
 
@@ -60,7 +61,7 @@ function Innovator() {
         <Horizontal>
           {loading ? (
             [1, 2, 3].map((i) => (
-              <Box key={i} width="38%" flexShrink={0}>
+              <Box key={i} width="43%" flexShrink={0}>
                 <Box height="150px" bg="gray.100" borderRadius="12px" />
               </Box>
             ))
@@ -69,7 +70,7 @@ function Innovator() {
               <Link
                 href={paths.INNOVATOR_PROFILE_PAGE.replace(':id', item.id)}
                 key={item.id}
-                style={{ textDecoration: 'none', width: '38%', flexShrink: 0, display: 'block' }}
+                style={{ textDecoration: 'none', width: '43%', flexShrink: 0, display: 'block' }}
               >
                 <CardInnovator
                   id={item.id}
@@ -79,6 +80,7 @@ function Innovator() {
                   jumlahDesaDampingan={item.jumlahDesaDampingan}
                   jumlahInovasi={item.jumlahInovasi}
                   ranking={idx + 1}
+                  activeBadge={item.activeBadge}
                 />
               </Link>
             ))

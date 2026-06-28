@@ -6,6 +6,11 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   if (pathname.startsWith('/api')) {
+    // Kecualikan keep-warm cron dari batasan Same-Origin
+    if (pathname === '/api/cron/keep-warm') {
+      return NextResponse.next()
+    }
+
     const origin = request.headers.get('origin')
     const referer = request.headers.get('referer')
     const host = request.headers.get('host')

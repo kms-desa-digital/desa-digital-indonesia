@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
 import { createNotification, createNotificationBatch } from '@/services/notificationServices'
+import { invalidateCachePattern, invalidateCacheKeys } from '@/lib/utils/cache'
 
 type Params = Promise<{ id: string }>
 
@@ -55,6 +56,18 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     if (result.matchedCount === 0) {
       return NextResponse.json({ message: 'Inovasi tidak ditemukan' }, { status: 404 })
     }
+
+    const targetInnovatorId = innovation.innovatorId || innovation.userId
+    await invalidateCachePattern('cache:innovations:list:*')
+    await invalidateCachePattern('cache:recommendations:*')
+    await invalidateCacheKeys([
+      `cache:innovation:detail:${id}`,
+      `cache:innovation:detail:${innovation._id.toString()}`,
+      ...(targetInnovatorId ? [
+        `cache:innovator:dashboard:${targetInnovatorId}`,
+        `cache:auth:me:${targetInnovatorId}`
+      ] : [])
+    ])
 
     // Create notification for innovator
     try {
