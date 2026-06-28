@@ -109,7 +109,7 @@ const AMBIGUOUS_OR_OFFDOMAIN_PATTERNS: RegExp[] = [
   // Politik
   /\b(?:presiden|politik|partai|pemilu|berita\s+terkini)\b/i,
   // Injection keywords
-  /\b(?:ignore|abaikan|lupakan|jailbreak|bypass|mode)\b/i,
+  /\b(?:ignore|abaikan|lupakan|jailbreak|bypass|mode|format\s+json)\b/i,
 ];
 
 function isClearlySafeDomainQuery(sanitized: string): boolean {

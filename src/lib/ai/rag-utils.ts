@@ -63,18 +63,30 @@ export function buildCollectionFilter(
   const normalizedRole = normalizeRole(role);
   const allowed = ROLE_ALLOWED_COLLECTIONS[normalizedRole];
 
-  // Jika intent sudah spesifik, intersect dengan allowed collection role
-  if (intent.primary === "village") {
-    return allowed.filter((c) => ["villages"].includes(c));
+  const targetCollections = new Set<string>();
+
+  if (intent.isVillage) {
+    targetCollections.add("villages");
+    targetCollections.add("innovations");
+    targetCollections.add("claimInnovations");
   }
-  if (intent.primary === "innovation") {
-    return allowed.filter((c) => ["innovations"].includes(c));
+  if (intent.isInnovation) {
+    targetCollections.add("innovations");
+    targetCollections.add("villages");
+    targetCollections.add("claimInnovations");
   }
-  if (intent.primary === "innovator") {
-    return allowed.filter((c) => ["innovators", "innovations"].includes(c));
+  if (intent.isInnovator) {
+    targetCollections.add("innovators");
+    targetCollections.add("innovations");
   }
-  // stats atau general: kembalikan semua yang diizinkan untuk role ini
-  return allowed;
+
+  // Jika tidak ada keyword spesifik atau mencari statistik, telusuri semua koleksi yang diizinkan
+  if (targetCollections.size === 0 || intent.isStats) {
+    return allowed;
+  }
+
+  // Filter koleksi yang diizinkan sesuai role
+  return allowed.filter((c) => targetCollections.has(c));
 }
 
 /**
@@ -186,6 +198,9 @@ export function detectQueryIntent(query: string): QueryIntent {
     "berapa harga",
     "inovasi apa saja",
     "daftar inovasi",
+    "klaim",
+    "status klaim",
+    "pengajuan",
   ];
 
   const innovatorKeywords = [
@@ -293,7 +308,6 @@ export async function searchDatabaseEmbeddings(
     const queryVector = await generateEmbeddings(query);
     const collectionFilter = buildCollectionFilter(intent, role);
 
-    // Pastikan filter tidak kosong — fallback ke innovations saja
     if (collectionFilter.length === 0) {
       console.warn(
         "[searchDatabaseEmbeddings] collectionFilter kosong, fallback ke innovations"
@@ -305,7 +319,8 @@ export async function searchDatabaseEmbeddings(
       `[searchDatabaseEmbeddings] Role=${role} | Filter=[${collectionFilter.join(", ")}]`
     );
 
-    const results = await db
+    // 1. Vector Search
+    const vectorResults = await db
       .collection("db_embeddings")
       .aggregate([
         {
@@ -329,12 +344,98 @@ export async function searchDatabaseEmbeddings(
       ])
       .toArray();
 
-    const valid = results.filter((r) => r.score > VECTOR_SCORE_THRESHOLD);
+    const validVectorResults = vectorResults.filter(
+      (r) => r.score > VECTOR_SCORE_THRESHOLD
+    );
 
-    // Defense-in-depth: filter ulang di memory, meski sudah difilter di pipeline
-    const safe = enforceRoleFilter(valid, role);
+    // 2. Exact Match Search (Hybrid Fallback)
+    // Berguna untuk keyword spesifik (seperti nama desa "Soge") yang mungkin
+    // vector score-nya rendah terhadap dokumen inovasi tapi nama desanya disebut di metadata.
+    const stopWords = new Set([
+      "desa", "yang", "di", "ke", "dari", "apa", "saja", "mengadopsi",
+      "inovasi", "diterapkan", "nya", "ini", "itu", "dan", "atau", "untuk"
+    ]);
+    const tokens = query
+      .replace(/[^\w\s]/gi, "")
+      .split(/\s+/)
+      .filter((t) => t.length > 3 && !stopWords.has(t.toLowerCase()));
+
+    let exactMatchResults: any[] = [];
+    if (tokens.length > 0) {
+      const buildRegexOr = (field: string, tokens: string[]) =>
+        tokens.map((t) => ({ [field]: { $regex: t, $options: "i" } }));
+
+      exactMatchResults = await db
+        .collection("db_embeddings")
+        .find({
+          source_collection: { $in: collectionFilter },
+          $or: [
+            ...buildRegexOr("metadata.label", tokens),
+            ...buildRegexOr("metadata.namaDesa", tokens),
+            ...buildRegexOr("metadata.namaInovasi", tokens),
+            ...buildRegexOr("metadata.inovasiDiterapkan", tokens),
+          ],
+        })
+        .project({ embedding_vector: 0 })
+        .limit(15)
+        .toArray();
+
+      // Secondary lookup: Tarik dokumen inovasi yang disebut di inovasiDiterapkan
+      // agar LLM memiliki konteks penuh (deskripsi, kategori) dari inovasi tersebut.
+      const relatedNames = new Set<string>();
+      exactMatchResults.forEach((doc) => {
+        if (doc.metadata?.inovasiDiterapkan) {
+          const arr = Array.isArray(doc.metadata.inovasiDiterapkan)
+            ? doc.metadata.inovasiDiterapkan
+            : [doc.metadata.inovasiDiterapkan];
+          arr.forEach((a: string) => {
+            if (typeof a === "string" && a.trim()) relatedNames.add(a.trim());
+          });
+        }
+      });
+
+      if (relatedNames.size > 0 && collectionFilter.includes("innovations")) {
+        const relatedOr = Array.from(relatedNames).flatMap((n) => [
+          { "metadata.namaInovasi": { $regex: `^${n}$`, $options: "i" } },
+          { "metadata.label": { $regex: `^${n}$`, $options: "i" } },
+        ]);
+        const relatedDocs = await db
+          .collection("db_embeddings")
+          .find({
+            source_collection: "innovations",
+            $or: relatedOr,
+          })
+          .project({ embedding_vector: 0 })
+          .limit(10)
+          .toArray();
+        exactMatchResults = [...exactMatchResults, ...relatedDocs];
+      }
+    }
+
+    // Gabungkan hasil dan dedikasi berdasarkan _id
+    const combinedMap = new Map<string, any>();
+
+    // Beri penanda skor artifisial tinggi untuk exact match agar diprioritaskan
+    exactMatchResults.forEach((doc) => {
+      combinedMap.set(doc._id.toString(), { ...doc, score: 0.99 });
+    });
+
+    validVectorResults.forEach((doc) => {
+      const idStr = doc._id.toString();
+      if (!combinedMap.has(idStr)) {
+        combinedMap.set(idStr, doc);
+      }
+    });
+
+    const combinedResults = Array.from(combinedMap.values()).sort(
+      (a, b) => (b.score || 0) - (a.score || 0)
+    );
+
+    // Defense-in-depth: filter ulang di memory
+    const safe = enforceRoleFilter(combinedResults, role);
+
     console.log(
-      `[searchDatabaseEmbeddings] ${results.length} raw → ${valid.length} lolos threshold → ${safe.length} lolos role filter`
+      `[searchDatabaseEmbeddings] ${vectorResults.length} vector raw → ${validVectorResults.length} vector valid | ${exactMatchResults.length} exact match → ${safe.length} lolos role filter`
     );
     return safe;
   } catch (error) {
@@ -368,11 +469,6 @@ export async function searchAllSources(
 
   try {
     const intent = detectQueryIntent(query);
-
-    // Intent yang merujuk langsung ke entitas database
-    const isDbSpecificIntent = ["village", "innovation", "innovator"].includes(
-      intent.primary
-    );
 
     const [docResults, dbResults] = await Promise.all([
       searchDocEmbeddings(query),

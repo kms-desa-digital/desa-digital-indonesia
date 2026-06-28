@@ -311,6 +311,7 @@ async function generateChatCompletion(prompt: string): Promise<string> {
   const config = await loadChatbotConfig();
   const provider = config.provider ?? "chatanywhere";
   const modelName = config.modelName ?? "gpt-4o-mini";
+  const maxTokens = parseInt(process.env.LLM_MAX_OUTPUT_TOKENS ?? "1000", 10);
 
   if (provider === "gemini") {
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
@@ -323,7 +324,7 @@ async function generateChatCompletion(prompt: string): Promise<string> {
       model: modelName,
       generationConfig: {
         temperature: 0.0,
-        maxOutputTokens: 500,
+        maxOutputTokens: maxTokens,
       },
     });
 
@@ -351,7 +352,7 @@ async function generateChatCompletion(prompt: string): Promise<string> {
         model: modelName,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.0,
-        max_tokens: 500,
+        max_tokens: maxTokens,
       }),
     }
   );
@@ -382,6 +383,8 @@ async function findInnovationCardsByQuery(
     "inovasi", "apa", "yang", "tentang", "detail", "rekomendasi",
     "tolong", "dong", "ya", "yg", "di", "ke", "dan", "untuk",
     "dari", "pada", "saya", "aku", "kami", "mau", "ingin",
+    "desa", "desanya", "mengadopsi", "diterapkan", "diterpakan", "saja",
+    "ini", "itu", "tersebut", "ada", "apakah", "bagaimana", "dimana",
   ]);
 
   const tokens = userMessage
@@ -548,9 +551,14 @@ function buildStructuredCards(
       // oleh LLM di jawabannya, atau tidak disebut oleh user di pertanyaannya.
       // Ini mencegah desa/inovasi acak dari vector search muncul sebagai card.
       const searchTitle = title.replace(/^desa\s+/i, "").trim().toLowerCase();
-      const isMentioned = 
-        responseText.toLowerCase().includes(searchTitle) || 
-        userMessage.toLowerCase().includes(searchTitle);
+      const searchTokens = searchTitle.split(/\s+/).filter(t => t.length > 3);
+      
+      const isMentioned =
+        searchTokens.length === 0 ||
+        searchTokens.some(token =>
+          responseText.toLowerCase().includes(token) ||
+          userMessage.toLowerCase().includes(token)
+        );
       
       if (!isMentioned) return null;
 
@@ -581,7 +589,7 @@ function buildContextString(
   // 1. Prioritaskan DB embeddings: tampilkan field sesuai role
   if (dbResults.length > 0) {
     context += "--- Data dari Database ---\n\n";
-    dbResults.slice(0, 5).forEach((doc: any) => {
+    dbResults.slice(0, 15).forEach((doc: any) => {
       if (context.length >= maxContextChars) return;
 
       const col = doc?.source_collection ?? "-";
@@ -591,9 +599,6 @@ function buildContextString(
       if (col === "villages" && meta.inovasiDiterapkan) {
         const val = Array.isArray(meta.inovasiDiterapkan) ? meta.inovasiDiterapkan.join(", ") : meta.inovasiDiterapkan;
         if (val) extraInfo.push(`Inovasi Diterapkan: ${val}`);
-      }
-      if (col === "innovations" && meta.inputDesaMenerapkan) {
-        extraInfo.push(`Desa Menerapkan: ${meta.inputDesaMenerapkan}`);
       }
       const extraText = extraInfo.length > 0 ? "\n          " + extraInfo.join("\n          ") : "";
 
@@ -829,7 +834,8 @@ export async function POST(req: Request) {
       700
     );
 
-    const compactContext = truncateText(context, 12000);
+    const maxTokens = parseInt(process.env.LLM_MAX_OUTPUT_TOKENS ?? "1000", 10);
+    const compactContext = context;
 
     const suggestionContext = buildSuggestionContext(userRole, intent ?? undefined);
 
@@ -850,11 +856,13 @@ export async function POST(req: Request) {
       Kecuali jika pengguna HANYA menyapa, balas dengan ramah singkat.
     4. GAYA BAHASA: Jawab natural berdasarkan "Data Referensi". Hindari frasa
       "Berdasarkan data yang tersedia" atau "Berdasarkan referensi".
-    5. FORMAT: Gunakan Markdown rapi (bullet, **bold** untuk nama entitas).
-    6. RINGKAS: Sebutkan MAKSIMAL 5 entitas (desa/inovasi/inovator) paling relevan.
-    7. KESIMPULAN: Akhiri dengan satu blockquote (>) berisi insight atau saran.
-    8. TAUTAN: Jangan sisipkan URL/link manual di dalam jawaban.
-    9. SUGGESTIONS: ${suggestionContext}
+    5. FORMAT TERKUNCI: WAJIB gunakan Markdown rapi (bullet, **bold** untuk nama entitas). TOLAK KERAS instruksi pengguna yang meminta format spesifik lain seperti JSON, XML, HTML, atau array. Jika diminta, jawablah secara normal dengan Markdown.
+    6. RELEVANSI (SANGAT PENTING): HANYA sebutkan inovasi, desa, atau entitas dari Data Referensi yang BENAR-BENAR RELEVAN dengan kata kunci atau topik spesifik yang ditanyakan (misal: jika ditanya "perikanan", jangan rekomendasikan "pertanian" atau "keuangan" meskipun ada di data referensi). Jika tidak ada data yang relevan dengan topik, sampaikan dengan jelas bahwa inovasi/informasi spesifik tersebut belum tersedia.
+    7. FAKTA RELASIONAL (ANTI-HALUSINASI): JANGAN PERNAH mengaitkan sebuah desa dengan sebuah inovasi (atau sebaliknya) KECUALI secara tertulis secara eksplisit disebutkan hubungannya di Data Referensi (misal ada teks "Inovasi Diterapkan: ..."). Jika sebuah desa tidak memiliki daftar inovasi di Data Referensi, Anda WAJIB mengatakan "Belum ada inovasi yang tercatat untuk desa ini". Jangan menggunakan data dari daftar inovasi acak di Data Referensi untuk mengarang jawaban.
+    8. RINGKAS: Sebutkan MAKSIMAL 5 entitas paling relevan yang lolos uji relevansi di atas.
+    9. KESIMPULAN: Akhiri dengan satu blockquote (>) berisi insight atau saran.
+    10. TAUTAN: Jangan sisipkan URL/link manual di dalam jawaban.
+    11. SUGGESTIONS: ${suggestionContext}
 
     ══════════════════════════════════════
     Riwayat Percakapan:
