@@ -98,11 +98,12 @@ const SAFE_DOMAIN_PATTERNS: RegExp[] = [
   /\b(?:inovasi|desa|village|inovator|digitalisasi\s+desa|desa\s+digital|platform|kms|knowledge\s+management|cara\s+daftar|mendaftar|login|akun)\b/i,
   /\b(?:total|jumlah|berapa\s+banyak|statistik|berapa\s+desa|sejauh\s+ini|rekomendasi|profil\s+desa|profil\s+inovator|potensi\s+desa|teknologi\s+desa)\b/i,
   /\b(?:pertanian|peternakan|perikanan|energi|umkm|wisata\s+desa|kesehatan\s+desa)\b/i,
+  /\b(?:prasarana|fasilitas|infrastruktur|pendidikan|kesehatan|jalan|listrik|air\s+bersih|sanitasi|monografi|geografis|topografi|potensi|sumber\s+daya)\b/i,
 ];
 
 const AMBIGUOUS_OR_OFFDOMAIN_PATTERNS: RegExp[] = [
   // Coding / pemrograman (termasuk typo umum: psudo, psuedo, pseudocode)
-  /\b(?:kode|coding|program(?:ming)?|script|p[su]+[eu]?do\s*code|algoritma|function|api|sql|python|javascript|typescript|buatkan\s+(?:kode|program|script|fungsi|class|aplikasi))\b/i,
+  /\b(?:kode|coding|programming|script|p[su]+[eu]?do\s*code|function|api|sql|python|javascript|typescript|buatkan\s+(?:kode|script|fungsi|class|aplikasi|sistem|website))\b/i,
   // Hiburan / off-topic
   /\b(?:resep|film|lagu|game|anime|cerita|joke|meme|saham|crypto|kripto|trading|investasi|forex)\b/i,
   // Politik
@@ -220,7 +221,7 @@ function resolveProvider(): "gemini" | "openai" | null {
 }
 
 /** Panggil guard via Google Generative AI */
-async function callGeminiGuard(sanitized: string): Promise<LlmGuardResponse> {
+async function callGeminiGuard(sanitized: string, signal?: AbortSignal): Promise<LlmGuardResponse> {
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
   const geminiModel = genAI.getGenerativeModel({
     model: GUARD_MODEL,
@@ -230,14 +231,17 @@ async function callGeminiGuard(sanitized: string): Promise<LlmGuardResponse> {
       responseMimeType: "application/json",
     },
   });
-  const result = await geminiModel.generateContent(LLM_GUARD_PROMPT + JSON.stringify(sanitized));
+  const result = await geminiModel.generateContent(
+    LLM_GUARD_PROMPT + JSON.stringify(sanitized),
+    { signal }
+  );
   const raw = result.response.text().trim().replace(/^```json?\s*/i, "").replace(/\s*```$/, "");
   console.log(`[QueryGuard/LLM] gemini: ${raw}`);
   return JSON.parse(raw);
 }
 
 /** Panggil guard via OpenAI-compatible (ChatAnywhere, dll.) */
-async function callOpenAIGuard(sanitized: string): Promise<LlmGuardResponse> {
+async function callOpenAIGuard(sanitized: string, signal?: AbortSignal): Promise<LlmGuardResponse> {
   const openai = new OpenAI({
     apiKey: process.env.CHATANYWHERE_API_KEY!,
     baseURL: process.env.CHATANYWHERE_URL || undefined,
@@ -248,7 +252,7 @@ async function callOpenAIGuard(sanitized: string): Promise<LlmGuardResponse> {
     temperature: 0,
     max_tokens: GUARD_MAX_OUTPUT_TOKENS,
     response_format: { type: "json_object" },
-  });
+  }, { signal });
   const raw = completion.choices[0]?.message?.content?.trim() ?? "{}";
   console.log(`[QueryGuard/LLM] openai: ${raw}`);
   return JSON.parse(raw);
@@ -301,8 +305,8 @@ async function checkWithLlm(sanitized: string): Promise<GuardResult | null> {
     console.log(`[QueryGuard/LLM] provider=${provider} model=${GUARD_MODEL}`);
     const parsed: LlmGuardResponse =
       provider === "gemini"
-        ? await callGeminiGuard(sanitized)
-        : await callOpenAIGuard(sanitized);
+        ? await callGeminiGuard(sanitized, controller.signal)
+        : await callOpenAIGuard(sanitized, controller.signal);
 
     if (!parsed.allowed) {
       console.warn(`[QueryGuard/LLM] Ditolak reason=${parsed.reason} category=${parsed.category}`);
