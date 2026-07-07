@@ -54,11 +54,11 @@ async function waitForOllamaReady(
     return false;
 }
 
-// builder text untuk data inovasi
-function buildInnovationText(doc: any): string {
-    const manfaat = Array.isArray(doc.manfaat)
-        ? doc.manfaat.join(", ")
-        : doc.manfaat ?? "";
+function buildInnovationText(doc: any, lookup?: any): string {
+    const manfaatArray = Array.isArray(doc.manfaat) ? doc.manfaat : [];
+    const manfaatStr = manfaatArray
+        .map((m: any) => typeof m === "object" ? `${m.judul || ""}: ${m.deskripsi || ""}` : String(m))
+        .join("; ");
 
     const infrastruktur = Array.isArray(doc.infrastruktur)
         ? doc.infrastruktur.join(", ")
@@ -68,30 +68,41 @@ function buildInnovationText(doc: any): string {
         ? doc.modelBisnis.join(", ")
         : doc.modelBisnis ?? "";
 
+    const desaMenerapkanIds = Array.isArray(doc.desaId) ? doc.desaId : [];
+    const desaMenerapkanNames = desaMenerapkanIds
+        .map((id: any) => lookup?.villageMap?.get(id?.toString()))
+        .filter(Boolean)
+        .join(", ");
+
     return `
     Inovasi: ${doc.namaInovasi ?? ""}.
     Kategori: ${doc.kategori ?? ""}.
     Deskripsi: ${doc.deskripsi ?? ""}.
     Status Inovasi: ${doc.statusInovasi ?? ""}.
     Model Bisnis: ${modelBisnis}.
-    Manfaat: ${manfaat}.
+    Manfaat: ${manfaatStr}.
     Infrastruktur: ${infrastruktur}.
     Harga: ${doc.hargaMinimal ?? ""} - ${doc.hargaMaksimal ?? ""}.
     Inovator: ${doc.namaInnovator ?? ""}.
     Tahun Dibuat: ${doc.tahunDibuat ?? ""}.
-    Desa Menerapkan: ${doc.inputDesaMenerapkan ?? ""}.
+    Desa Menerapkan: ${desaMenerapkanNames || doc.inputDesaMenerapkan || ""}.
   `
         .replace(/\s+/g, " ")
         .trim();
 }
 
-// builder text untuk data desa
-function buildVillageText(doc: any): string {
-    const lokasiStr = [doc.desa, doc.kecamatan, doc.kabupaten, doc.provinsi]
-        .filter(Boolean)
-        .join(", ");
-
-    const lokasiFinal = lokasiStr || doc.lokasi?.deskripsi || "";
+function buildVillageText(doc: any, lookup?: any): string {
+    let lokasiFinal = "";
+    if (doc.lokasi && typeof doc.lokasi === "object") {
+        lokasiFinal = [
+            doc.lokasi.desaKelurahan?.label,
+            doc.lokasi.kecamatan?.label,
+            doc.lokasi.kabupatenKota?.label,
+            doc.lokasi.provinsi?.label
+        ].filter(Boolean).join(", ");
+    } else if (typeof doc.lokasi === "string") {
+        lokasiFinal = doc.lokasi;
+    }
 
     const potensi = Array.isArray(doc.potensiDesa)
         ? doc.potensiDesa.join(", ")
@@ -103,41 +114,73 @@ function buildVillageText(doc: any): string {
         ? doc.inovatorDamping.join(", ")
         : doc.inovatorDamping ?? "";
 
+    const _idStr = doc._id?.toString();
+    const userIdStr = doc.userId?.toString();
+
+    let resolvedInovasi = "";
+    if (_idStr && lookup?.villageToInnovations?.has(_idStr)) {
+        resolvedInovasi = lookup.villageToInnovations.get(_idStr).join(", ");
+    } else if (userIdStr && lookup?.villageToInnovations?.has(userIdStr)) {
+        resolvedInovasi = lookup.villageToInnovations.get(userIdStr).join(", ");
+    }
+
+    let resolvedInovator = "";
+    if (_idStr && lookup?.villageToInnovators?.has(_idStr)) {
+        resolvedInovator = lookup.villageToInnovators.get(_idStr).join(", ");
+    } else if (userIdStr && lookup?.villageToInnovators?.has(userIdStr)) {
+        resolvedInovator = lookup.villageToInnovators.get(userIdStr).join(", ");
+    }
+
     return `
     Desa: ${doc.namaDesa ?? ""}.
     Deskripsi: ${doc.deskripsi ?? ""}.
-    Manfaat: ${doc.manfaat ?? ""}.
     Potensi: ${potensi}.
     Lokasi: ${lokasiFinal}.
     Geografis: ${doc.geografisDesa ?? ""}.
     Jaringan: ${doc.jaringan ?? ""}.
     Kemampuan: ${doc.kemampuan ?? ""}.
-    Kondisi Jalan: ${doc.kondisiJalan ?? ""}.
+    Kondisi Jalan: ${doc.kondisijalan ?? doc.kondisiJalan ?? ""}.
+    Inovasi Diterapkan: ${resolvedInovasi || inovasiDiterapkan}.
+    Inovator Pendamping: ${resolvedInovator || inovatorDamping}.
     Jumlah Inovasi Diterapkan: ${doc.jumlahInovasiDiterapkan ?? 0}.
     Kesiapan Digital: ${doc.kesiapanDigital ?? ""}.
     Kesiapan Teknologi: ${doc.kesiapanTeknologi ?? ""}.
-    Infrastruktur: ${doc.infrastruktur ?? ""}.
+    Infrastruktur: ${doc.infrastrukturDesa ?? doc.infrastruktur ?? ""}.
     Listrik: ${doc.listrik ?? ""}.
     Sosial Budaya: ${doc.sosialBudaya ?? ""}.
     Sumber Daya: ${doc.sumberDaya ?? ""}.
+    Teknologi: ${doc.teknologi ?? ""}.
     Kategori: ${doc.kategori ?? ""}.
     Tahun Data: ${doc.tahunData ?? ""}.
-    WhatsApp: ${doc.whatsApp ?? doc.whatsapp ?? ""}.
+    WhatsApp: ${doc.whatsapp ?? doc.whatsApp ?? ""}.
+    Website: ${doc.website ?? ""}.
   `
         .replace(/\s+/g, " ")
         .trim();
 }
 
-// builder text untuk data inovator
-function buildInnovatorText(doc: any): string {
+function buildInnovatorText(doc: any, lookup?: any): string {
+    const targetPengguna = Array.isArray(doc.targetPengguna)
+        ? doc.targetPengguna.join(", ")
+        : doc.targetPengguna ?? "";
+
+    const desaDampinganIds = Array.isArray(doc.desaId) ? doc.desaId : [];
+    const desaDampinganNames = desaDampinganIds
+        .map((id: any) => lookup?.villageMap?.get(id?.toString()))
+        .filter(Boolean)
+        .join(", ");
+
     return `
     Inovator: ${doc.namaInovator ?? ""}.
     Deskripsi: ${doc.deskripsi ?? ""}.
     Kategori: ${doc.kategori ?? ""}.
     Jumlah Inovasi: ${doc.jumlahInovasi ?? 0}.
     Jumlah Desa Dampingan: ${doc.jumlahDesaDampingan ?? 0}.
+    Daftar Desa Dampingan: ${desaDampinganNames}.
     Tahun Dibentuk: ${doc.tahunDibentuk ?? ""}.
     Status: ${doc.status ?? ""}.
+    Target Pengguna: ${targetPengguna}.
+    Model Bisnis: ${doc.modelBisnis ?? ""}.
     WhatsApp: ${doc.whatsapp ?? ""}.
     Website: ${doc.website ?? ""}.
     Instagram: ${doc.instagram ?? ""}.
@@ -146,12 +189,14 @@ function buildInnovatorText(doc: any): string {
         .trim();
 }
 
-// builder text untuk data klaim inovasi
-function buildClaimText(doc: any): string {
+function buildClaimText(doc: any, lookup?: any): string {
+    const namaDesaResolved = doc.namaDesa || lookup?.villageMap?.get(doc.desaId?.toString()) || lookup?.villageMap?.get(doc.userId?.toString()) || "Sebuah desa";
+    const namaInovasiResolved = doc.namaInovasi || lookup?.innovationMap?.get(doc.inovasiId?.toString()) || "inovasi ini";
+
     return `
-    Klaim Inovasi: ${doc.namaDesa ?? "Sebuah desa"} telah mengajukan klaim untuk menerapkan inovasi bernama ${doc.namaInovasi ?? ""}.
+    Klaim Inovasi: ${namaDesaResolved} telah mengajukan klaim untuk menerapkan inovasi bernama ${namaInovasiResolved}.
     Status Klaim saat ini: ${doc.status ?? ""}.
-    Catatan Admin: ${doc.catatanAdmin ?? "Tidak ada catatan"}.
+    Catatan Admin: ${doc.catatanAdmin || "Tidak ada catatan"}.
   `
         .replace(/\s+/g, " ")
         .trim();
@@ -160,7 +205,7 @@ function buildClaimText(doc: any): string {
 // konfigurasi collection yang akan diproses
 interface CollectionConfig {
     name: string;
-    buildText: (doc: any) => string;
+    buildText: (doc: any, lookup?: any) => string;
     labelField: string;
 }
 
@@ -183,7 +228,7 @@ const COLLECTIONS_TO_INGEST: CollectionConfig[] = [
     {
         name: "claimInnovations",
         buildText: buildClaimText,
-        labelField: "namaInovasi", 
+        labelField: "namaInovasi",
     },
 ];
 
@@ -200,6 +245,48 @@ async function runIngestion() {
 
         const db = await connectToDatabase();
         const embeddingCollection = db.collection("db_embeddings");
+
+        // --- Build Lookup Maps ---
+        const lookup = {
+            villageMap: new Map(),
+            innovationMap: new Map(),
+            villageToInnovations: new Map(),
+            villageToInnovators: new Map(),
+        };
+
+        log.info("Membangun referensi Lookup Map...");
+        const allVillages = await db.collection("villages").find({}).project({ _id: 1, namaDesa: 1, userId: 1 }).toArray();
+        allVillages.forEach((v: any) => {
+            const name = v.namaDesa || "Desa Tidak Diketahui";
+            if (v._id) lookup.villageMap.set(v._id.toString(), name);
+            if (v.userId) lookup.villageMap.set(v.userId.toString(), name);
+        });
+
+        const allInnovationsData = await db.collection("innovations").find({}).project({ _id: 1, namaInovasi: 1, desaId: 1 }).toArray();
+        allInnovationsData.forEach((inv: any) => {
+            if (inv._id) lookup.innovationMap.set(inv._id.toString(), inv.namaInovasi);
+            if (Array.isArray(inv.desaId)) {
+                inv.desaId.forEach((dId: any) => {
+                    const idStr = dId?.toString();
+                    if (!idStr) return;
+                    if (!lookup.villageToInnovations.has(idStr)) lookup.villageToInnovations.set(idStr, []);
+                    lookup.villageToInnovations.get(idStr).push(inv.namaInovasi);
+                });
+            }
+        });
+
+        const allInnovatorsData = await db.collection("innovators").find({}).project({ _id: 1, namaInovator: 1, desaId: 1 }).toArray();
+        allInnovatorsData.forEach((invo: any) => {
+            if (Array.isArray(invo.desaId)) {
+                invo.desaId.forEach((dId: any) => {
+                    const idStr = dId?.toString();
+                    if (!idStr) return;
+                    if (!lookup.villageToInnovators.has(idStr)) lookup.villageToInnovators.set(idStr, []);
+                    lookup.villageToInnovators.get(idStr).push(invo.namaInovator);
+                });
+            }
+        });
+        // --- End Build Lookup Maps ---
 
         for (const config of COLLECTIONS_TO_INGEST) {
             log.info(`Processing collection: ${config.name}`);
@@ -235,7 +322,7 @@ async function runIngestion() {
 
             // proses satu record
             const processRecord = async (record: any, index: number) => {
-                const text = config.buildText(record);
+                const text = config.buildText(record, lookup);
 
                 if (!text || text.length < 10) {
                     log.warn(`Skip record ${index + 1}`);
@@ -298,20 +385,30 @@ async function runIngestion() {
                         ...(config.name === "villages" && {
                             namaDesa: record.namaDesa,
                             deskripsi: record.deskripsi,
-                            lokasi: [
-                                record.desa,
-                                record.kecamatan,
-                                record.kabupaten,
-                                record.provinsi,
-                            ]
-                                .filter(Boolean)
-                                .join(", ") || record.lokasi?.deskripsi,
+                            lokasi: (record.lokasi && typeof record.lokasi === "object") ? [
+                                record.lokasi.desaKelurahan?.label,
+                                record.lokasi.kecamatan?.label,
+                                record.lokasi.kabupatenKota?.label,
+                                record.lokasi.provinsi?.label
+                            ].filter(Boolean).join(", ") : (record.lokasi || ""),
                             potensiDesa: record.potensiDesa,
                             idm: record.idm,
                             status: record.status,
                             kategori: record.kategori,
-                            inovasiDiterapkan: record.inovasiDiterapkan,
-                            inovatorDamping: record.inovatorDamping,
+                            inovasiDiterapkan: (record._id && lookup.villageToInnovations.has(record._id.toString()))
+                                ? lookup.villageToInnovations.get(record._id.toString())
+                                : (record.userId && lookup.villageToInnovations.has(record.userId.toString()))
+                                    ? lookup.villageToInnovations.get(record.userId.toString())
+                                    : (Array.isArray(record.inovasiDiterapkan)
+                                        ? record.inovasiDiterapkan.filter((v: any) => typeof v === "string" && !v.match(/^[0-9a-f]{24}$/i))
+                                        : record.inovasiDiterapkan),
+                            inovatorDamping: (record._id && lookup.villageToInnovators.has(record._id.toString()))
+                                ? lookup.villageToInnovators.get(record._id.toString())
+                                : (record.userId && lookup.villageToInnovators.has(record.userId.toString()))
+                                    ? lookup.villageToInnovators.get(record.userId.toString())
+                                    : (Array.isArray(record.inovatorDamping)
+                                        ? record.inovatorDamping.filter((v: any) => typeof v === "string" && !v.match(/^[0-9a-f]{24}$/i))
+                                        : record.inovatorDamping),
                         }),
 
                         ...(config.name === "innovators" && {

@@ -108,11 +108,22 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
             });
             if (!response.ok) {
                 const isServerError = response.status >= 500;
-                throw new Error(
-                    isServerError
-                        ? 'server_error'
-                        : 'client_error'
-                );
+
+                // Untuk client error (4xx), baca body untuk mendapatkan
+                // rejectMessage dari query guard
+                if (!isServerError) {
+                    try {
+                        const errorData = await response.json();
+                        if (errorData?.text) {
+                            throw new Error(`guard:${errorData.text}`);
+                        }
+                    } catch (parseErr: any) {
+                        // Jika sudah throw guard message, re-throw
+                        if (parseErr?.message?.startsWith('guard:')) throw parseErr;
+                    }
+                }
+
+                throw new Error(isServerError ? 'server_error' : 'client_error');
             }
 
             const data = await response.json();
@@ -133,11 +144,13 @@ const ChatWindow = ({ onClose, onClearHistory, messages, setMessages }: ChatWind
             console.error('Chat error:', error);
 
             const errorContent =
-                error?.message === 'server_error'
-                    ? t('errorServer')
-                    : error?.message === 'client_error'
-                        ? t('errorClient')
-                        : t('errorNetwork');
+                error?.message?.startsWith('guard:')
+                    ? error.message.slice(6)
+                    : error?.message === 'server_error'
+                        ? t('errorServer')
+                        : error?.message === 'client_error'
+                            ? t('errorClient')
+                            : t('errorNetwork');
 
             setMessages(prev => [
                 ...prev,

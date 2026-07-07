@@ -10,21 +10,14 @@ import {
   normalizeRole,
   type QueryIntent,
   type UserRole,
-  PROMPT_CONTEXT_MAX_CHARS,
-  HISTORY_MESSAGE_LIMIT,
-  HISTORY_MESSAGE_MAX_CHARS,
-  LLM_MAX_OUTPUT_TOKENS,
 } from "@/lib/ai/rag-utils";
 import { validateQuery } from "@/lib/ai/query-guard";
-import OpenAI from "openai";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { connectToDatabase } from "@/lib/db/mongodb";
 import { verifyRoleFromToken } from "@/lib/auth/verifyRole";
 import { Innovation } from "@/types";
 
-// ---------------------------------------------------------------------------
 // Types
-// ---------------------------------------------------------------------------
 
 interface RagSourceItem {
   source_id?: string;
@@ -40,69 +33,343 @@ interface LinkCard {
   sourceId: string;
 }
 
-// ---------------------------------------------------------------------------
+interface ChatbotConfig {
+  provider?: "chatanywhere" | "gemini";
+  modelName?: string;
+}
+
 // Role permission matrix untuk UI cards
 // Mendefinisikan card kind apa yang boleh ditampilkan per role.
-// ---------------------------------------------------------------------------
 
 const ROLE_ALLOWED_CARD_KINDS: Record<UserRole, string[]> = {
   admin: ["innovation", "village", "innovator", "claim"],
-  kementerian: ["innovation", "village"],
-  innovator: ["innovation", "innovator"],
-  village: ["innovation", "village"],
+  kementerian: ["innovation", "village", "innovator"],
+  innovator: ["innovation", "village", "innovator"],
+  village: ["innovation", "village", "innovator"],
   guest: ["innovation", "village", "innovator"],
 };
 
-// ---------------------------------------------------------------------------
+const PLATFORM_FEATURES = {
+  innovation: [
+    "Lihat daftar inovasi terverifikasi",
+    "Cari inovasi berdasarkan kategori",
+    "Lihat detail inovasi tertentu",
+    "Cari inovasi berdasarkan harga",
+    "Inovasi apa yang cocok untuk desa saya",
+  ],
+  village: [
+    "Lihat profil desa tertentu",
+    "Desa mana yang sudah menerapkan inovasi X",
+    "Cari desa berdasarkan lokasi/provinsi",
+    "Desa dengan potensi pertanian/perikanan/dll",
+  ],
+  innovator: [
+    "Lihat profil inovator tertentu",
+    "Inovator mana yang aktif di bidang pertanian",
+    "Cara mendaftar sebagai inovator baru",
+    "Inovator mana yang mendampingi desa di wilayah X",
+  ],
+  claim: [
+    "Bagaimana cara mengajukan klaim inovasi",
+    "Status klaim inovasi saya",
+    "Syarat pengajuan klaim inovasi",
+  ],
+  platform: [
+    "Apa itu platform Desa Digital Indonesia",
+    "Cara mendaftar ke platform",
+    "Fitur apa saja yang tersedia",
+    "Cara login dan menggunakan platform",
+  ],
+  stats: [
+    "Berapa total inovasi yang sudah terverifikasi",
+    "Berapa desa yang sudah bergabung",
+    "Statistik adopsi inovasi terbaru",
+  ],
+} as const;
+
+const ROLE_SUGGESTION_SCOPE: Record<UserRole, (keyof typeof PLATFORM_FEATURES)[]> = {
+  admin: ["innovation", "village", "innovator", "claim", "platform", "stats"],
+  kementerian: ["innovation", "village", "innovator", "platform", "stats"],
+  innovator: ["innovation", "village", "innovator", "platform"],
+  village: ["innovation", "village", "platform"],
+  guest: ["innovation", "village", "platform"],
+};
+
+function buildSuggestionContext(
+  role: UserRole,
+  intent?: QueryIntent
+): string {
+  const allowedScopes = ROLE_SUGGESTION_SCOPE[role];
+
+  // Prioritaskan fitur yang relevan dengan intent saat ini
+  const priorityScope: (keyof typeof PLATFORM_FEATURES)[] = [];
+
+  if (intent?.primary === "innovation") priorityScope.push("innovation");
+  if (intent?.primary === "village") priorityScope.push("village");
+  if (intent?.primary === "innovator") priorityScope.push("innovator");
+  if (intent?.isStats) priorityScope.push("stats");
+
+  // Gabungkan: priority dulu, lalu sisanya yang diizinkan role
+  const orderedScopes = [
+    ...priorityScope,
+    ...allowedScopes.filter((s) => !priorityScope.includes(s)),
+  ].slice(0, 3); // ambil max 3 scope
+
+  const featureExamples = orderedScopes
+    .map((scope) => {
+      const examples = PLATFORM_FEATURES[scope].slice(0, 2).join(" | ");
+      return `[${scope}]: ${examples}`;
+    })
+    .join("\n");
+
+  return `
+FITUR YANG TERSEDIA UNTUK ROLE ${role.toUpperCase()}:
+${featureExamples}
+
+ATURAN SUGGESTIONS:
+- Suggestions HARUS merujuk ke salah satu fitur di atas
+- Gunakan bahasa natural, bukan copy-paste label fitur
+- Relevan dengan konteks jawaban yang baru diberikan
+- Format wajib: SUGGESTIONS: ["...", "...", "..."]
+`.trim();
+}
+
+function getFallbackSuggestions(
+  role: UserRole,
+  intent?: QueryIntent
+): string[] {
+  const scope = ROLE_SUGGESTION_SCOPE[role][0]; // ambil scope pertama yang diizinkan
+  const primary = intent?.primary ?? "general";
+
+  const fallbacks: Record<string, string[]> = {
+    innovation: [
+      "Inovasi apa saja yang tersedia di platform?",
+      "Cari inovasi berdasarkan kategori tertentu",
+      "Inovasi mana yang paling banyak diterapkan desa?",
+    ],
+    village: [
+      "Desa mana yang sudah menerapkan inovasi digital?",
+      "Tampilkan profil desa berdasarkan provinsi",
+      "Desa dengan potensi apa yang tersedia?",
+    ],
+    innovator: [
+      "Siapa saja inovator yang aktif di platform?",
+      "Inovator mana yang bergerak di bidang pertanian?",
+      "Bagaimana cara mendaftar sebagai inovator?",
+    ],
+    general: [
+      "Apa saja fitur yang tersedia di platform ini?",
+      "Tampilkan daftar inovasi terverifikasi",
+      "Bagaimana cara menggunakan platform Desa Digital?",
+    ],
+  };
+
+  return fallbacks[primary] ?? fallbacks["general"];
+}
+
+function validateSuggestions(
+  suggestions: string[],
+  role: UserRole,
+  intent?: QueryIntent
+): string[] {
+  const allowedScopes = ROLE_SUGGESTION_SCOPE[role];
+
+  const offTopicPatterns = [
+    /berita/i,
+    /harga pasar/i,
+    /cuaca/i,
+    /resep/i,
+    /politik/i,
+    /hiburan/i,
+    /kode program/i,
+    /tutorial coding/i,
+  ];
+
+  const onTopicKeywords = [
+    "inovasi", "desa", "inovator", "klaim", "platform",
+    "daftar", "cara", "fitur", "kategori", "profil",
+    "statistik", "total", "wilayah", "menerapkan",
+  ];
+
+  const filtered = suggestions.filter((s) => {
+    const isOffTopic = offTopicPatterns.some((p) => p.test(s));
+    if (isOffTopic) return false;
+
+    const isOnTopic = onTopicKeywords.some((k) =>
+      s.toLowerCase().includes(k)
+    );
+    return isOnTopic;
+  });
+
+  if (filtered.length === 0) {
+    return getFallbackSuggestions(role, intent);
+  }
+
+  return filtered.slice(0, 3);
+}
+
 // Role instructions untuk LLM — hard constraint, bukan sekadar tone
-// ---------------------------------------------------------------------------
 
 function buildRoleInstructions(role: UserRole): string {
   switch (role) {
     case "admin":
-      return `ROLE: ADMINISTRATOR. Akses penuh: klaim, status verifikasi (pending/terverifikasi/ditolak), log, statistik internal. Sertakan status dokumen jika relevan. Gaya: lugas, teknikal.`;
- 
+      return `
+          PENGGUNA: ADMINISTRATOR SISTEM
+          AKSES PENUH: Kamu boleh membahas semua data termasuk klaim inovasi, status
+          verifikasi (pending/terverifikasi/ditolak), log aktivitas, dan statistik internal.
+          WAJIB: Sertakan status dokumen jika relevan (misal: "3 klaim masih pending").
+          GAYA: Lugas, teknikal, langsung ke inti tanpa basa-basi.
+          DILARANG: Tidak ada larangan khusus untuk admin.`.trim();
+
     case "kementerian":
-      return `ROLE: PEJABAT KEMENTERIAN. Akses: data agregat, statistik makro, tren adopsi, dampak kebijakan. Prioritaskan angka, persentase, perbandingan wilayah/periode, implikasi kebijakan. Bahasa formal. DILARANG: detail kontak inovator, data klaim, info operasional internal. Jika ditanya di luar akses: "Informasi tersebut bersifat operasional dan tidak tersedia untuk level akses ini."`;
- 
+      return `
+          PENGGUNA: PEJABAT KEMENTERIAN
+          AKSES: Data agregat, statistik makro, tren adopsi inovasi, dan dampak kebijakan.
+          WAJIB: Prioritaskan angka, persentase, perbandingan antar wilayah/periode,
+          dan implikasi kebijakan. Gunakan bahasa formal.
+          DILARANG KERAS: Jangan tampilkan detail kontak inovator, data klaim inovasi,
+          informasi operasional internal sistem, atau isu teknis platform.
+          JIKA DITANYA di luar akses: Jawab "Informasi tersebut bersifat operasional
+          dan tidak tersedia untuk level akses ini."`.trim();
+
     case "innovator":
-      return `ROLE: INOVATOR TERDAFTAR. Akses: profil inovasi, cara publikasi, peluang kolaborasi desa, profil inovator lain. Fokus: cara kerja inovasi, mendaftarkan inovasi baru, desa mitra. DILARANG: data administrasi internal desa, klaim inovasi inovator lain, statistik internal sistem. Jika di luar akses: arahkan ke menu platform.`;
- 
+      return `
+          PENGGUNA: INOVATOR TERDAFTAR
+          AKSES: Profil dan detail inovasi, cara publikasi karya, peluang kolaborasi
+          dengan desa, dan profil inovator lain.
+          WAJIB: Fokus pada "bagaimana inovasi ini bekerja", "bagaimana mendaftarkan
+          inovasi baru", dan "desa mana yang cocok sebagai mitra".
+          DILARANG KERAS: Jangan tampilkan data administrasi internal desa, klaim
+          inovasi milik inovator lain, atau statistik sistem yang bersifat internal.
+          JIKA DITANYA di luar akses: Arahkan ke menu yang relevan di platform.`.trim();
+
     case "village":
-      return `ROLE: PERANGKAT/MASYARAKAT DESA. Akses: rekomendasi inovasi, profil desa lain, panduan adopsi teknologi. Bahasa sederhana dan membumi. Fokus: inovasi yang membantu masalah desa, cara mengajukan inovasi. DILARANG: data klaim, kontak pribadi inovator, statistik internal. Jika di luar akses: sarankan hubungi admin.`;
- 
+      return `
+          PENGGUNA: PERANGKAT DESA / MASYARAKAT DESA
+          AKSES: Rekomendasi inovasi yang cocok untuk desa, profil desa lain sebagai
+          referensi, dan panduan adopsi teknologi.
+          WAJIB: Gunakan bahasa yang sederhana dan membumi. Fokus menjawab
+          "inovasi apa yang bisa membantu masalah desa saya" dan "bagaimana cara
+          mengajukan inovasi ke desa".
+          DILARANG KERAS: Jangan tampilkan data klaim inovasi, informasi sensitif
+          inovator (kontak pribadi, data bisnis), atau statistik internal sistem.
+          JIKA DITANYA di luar akses: Sarankan menghubungi admin platform.`.trim();
+
     default: // guest
-      return `ROLE: TAMU (belum login). Akses: info publik umum platform saja. Arahkan untuk daftar/login agar akses lebih lanjut. DILARANG: data klaim, status verifikasi, statistik internal, kontak inovator spesifik. Jika ditanya data sensitif: "Informasi tersebut hanya tersedia setelah login."`;
+      return `
+          PENGGUNA: TAMU (Belum Login)
+          AKSES: Informasi publik umum tentang platform Desa Digital Indonesia saja.
+          WAJIB: Berikan jawaban yang bersifat pengenalan dan informatif secara umum.
+          Arahkan pengguna untuk mendaftar/login agar mendapat akses lebih lanjut.
+          DILARANG KERAS: Tolak pertanyaan tentang data klaim, status verifikasi,
+          statistik internal, kontak inovator spesifik, atau detail operasional.
+          Jawab permintaan data sensitif dengan: "Informasi tersebut hanya tersedia
+          setelah login. Silakan daftar atau masuk ke platform."`.trim();
   }
 }
 
-// ---------------------------------------------------------------------------
 // Helper: resolve source ID dari berbagai bentuk dokumen
-// ---------------------------------------------------------------------------
 
 function resolveSourceId(item: RagSourceItem): string {
   const raw =
     item?.source_id ?? item?.metadata?.id ?? item?._id ?? "";
-  const resolved = String(raw).trim();
-  // Log untuk debug — hapus setelah konfirmasi
-  if (!resolved) {
-    console.warn("[resolveSourceId] Gagal resolve ID dari item:", JSON.stringify({
-      source_id: item?.source_id,
-      metadata_id: item?.metadata?.id,
-      _id: item?._id,
-    }));
-  }
-  return resolved;
+  return String(raw).trim();
 }
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-// ---------------------------------------------------------------------------
+function truncateText(value: string, maxChars: number): string {
+  if (!value || value.length <= maxChars) {
+    return value;
+  }
+
+  return `${value.slice(0, maxChars).trim()}...`;
+}
+
+async function loadChatbotConfig(): Promise<ChatbotConfig> {
+  const db = await connectToDatabase();
+  const settings = await db.collection("settings").findOne({ key: "chatbot_config" });
+
+  const defaultConfig: ChatbotConfig = {
+    provider: process.env.CHATANYWHERE_API_KEY ? "chatanywhere" : "gemini",
+    modelName: process.env.CHATANYWHERE_API_KEY
+      ? (process.env.CHATANYWHERE_MODEL ?? "gpt-4o-mini")
+      : (process.env.GEMINI_DEFAULT_MODEL ?? "gemini-1.5-flash"),
+  };
+
+  const storedConfig = (settings?.value ?? {}) as ChatbotConfig;
+
+  return {
+    provider: storedConfig.provider ?? defaultConfig.provider,
+    modelName: storedConfig.modelName?.trim() || defaultConfig.modelName,
+  };
+}
+
+async function generateChatCompletion(prompt: string): Promise<string> {
+  const config = await loadChatbotConfig();
+  const provider = config.provider ?? "chatanywhere";
+  const modelName = config.modelName ?? "gpt-4o-mini";
+  const maxTokens = parseInt(process.env.LLM_MAX_OUTPUT_TOKENS ?? "1000", 10);
+
+  if (provider === "gemini") {
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GOOGLE_GENERATIVE_AI_API_KEY belum diatur.");
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: {
+        temperature: 0.0,
+        maxOutputTokens: maxTokens,
+      },
+    });
+
+    const result = await model.generateContent(prompt);
+    return result.response.text().trim();
+  }
+
+  const chatAnywhereApiKey = process.env.CHATANYWHERE_API_KEY;
+  const chatAnywhereBaseUrl =
+    process.env.CHATANYWHERE_BASE_URL || "https://api.chatanywhere.tech/v1";
+
+  if (!chatAnywhereApiKey) {
+    throw new Error("CHATANYWHERE_API_KEY belum diatur.");
+  }
+
+  const chatAnywhereResponse = await fetch(
+    `${chatAnywhereBaseUrl}/chat/completions`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${chatAnywhereApiKey}`,
+      },
+      body: JSON.stringify({
+        model: modelName,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.0,
+        max_tokens: maxTokens,
+      }),
+    }
+  );
+
+  if (!chatAnywhereResponse.ok) {
+    const errorText = await chatAnywhereResponse.text();
+    throw new Error(
+      `ChatAnywhere error ${chatAnywhereResponse.status}: ${errorText}`
+    );
+  }
+
+  const chatAnywhereData = await chatAnywhereResponse.json();
+  return chatAnywhereData?.choices?.[0]?.message?.content?.trim() || "";
+}
+
 // Fallback card: cari inovasi berdasarkan keyword query
 // (digunakan jika RAG tidak menghasilkan card yang cukup)
-// ---------------------------------------------------------------------------
 
 async function findInnovationCardsByQuery(
   userMessage: string,
@@ -116,6 +383,8 @@ async function findInnovationCardsByQuery(
     "inovasi", "apa", "yang", "tentang", "detail", "rekomendasi",
     "tolong", "dong", "ya", "yg", "di", "ke", "dan", "untuk",
     "dari", "pada", "saya", "aku", "kami", "mau", "ingin",
+    "desa", "desanya", "mengadopsi", "diterapkan", "diterpakan", "saja",
+    "ini", "itu", "tersebut", "ada", "apakah", "bagaimana", "dimana",
   ]);
 
   const tokens = userMessage
@@ -158,9 +427,7 @@ async function findInnovationCardsByQuery(
   });
 }
 
-// ---------------------------------------------------------------------------
 // Fallback card: cari desa dari nama yang disebut di respons LLM
-// ---------------------------------------------------------------------------
 
 function extractVillageNamesFromResponse(responseText: string): string[] {
   const names = new Set<string>();
@@ -204,12 +471,12 @@ async function findVillageCardsByResponse(
   }));
 }
 
-// ---------------------------------------------------------------------------
 // Build link cards dari hasil RAG — role-aware
-// ---------------------------------------------------------------------------
 
 function buildStructuredCards(
   dbResults: any[],
+  responseText: string,
+  userMessage: string,
   role: UserRole,
   intent?: QueryIntent
 ): LinkCard[] {
@@ -233,32 +500,39 @@ function buildStructuredCards(
 
       switch (collection) {
         case "innovations":
-          title = item?.metadata?.namaInovasi || item?.metadata?.label || "Inovasi";
+          title =
+            item?.metadata?.namaInovasi || item?.metadata?.label || "Inovasi";
           const rawInnovator =
             item?.metadata?.inovator_nama || item?.metadata?.namaInnovator;
           subtitle = Array.isArray(rawInnovator)
             ? rawInnovator.join(", ")
             : rawInnovator ||
-              (item?.metadata?.kategori ? `${item.metadata.kategori}` : "Inovasi Digital");
+            (item?.metadata?.kategori
+              ? `${item.metadata.kategori}`
+              : "Inovasi Digital");
           kind = "innovation";
           href = `/innovation/detail/${resolvedSourceId}`;
           break;
 
         case "villages":
-          title = item?.metadata?.namaDesa || item?.metadata?.label || "Desa";
+          title =
+            item?.metadata?.namaDesa || item?.metadata?.label || "Desa";
           subtitle = item?.metadata?.lokasi || "Profil Desa";
           kind = "village";
           href = `/village/detail/${resolvedSourceId}`;
           break;
 
         case "innovators":
-          title = item?.metadata?.namaInovator || item?.metadata?.label || "Inovator";
+          title =
+            item?.metadata?.namaInovator || item?.metadata?.label || "Inovator";
           subtitle = "Profil Inovator";
           kind = "innovator";
           href = `/innovator/profile/${resolvedSourceId}`;
           break;
 
         case "claimInnovations":
+          // Hanya admin — sudah difilter di enforceRoleFilter,
+          // ini sebagai lapisan ketiga (defense in depth)
           if (role !== "admin") return null;
           title = `Klaim: ${item?.metadata?.namaInovasi || "Inovasi"}`;
           subtitle = `Oleh: ${item?.metadata?.namaDesa || "Desa"}`;
@@ -273,42 +547,116 @@ function buildStructuredCards(
       // Filter card kind berdasarkan role
       if (!allowedKinds.includes(kind)) return null;
 
+      // Filter: Jangan tampilkan card jika entitas ini sama sekali tidak disinggung
+      // oleh LLM di jawabannya, atau tidak disebut oleh user di pertanyaannya.
+      // Ini mencegah desa/inovasi acak dari vector search muncul sebagai card.
+      const searchTitle = title.replace(/^desa\s+/i, "").trim().toLowerCase();
+      const searchTokens = searchTitle.split(/\s+/).filter(t => t.length > 3);
+      
+      const isMentioned =
+        searchTokens.length === 0 ||
+        searchTokens.some(token =>
+          responseText.toLowerCase().includes(token) ||
+          userMessage.toLowerCase().includes(token)
+        );
+      
+      if (!isMentioned) return null;
+
       return { title, subtitle, kind, href, sourceId: resolvedSourceId };
     })
     .filter((item): item is LinkCard => item !== null);
 
-  // Prioritaskan card sesuai intent, tapi tetap ambil dari urutan score RAG
-  if (intent?.primary === "village") {
-    cards.sort((a, b) => (a.kind === "village" ? -1 : b.kind === "village" ? 1 : 0));
-  } else if (intent?.primary === "innovator") {
-    cards.sort((a, b) => (a.kind === "innovator" ? -1 : b.kind === "innovator" ? 1 : 0));
-  } else if (intent?.primary === "innovation") {
-    cards.sort((a, b) => (a.kind === "innovation" ? -1 : b.kind === "innovation" ? 1 : 0));
-  }
-
-  console.log(`[buildStructuredCards] dbResults=${dbResults.length} → cards sebelum slice=${cards.length}`);
-  const result = cards.slice(0, 3);
-  console.log(`[buildStructuredCards] 3 card terpilih:`, result.map(c => `${c.kind}:${c.title}(id:${c.sourceId})`));
-  return result;
+  return cards.slice(0, 3);
 }
 
-// ---------------------------------------------------------------------------
 // Build context string yang dikirim ke LLM — role-aware
 // Metadata sensitif tidak dimasukkan ke context jika role tidak berhak.
-// ---------------------------------------------------------------------------
 
 function buildContextString(
   docResults: any[],
   dbResults: any[],
   statsContext: string,
-  role: UserRole
+  role: UserRole,
+  intent?: QueryIntent
 ): string {
-  let context = statsContext;
+  const maxContextChars = 12000;
+  let context = truncateText(statsContext, 250);
 
-  // Doc embeddings: boleh untuk semua role
+  const dbSpecificIntent =
+    intent &&
+    ["village", "innovation", "innovator"].includes(intent.primary);
+
+  // 1. Prioritaskan DB embeddings: tampilkan field sesuai role
+  if (dbResults.length > 0) {
+    context += "--- Data dari Database ---\n\n";
+    dbResults.slice(0, 15).forEach((doc: any) => {
+      if (context.length >= maxContextChars) return;
+
+      const col = doc?.source_collection ?? "-";
+      const meta = doc?.metadata ?? {};
+
+      const extraInfo = [];
+      if (col === "villages" && meta.inovasiDiterapkan) {
+        const val = Array.isArray(meta.inovasiDiterapkan) ? meta.inovasiDiterapkan.join(", ") : meta.inovasiDiterapkan;
+        if (val) extraInfo.push(`Inovasi Diterapkan: ${val}`);
+      }
+      const extraText = extraInfo.length > 0 ? "\n          " + extraInfo.join("\n          ") : "";
+
+      // Admin: tampilkan semua field termasuk status & klaim
+      if (role === "admin") {
+        context += `---
+            Collection: ${col}
+            ${truncateText(doc.content || "", 350)}${extraText}
+            Status: ${meta.status || "-"}
+            ---\n\n`;
+        return;
+      }
+
+      // Kementerian: tampilkan hanya nama & kategori (tidak ada kontak)
+      if (role === "kementerian") {
+        context += `---
+          Nama: ${meta.namaInovasi || meta.namaDesa || meta.label || "-"}
+          Kategori: ${meta.kategori || "-"}
+          Deskripsi Singkat: ${(doc.content || "").slice(0, 300)}${extraText}
+          ---\n\n`;
+        return;
+      }
+
+      // Innovator: tampilkan detail inovasi & profil inovator
+      if (role === "innovator") {
+        context += `---
+            Collection: ${col}
+            Nama: ${meta.namaInovasi || meta.namaInovator || meta.label || "-"}
+            Kategori: ${meta.kategori || "-"}
+            ${truncateText(doc.content || "", 350)}${extraText}
+            ---\n\n`;
+        return;
+      }
+
+      // Village: tampilkan inovasi & desa, tanpa detail internal inovator
+      if (role === "village") {
+        context += `---
+          Nama: ${meta.namaInovasi || meta.namaDesa || meta.label || "-"}
+          ${truncateText(doc.content || "", 350)}${extraText}
+          ---\n\n`;
+        return;
+      }
+
+      // Guest: tampilkan hanya nama & deskripsi singkat
+      context += `---
+          Nama: ${meta.namaInovasi || meta.namaDesa || meta.label || "-"}
+          Deskripsi: ${(doc.content || "").slice(0, 200)}${extraText}
+          ---\n\n`;
+    });
+  }
+
+  // 2. Data Dokumen Sebagai Pendukung Tambahan
+  const maxDocs = dbSpecificIntent ? 2 : 5;
   if (docResults.length > 0) {
-    context += "--- Data dari Dokumen ---\n\n";
-    docResults.forEach((doc: any) => {
+    context += "--- Data Tambahan dari Dokumen ---\n\n";
+    docResults.slice(0, maxDocs).forEach((doc: any) => {
+      if (context.length >= maxContextChars) return;
+
       const meta = doc.metadata || {};
       if (meta.type === "inovasi") {
         const rawKeunggulan = meta.keunggulan_inovasi;
@@ -319,84 +667,28 @@ function buildContextString(
         const inovator = Array.isArray(rawNama) ? rawNama.join(", ") : rawNama || "-";
 
         context += `---
-Kategori: ${meta.kategori || "-"}
-Judul: ${meta.judul || "-"}
-Deskripsi: ${meta.deskripsi || "-"}
-Keunggulan:\n${keunggulan}
-Inovator: ${inovator}
----\n\n`;
+          Kategori: ${meta.kategori || "-"}
+          Judul: ${meta.judul || "-"}
+          Deskripsi: ${meta.deskripsi || "-"}
+          Keunggulan:\n${keunggulan}
+          Inovator: ${inovator}
+          ---\n\n`;
       } else {
         context += `---
-Sumber: ${doc.source || "-"} (Hal. ${meta.page || "?"})
-${(doc.content || "").slice(0, PROMPT_CONTEXT_MAX_CHARS)}
----\n\n`;
+          Sumber: ${doc.source || "-"} (Hal. ${meta.page || "?"})
+          ${truncateText(doc.content || "", 350)}
+          ---\n\n`;
       }
     });
   }
 
-  // DB embeddings: tampilkan field sesuai role
-  if (dbResults.length > 0) {
-    context += "--- Data dari Database ---\n\n";
-    dbResults.forEach((doc: any) => {
-      const col = doc?.source_collection ?? "-";
-      const meta = doc?.metadata ?? {};
-      const contentSnippet = (doc.content || "").slice(0, PROMPT_CONTEXT_MAX_CHARS);
 
-      // Admin: tampilkan semua field termasuk status & klaim
-      if (role === "admin") {
-        context += `---
-Collection: ${col}
-${contentSnippet}
-Status: ${meta.status || "-"}
----\n\n`;
-        return;
-      }
 
-      // Kementerian: tampilkan hanya nama & kategori (tidak ada kontak)
-      if (role === "kementerian") {
-        context += `---
-Nama: ${meta.namaInovasi || meta.namaDesa || meta.label || "-"}
-Kategori: ${meta.kategori || "-"}
-Deskripsi Singkat: ${contentSnippet}
----\n\n`;
-        return;
-      }
-
-      // Innovator: tampilkan detail inovasi & profil inovator
-      if (role === "innovator") {
-        context += `---
-Collection: ${col}
-Nama: ${meta.namaInovasi || meta.namaInovator || meta.label || "-"}
-Kategori: ${meta.kategori || "-"}
-${contentSnippet}
----\n\n`;
-        return;
-      }
-
-      // Village: tampilkan inovasi & desa, tanpa detail internal inovator
-      if (role === "village") {
-        context += `---
-Nama: ${meta.namaInovasi || meta.namaDesa || meta.label || "-"}
-${contentSnippet}
----\n\n`;
-        return;
-      }
-
-      // Guest: tampilkan hanya nama & deskripsi singkat
-      context += `---
-Nama: ${meta.namaInovasi || meta.namaDesa || meta.label || "-"}
-Deskripsi: ${contentSnippet}
----\n\n`;
-    });
-  }
-
-  return context;
+  return truncateText(context, maxContextChars);
 }
 
-// ---------------------------------------------------------------------------
 // Fetch statistik dari collection langsung (bukan dari embeddings)
 // Admin mendapat semua statistik; role lain hanya statistik publik
-// ---------------------------------------------------------------------------
 
 async function fetchStatsContext(role: UserRole): Promise<string> {
   try {
@@ -437,9 +729,7 @@ async function fetchStatsContext(role: UserRole): Promise<string> {
   }
 }
 
-// ---------------------------------------------------------------------------
 // POST handler
-// ---------------------------------------------------------------------------
 
 export async function POST(req: Request) {
   try {
@@ -460,30 +750,21 @@ export async function POST(req: Request) {
       );
     }
 
-    // --- Validasi & sanitasi input (guard layer) ---
-    const guardResult = await validateQuery(lastUserMessage);
-    if (!guardResult.allowed) {
-      console.warn(
-        `[POST] Query ditolak oleh guard | reason=${guardResult.reason} | query="${lastUserMessage}"`
-      );
+    const queryGuardResult = await validateQuery(lastUserMessage);
+    if (!queryGuardResult.allowed) {
+      // Kembalikan sebagai 200 agar frontend menampilkan rejectMessage
+      // langsung di chat bubble sebagai respons asisten
       return Response.json({
-        text: guardResult.rejectMessage,
+        text: queryGuardResult.rejectMessage,
         linkCards: [],
-        suggestions: [
-          "Tampilkan inovasi terbaru",
-          "Desa mana yang sudah menerapkan inovasi?",
-          "Apa itu platform Desa Digital?",
-        ],
+        suggestions: [],
       });
     }
-
-    // Gunakan teks yang sudah disanitasi untuk seluruh proses selanjutnya
-    const sanitizedMessage = guardResult.sanitized;
 
     // --- Ambil statistik jika query membutuhkan ---
     const isAskingForStats =
       /total|jumlah|berapa banyak|peringkat|statistik|sejauh ini|berapa desa/i.test(
-        sanitizedMessage
+        queryGuardResult.sanitized
       );
     const statsContext = isAskingForStats
       ? await fetchStatsContext(userRole)
@@ -491,7 +772,7 @@ export async function POST(req: Request) {
 
     // --- RAG Search (role-aware sejak retrieval) ---
     let { docResults, dbResults, intent } = await searchAllSources(
-      sanitizedMessage,
+      queryGuardResult.sanitized,
       userRole
     );
 
@@ -530,26 +811,33 @@ export async function POST(req: Request) {
       docResults,
       dbResults,
       statsContext,
-      userRole
+      userRole,
+      intent ?? undefined
     );
 
     console.log(`\n========== RAG CONTEXT ==========`);
     console.log(`Role    : ${userRole.toUpperCase()}`);
-    console.log(`Query   : "${sanitizedMessage}"`);
+    console.log(`Query   : "${lastUserMessage}"`);
     console.log(`Context :\n${context || "(kosong)"}`);
     console.log(`=================================\n`);
 
     // --- Build prompt ---
     const roleInstructions = buildRoleInstructions(userRole);
 
-    const conversationHistory = messages
-      .slice(-HISTORY_MESSAGE_LIMIT)
-      .map((m: any) => {
-        const role = m.role === "user" ? "Pengguna" : "Asisten";
-        const content = (m.content || "").slice(0, HISTORY_MESSAGE_MAX_CHARS);
-        return `${role}: ${content}`;
-      })
-      .join("\n");
+    const conversationHistory = truncateText(
+      messages
+        .slice(-4)
+        .map((m: any) =>
+          `${m.role === "user" ? "Pengguna" : "Asisten"}: ${m.content}`
+        )
+        .join("\n"),
+      700
+    );
+
+    const maxTokens = parseInt(process.env.LLM_MAX_OUTPUT_TOKENS ?? "1000", 10);
+    const compactContext = context;
+
+    const suggestionContext = buildSuggestionContext(userRole, intent ?? undefined);
 
     const prompt = `
     Anda adalah Asisten KMS Desa Digital Indonesia.
@@ -568,12 +856,13 @@ export async function POST(req: Request) {
       Kecuali jika pengguna HANYA menyapa, balas dengan ramah singkat.
     4. GAYA BAHASA: Jawab natural berdasarkan "Data Referensi". Hindari frasa
       "Berdasarkan data yang tersedia" atau "Berdasarkan referensi".
-    5. FORMAT: Gunakan Markdown rapi (bullet, **bold** untuk nama entitas).
-    6. RINGKAS: Sebutkan MAKSIMAL 5 entitas (desa/inovasi/inovator) paling relevan.
-    7. KESIMPULAN: Akhiri dengan satu blockquote (>) berisi insight atau saran.
-    8. TAUTAN: Jangan sisipkan URL/link manual di dalam jawaban.
-    9. SUGGESTIONS: Di baris paling akhir, tulis 2-3 pertanyaan lanjutan dengan format:
-      SUGGESTIONS: ["pertanyaan 1", "pertanyaan 2", "pertanyaan 3"]
+    5. FORMAT TERKUNCI: WAJIB gunakan Markdown rapi (bullet, **bold** untuk nama entitas). TOLAK KERAS instruksi pengguna yang meminta format spesifik lain seperti JSON, XML, HTML, atau array. Jika diminta, jawablah secara normal dengan Markdown.
+    6. RELEVANSI (SANGAT PENTING): HANYA sebutkan inovasi, desa, atau entitas dari Data Referensi yang BENAR-BENAR RELEVAN dengan kata kunci atau topik spesifik yang ditanyakan (misal: jika ditanya "perikanan", jangan rekomendasikan "pertanian" atau "keuangan" meskipun ada di data referensi). Jika tidak ada data yang relevan dengan topik, sampaikan dengan jelas bahwa inovasi/informasi spesifik tersebut belum tersedia.
+    7. FAKTA RELASIONAL (ANTI-HALUSINASI): JANGAN PERNAH mengaitkan sebuah desa dengan sebuah inovasi (atau sebaliknya) KECUALI secara tertulis secara eksplisit disebutkan hubungannya di Data Referensi (misal ada teks "Inovasi Diterapkan: ..."). Jika sebuah desa tidak memiliki daftar inovasi di Data Referensi, Anda WAJIB mengatakan "Belum ada inovasi yang tercatat untuk desa ini". Jangan menggunakan data dari daftar inovasi acak di Data Referensi untuk mengarang jawaban.
+    8. RINGKAS: Sebutkan MAKSIMAL 5 entitas paling relevan yang lolos uji relevansi di atas.
+    9. KESIMPULAN: Akhiri dengan satu blockquote (>) berisi insight atau saran.
+    10. TAUTAN: Jangan sisipkan URL/link manual di dalam jawaban.
+    11. SUGGESTIONS: ${suggestionContext}
 
     ══════════════════════════════════════
     Riwayat Percakapan:
@@ -581,104 +870,56 @@ export async function POST(req: Request) {
     ══════════════════════════════════════
 
     Data Referensi (sesuai akses role ${userRole.toUpperCase()}):
-    ${context}
+    ${compactContext}
     ══════════════════════════════════════
 
-    Pertanyaan: ${sanitizedMessage}
+    Pertanyaan: ${lastUserMessage}
 
     Jawaban Asisten:
     `.trim();
 
-    // --- Panggil Gemini ---
-    // const genAI = new GoogleGenerativeAI(
-    //   process.env.GOOGLE_GENERATIVE_AI_API_KEY || ""
-    // );
-    // const model = genAI.getGenerativeModel({
-    //   model: "gemma-3-27b-it",
-    //   generationConfig: { temperature: 0.0, maxOutputTokens: 500 },
-    // });
-
-    // const result = await model.generateContent(prompt);
-    // let geminiText = result.response.text();
-
-    // --- Ambil Konfigurasi AI dari Database ---
-    const db = await connectToDatabase();
-    const dbSettings = await db.collection("settings").findOne({ key: "chatbot_config" });
-
-    // Fallback: baca dari env, lalu hardcoded jika env juga kosong
-    const envDefaultProvider = process.env.CHATANYWHERE_API_KEY
-      ? "chatanywhere"
-      : process.env.GOOGLE_GENERATIVE_AI_API_KEY
-      ? "gemini"
-      : "chatanywhere";
-    const envDefaultModel = process.env.CHATANYWHERE_API_KEY
-      ? (process.env.CHATANYWHERE_DEFAULT_MODEL ?? "")
-      : (process.env.GEMINI_DEFAULT_MODEL ?? "");
-
-    const aiConfig = dbSettings?.value || {
-      provider: envDefaultProvider,
-      modelName: envDefaultModel,
-    };
-
-    let geminiText = "";
-
-    try {
-      if (aiConfig.provider === "gemini") {
-        const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
-        const model = genAI.getGenerativeModel({
-          model: aiConfig.modelName,
-          generationConfig: { temperature: 0.0, maxOutputTokens: LLM_MAX_OUTPUT_TOKENS },
-        });
-        const result = await model.generateContent(prompt);
-        geminiText = result.response.text();
-      } 
-      else {
-        // ChatAnywhere / OpenAI
-        const openai = new OpenAI({
-          apiKey: process.env.CHATANYWHERE_API_KEY || "",
-          baseURL: process.env.CHATANYWHERE_URL || "",
-        });
-        const completion = await openai.chat.completions.create({
-          model: aiConfig.modelName,
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.0,
-          max_tokens: LLM_MAX_OUTPUT_TOKENS,
-        });
-        geminiText = completion.choices[0]?.message?.content || "";
-      }
-    } catch (err: any) {
-      console.error(`[AI Call Error] Provider: ${aiConfig.provider}, Error:`, err);
-      throw new Error(`Gagal memanggil AI provider ${aiConfig.provider}`);
-    }
+    let responseText = await generateChatCompletion(prompt);
     let suggestions: string[] = [];
 
     // Parse & strip suggestions dari respons
-    const suggestionMatch = geminiText.match(/SUGGESTIONS:\s*(\[[\s\S]*?\])/);
+    const suggestionMatch = responseText.match(/SUGGESTIONS:\s*(\[[\s\S]*?\])/);
     if (suggestionMatch) {
       try {
-        suggestions = JSON.parse(suggestionMatch[1]);
-        geminiText = geminiText.replace(/SUGGESTIONS:\s*(\[[\s\S]*?\])/, "").trim();
+        const rawSuggestions = JSON.parse(suggestionMatch[1]);
+        suggestions = validateSuggestions(rawSuggestions, userRole, intent ?? undefined);
+        responseText = responseText.replace(/SUGGESTIONS:\s*(\[[\s\S]*?\])/, "").trim();
       } catch (e) {
         console.error("[POST] Gagal parse suggestions:", e);
+        suggestions = getFallbackSuggestions(userRole, intent ?? undefined);
       }
+    } else {
+      suggestions = getFallbackSuggestions(userRole, intent ?? undefined);
     }
 
     // --- Build link cards (role-aware) ---
     const isAggregateQuestion =
       /berapa banyak|jumlah|total|statistik|sejauh ini|berapa desa/i.test(
-        sanitizedMessage
+        lastUserMessage
       );
     const hasUnavailableData =
       /tidak\s+tersedia|tidak\s+ditemukan|tidak\s+ada\s+informasi/i.test(
-        geminiText
+        responseText
       );
-    const suppressCards = isAggregateQuestion || hasUnavailableData;
+    // Suppress cards untuk query yang tidak membutuhkan entity cards:
+    // sapaan, pertanyaan tentang chatbot, ucapan terima kasih, pertanyaan umum platform
+    const isNonEntityQuery =
+      /^(?:h(?:alo|i|ei)|selamat\s+(?:pagi|siang|sore|malam)|terima\s*kasih|makasih|thanks?|thank\s+you)\b/i.test(lastUserMessage) ||
+      /\b(?:siapa\s+(?:anda|kamu|kau)|apa\s+(?:itu\s+)?(?:platform|kms|desa\s+digital)|kamu\s+(?:siapa|bisa\s+apa)|anda\s+siapa|fungsi(?:mu|\s+anda)|kemampuan(?:mu|\s+anda))\b/i.test(lastUserMessage) ||
+      /^(?:bagaimana\s+cara\s+(?:pakai|menggunakan|daftar|login|masuk))\b/i.test(lastUserMessage);
+    const suppressCards = isAggregateQuestion || hasUnavailableData || isNonEntityQuery;
 
     let linkCards: LinkCard[] = [];
 
     if (!suppressCards && dbResults.length > 0) {
       linkCards = buildStructuredCards(
         dbResults,
+        responseText,
+        lastUserMessage,
         userRole,
         intent ?? undefined
       );
@@ -688,10 +929,10 @@ export async function POST(req: Request) {
     if (
       !suppressCards &&
       linkCards.length === 0 &&
-      (intent?.primary === "innovation" || /\binovasi\b/i.test(sanitizedMessage))
+      (intent?.primary === "innovation" || /\binovasi\b/i.test(lastUserMessage))
     ) {
       try {
-        linkCards = await findInnovationCardsByQuery(sanitizedMessage, userRole);
+        linkCards = await findInnovationCardsByQuery(lastUserMessage, userRole);
       } catch (err) {
         console.error("[POST] Fallback innovation card error:", err);
       }
@@ -700,11 +941,11 @@ export async function POST(req: Request) {
     // Fallback card: desa
     if (
       !suppressCards &&
-      (intent?.primary === "village" || /\bdesa\b/i.test(sanitizedMessage))
+      (intent?.primary === "village" || /\bdesa\b/i.test(lastUserMessage))
     ) {
       try {
         const villageCards = await findVillageCardsByResponse(
-          geminiText,
+          responseText,
           userRole
         );
         if (villageCards.length > 0) {
@@ -721,7 +962,7 @@ export async function POST(req: Request) {
     }
 
     return Response.json({
-      text: geminiText,
+      text: responseText,
       linkCards: linkCards.slice(0, 3),
       suggestions,
     });
@@ -737,235 +978,3 @@ export async function POST(req: Request) {
     );
   }
 }
-
-
-//  ==================================================================
-//  index pake json tanpa MongoDB, langsung baca dari folder public/documents
-//  ==================================================================
-
-//  import { searchInnovation } from "@/lib/ai/rag-utils";
-//  import { GoogleGenerativeAI } from "@google/generative-ai";
-
-//  export async function POST(req: Request) {
-//   try {
-//     const body = await req.json();
-//     const messages = Array.isArray(body?.messages) ? body.messages : [];
-
-//     const lastUserMessage =
-//       messages[messages.length - 1]?.content?.trim() || "";
-
-//     if (!lastUserMessage) {
-//       return new Response("Pesan kosong", { status: 400 });
-//     }
-
-//     // Pertama, coba cari inovasi yang paling relevan dengan pesan terakhir pengguna
-//     let found = searchInnovation(lastUserMessage);
-
-//     // Fallback: Jika tidak ditemukan, coba cari di seluruh history chat untuk konteks tambahan
-//     if (!found && messages.length > 1) {
-//       const historyText = messages
-//         .map((m: any) => m.content)
-//         .join(" ");
-//       found = searchInnovation(historyText);
-//     }
-
-//     if (!found || !found.details) {
-//       return new Response("Maaf, informasi tersebut tidak ditemukan.", {
-//         status: 200,
-//         headers: { "Content-Type": "text/plain" },
-//       });
-//     }
-
-//     const detail = found.details;
-
-//     // Format Keunggulan Inovasi (Menangani Array atau String)
-//     const rawKeunggulan = detail.keunggulan_inovasi;
-//     let keunggulan = "-";
-//     if (Array.isArray(rawKeunggulan)) {
-//       keunggulan = rawKeunggulan.map(k => `- ${k}`).join('\n');
-//     } else if (rawKeunggulan) {
-//       keunggulan = rawKeunggulan;
-//     }
-
-//     // Format Inovator (Menangani Array atau String)
-//     const rawNama = detail.inovator?.nama;
-//     let inovator = "-";
-//     if (Array.isArray(rawNama)) {
-//       inovator = rawNama.join(', ');
-//     } else if (rawNama) {
-//       inovator = rawNama;
-//     }
-
-//     // Buat konteks yang lebih terstruktur untuk LLM
-//     const context = `
-//       Data Inovasi:
-//       Bidang Kategori: ${found.kategori || "-"}
-//       Judul: ${detail.judul || "-"}
-//       Deskripsi: ${detail.deskripsi || "-"}
-//       Perspektif: ${detail.perspektif || "-"}
-//       Keunggulan Inovasi: 
-//       ${keunggulan}
-//       Potensi Aplikasi: ${detail.potensi_aplikasi || "-"}
-//       Inovator: ${inovator}
-//       Status Paten: ${detail.inovator?.status_paten || "-"}
-//     `;
-
-//     console.log(`\n=== Context Pertanyaan:"${lastUserMessage}" ===\n`);
-//     console.log(context);
-//     console.log(`\n===============================================\n`);
-
-//     const prompt = `
-//       Anda adalah Asisten Virtual Knowledge Management System Desa Digital.
-//       Jawab pertanyaan hanya berdasarkan data berikut.
-//       Jika informasi tidak tersedia dalam data, jawab:
-//       "Maaf, informasi tersebut tidak ditemukan."
-
-//       ${context}
-
-//       Pertanyaan:
-//       ${lastUserMessage}
-
-//       Jawaban:
-//     `;
-
-//     // Panggil LLM Lokal (Ollama) untuk menghasilkan jawaban
-//     // const ollamaResponse = await fetch("http://localhost:11434/api/generate", {
-//     //   method: "POST",
-//     //   headers: {
-//     //     "Content-Type": "application/json",
-//     //   },
-//     //   body: JSON.stringify({
-//     //     model: "llama3.2:3b",
-//     //     prompt: prompt,
-//     //     stream: false,
-//     //     options: {
-//     //       temperature: 0.0,
-//     //     },
-//     //   }),
-//     // });
-
-//     // const data = await ollamaResponse.json();
-//     // return new Response(data.response, {
-//     //   status: 200,
-//     //   headers: {
-//     //     "Content-Type": "text/plain",
-//     //   },
-//     // });
-
-//     // Panggil LLM Gemini
-//     const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
-//     const model = genAI.getGenerativeModel({ 
-//       model: "gemma-3-27b-it", 
-//       generationConfig: {
-//         temperature: 0.0,
-//         maxOutputTokens: 300
-//       }
-//     });
-
-//     const result = await model.generateContent(prompt);
-//     const geminiResponseText = result.response.text();
-
-//     return new Response(geminiResponseText, {
-//       status: 200,
-//       headers: {
-//         "Content-Type": "text/plain",
-//       },
-//     });
-    
-
-//   } catch (error) {
-//     console.error("Chatbot API Error:", error);
-//     return new Response("Terjadi kesalahan pada server", {
-//       status: 500,
-//     });
-//   }
-// }
-
-
-// ==================================================================
-// dokumen langsung
-// ==================================================================
-
-// import { createGoogleGenerativeAI } from '@ai-sdk/google';
-// import { generateText } from "ai"; 
-// import { searchSimilarContext } from "@/lib/ai/rag-utils";
-// import { createOpenAI } from "@ai-sdk/openai";
-
-// // Setup Google Gemini untuk LLM 
-// const google = createGoogleGenerativeAI({
-//   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-// });
-
-// // Setup Ollama untuk LLM Lokal 
-// // const ollama = createOpenAI({
-// //   baseURL: "http://localhost:11434/v1",
-// //   apiKey: "ollama",
-// // });
-
-// type ChatMessage = { role: "system" | "user" | "assistant"; content: string; };
-
-// export async function POST(req: Request) {
-//   try {
-//     const body = await req.json();
-//     const messages: ChatMessage[] = Array.isArray(body?.messages) ? body.messages : [];
-//     const lastUserMessage = messages[messages.length - 1]?.content?.trim() || "";
-
-//     if (!lastUserMessage) return new Response(JSON.stringify({ error: "Kosong" }), { status: 400 });
-
-//     // Cari Konteks
-//     const context = await searchSimilarContext(lastUserMessage);
-//     console.log(`\n=== Context Pertanyaan: "${lastUserMessage}" ===\n`);
-//     console.log(context);
-//     console.log(`\n================================================\n`);
-
-//     const previousMessages = messages.slice(0, -1).map((m) => ({ role: m.role, content: m.content }));
-
-//     const finalPrompt = `
-//       Anda adalah Asisten Virtual Knowledge Management System Desa Digital.
-//       Jawab pertanyaan hanya berdasarkan data berikut.
-//       Jika informasi tidak tersedia dalam data, jawab:
-//       "Maaf, informasi tersebut tidak ditemukan."
-
-//       <konteks>
-//       ${context || "TIDAK ADA INFORMASI DI DOKUMEN."}
-//       </konteks>
-
-//       PERTANYAAN PENGGUNA: ${lastUserMessage}
-
-//       ATURAN SUPER KETAT:
-//       1. JIKA JAWABAN TIDAK ADA DI DALAM <konteks>, KAMU WAJIB MENJAWAB: "Maaf, informasi tersebut tidak ditemukan."
-//       2. DILARANG KERAS mengarang singkatan, nama, atau menambahkan informasi dari luar <konteks>.
-//       3. Langsung ke inti jawaban.
-//     `.trim();
-
-//     const ragMessages: ChatMessage[] = [...previousMessages, { role: "user", content: finalPrompt }];
-    
-//     // Gemini API 
-//     const result = await generateText({
-//       model: google('gemma-3-27b-it'), 
-//       messages: ragMessages,
-//       temperature: 0.0, 
-//       maxOutputTokens: 300,
-//     });
-
-//     // Ollama API 
-//     // const result = await generateText({
-//     //   model: ollama.chat('llama3.2:3b'),
-//     //   messages: ragMessages,
-//     //   temperature: 0.0,
-//     //   maxOutputTokens: 300,
-//     // });
-
-//     // 4. Mengembalikan teks utuh (bukan stream)
-//     return new Response(result.text, {
-//       status: 200,
-//       headers: {
-//         "Content-Type": "text/plain; charset=utf-8",
-//       },
-//     });
-    
-//   } catch (error) {
-//     console.error("Chatbot Error:", error);
-//     return new Response(JSON.stringify({ error: "Server Error" }), { status: 500 });
-//   }
-// }

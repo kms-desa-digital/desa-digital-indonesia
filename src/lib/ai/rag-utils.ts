@@ -5,69 +5,16 @@
 
 import { connectToDatabase } from "@/lib/db/mongodb";
 
+// Konfigurasi via environment variables
 const OLLAMA_BASE_URL =
   process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434";
 const OLLAMA_EMBED_MODEL =
-  process.env.OLLAMA_EMBED_MODEL || "";
+  process.env.OLLAMA_EMBED_MODEL || "mxbai-embed-large:latest";
 const VECTOR_SCORE_THRESHOLD = parseFloat(
-  process.env.VECTOR_SCORE_THRESHOLD || "0.7"
+  process.env.VECTOR_SCORE_THRESHOLD || "0.6"
 );
 const OLLAMA_TIMEOUT_MS = parseInt(
   process.env.OLLAMA_TIMEOUT_MS || "30000",
-  10
-);
-
-/** Batas panjang content (chars) saat hasil retrieval diproses di rag-utils */
-export const CONTEXT_MAX_CHARS = parseInt(
-  process.env.CONTEXT_MAX_CHARS || "800",
-  10
-);
-
-/** Batas jumlah dokumen dari doc_embeddings yang masuk ke prompt */
-export const DOC_RESULT_LIMIT = parseInt(
-  process.env.DOC_RESULT_LIMIT || "3",
-  10
-);
-
-/** Batas jumlah dokumen dari db_embeddings yang masuk ke prompt */
-export const DB_RESULT_LIMIT = parseInt(
-  process.env.DB_RESULT_LIMIT || "3",
-  10
-);
-
-/** Batas panjang jawaban LLM (dalam token) */
-export const LLM_MAX_OUTPUT_TOKENS = parseInt(
-  process.env.LLM_MAX_OUTPUT_TOKENS || "400",
-  10
-);
-
-/** Batas panjang tiap context item saat prompt final dibuat (chars) */
-export const PROMPT_CONTEXT_MAX_CHARS = parseInt(
-  process.env.PROMPT_CONTEXT_MAX_CHARS || "500",
-  10
-);
-
-/** Jumlah pesan history yang dimasukkan ke prompt */
-export const HISTORY_MESSAGE_LIMIT = parseInt(
-  process.env.HISTORY_MESSAGE_LIMIT || "3",
-  10
-);
-
-/** Batas panjang tiap pesan history (chars) */
-export const HISTORY_MESSAGE_MAX_CHARS = parseInt(
-  process.env.HISTORY_MESSAGE_MAX_CHARS || "300",
-  10
-);
-
-/** Jumlah kandidat vector search (internal, tidak perlu di-export) */
-const VECTOR_NUM_CANDIDATES = parseInt(
-  process.env.VECTOR_NUM_CANDIDATES || "50",
-  10
-);
-
-/** Jumlah hasil mentah dari vector search sebelum difilter threshold */
-const VECTOR_SEARCH_LIMIT = parseInt(
-  process.env.VECTOR_SEARCH_LIMIT || "5",
   10
 );
 
@@ -96,13 +43,12 @@ export type SearchResult = {
 
 // Role permission matrix
 // Mendefinisikan dengan jelas apa yang boleh diakses tiap role.
-// Satu tempat — mudah diaudit dan diubah.
 
 const ROLE_ALLOWED_COLLECTIONS: Record<UserRole, string[]> = {
   admin: ["innovations", "villages", "innovators", "claimInnovations"],
-  kementerian: ["innovations", "villages"],
-  innovator: ["innovations", "innovators"],
-  village: ["innovations", "villages"],
+  kementerian: ["innovations", "villages", "innovators"],
+  innovator: ["innovations", "villages", "innovators"],
+  village: ["innovations", "villages", "innovators"],
   guest: ["innovations", "villages", "innovators"],
 };
 
@@ -117,18 +63,30 @@ export function buildCollectionFilter(
   const normalizedRole = normalizeRole(role);
   const allowed = ROLE_ALLOWED_COLLECTIONS[normalizedRole];
 
-  // Jika intent sudah spesifik, intersect dengan allowed collection role
-  if (intent.primary === "village") {
-    return allowed.filter((c) => ["villages"].includes(c));
+  const targetCollections = new Set<string>();
+
+  if (intent.isVillage) {
+    targetCollections.add("villages");
+    targetCollections.add("innovations");
+    targetCollections.add("claimInnovations");
   }
-  if (intent.primary === "innovation") {
-    return allowed.filter((c) => ["innovations"].includes(c));
+  if (intent.isInnovation) {
+    targetCollections.add("innovations");
+    targetCollections.add("villages");
+    targetCollections.add("claimInnovations");
   }
-  if (intent.primary === "innovator") {
-    return allowed.filter((c) => ["innovators", "innovations"].includes(c));
+  if (intent.isInnovator) {
+    targetCollections.add("innovators");
+    targetCollections.add("innovations");
   }
-  // stats atau general: kembalikan semua yang diizinkan untuk role ini
-  return allowed;
+
+  // Jika tidak ada keyword spesifik atau mencari statistik, telusuri semua koleksi yang diizinkan
+  if (targetCollections.size === 0 || intent.isStats) {
+    return allowed;
+  }
+
+  // Filter koleksi yang diizinkan sesuai role
+  return allowed.filter((c) => targetCollections.has(c));
 }
 
 /**
@@ -149,39 +107,7 @@ export function normalizeRole(role: string): UserRole {
 
 // Embedding generation
 
-/** Potong dan bersihkan teks agar tidak melebihi CONTEXT_MAX_CHARS */
-function trimContext(text: string, maxChars = CONTEXT_MAX_CHARS): string {
-  const cleaned = (text || "")
-    .replace(/[\r\n]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (cleaned.length <= maxChars) return cleaned;
-  return cleaned.slice(0, maxChars) + "...";
-}
-
-/**
- * Tentukan apakah doc_embeddings perlu dicari.
- * Tujuannya agar tidak semua query selalu menarik dokumen PDF/JSON.
- */
-function shouldSearchDocEmbeddings(query: string, intent: QueryIntent): boolean {
-  // Stats tidak butuh dokumen
-  if (intent.primary === "stats") return false;
-
-  // Innovator tidak butuh dokumen PDF — cukup dari db_embeddings
-  if (intent.primary === "innovator") return false;
-
-  // Innovation: cari dokumen jika ada keyword inovasi yang mungkin ada di doc_embeddings (IPB, dll)
-  if (intent.primary === "innovation") return true;
-
-  // Village dan general: hanya cari dokumen jika ada keyword yang relevan
-  return /dokumen|pdf|referensi|profil desa|platform|desa digital|panduan|tentang sistem|sejarah|latar belakang/i.test(query);
-}
-
 export async function generateEmbeddings(text: string): Promise<number[]> {
-  if (!OLLAMA_EMBED_MODEL) {
-    throw new Error("[generateEmbeddings] OLLAMA_EMBED_MODEL belum diset di .env");
-  }
-
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
 
@@ -267,6 +193,14 @@ export function detectQueryIntent(query: string): QueryIntent {
     "manfaat inovasi",
     "kategori inovasi",
     "rekomendasi inovasi",
+    "siapa inovator",
+    "sudah menerapkan",
+    "berapa harga",
+    "inovasi apa saja",
+    "daftar inovasi",
+    "klaim",
+    "status klaim",
+    "pengajuan",
   ];
 
   const innovatorKeywords = [
@@ -338,8 +272,8 @@ export async function searchDocEmbeddings(query: string): Promise<any[]> {
             index: "vector_index",
             path: "embedding_vector",
             queryVector,
-            numCandidates: VECTOR_NUM_CANDIDATES,
-            limit: VECTOR_SEARCH_LIMIT,
+            numCandidates: 100,
+            limit: 15,
           },
         },
         {
@@ -351,15 +285,7 @@ export async function searchDocEmbeddings(query: string): Promise<any[]> {
       ])
       .toArray();
 
-    const valid = results
-      .filter((r) => r.score > VECTOR_SCORE_THRESHOLD)
-      .map((r) => ({
-        ...r,
-        content: trimContext(r.content ?? r.text ?? ""),
-        text: undefined,
-      }))
-      .filter((r) => r.content);
-
+    const valid = results.filter((r) => r.score > VECTOR_SCORE_THRESHOLD);
     console.log(`[searchDocEmbeddings] Ditemukan ${valid.length} hasil valid`);
     return valid;
   } catch (error) {
@@ -382,7 +308,6 @@ export async function searchDatabaseEmbeddings(
     const queryVector = await generateEmbeddings(query);
     const collectionFilter = buildCollectionFilter(intent, role);
 
-    // Pastikan filter tidak kosong — fallback ke innovations saja
     if (collectionFilter.length === 0) {
       console.warn(
         "[searchDatabaseEmbeddings] collectionFilter kosong, fallback ke innovations"
@@ -394,7 +319,8 @@ export async function searchDatabaseEmbeddings(
       `[searchDatabaseEmbeddings] Role=${role} | Filter=[${collectionFilter.join(", ")}]`
     );
 
-    const results = await db
+    // 1. Vector Search
+    const vectorResults = await db
       .collection("db_embeddings")
       .aggregate([
         {
@@ -402,8 +328,8 @@ export async function searchDatabaseEmbeddings(
             index: "vector_index_db",
             path: "embedding_vector",
             queryVector,
-            numCandidates: VECTOR_NUM_CANDIDATES,
-            limit: VECTOR_SEARCH_LIMIT,
+            numCandidates: 100,
+            limit: 15,
             filter: {
               source_collection: { $in: collectionFilter },
             },
@@ -418,19 +344,98 @@ export async function searchDatabaseEmbeddings(
       ])
       .toArray();
 
-    const valid = results
-      .filter((r) => r.score > VECTOR_SCORE_THRESHOLD)
-      .map((r) => ({
-        ...r,
-        content: trimContext(r.content ?? r.text ?? ""),
-        text: undefined,
-      }))
-      .filter((r) => r.content);
+    const validVectorResults = vectorResults.filter(
+      (r) => r.score > VECTOR_SCORE_THRESHOLD
+    );
 
-    // Defense-in-depth: filter ulang di memory, meski sudah difilter di pipeline
-    const safe = enforceRoleFilter(valid, role);
+    // 2. Exact Match Search (Hybrid Fallback)
+    // Berguna untuk keyword spesifik (seperti nama desa "Soge") yang mungkin
+    // vector score-nya rendah terhadap dokumen inovasi tapi nama desanya disebut di metadata.
+    const stopWords = new Set([
+      "desa", "yang", "di", "ke", "dari", "apa", "saja", "mengadopsi",
+      "inovasi", "diterapkan", "nya", "ini", "itu", "dan", "atau", "untuk"
+    ]);
+    const tokens = query
+      .replace(/[^\w\s]/gi, "")
+      .split(/\s+/)
+      .filter((t) => t.length > 3 && !stopWords.has(t.toLowerCase()));
+
+    let exactMatchResults: any[] = [];
+    if (tokens.length > 0) {
+      const buildRegexOr = (field: string, tokens: string[]) =>
+        tokens.map((t) => ({ [field]: { $regex: t, $options: "i" } }));
+
+      exactMatchResults = await db
+        .collection("db_embeddings")
+        .find({
+          source_collection: { $in: collectionFilter },
+          $or: [
+            ...buildRegexOr("metadata.label", tokens),
+            ...buildRegexOr("metadata.namaDesa", tokens),
+            ...buildRegexOr("metadata.namaInovasi", tokens),
+            ...buildRegexOr("metadata.inovasiDiterapkan", tokens),
+          ],
+        })
+        .project({ embedding_vector: 0 })
+        .limit(15)
+        .toArray();
+
+      // Secondary lookup: Tarik dokumen inovasi yang disebut di inovasiDiterapkan
+      // agar LLM memiliki konteks penuh (deskripsi, kategori) dari inovasi tersebut.
+      const relatedNames = new Set<string>();
+      exactMatchResults.forEach((doc) => {
+        if (doc.metadata?.inovasiDiterapkan) {
+          const arr = Array.isArray(doc.metadata.inovasiDiterapkan)
+            ? doc.metadata.inovasiDiterapkan
+            : [doc.metadata.inovasiDiterapkan];
+          arr.forEach((a: string) => {
+            if (typeof a === "string" && a.trim()) relatedNames.add(a.trim());
+          });
+        }
+      });
+
+      if (relatedNames.size > 0 && collectionFilter.includes("innovations")) {
+        const relatedOr = Array.from(relatedNames).flatMap((n) => [
+          { "metadata.namaInovasi": { $regex: `^${n}$`, $options: "i" } },
+          { "metadata.label": { $regex: `^${n}$`, $options: "i" } },
+        ]);
+        const relatedDocs = await db
+          .collection("db_embeddings")
+          .find({
+            source_collection: "innovations",
+            $or: relatedOr,
+          })
+          .project({ embedding_vector: 0 })
+          .limit(10)
+          .toArray();
+        exactMatchResults = [...exactMatchResults, ...relatedDocs];
+      }
+    }
+
+    // Gabungkan hasil dan dedikasi berdasarkan _id
+    const combinedMap = new Map<string, any>();
+
+    // Beri penanda skor artifisial tinggi untuk exact match agar diprioritaskan
+    exactMatchResults.forEach((doc) => {
+      combinedMap.set(doc._id.toString(), { ...doc, score: 0.99 });
+    });
+
+    validVectorResults.forEach((doc) => {
+      const idStr = doc._id.toString();
+      if (!combinedMap.has(idStr)) {
+        combinedMap.set(idStr, doc);
+      }
+    });
+
+    const combinedResults = Array.from(combinedMap.values()).sort(
+      (a, b) => (b.score || 0) - (a.score || 0)
+    );
+
+    // Defense-in-depth: filter ulang di memory
+    const safe = enforceRoleFilter(combinedResults, role);
+
     console.log(
-      `[searchDatabaseEmbeddings] ${results.length} raw → ${valid.length} lolos threshold → ${safe.length} lolos role filter`
+      `[searchDatabaseEmbeddings] ${vectorResults.length} vector raw → ${validVectorResults.length} vector valid | ${exactMatchResults.length} exact match → ${safe.length} lolos role filter`
     );
     return safe;
   } catch (error) {
@@ -464,21 +469,11 @@ export async function searchAllSources(
 
   try {
     const intent = detectQueryIntent(query);
-    const shouldSearchDocs = shouldSearchDocEmbeddings(query, intent);
 
-    const [docResultsRaw, dbResultsRaw] = await Promise.all([
-      shouldSearchDocs ? searchDocEmbeddings(query) : Promise.resolve([]),
+    const [docResults, dbResults] = await Promise.all([
+      searchDocEmbeddings(query),
       searchDatabaseEmbeddings(query, intent, role),
     ]);
-
-    // Batasi jumlah hasil sesuai konfigurasi
-    const docResults = [...docResultsRaw]
-      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-      .slice(0, DOC_RESULT_LIMIT);
-
-    const dbResults = [...dbResultsRaw]
-      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-      .slice(0, DB_RESULT_LIMIT);
 
     console.log(
       `\n[searchAllSources] doc=${docResults.length} | db=${dbResults.length}`
@@ -508,282 +503,3 @@ export async function searchAllSources(
     return { docResults: [], dbResults: [], intent: null };
   }
 }
-
-
-// ==================================================================
-// index pake json tanpa MongoDB, langsung baca dari folder public/documents
-// ==================================================================
-
-// import fs from "fs";
-// import path from "path";
-
-// export interface InnovationNode {
-//   id?: string;
-//   node_id?: string;
-//   kategori?: string; 
-//   details?: {
-//     judul?: string;
-//     deskripsi?: string;
-//     perspektif?: string;
-//     keunggulan_inovasi?: string | string[];
-//     potensi_aplikasi?: string;
-//     inovator?: {
-//       nama?: string | string[];
-//       status_paten?: string;
-//     };
-//   };
-// }
-
-// let cachedNodes: InnovationNode[] | null = null;
-
-// function getJsonData(): InnovationNode[] {
-//   if (cachedNodes) return cachedNodes;
-
-//   try {
-//     const dirPath = path.join(process.cwd(), "public", "documents");
-    
-//     if (!fs.existsSync(dirPath)) {
-//       console.error("Folder documents tidak ditemukan:", dirPath);
-//       return [];
-//     }
-
-//     // Baca semua nama file di dalam folder documents
-//     const files = fs.readdirSync(dirPath).filter(file => file.endsWith('.json'));
-//     let allNodes: InnovationNode[] = [];
-
-//     // Looping untuk membuka dan menggabungkan setiap file JSON
-//     for (const file of files) {
-//       try {
-//         const filePath = path.join(dirPath, file);
-//         const fileContent = fs.readFileSync(filePath, "utf-8");
-//         // Hilangkan BOM UTF-8 agar JSON.parse tidak gagal pada karakter awal tersembunyi.
-//         const sanitizedContent = fileContent.replace(/^\uFEFF/, "");
-//         const data = JSON.parse(sanitizedContent);
-
-//         if (data.nodes && Array.isArray(data.nodes)) {
-//           // Ekstrak nama bidang dari nama file (contoh: "hasil_inovasi_ipb_pangan.json" -> "pangan")
-//           const categoryMatch = file.match(/hasil_inovasi_ipb_(.*?)\.json/);
-//           const bidang = categoryMatch ? categoryMatch[1].toUpperCase() : "UMUM";
-
-//           // Sisipkan informasi kategori ke dalam setiap node
-//           const nodesWithMetadata = data.nodes.map((node: any) => ({
-//             ...node,
-//             kategori: bidang
-//           }));
-
-//           // Gabungkan ke array utama
-//           allNodes = allNodes.concat(nodesWithMetadata);
-//         }
-//       } catch (fileError) {
-//         console.error(`Gagal parse file JSON: ${file}`, fileError);
-//       }
-//     }
-
-//     cachedNodes = allNodes;
-//     console.log(`Berhasil memuat ${allNodes.length} inovasi dari ${files.length} file JSON.`);
-//     return cachedNodes as InnovationNode[];
-    
-//   } catch (error) {
-//     console.error("Gagal membaca folder/file JSON:", error);
-//     return [];
-//   }
-// }
-
-// function normalize(text: string): string {
-//   if (!text) return "";
-//   return text
-//     .toLowerCase()
-//     .replace(/[^a-z0-9\s]/g, "")
-//     .replace(/\s+/g, " ")
-//     .trim();
-// }
-
-// export function searchInnovation(query: string): InnovationNode | null {
-//   const nodes = getJsonData();
-//   if (!query || nodes.length === 0) return null;
-
-//   const normalizedQuery = normalize(query);
-//   const keywords = normalizedQuery.split(" ").filter(w => w.length > 0);
-
-//   let bestMatch: InnovationNode | null = null;
-//   let highestScore = 0;
-
-//   for (const node of nodes) {
-//     const details = node.details;
-//     if (!details) continue;
-
-//     const judul = normalize(details.judul ?? "");
-//     const kategori = normalize(node.kategori ?? ""); 
-
-//     const rawKeunggulan = details.keunggulan_inovasi;
-//     const keunggulanText = Array.isArray(rawKeunggulan) ? rawKeunggulan.join(" ") : (rawKeunggulan ?? "");
-
-//     const rawNama = details.inovator?.nama;
-//     const inovatorText = Array.isArray(rawNama) ? rawNama.join(" ") : (rawNama ?? "");
-
-//     const combinedText = normalize(`
-//       ${kategori}
-//       ${details.judul ?? ""}
-//       ${details.deskripsi ?? ""}
-//       ${details.perspektif ?? ""}
-//       ${keunggulanText}
-//       ${details.potensi_aplikasi ?? ""}
-//       ${inovatorText}
-//       ${details.inovator?.status_paten ?? ""}
-//     `);
-
-//     let score = 0;
-
-//     for (const keyword of keywords) {
-//       if (judul.includes(keyword)) {
-//         score += 3; 
-//       } else if (kategori.includes(keyword)) {
-//         score += 2; 
-//       } else if (combinedText.includes(keyword)) {
-//         score += 1;
-//       }
-//     }
-
-//     if (score > highestScore) {
-//       highestScore = score;
-//       bestMatch = node;
-//     }
-//   }
-
-//   if (highestScore < 2) return null;
-
-//   return bestMatch;
-// }
-
-
-// ==================================================================
-// dokumen langsung
-// ==================================================================
-
-// import { createOpenAI } from "@ai-sdk/openai";
-// import { embed } from "ai";
-// import { createRequire } from "module";
-// import { connectToDatabase } from "../db/mongodb";
-
-// const require = createRequire(import.meta.url);
-// const pdfParse = require("pdf-parse");
-
-// // Setup Ollama untuk Embedding Lokal
-// const ollama = createOpenAI({
-//   baseURL: "http://localhost:11434/v1",
-//   apiKey: "ollama",
-//   fetch: (url, init) => {
-//     const controller = new AbortController();
-//     const timeout = setTimeout(() => controller.abort(), 30000);
-//     return fetch(url, { ...init, signal: controller.signal })
-//       .finally(() => clearTimeout(timeout));
-//   },
-// });
-
-// interface KnowledgeDoc {
-//   source: string;
-//   content: string;
-//   score?: number;
-// }
-
-// function normalizeText(text: string) {
-//   return (text ?? "").replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim();
-// }
-
-// function cleanAndTrim(text: string, maxChars = 1500) {
-//   const cleaned = normalizeText(text);
-//   return cleaned.length > maxChars ? cleaned.slice(0, maxChars) + "…" : cleaned;
-// }
-
-// function dedupByContent(docs: KnowledgeDoc[]): KnowledgeDoc[] {
-//   const seen = new Set<string>();
-//   const out: KnowledgeDoc[] = [];
-//   for (const d of docs) {
-//     const key = (d.content ?? "").slice(0, 300);
-//     if (!key || seen.has(key)) continue;
-//     seen.add(key);
-//     out.push(d);
-//   }
-//   return out;
-// }
-
-// const EMBED_MODEL = "nomic-embed-text"; // Menggunakan model lokal Ollama
-// const EXPECTED_DIM = 768;
-
-// export async function generateEmbeddings(text: string) {
-//   const cleanText = normalizeText(text);
-//   if (!cleanText || cleanText.length < 5) throw new Error("Text too short");
-
-//   const { embedding } = await embed({
-//     model: ollama.embedding(EMBED_MODEL),
-//     value: cleanText,
-//   });
-//   return embedding;
-// }
-
-// export async function searchSimilarContext(userQuery: string) {
-//   try {
-//     const db = await connectToDatabase();
-//     const collection = db.collection("knowledge_base");
-
-//     // 1. Ubah pertanyaan jadi vektor pakai Ollama
-//     const userQueryEmbedding = await generateEmbeddings(userQuery);
-
-//     // 2. Cari di MongoDB Atlas
-//     const rawDocs = await collection.aggregate([
-//       {
-//         $vectorSearch: {
-//           index: "vector_index",
-//           path: "embedding_vector",
-//           queryVector: userQueryEmbedding,
-//           numCandidates: 100,
-//           limit: 10,
-//         },
-//       },
-//       {
-//         $project: { _id: 0, source: 1, content: 1, score: { $meta: "vectorSearchScore" } },
-//       },
-//     ]).toArray();
-
-//     const docs: KnowledgeDoc[] = rawDocs
-//       .map((d: any) => ({
-//         source: String(d.source ?? ""),
-//         content: String(d.content ?? ""),
-//         score: typeof d.score === "number" ? d.score : undefined,
-//       }))
-//       .filter((d) => d.source && d.content);
-
-//     const MIN_SCORE = 0.60;
-//     const topDocs = dedupByContent(docs)
-//       .filter((d) => (d.score ?? 0) >= MIN_SCORE)
-//       .slice(0, 5)
-//       .map((d) => ({ ...d, content: cleanAndTrim(d.content, 1200) }));
-
-//     if (topDocs.length > 0) {
-//       // Log skor Vector Search di terminal
-//       console.log("\n=== Hasil Ranking Vector Search ===");
-//       topDocs.forEach((doc, index) => {
-//         console.log(`Rank ${index + 1} | Score: ${doc.score?.toFixed(4)} | Sumber: ${doc.source}`);
-//       });
-
-//       return topDocs.map((d, i) => `[Sumber: ${d.source}]\n${d.content}`).join("\n\n---\n\n");
-//     }
-
-//     return "";
-//   } catch (error) {
-//     console.error("Vector search error:", error);
-//     return "";
-//   }
-// }
-
-// export async function parsePdf(buffer: Buffer) {
-//   if (typeof pdfParse === "function") {
-//     const data = await pdfParse(buffer);
-//     return data.text ?? "";
-//   } else if (pdfParse && pdfParse.PDFParse) {
-//     const instance = new pdfParse.PDFParse({ data: buffer });
-//     const data = await instance.getText();
-//     return data.text ?? "";
-//   }
-//   return "";
-// }
