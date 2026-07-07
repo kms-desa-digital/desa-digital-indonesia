@@ -1,0 +1,37 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Hostinger VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            # Masuk ke folder proyek
+            # Pastikan Anda mengubah /path/to/project dengan path asli di VPS Anda
+            cd /root/desa-digital-indonesia
+
+            # Tarik kode terbaru dari GitHub
+            git pull origin master
+
+            # Build ulang container web (Next.js)
+            docker compose build web
+            
+            # Restart layanan dengan detach mode (agar jalan di background)
+            docker compose up -d
+            
+            # (Opsional) Bersihkan image Docker yang tidak terpakai
+            docker image prune -f
