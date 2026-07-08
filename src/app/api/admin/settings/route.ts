@@ -9,10 +9,12 @@ export async function GET() {
     
     // Default config — baca dari env, tidak ada hardcoded
     const defaultConfig = {
-      provider: process.env.CHATANYWHERE_API_KEY ? "chatanywhere" : "gemini",
-      modelName: process.env.CHATANYWHERE_API_KEY
-        ? (process.env.CHATANYWHERE_DEFAULT_MODEL ?? "")
-        : (process.env.GEMINI_DEFAULT_MODEL ?? ""),
+      provider: "ollama",
+      modelName: process.env.OLLAMA_GENERATIVE_MODEL || "qwen3:8b",
+      // provider: process.env.CHATANYWHERE_API_KEY ? "chatanywhere" : "gemini",
+      // modelName: process.env.CHATANYWHERE_API_KEY
+      //   ? (process.env.CHATANYWHERE_DEFAULT_MODEL ?? "")
+      //   : (process.env.GEMINI_DEFAULT_MODEL ?? ""),
     };
     
     return NextResponse.json(settings?.value || defaultConfig);
