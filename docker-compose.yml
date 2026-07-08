@@ -5,7 +5,7 @@
 #   NGROK_AUTHTOKEN      → hanya jika menjalankan dengan --profile ngrok
 services:
   # ─────────────────────────────────────────
-  # MongoDB — Database
+  # MongoDB — Database Utama
   # ─────────────────────────────────────────
   mongodb:
     image: mongo:latest
@@ -13,7 +13,18 @@ services:
     restart: unless-stopped
     volumes:
       - mongodb_data:/data/db
-    # Port tidak di-expose ke publik untuk keamanan, hanya internal Docker
+    expose:
+      - "27017"
+
+  # ─────────────────────────────────────────
+  # MongoDB — Database Testing (Performa/Dummy)
+  # ─────────────────────────────────────────
+  mongodb_test:
+    image: mongo:latest
+    container_name: desa-digital-mongodb-test
+    restart: unless-stopped
+    volumes:
+      - mongodb_test_data:/data/db
     expose:
       - "27017"
 
@@ -48,7 +59,7 @@ services:
       - mongodb
       - redis
   # ─────────────────────────────────────────
-  # Ollama — embedding server
+  # Ollama — Layanan Model AI
   # ─────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
@@ -127,6 +138,8 @@ volumes:
     name: desa-digital-ollama-data
   mongodb_data:
     name: desa-digital-mongodb-data
+  mongodb_test_data:
+    name: desa-digital-mongodb-test-data
   redis_data:
     name: desa-digital-redis-data
 

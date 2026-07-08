@@ -27,6 +27,9 @@ jobs:
             # Tarik kode terbaru dari GitHub
             git pull origin master
 
+            # Buat/Update file .env.local dari GitHub Secrets
+            echo "${{ secrets.ENV_FILE }}" > .env.local
+
             # Build ulang container web (Next.js)
             docker compose build web
             
