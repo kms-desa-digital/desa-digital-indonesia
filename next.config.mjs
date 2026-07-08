@@ -18,6 +18,7 @@ const nextConfig = {
     compiler: {
         styledComponents: true,
     },
+    transpilePackages: ['next-intl', 'use-intl'],
     output: 'standalone',
 };
 
