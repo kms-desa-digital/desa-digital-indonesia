@@ -3,10 +3,63 @@
 #   OLLAMA_EMBED_MODEL   → nama model embedding (contoh: mxbai-embed-large:latest)
 #   OLLAMA_BASE_URL      → http://localhost:11434 (lokal) atau URL ngrok (publik)
 #   NGROK_AUTHTOKEN      → hanya jika menjalankan dengan --profile ngrok
-
 services:
   # ─────────────────────────────────────────
-  # Ollama — embedding server
+  # MongoDB — Database Utama
+  # ─────────────────────────────────────────
+  mongodb:
+    image: mongo:latest
+    container_name: desa-digital-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+    expose:
+      - "27017"
+
+  # ─────────────────────────────────────────
+  # MongoDB — Database Testing (Performa/Dummy)
+  # ─────────────────────────────────────────
+  mongodb_test:
+    image: mongo:latest
+    container_name: desa-digital-mongodb-test
+    restart: unless-stopped
+    volumes:
+      - mongodb_test_data:/data/db
+    expose:
+      - "27017"
+
+  # ─────────────────────────────────────────
+  # Redis — In-Memory Cache
+  # ─────────────────────────────────────────
+  redis:
+    image: redis:alpine
+    container_name: desa-digital-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    # Port tidak di-expose ke publik untuk keamanan
+    expose:
+      - "6379"
+
+  # ─────────────────────────────────────────
+  # Next.js — Web & API Server
+  # ─────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: desa-digital-web
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    depends_on:
+      - ollama
+      - mongodb
+      - redis
+  # ─────────────────────────────────────────
+  # Ollama — Layanan Model AI
   # ─────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
@@ -83,3 +136,15 @@ services:
 volumes:
   ollama_data:
     name: desa-digital-ollama-data
+  mongodb_data:
+    name: desa-digital-mongodb-data
+  mongodb_test_data:
+    name: desa-digital-mongodb-test-data
+  redis_data:
+    name: desa-digital-redis-data
+
+# Shared network agar bisa berkomunikasi dengan Repo Sistem Rekomendasi
+networks:
+  default:
+    name: desa_digital_net
+    driver: bridge
