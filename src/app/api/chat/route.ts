@@ -311,12 +311,11 @@ async function loadChatbotConfig(): Promise<ChatbotConfig> {
 
 async function generateChatCompletion(prompt: string): Promise<string> {
   const config = await loadChatbotConfig();
-  const provider = config.provider ?? "ollama";
+  const provider = "ollama"; // config.provider ?? "ollama";
   const modelName = config.modelName ?? process.env.OLLAMA_GENERATIVE_MODEL ?? "qwen3:8b";
-  // const provider = config.provider ?? "chatanywhere";
-  // const modelName = config.modelName ?? "gpt-4o-mini";
   const maxTokens = parseInt(process.env.LLM_MAX_OUTPUT_TOKENS ?? "1000", 10);
 
+  /* Gemini & ChatAnywhere 
   if (provider === "gemini") {
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
@@ -335,34 +334,35 @@ async function generateChatCompletion(prompt: string): Promise<string> {
     const result = await model.generateContent(prompt);
     return result.response.text().trim();
   }
+  */
 
-  if (provider === "ollama") {
-    const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434";
-    const ollamaModel = modelName || "qwen3:8b";
-    
-    const ollamaResponse = await fetch(`${ollamaBaseUrl}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: ollamaModel,
-        messages: [{ role: "user", content: prompt }],
-        stream: false,
-        options: {
-          temperature: 0.0,
-          num_predict: maxTokens
-        }
-      }),
-    });
+  // Karena full Ollama, kita langsung jalankan request ke Ollama
+  const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434";
+  const ollamaModel = modelName || "qwen3:8b";
 
-    if (!ollamaResponse.ok) {
-      const errorText = await ollamaResponse.text();
-      throw new Error(`Ollama error ${ollamaResponse.status}: ${errorText}`);
-    }
+  const ollamaResponse = await fetch(`${ollamaBaseUrl}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: ollamaModel,
+      messages: [{ role: "user", content: prompt }],
+      stream: false,
+      options: {
+        temperature: 0.0,
+        num_predict: maxTokens
+      }
+    }),
+  });
 
-    const ollamaData = await ollamaResponse.json();
-    return ollamaData?.message?.content?.trim() || "";
+  if (!ollamaResponse.ok) {
+    const errorText = await ollamaResponse.text();
+    throw new Error(`Ollama error ${ollamaResponse.status}: ${errorText}`);
   }
 
+  const ollamaData = await ollamaResponse.json();
+  return ollamaData?.message?.content?.trim() || "";
+
+  /* ChatAnywhere 
   const chatAnywhereApiKey = process.env.CHATANYWHERE_API_KEY;
   const chatAnywhereBaseUrl =
     process.env.CHATANYWHERE_BASE_URL || "https://api.chatanywhere.tech/v1";
@@ -397,6 +397,7 @@ async function generateChatCompletion(prompt: string): Promise<string> {
 
   const chatAnywhereData = await chatAnywhereResponse.json();
   return chatAnywhereData?.choices?.[0]?.message?.content?.trim() || "";
+  */
 }
 
 // Fallback card: cari inovasi berdasarkan keyword query
@@ -583,14 +584,14 @@ function buildStructuredCards(
       // Ini mencegah desa/inovasi acak dari vector search muncul sebagai card.
       const searchTitle = title.replace(/^desa\s+/i, "").trim().toLowerCase();
       const searchTokens = searchTitle.split(/\s+/).filter(t => t.length > 3);
-      
+
       const isMentioned =
         searchTokens.length === 0 ||
         searchTokens.some(token =>
           responseText.toLowerCase().includes(token) ||
           userMessage.toLowerCase().includes(token)
         );
-      
+
       if (!isMentioned) return null;
 
       return { title, subtitle, kind, href, sourceId: resolvedSourceId };
@@ -825,6 +826,9 @@ export async function POST(req: Request) {
     // Defense-in-depth filter (lapisan ketiga, setelah pipeline & enforceRoleFilter di rag-utils)
     dbResults = enforceRoleFilter(dbResults, userRole);
 
+    // Filter ini dikomentari agar LLM Ollama tetap bisa memberikan respons
+    // berdasarkan prompt atau pengetahuannya jika RAG tidak menemukan dokumen.
+    /*
     if (
       docResults.length === 0 &&
       dbResults.length === 0 &&
@@ -836,6 +840,7 @@ export async function POST(req: Request) {
         suggestions: ["Cari inovasi lain", "Tampilkan daftar desa"],
       });
     }
+    */
 
     // --- Build context untuk LLM ---
     const context = buildContextString(
