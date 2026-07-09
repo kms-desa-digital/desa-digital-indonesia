@@ -29,6 +29,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icons/smart-agri.svg",
   },
+  verification: {
+    google: "VRSvSoVAQErzDYMQTMwtkqoFwt4qckOPf3AEuJB6S-4",
+  },
 };
 
 export default function RootLayout({
