@@ -36,14 +36,16 @@ export const Container = styled.div<{ $gapSize?: number }>`
   gap: ${({ $gapSize }) => $gapSize || 8}px;
 `;
 
-export const Title = styled.p`
+export const Title = styled.h2`
   font-size: 12px;
   font-weight: 400;
   color: #374151;
+  margin: 0;
 `;
 
-export const Description = styled.p`
+export const Description = styled.h1`
   font-size: 20px;
   font-weight: 700;
   color: #374151;
+  margin: 0;
 `;

@@ -11,8 +11,21 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Desa Digital Indonesia",
-  description: "KMS Desa Digital",
+  title: {
+    default: "KMS Desa Digital Indonesia - Solusi Inovasi Desa",
+    template: "%s | Desa Digital Indonesia"
+  },
+  description: "Knowledge Management System (KMS) Desa Digital Indonesia. Platform berbagi inovasi, potensi, dan teknologi untuk memajukan desa-desa di seluruh Nusantara.",
+  keywords: ["KMS Desa Digital", "Desa Digital Indonesia", "Inovasi Desa", "Smart Village", "Sistem Informasi Desa"],
+  authors: [{ name: "KMS Desa Digital Team" }],
+  openGraph: {
+    title: "KMS Desa Digital Indonesia",
+    description: "Platform berbagi inovasi dan teknologi untuk memajukan desa di Nusantara.",
+    url: "https://desa-digital-indonesia.vercel.app",
+    siteName: "Desa Digital Indonesia",
+    locale: "id_ID",
+    type: "website",
+  },
   icons: {
     icon: "/icons/smart-agri.svg",
   },
