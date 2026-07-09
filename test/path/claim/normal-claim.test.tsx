@@ -120,4 +120,44 @@ describe('Pengujian Komponen Asli - Klaim Inovasi (Normal)', () => {
             expect(claimInnovation).toHaveBeenCalled();
         });
     });
+
+    test('Path 4: Batal mengajukan klaim di modal konfirmasi', async () => {
+        render(<KlaimInovasi />);
+        await waitFor(() => expect(screen.queryByTestId('mock-loading')).toBeNull());
+
+        fireEvent.click(screen.getByText(/Foto/i));
+        fireEvent.click(screen.getByTestId('mock-image-upload'));
+
+        fireEvent.click(screen.getByRole('button', { name: /Ajukan Klaim/i }));
+
+        // Asumsi mock modal memiliki tombol Confirm. Untuk batal, kita tidak klik confirm, atau klik di luar (modal ditutup). 
+        // Kita hanya pastikan claimInnovation tidak dipanggil jika tidak dikonfirmasi.
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-conf-modal')).toBeTruthy();
+        });
+        
+        expect(claimInnovation).not.toHaveBeenCalled();
+    });
+
+    test('Path 5: Menangani error API saat mengajukan klaim', async () => {
+        (claimInnovation as jest.Mock).mockRejectedValue(new Error('Gagal Sistem'));
+
+        render(<KlaimInovasi />);
+        await waitFor(() => expect(screen.queryByTestId('mock-loading')).toBeNull());
+
+        fireEvent.click(screen.getByText(/Foto/i));
+        fireEvent.click(screen.getByTestId('mock-image-upload'));
+
+        fireEvent.click(screen.getByRole('button', { name: /Ajukan Klaim/i }));
+
+        await waitFor(() => {
+            const confirmBtn = screen.getByText('Confirm');
+            fireEvent.click(confirmBtn);
+        });
+
+        await waitFor(() => {
+            expect(claimInnovation).toHaveBeenCalled();
+        });
+        // Kita tangkap errornya
+    });
 });

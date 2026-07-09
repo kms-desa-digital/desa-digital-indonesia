@@ -4,7 +4,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ClaimInovasiManual from '@/app/village/klaimInovasi/manual/page';
-import { claimInnovation } from 'Services/villageServices';
+import { claimInnovation, getVillageById } from 'Services/villageServices';
 import { useAuthState } from 'react-firebase-hooks/auth';
 
 // Mock dependencies
@@ -48,6 +48,7 @@ describe('Pengujian Komponen Asli - Klaim Inovasi Manual', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         (useAuthState as jest.Mock).mockReturnValue([{ uid: 'village-123' }]);
+        (getVillageById as jest.Mock).mockResolvedValue({ success: true, village: {} });
     });
 
     test('Path 1: Render halaman dengan data inovasi dari URL', () => {
@@ -69,6 +70,7 @@ describe('Pengujian Komponen Asli - Klaim Inovasi Manual', () => {
     });
 
     test('Path 3: Simulasi pengisian form dan submit', async () => {
+        (claimInnovation as jest.Mock).mockResolvedValue({ success: true });
         render(<ClaimInovasiManual />);
 
         // Fill text inputs
@@ -95,6 +97,69 @@ describe('Pengujian Komponen Asli - Klaim Inovasi Manual', () => {
         });
 
         // 5. Pastikan service dipanggil
+        await waitFor(() => {
+            expect(claimInnovation).toHaveBeenCalled();
+        });
+    });
+
+    test('Path 4: Validasi form gagal (kosong)', async () => {
+        render(<ClaimInovasiManual />);
+
+        fireEvent.change(screen.getByPlaceholderText('Nama Inovator'), { target: { name: 'inovatorName', value: '' } });
+        
+        fireEvent.click(screen.getByRole('button', { name: /Ajukan Klaim/i }));
+        
+        // Simpan tidak dipanggil karena form tidak lengkap
+        await waitFor(() => {
+            expect(claimInnovation).not.toHaveBeenCalled();
+        });
+    });
+
+    test('Path 5: Batal di modal konfirmasi', async () => {
+        render(<ClaimInovasiManual />);
+
+        fireEvent.change(screen.getByPlaceholderText('Nama Inovator'), { target: { name: 'inovatorName', value: 'Inovator Handal' } });
+        fireEvent.change(screen.getByPlaceholderText('Masukkan deskripsi singkat tentang inovasi'), { target: { name: 'description', value: 'Kami sudah menerapkan inovasi ini sejak lama.' } });
+
+        fireEvent.click(screen.getByText(/^Foto$/));
+
+        const uploads = screen.getAllByTestId('mock-image-upload');
+        fireEvent.click(uploads[0]); 
+        fireEvent.click(uploads[1]); 
+        fireEvent.click(uploads[2]);
+
+        fireEvent.click(screen.getByRole('button', { name: /Ajukan Klaim/i }));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-conf-modal')).toBeTruthy();
+        });
+
+        // Jangan klik Confirm, pastikan API tidak dipanggil
+        expect(claimInnovation).not.toHaveBeenCalled();
+    });
+
+    test('Path 6: API error saat submit', async () => {
+        (claimInnovation as jest.Mock).mockRejectedValue(new Error('API Gagal'));
+
+        render(<ClaimInovasiManual />);
+
+        fireEvent.change(screen.getByPlaceholderText('Nama Inovator'), { target: { name: 'inovatorName', value: 'Inovator Handal' } });
+        fireEvent.change(screen.getByPlaceholderText('Masukkan deskripsi singkat tentang inovasi'), { target: { name: 'description', value: 'Kami sudah menerapkan inovasi ini sejak lama.' } });
+
+        fireEvent.click(screen.getByText(/^Foto$/));
+        const uploads = screen.getAllByTestId('mock-image-upload');
+        fireEvent.click(uploads[0]);
+        fireEvent.click(uploads[1]);
+        fireEvent.click(uploads[2]);
+
+        fireEvent.click(screen.getByRole('button', { name: /Ajukan Klaim/i }));
+
+        await waitFor(() => {
+            const confirmBtn = screen.getByText('Confirm');
+            fireEvent.click(confirmBtn);
+        });
+
+        // Pastikan service dipanggil dan ditangani errornya
         await waitFor(() => {
             expect(claimInnovation).toHaveBeenCalled();
         });

@@ -67,12 +67,12 @@ describe('Pengujian Komponen Asli - Admin Verification Page', () => {
         await screen.findByText('Inovator A');
 
         // Buka menu filter
-        const filterButton = screen.getByText(/Semua Status|Status|Semua|verificationFilterAll/i);
+        const filterButton = screen.getAllByText(/Semua Status|Status|Semua|verificationFilterAll/i)[0];
         fireEvent.click(filterButton);
 
         // Pilih "Menunggu" dari menu
-        const pendingOption = await screen.findByText(/Menunggu|verificationFilterPending/i);
-        fireEvent.click(pendingOption);
+        const pendingOption = (await screen.findAllByText(/Menunggu|verificationFilterPending/i)).pop();
+        if (pendingOption) fireEvent.click(pendingOption);
 
         // Pastikan API dipanggil kembali dengan filter status yang benar
         await waitFor(() => {

@@ -115,4 +115,69 @@ describe('Pengujian Komponen Asli - Login Page', () => {
             expect(mockReplace).toHaveBeenCalledWith('/admin');
         });
     });
+
+    test('Path 4: Login Sukses sebagai Ministry dan diredirect', async () => {
+        (signInWithEmailAndPassword as jest.Mock).mockResolvedValue({
+            user: { uid: 'min-uid', getIdToken: jest.fn() }
+        });
+
+        (getDoc as jest.Mock).mockResolvedValue({
+            exists: () => true,
+            data: () => ({ role: 'ministry' })
+        });
+
+        render(<Login />);
+
+        fireEvent.change(screen.getByPlaceholderText('Email'), { target: { name: 'email', value: 'min@mail.com' } });
+        fireEvent.change(screen.getByPlaceholderText('Kata sandi'), { target: { name: 'password', value: 'rahasia123' } });
+
+        const submitBtn = screen.getByRole('button', { name: /^Masuk$/i });
+        fireEvent.click(submitBtn);
+
+        await waitFor(() => {
+            expect(signInWithEmailAndPassword).toHaveBeenCalled();
+            expect(getDoc).toHaveBeenCalled();
+            expect(mockReplace).toHaveBeenCalledWith('/ministry'); // Use mocked DASHBOARD_MINISTRY_HOME const path
+        });
+    });
+
+    test('Path 5: Harus memunculkan error jika data pengguna tidak ada di Firestore', async () => {
+        (signInWithEmailAndPassword as jest.Mock).mockResolvedValue({
+            user: { uid: 'no-doc-uid', getIdToken: jest.fn() }
+        });
+
+        (getDoc as jest.Mock).mockResolvedValue({
+            exists: () => false
+        });
+
+        render(<Login />);
+
+        fireEvent.change(screen.getByPlaceholderText('Email'), { target: { name: 'email', value: 'test@mail.com' } });
+        fireEvent.change(screen.getByPlaceholderText('Kata sandi'), { target: { name: 'password', value: 'rahasia123' } });
+
+        const submitBtn = screen.getByRole('button', { name: /^Masuk$/i });
+        fireEvent.click(submitBtn);
+
+        await waitFor(() => {
+            // Kita anggap komponen akan memanggil toast.error atau set error state
+            // Di mock test Anda menggunakan setError("Data pengguna tidak ditemukan")
+            expect(screen.getByText(/Data pengguna tidak ditemukan/i)).toBeTruthy();
+        });
+    });
+
+    test('Path 6: Harus menangani error dari Firebase Auth (misal: password salah)', async () => {
+        (signInWithEmailAndPassword as jest.Mock).mockRejectedValue(new Error('Firebase: Error (auth/wrong-password).'));
+
+        render(<Login />);
+
+        fireEvent.change(screen.getByPlaceholderText('Email'), { target: { name: 'email', value: 'test@mail.com' } });
+        fireEvent.change(screen.getByPlaceholderText('Kata sandi'), { target: { name: 'password', value: 'salahpassword' } });
+
+        const submitBtn = screen.getByRole('button', { name: /^Masuk$/i });
+        fireEvent.click(submitBtn);
+
+        await waitFor(() => {
+            expect(screen.getByText(/Terjadi kesalahan, coba lagi/i)).toBeTruthy();
+        });
+    });
 });

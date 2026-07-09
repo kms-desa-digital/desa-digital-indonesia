@@ -28,9 +28,10 @@ jest.mock('src/firebase/clientApp', () => ({
 jest.mock('Components/topBar', () => () => <div data-testid="mock-topbar" />);
 
 const mockPush = jest.fn();
+const mockGetParams = jest.fn<any, any>();
 jest.mock('next/navigation', () => ({
     useRouter: () => ({ push: mockPush, back: jest.fn(), refresh: jest.fn() }),
-    useSearchParams: () => ({ get: jest.fn(() => null) }) // Mengembalikan null (bukan Google Flow)
+    useSearchParams: () => ({ get: mockGetParams })
 }));
 
 describe('Pengujian Komponen Asli - Register Page', () => {
@@ -83,6 +84,7 @@ describe('Pengujian Komponen Asli - Register Page', () => {
     test('Path 4: Pendaftaran standar berhasil dan memanggil fungsi Firebase', async () => {
         // Setup mock agar fungsi createUser dianggap sukses
         (createUserWithEmailAndPassword as jest.Mock).mockResolvedValue({ user: { uid: 'uid-baru-123' } });
+        mockGetParams.mockReturnValue(null);
 
         render(<Register />);
 
@@ -105,5 +107,43 @@ describe('Pengujian Komponen Asli - Register Page', () => {
             expect(setDoc).toHaveBeenCalled();
             expect(mockPush).toHaveBeenCalled();
         }, { timeout: 3000 });
+    });
+
+    test('Path 2: Registrasi sukses melalui Google Flow', async () => {
+        mockGetParams.mockReturnValue('google');
+
+        render(<Register />);
+
+        const radios = screen.getAllByRole('radio');
+        fireEvent.click(radios[0]); // Pilih Inovator
+
+        fireEvent.click(screen.getByRole('button', { name: /Registrasi/i }));
+
+        await waitFor(() => {
+            expect(setDoc).toHaveBeenCalled();
+            expect(mockPush).toHaveBeenCalled();
+        });
+    });
+
+    test('Path 5: Harus memunculkan error dari API (misal: email sudah digunakan)', async () => {
+        mockGetParams.mockReturnValue(null);
+        (createUserWithEmailAndPassword as jest.Mock).mockRejectedValue(new Error('Firebase: Error (auth/email-already-in-use).'));
+
+        render(<Register />);
+
+        fireEvent.change(screen.getByPlaceholderText('Email'), { target: { name: 'email', value: 'test@gmail.com' } });
+
+        const passwordInputs = screen.getAllByPlaceholderText(/Kata sandi/i);
+        fireEvent.change(passwordInputs[0], { target: { name: 'password', value: 'password123' } });
+        fireEvent.change(screen.getByPlaceholderText('Tulis ulang kata sandi'), { target: { value: 'password123' } });
+
+        const radios = screen.getAllByRole('radio');
+        fireEvent.click(radios[0]);
+
+        fireEvent.click(screen.getByRole('button', { name: /Registrasi/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/Firebase: Error \(auth\/email-already-in-use\)\./i)).toBeTruthy();
+        });
     });
 });
