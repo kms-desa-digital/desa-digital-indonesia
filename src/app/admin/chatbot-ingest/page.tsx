@@ -62,8 +62,10 @@ const EMPTY_INNOVATION: InnovationData = {
 };
 
 const DEFAULT_AI_CONFIG: AiConfig = {
-  provider: "chatanywhere",
-  modelName: "gpt-4o-mini",
+  provider: "ollama",
+  modelName: "qwen3:8b",
+  // provider: "chatanywhere",
+  // modelName: "gpt-4o-mini",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -519,6 +521,7 @@ export default function ChatbotIngestPage() {
                           ChatAnywhere (OpenAI)
                         </option>
                         <option value="gemini">Google Gemini</option>
+                        <option value="ollama">Ollama (Local)</option>
                       </Select>
                     </FormControl>
 
@@ -532,7 +535,7 @@ export default function ChatbotIngestPage() {
                             modelName: e.target.value,
                           })
                         }
-                        placeholder="Contoh: gpt-4o-mini, gemma-3-27b-it, llama-3.3-70b-versatile"
+                        placeholder="Contoh: gpt-4o-mini, gemma-3-27b-it, qwen3:8b"
                         {...fieldProps}
                       />
                       <Text fontSize="xs" color="gray.500" mt={1}>
