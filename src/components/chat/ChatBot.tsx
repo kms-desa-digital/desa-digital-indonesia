@@ -115,8 +115,8 @@ const Chatbot = () => {
                     right={{ base: '15px', md: 'calc(50% - 157.5px)' }}
                     width={{ base: 'calc(100vw - 30px)', md: '315px' }}
                     maxWidth="315px"
-                    height={{ base: 'calc(100vh - 160px)', md: '580px' }}
-                    maxHeight="580px"
+                    height={{ base: 'calc(100vh - 180px)', md: '500px' }}
+                    maxHeight="500px"
                     bg="white"
                     borderRadius="20px"
                     boxShadow="0 10px 30px rgba(0,0,0,0.12)"
