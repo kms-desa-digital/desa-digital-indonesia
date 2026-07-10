@@ -11,7 +11,7 @@ const OLLAMA_BASE_URL =
 const OLLAMA_EMBED_MODEL =
   process.env.OLLAMA_EMBED_MODEL || "mxbai-embed-large:latest";
 const VECTOR_SCORE_THRESHOLD = parseFloat(
-  process.env.VECTOR_SCORE_THRESHOLD || "0.6"
+  process.env.VECTOR_SCORE_THRESHOLD || "0.7"
 );
 const OLLAMA_TIMEOUT_MS = parseInt(
   process.env.OLLAMA_TIMEOUT_MS || "30000",
@@ -80,12 +80,12 @@ export function buildCollectionFilter(
     targetCollections.add("innovations");
   }
 
-  // Jika tidak ada keyword spesifik atau mencari statistik, telusuri semua koleksi yang diizinkan
+  // Jika tidak ada intent spesifik atau mencari statistik, telusuri semua koleksi yang diizinkan
   if (targetCollections.size === 0 || intent.isStats) {
     return allowed;
   }
 
-  // Filter koleksi yang diizinkan sesuai role
+  // Filter koleksi yang diizinkan sesuai role HANYA yang diminta (lebih presisi/relevan)
   return allowed.filter((c) => targetCollections.has(c));
 }
 
@@ -272,8 +272,8 @@ export async function searchDocEmbeddings(query: string): Promise<any[]> {
             index: "vector_index",
             path: "embedding_vector",
             queryVector,
-            numCandidates: 100,
-            limit: 15,
+            numCandidates: 50,
+            limit: 5,
           },
         },
         {
@@ -328,8 +328,8 @@ export async function searchDatabaseEmbeddings(
             index: "vector_index_db",
             path: "embedding_vector",
             queryVector,
-            numCandidates: 100,
-            limit: 15,
+            numCandidates: 50,
+            limit: 5,
             filter: {
               source_collection: { $in: collectionFilter },
             },
@@ -377,7 +377,7 @@ export async function searchDatabaseEmbeddings(
           ],
         })
         .project({ embedding_vector: 0 })
-        .limit(15)
+        .limit(5)
         .toArray();
 
       // Secondary lookup: Tarik dokumen inovasi yang disebut di inovasiDiterapkan
