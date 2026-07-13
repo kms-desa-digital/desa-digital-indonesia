@@ -31,6 +31,7 @@
     "ai": "^6.0.55",
     "axios": "^1.4.0",
     "bcryptjs": "^3.0.3",
+    "chromadb": "^3.5.0",
     "dotenv": "^17.2.3",
     "file-saver": "^2.0.5",
     "firebase": "^10.8.1",
