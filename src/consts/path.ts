@@ -22,6 +22,7 @@ export const paths = {
     PREVIEW_REPORT_ADMIN: "/admin/report/preview",
     CHATBOT_INGEST: "/admin/chatbot-ingest",
     ADMIN_USER_MANAGEMENT: "/admin/users",
+    ADMIN_BADGE_MONITORING: "/admin/badges",
 
 
 

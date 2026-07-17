@@ -1,4 +1,4 @@
-﻿{
+{
     "Home": {
         "title": "Desa Digital Indonesia",
         "searchPlaceholder": "Cari Inovasi di sini...",
@@ -27,6 +27,7 @@
         "verifClaim": "Verifikasi Klaim Inovasi",
         "verifAddInno": "Verifikasi Tambah Inovasi",
         "adsMake": "Pembuatan Iklan",
+        "monitoringGelar": "Monitoring Gelar",
         "communityDev": "Pengembangan Masyarakat dan Ekonomi",
         "financialService": "Layanan Keuangan",
         "resourceMgmt": "Pengelolaan Sumber Daya",

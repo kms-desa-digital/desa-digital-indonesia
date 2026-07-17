@@ -1,4 +1,4 @@
-﻿{
+{
     "Home": {
         "title": "Digital Village Indonesia",
         "searchPlaceholder": "Search Innovations here...",
@@ -27,6 +27,7 @@
         "verifClaim": "Innovation Claim Verification",
         "verifAddInno": "Add Innovation Verification",
         "adsMake": "Ads Creation",
+        "monitoringGelar": "Badge Monitoring",
         "communityDev": "Community and Economic Development",
         "financialService": "Financial Services",
         "resourceMgmt": "Resource Management",
