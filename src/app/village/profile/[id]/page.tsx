@@ -26,6 +26,7 @@ import {
     Image,
 } from "@chakra-ui/react";
 import { auth } from "src/firebase/clientApp";
+import { BADGE_STYLES } from "@/features/digital-nudge/constants";
 // import { auth, firestore } from "src/firebase/clientApp";
 import { getVillageById, updateVillage, getVillageInnovations, verifyVillage } from "Services/villageServices";
 import {
@@ -279,44 +280,7 @@ export default function ProfileVillage() {
                             <Flex mt={1.5} mb={0.5}>
                                 {(() => {
                                     const badgeId = village.activeBadge;
-                                    const configMap: Record<string, { name: string; icon: string; bg: string; border: string; color: string }> = {
-                                        penggerak_inovasi: {
-                                            name: "Penggerak Inovasi",
-                                            icon: "/icons/digital_nudge/PenggerakInovasi.svg",
-                                            bg: "#FFF7ED",
-                                            border: "#F97316",
-                                            color: "#C2410C"
-                                        },
-                                        penggiat_digital: {
-                                            name: "Penggiat Digital",
-                                            icon: "/icons/digital_nudge/PenggiatDigital.svg",
-                                            bg: "#EFF6FF",
-                                            border: "#3B82F6",
-                                            color: "#1D4ED8"
-                                        },
-                                        adopter_spesialis: {
-                                            name: "Adopter Spesialis",
-                                            icon: "/icons/digital_nudge/Adopter_Spesialis.svg",
-                                            bg: "#FDF2F8",
-                                            border: "#EC4899",
-                                            color: "#BE185D"
-                                        },
-                                        adopter_giat: {
-                                            name: "Adopter Giat",
-                                            icon: "/icons/digital_nudge/Adopter_Giat.svg",
-                                            bg: "#FEF9C3",
-                                            border: "#EAB308",
-                                            color: "#A16207"
-                                        },
-                                        sahabat_inovator: {
-                                            name: "Sahabat Inovator",
-                                            icon: "/icons/digital_nudge/Sahabat_Inovator.svg",
-                                            bg: "#F5F3FF",
-                                            border: "#8B5CF6",
-                                            color: "#6D28D9"
-                                        }
-                                    };
-                                    const cfg = configMap[badgeId];
+                                    const cfg = BADGE_STYLES[badgeId];
                                     if (!cfg) return null;
                                     return (
                                         <Flex

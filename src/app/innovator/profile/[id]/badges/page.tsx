@@ -16,19 +16,10 @@ import {
 import TopBar from "Components/topBar";
 import Container from "Components/container";
 import api from "Services/api";
-import { toast } from "react-toastify";
 import { useUser } from "src/contexts/UserContext";
 import Forbidden from "src/components/Forbidden";
-
-interface Badge {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  isUnlocked: boolean;
-  progress: number;
-  target: number;
-}
+import { useBadge } from "@/features/digital-nudge/hooks/useBadge";
+import BadgeCard from "@/features/digital-nudge/components/BadgeCard";
 
 const GelarSayaInovator = () => {
   const params = useParams();
@@ -36,56 +27,32 @@ const GelarSayaInovator = () => {
   const router = useRouter();
   const { role, uid, firebaseUid, loading: userLoading } = useUser();
 
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [activeBadge, setActiveBadge] = useState<string | null>(null);
-  const [badges, setBadges] = useState<Badge[]>([]);
+  const { badges, activeBadge, loading: badgesLoading, actionLoading, applyBadge } = useBadge(id, "innovator");
   const [innovatorName, setInnovatorName] = useState<string>("Inovator Saya");
-
-  const fetchBadgesData = async () => {
-    try {
-      setLoading(true);
-      // Fetch badges evaluation
-      const res: any = await api.get(`/innovator/${id}/badges`);
-      setActiveBadge(res.activeBadge);
-      setBadges(res.badges || []);
-
-      // Fetch innovator profile to get innovator name
-      const innovatorRes: any = await api.get(`/innovator/${id}`);
-      const innovatorData = innovatorRes.innovator || innovatorRes.data;
-      if (innovatorData) {
-        setInnovatorName(innovatorData.namaInovator || "Inovator");
-      }
-    } catch (err: any) {
-      console.error("Error fetching innovator badges:", err);
-      toast.error(err?.message || "Gagal memuat data gelar");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [nameLoading, setNameLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      fetchBadgesData();
-    }
+    const fetchInnovatorName = async () => {
+      if (!id) return;
+      try {
+        setNameLoading(true);
+        const innovatorRes: any = await api.get(`/innovator/${id}`);
+        const innovatorData = innovatorRes.innovator || innovatorRes.data;
+        if (innovatorData) {
+          setInnovatorName(innovatorData.namaInovator || "Inovator");
+        }
+      } catch (err: any) {
+        console.error("Error fetching innovator name:", err);
+      } finally {
+        setNameLoading(false);
+      }
+    };
+    fetchInnovatorName();
   }, [id]);
 
-  const handleUseBadge = async (badgeId: string | null) => {
-    try {
-      setActionLoading(badgeId || "remove");
-      const res: any = await api.patch(`/innovator/${id}/badges`, { badgeId });
-      setActiveBadge(res.activeBadge);
-      toast.success(badgeId ? "Gelar berhasil diterapkan!" : "Gelar dilepas!");
-      fetchBadgesData();
-    } catch (err: any) {
-      console.error("Error setting badge:", err);
-      toast.error(err?.message || "Gagal menerapkan gelar");
-    } finally {
-      setActionLoading(null);
-    }
-  };
+  const loading = userLoading || badgesLoading || nameLoading;
 
-  if (userLoading || loading) {
+  if (loading) {
     return (
       <Box minH="100vh">
         <TopBar title="Gelar Saya" onBack={() => router.back()} />
@@ -165,12 +132,13 @@ const GelarSayaInovator = () => {
             <Tag
               size="lg"
               variant="subtle"
-              colorScheme="whiteAlpha"
+              color="white"
+              bg="rgba(255, 255, 255, 0.15)"
               borderRadius="full"
               px={5}
               py={2.5}
-              bg="white"
-              color="#347357"
+              border="1px solid rgba(255, 255, 255, 0.3)"
+              backdropFilter="blur(5px)"
               fontWeight="bold"
               boxShadow="sm"
             >
@@ -188,7 +156,7 @@ const GelarSayaInovator = () => {
               color="white"
               fontWeight="medium"
               textDecoration="underline"
-              onClick={() => handleUseBadge(null)}
+              onClick={() => applyBadge(null)}
               isLoading={actionLoading === "remove"}
             >
               Lepas Gelar
@@ -204,86 +172,15 @@ const GelarSayaInovator = () => {
 
           {/* Badges List Container */}
           <Stack spacing={3}>
-            {badges.map((badge) => {
-              const isActive = activeBadge === badge.id;
-              const isLocked = !badge.isUnlocked;
-
-              return (
-                <Box
-                  key={badge.id}
-                  p={4}
-                  borderRadius="16px"
-                  borderWidth="1px"
-                  bg="white"
-                  borderColor={isActive ? "#347357" : "gray.200"}
-                  shadow="xs"
-                  opacity={isLocked ? 0.6 : 1}
-                  filter={isLocked ? "grayscale(10%)" : "none"}
-                >
-                  <Flex align="center">
-                    {/* Badge Icon on Left */}
-                    <Box
-                      p={2.5}
-                      bg={isLocked ? "gray.100" : "green.50"}
-                      borderRadius="12px"
-                      mr={4}
-                    >
-                      <Image
-                        src={badge.icon}
-                        alt={badge.name}
-                        boxSize="36px"
-                      />
-                    </Box>
-
-                    {/* Mid Text */}
-                    <Stack spacing={0.5} flex={1}>
-                      <Text fontSize="14px" fontWeight="700" color="#1F2937">
-                        {badge.name}
-                      </Text>
-                      <Text fontSize="11px" color="#6B7280" lineHeight="1.3">
-                        {badge.description}
-                      </Text>
-                    </Stack>
-
-                    {/* Action Button / Progress on Right */}
-                    <Box pl={2}>
-                      {isActive ? (
-                        <Tag
-                          size="md"
-                          variant="solid"
-                          bg="#DCFCE7"
-                          color="#15803D"
-                          fontWeight="bold"
-                          borderRadius="full"
-                        >
-                          <TagLabel fontSize="10px">Digunakan</TagLabel>
-                        </Tag>
-                      ) : isLocked ? (
-                        <Text fontSize="11px" fontWeight="bold" color="#EF4444">
-                          {badge.progress}/{badge.target}
-                        </Text>
-                      ) : (
-                        <Button
-                          size="sm"
-                          bg="#347357"
-                          color="white"
-                          fontWeight="bold"
-                          fontSize="11px"
-                          borderRadius="8px"
-                          px={4}
-                          height="28px"
-                          _hover={{ bg: "#2d6149" }}
-                          isLoading={actionLoading === badge.id}
-                          onClick={() => handleUseBadge(badge.id)}
-                        >
-                          Gunakan
-                        </Button>
-                      )}
-                    </Box>
-                  </Flex>
-                </Box>
-              );
-            })}
+            {badges.map((badge) => (
+              <BadgeCard
+                key={badge.id}
+                badge={badge}
+                isActive={activeBadge === badge.id}
+                onApply={() => applyBadge(badge.id)}
+                isLoading={actionLoading === badge.id}
+              />
+            ))}
           </Stack>
         </Box>
       </Stack>

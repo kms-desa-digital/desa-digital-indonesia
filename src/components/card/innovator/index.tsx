@@ -10,6 +10,7 @@ import {
 
 import React from "react";
 import { useTranslations } from "next-intl";
+import { BADGE_STYLES } from "@/features/digital-nudge/constants";
 import { Flex } from "@chakra-ui/react";
 
 
@@ -87,44 +88,7 @@ function CardInnovator(props: CardInnovatorProps) {
         {activeBadge && (
           <Flex mt={1} mb={1}>
             {(() => {
-              const configMap: Record<string, { name: string; icon: string; bg: string; border: string; color: string }> = {
-                terus_berkembang: {
-                  name: "Terus Berkembang",
-                  icon: "/icons/digital_nudge/TerusBerkembang.svg",
-                  bg: "#EFF6FF",
-                  border: "#3B82F6",
-                  color: "#1D4ED8"
-                },
-                si_inovatif: {
-                  name: "Si Inovatif",
-                  icon: "/icons/digital_nudge/SiInovatif.svg",
-                  bg: "#FFF7ED",
-                  border: "#F97316",
-                  color: "#C2410C"
-                },
-                kolaborator_handal: {
-                  name: "Kolaborator Handal",
-                  icon: "/icons/digital_nudge/KolaboratorHandal.svg",
-                  bg: "#F5F3FF",
-                  border: "#8B5CF6",
-                  color: "#6D28D9"
-                },
-                sahabat_desa: {
-                  name: "Sahabat Desa",
-                  icon: "/icons/digital_nudge/SahabatDesa.svg",
-                  bg: "#FDF2F8",
-                  border: "#EC4899",
-                  color: "#BE185D"
-                },
-                pemimpin_pasar: {
-                  name: "Pemimpin Pasar",
-                  icon: "/icons/digital_nudge/PemimpinPasar.svg",
-                  bg: "#FEF9C3",
-                  border: "#EAB308",
-                  color: "#A16207"
-                }
-              };
-              const cfg = configMap[activeBadge];
+              const cfg = BADGE_STYLES[activeBadge];
               if (!cfg) return null;
               return (
                 <Flex
