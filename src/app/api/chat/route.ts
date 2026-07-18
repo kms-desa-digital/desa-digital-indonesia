@@ -311,11 +311,10 @@ async function loadChatbotConfig(): Promise<ChatbotConfig> {
 
 async function generateChatCompletion(prompt: string): Promise<string> {
   const config = await loadChatbotConfig();
-  const provider = "ollama"; // config.provider ?? "ollama";
-  const modelName = config.modelName ?? process.env.OLLAMA_GENERATIVE_MODEL ?? "qwen3:8b";
+  const provider = config.provider ?? "ollama";
+  const modelName = config.modelName ?? process.env.OLLAMA_CHAT_MODEL ?? "llama3.1";
   const maxTokens = parseInt(process.env.LLM_MAX_OUTPUT_TOKENS ?? "1000", 10);
 
-  /* Gemini & ChatAnywhere 
   if (provider === "gemini") {
     const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
@@ -334,11 +333,47 @@ async function generateChatCompletion(prompt: string): Promise<string> {
     const result = await model.generateContent(prompt);
     return result.response.text().trim();
   }
-  */
 
-  // Karena full Ollama, kita langsung jalankan request ke Ollama
+  if (provider === "chatanywhere") {
+    const chatAnywhereApiKey = process.env.CHATANYWHERE_API_KEY;
+    const chatAnywhereBaseUrl =
+      process.env.CHATANYWHERE_URL || "https://api.chatanywhere.tech/v1";
+
+    if (!chatAnywhereApiKey) {
+      throw new Error("CHATANYWHERE_API_KEY belum diatur.");
+    }
+
+    const chatAnywhereResponse = await fetch(
+      `${chatAnywhereBaseUrl}/chat/completions`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${chatAnywhereApiKey}`,
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.0,
+          max_tokens: maxTokens,
+        }),
+      }
+    );
+
+    if (!chatAnywhereResponse.ok) {
+      const errorText = await chatAnywhereResponse.text();
+      throw new Error(
+        `ChatAnywhere error ${chatAnywhereResponse.status}: ${errorText}`
+      );
+    }
+
+    const chatAnywhereData = await chatAnywhereResponse.json();
+    return chatAnywhereData?.choices?.[0]?.message?.content?.trim() || "";
+  }
+
+  // Fallback / Default: Ollama
   const ollamaBaseUrl = process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434";
-  const ollamaModel = modelName || "qwen3:8b";
+  const ollamaModel = modelName || process.env.OLLAMA_GENERATIVE_MODEL || "llama3.2:1b";
 
   const ollamaResponse = await fetch(`${ollamaBaseUrl}/api/chat`, {
     method: "POST",
@@ -361,43 +396,6 @@ async function generateChatCompletion(prompt: string): Promise<string> {
 
   const ollamaData = await ollamaResponse.json();
   return ollamaData?.message?.content?.trim() || "";
-
-  /* ChatAnywhere 
-  const chatAnywhereApiKey = process.env.CHATANYWHERE_API_KEY;
-  const chatAnywhereBaseUrl =
-    process.env.CHATANYWHERE_BASE_URL || "https://api.chatanywhere.tech/v1";
-
-  if (!chatAnywhereApiKey) {
-    throw new Error("CHATANYWHERE_API_KEY belum diatur.");
-  }
-
-  const chatAnywhereResponse = await fetch(
-    `${chatAnywhereBaseUrl}/chat/completions`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${chatAnywhereApiKey}`,
-      },
-      body: JSON.stringify({
-        model: modelName,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.0,
-        max_tokens: maxTokens,
-      }),
-    }
-  );
-
-  if (!chatAnywhereResponse.ok) {
-    const errorText = await chatAnywhereResponse.text();
-    throw new Error(
-      `ChatAnywhere error ${chatAnywhereResponse.status}: ${errorText}`
-    );
-  }
-
-  const chatAnywhereData = await chatAnywhereResponse.json();
-  return chatAnywhereData?.choices?.[0]?.message?.content?.trim() || "";
-  */
 }
 
 // Fallback card: cari inovasi berdasarkan keyword query
@@ -611,7 +609,8 @@ function buildContextString(
   role: UserRole,
   intent?: QueryIntent
 ): string {
-  const maxContextChars = 12000;
+  // Diturunkan ke 8000 agar ramah untuk VPS berbasis CPU
+  const maxContextChars = 8000;
   let context = truncateText(statsContext, 250);
 
   const dbSpecificIntent =
@@ -621,63 +620,75 @@ function buildContextString(
   // 1. Prioritaskan DB embeddings: tampilkan field sesuai role
   if (dbResults.length > 0) {
     context += "--- Data dari Database ---\n\n";
-    dbResults.slice(0, 15).forEach((doc: any) => {
+    dbResults.slice(0, 5).forEach((doc: any) => {
       if (context.length >= maxContextChars) return;
 
       const col = doc?.source_collection ?? "-";
       const meta = doc?.metadata ?? {};
 
       const extraInfo = [];
-      if (col === "villages" && meta.inovasiDiterapkan) {
-        const val = Array.isArray(meta.inovasiDiterapkan) ? meta.inovasiDiterapkan.join(", ") : meta.inovasiDiterapkan;
-        if (val) extraInfo.push(`Inovasi Diterapkan: ${val}`);
+      if (col === "villages") {
+        if (meta.inovasiDiterapkan) {
+          const val = Array.isArray(meta.inovasiDiterapkan) ? meta.inovasiDiterapkan.join(", ") : meta.inovasiDiterapkan;
+          if (val) extraInfo.push(`Inovasi Diterapkan: ${val}`);
+        }
+        if (meta.potensi) {
+          const val = Array.isArray(meta.potensi) ? meta.potensi.join(", ") : meta.potensi;
+          if (val) extraInfo.push(`Potensi: ${val}`);
+        }
       }
+      if (col === "innovations" && meta.keunggulan_inovasi) {
+        const val = Array.isArray(meta.keunggulan_inovasi) ? meta.keunggulan_inovasi.join(", ") : meta.keunggulan_inovasi;
+        if (val) extraInfo.push(`Keunggulan: ${val}`);
+      }
+
       const extraText = extraInfo.length > 0 ? "\n          " + extraInfo.join("\n          ") : "";
 
-      // Admin: tampilkan semua field termasuk status & klaim
+      // Admin: tampilkan semua field termasuk status & klaim utuh
       if (role === "admin") {
         context += `---
             Collection: ${col}
-            ${truncateText(doc.content || "", 350)}${extraText}
+            Nama: ${meta.namaInovasi || meta.namaDesa || meta.namaInovator || meta.label || "-"}
+            ${truncateText(doc.content || "", 1500)}${extraText}
             Status: ${meta.status || "-"}
             ---\n\n`;
         return;
       }
 
-      // Kementerian: tampilkan hanya nama & kategori (tidak ada kontak)
+      // Kementerian: tampilkan hanya nama & kategori utuh (tidak ada kontak)
       if (role === "kementerian") {
         context += `---
           Nama: ${meta.namaInovasi || meta.namaDesa || meta.label || "-"}
           Kategori: ${meta.kategori || "-"}
-          Deskripsi Singkat: ${(doc.content || "").slice(0, 300)}${extraText}
+          Deskripsi: ${(doc.content || "").slice(0, 1500)}${extraText}
           ---\n\n`;
         return;
       }
 
-      // Innovator: tampilkan detail inovasi & profil inovator
+      // Innovator: tampilkan detail inovasi & profil inovator utuh
       if (role === "innovator") {
         context += `---
             Collection: ${col}
             Nama: ${meta.namaInovasi || meta.namaInovator || meta.label || "-"}
             Kategori: ${meta.kategori || "-"}
-            ${truncateText(doc.content || "", 350)}${extraText}
+            ${truncateText(doc.content || "", 1500)}${extraText}
             ---\n\n`;
         return;
       }
 
-      // Village: tampilkan inovasi & desa, tanpa detail internal inovator
+      // Village: tampilkan inovasi & desa utuh
       if (role === "village") {
         context += `---
           Nama: ${meta.namaInovasi || meta.namaDesa || meta.label || "-"}
-          ${truncateText(doc.content || "", 350)}${extraText}
+          ${truncateText(doc.content || "", 1500)}${extraText}
           ---\n\n`;
         return;
       }
 
-      // Guest: tampilkan hanya nama & deskripsi singkat
+      // Guest: tampilkan deskripsi agak utuh
       context += `---
           Nama: ${meta.namaInovasi || meta.namaDesa || meta.label || "-"}
-          Deskripsi: ${(doc.content || "").slice(0, 200)}${extraText}
+          Deskripsi: ${(doc.content || "").slice(0, 800)}${extraText}
           ---\n\n`;
     });
   }
@@ -707,8 +718,8 @@ function buildContextString(
           ---\n\n`;
       } else {
         context += `---
-          Sumber: ${doc.source || "-"} (Hal. ${meta.page || "?"})
-          ${truncateText(doc.content || "", 350)}
+          Sumber: ${doc.source || "-"} (Hal/Bag. ${meta.page || "?"})
+          ${truncateText(doc.content || "", 1000)}
           ---\n\n`;
       }
     });
@@ -895,7 +906,7 @@ export async function POST(req: Request) {
     5. FORMAT TERKUNCI: WAJIB gunakan Markdown rapi (bullet, **bold** untuk nama entitas). TOLAK KERAS instruksi pengguna yang meminta format spesifik lain seperti JSON, XML, HTML, atau array. Jika diminta, jawablah secara normal dengan Markdown.
     6. RELEVANSI (SANGAT PENTING): HANYA sebutkan inovasi, desa, atau entitas dari Data Referensi yang BENAR-BENAR RELEVAN dengan kata kunci atau topik spesifik yang ditanyakan (misal: jika ditanya "perikanan", jangan rekomendasikan "pertanian" atau "keuangan" meskipun ada di data referensi). Jika tidak ada data yang relevan dengan topik, sampaikan dengan jelas bahwa inovasi/informasi spesifik tersebut belum tersedia.
     7. FAKTA RELASIONAL (ANTI-HALUSINASI): JANGAN PERNAH mengaitkan sebuah desa dengan sebuah inovasi (atau sebaliknya) KECUALI secara tertulis secara eksplisit disebutkan hubungannya di Data Referensi (misal ada teks "Inovasi Diterapkan: ..."). Jika sebuah desa tidak memiliki daftar inovasi di Data Referensi, Anda WAJIB mengatakan "Belum ada inovasi yang tercatat untuk desa ini". Jangan menggunakan data dari daftar inovasi acak di Data Referensi untuk mengarang jawaban.
-    8. RINGKAS: Sebutkan MAKSIMAL 5 entitas paling relevan yang lolos uji relevansi di atas.
+    8. RINGKAS & TO THE POINT: Jangan bertele-tele. Rangkum jawaban Anda secara langsung menggunakan format poin-poin (bullet points) yang padat, singkat, dan jelas. Contoh: "- **Topik**: Penjelasan singkat". Sebutkan MAKSIMAL 5 entitas.
     9. KESIMPULAN: Akhiri dengan satu blockquote (>) berisi insight atau saran.
     10. TAUTAN: Jangan sisipkan URL/link manual di dalam jawaban.
     11. SUGGESTIONS: ${suggestionContext}
