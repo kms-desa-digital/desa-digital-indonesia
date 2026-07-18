@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         }
       } else if (jenis === 'video') {
         const videoFiles = buktiFiles.video;
-        if (!videoFiles || !Array.isArray(videoFiles) || videoFiles.length === 0 || videoFiles.every((v: any) => !v || typeof v !== 'string' || v.trim() === '')) {
+        if (!videoFiles || !Array.isArray(videoFiles) || videoFiles.length === 0 || videoFiles.some((v: any) => !v || typeof v !== 'string' || v.trim() === '')) {
           return new NextResponse(
             JSON.stringify({ message: 'Bukti video harus menyertakan file video yang valid.' }, null, 2),
             { status: 400, headers: { 'Content-Type': 'application/json' } }
@@ -264,7 +264,7 @@ export async function GET(request: NextRequest) {
       id: doc._id.toString(),
       _id: doc._id.toString(),
     }))
-    
+
     const totalPages = limit > 0 ? Math.ceil(total / limit) : 1;
 
     const responsePayload = {

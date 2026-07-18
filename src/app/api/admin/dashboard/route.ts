@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { ObjectId } from 'mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { getCachedData, setCachedData } from '@/lib/utils/cache'
 
 const provinceCoords: Record<string, { lat: number; lng: number }> = {
   'ACEH': { lat: 4.695135, lng: 96.749399 },
@@ -78,6 +79,12 @@ export async function GET(request: NextRequest) {
     const auth = await requireRole(request, ["admin"]);
     if (auth instanceof NextResponse) return auth;
 
+    const cacheKey = `cache:admin:dashboard`;
+    const cached = await getCachedData<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, { status: 200 });
+    }
+
     const db = await connectToDatabase()
 
     // Cari user dengan aman (menghindari error jika auth.uid adalah Firebase UID)
@@ -104,14 +111,37 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: 'Not found' }, { status: 404 })
     }
 
-    // Ambil data dashboard
-    const totalUsers = await db.collection('users').countDocuments()
-    const totalInnovations = await db.collection('innovations').countDocuments()
-    const totalVillages = await db.collection('villages').countDocuments()
-    const totalInnovators = await db.collection('innovators').countDocuments()
+    // Gunakan Promise.all untuk mengambil data secara konkuren dan terapkan proyeksi
+    const [
+      totalUsers,
+      totalInnovations,
+      totalVillages,
+      totalInnovators,
+      top5VillagesData,
+      top5InnovatorsData,
+      top5InnovationsData,
+      allVillages,
+      allInnovators
+    ] = await Promise.all([
+      db.collection('users').countDocuments(),
+      db.collection('innovations').countDocuments(),
+      db.collection('villages').countDocuments(),
+      db.collection('innovators').countDocuments(),
+      
+      db.collection('villages').find({}, { projection: { namaDesa: 1, jumlahInovasiDiterapkan: 1, latitude: 1, longitude: 1 } })
+        .sort({ jumlahInovasiDiterapkan: -1 }).limit(5).toArray(),
+        
+      db.collection('innovators').find({}, { projection: { namaInovator: 1, jumlahInovasi: 1, latitude: 1, longitude: 1 } })
+        .sort({ jumlahInovasi: -1 }).limit(5).toArray(),
+        
+      db.collection('innovations').find({}, { projection: { namaInovasi: 1, jumlahKlaim: 1, kategori: 1 } })
+        .sort({ jumlahKlaim: -1 }).limit(5).toArray(),
+        
+      db.collection('villages').find({}, { projection: { namaDesa: 1, latitude: 1, longitude: 1, provinsi: 1, lokasi: 1 } }).toArray(),
+      
+      db.collection('innovators').find({}, { projection: { namaInovator: 1, latitude: 1, longitude: 1, provinsi: 1, lokasi: 1 } }).toArray()
+    ]);
 
-    // Ambil data detail top 5
-    const top5VillagesData = await db.collection('villages').find().sort({ jumlahInovasiDiterapkan: -1 }).limit(5).toArray();
     const top5Villages = top5VillagesData.map(v => ({
       name: v.namaDesa || '',
       totalInovasi: v.jumlahInovasiDiterapkan || 0,
@@ -119,7 +149,6 @@ export async function GET(request: NextRequest) {
       lng: v.longitude || 0
     }));
 
-    const top5InnovatorsData = await db.collection('innovators').find().sort({ jumlahInovasi: -1 }).limit(5).toArray();
     const top5Innovators = top5InnovatorsData.map(i => ({
       name: i.namaInovator || '',
       totalInovasi: i.jumlahInovasi || 0,
@@ -127,7 +156,6 @@ export async function GET(request: NextRequest) {
       lng: i.longitude || 0
     }));
 
-    const top5InnovationsData = await db.collection('innovations').find().sort({ jumlahKlaim: -1 }).limit(5).toArray();
     const top5Innovations = top5InnovationsData.map(i => ({
       name: i.namaInovasi || '',
       totalKlaim: i.jumlahKlaim || 0,
@@ -135,9 +163,6 @@ export async function GET(request: NextRequest) {
     }));
 
     // Data map markers
-    const allVillages = await db.collection('villages').find({}).toArray();
-    const allInnovators = await db.collection('innovators').find({}).toArray();
-    
     const mappedVillages = allVillages.map((v, idx) => {
       const prov = v.provinsi || v.lokasi?.provinsi?.label || 'Unknown';
       let lat = parseFloat(v.latitude);
@@ -167,7 +192,7 @@ export async function GET(request: NextRequest) {
       ...mappedInnovators
     ].filter(m => m.lat && m.lng);
 
-    return NextResponse.json({
+    const dashboardData = {
       totalUsers,
       totalInnovations,
       totalVillages,
@@ -176,7 +201,12 @@ export async function GET(request: NextRequest) {
       top5Innovators,
       top5Innovations,
       mapMarkers
-    })
+    };
+
+    // Simpan ke cache selama 5 menit (300 detik)
+    await setCachedData(cacheKey, dashboardData, 300);
+
+    return NextResponse.json(dashboardData)
   } catch (error) {
     console.error('Error fetching admin dashboard:', error)
     return NextResponse.json(

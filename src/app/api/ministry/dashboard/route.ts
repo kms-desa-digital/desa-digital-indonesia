@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/db/mongodb'
 import { requireRole } from '@/lib/auth/apiAuth'
+import { getCachedData, setCachedData } from '@/lib/utils/cache'
 
 const provinceCoords: Record<string, { lat: number; lng: number }> = {
   'ACEH': { lat: 4.695135, lng: 96.749399 },
@@ -77,6 +78,12 @@ export async function GET(request: NextRequest) {
     const auth = await requireRole(request, ["kementerian", "admin"]);
     if (auth instanceof NextResponse) return auth;
 
+    const cacheKey = `cache:ministry:dashboard`;
+    const cached = await getCachedData<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, { status: 200 });
+    }
+
     const db = await connectToDatabase()
 
     // Hitung jumlah provinsi unik
@@ -85,14 +92,63 @@ export async function GET(request: NextRequest) {
     const allProvinces = [...new Set([...distinctProvinces, ...distinctProvincesLegacy])].filter(Boolean);
     const totalProvinces = allProvinces.length;
 
-    // Kategori Desa (Kesiapan Digital)
-    const rawVillages = await db.collection('villages').find({}).toArray();
+    // Kategori Inovasi & Inovator (Agregasi)
+    const [innovationStats, innovatorStats] = await Promise.all([
+      db.collection('innovations').aggregate([
+        { $group: { _id: '$kategori', count: { $sum: 1 } } }
+      ]).toArray(),
+      db.collection('innovators').aggregate([
+        { $group: { _id: '$kategori', count: { $sum: 1 } } }
+      ]).toArray()
+    ]);
+    
+    const innovationChartData = innovationStats.map(s => ({
+      name: s._id || 'Lainnya',
+      value: s.count
+    }));
+    const innovatorChartData = innovatorStats.map(s => ({
+      name: s._id || 'Lainnya',
+      value: s.count
+    }));
+
+    // Eksekusi Promise.all untuk counts dan fetch data dengan Proyeksi
+    const villageProjection = {
+      namaDesa: 1, latitude: 1, longitude: 1, provinsi: 1, lokasi: 1, 
+      createdAt: 1, userId: 1, kesiapanDigital: 1, kategori: 1, 
+      kategoriDesa: 1, jaringan: 1, listrik: 1, teknologi: 1, kemampuan: 1, status: 1
+    };
+    
+    const claimProjection = { desaId: 1, namaInovasi: 1, namaInovator: 1 };
+    
+    const innovatorProjection = { namaInovator: 1, latitude: 1, longitude: 1, provinsi: 1, lokasi: 1 };
+
+    const [
+      totalVillages,
+      verifiedVillages,
+      totalInnovations,
+      verifiedInnovations,
+      totalInnovators,
+      verifiedInnovators,
+      totalUsers,
+      villagesList,
+      allClaims,
+      innovatorsList,
+    ] = await Promise.all([
+      db.collection('villages').countDocuments(),
+      db.collection('villages').countDocuments({ status: 'Terverifikasi' }),
+      db.collection('innovations').countDocuments(),
+      db.collection('innovations').countDocuments({ status: 'Terverifikasi' }),
+      db.collection('innovators').countDocuments(),
+      db.collection('innovators').countDocuments({ status: 'Terverifikasi' }),
+      db.collection('users').countDocuments(),
+      db.collection('villages').find({}, { projection: villageProjection }).toArray(),
+      db.collection('claimInnovations').find({}, { projection: claimProjection }).toArray(),
+      db.collection('innovators').find({}, { projection: innovatorProjection }).toArray(),
+    ]);
+
+    // Kategori Desa (Kesiapan Digital) - proses dari villagesList
     const villageStatsMap: Record<string, number> = {
-      "Sangat Siap": 0,
-      "Siap": 0,
-      "Cukup Siap": 0,
-      "Kurang Siap": 0,
-      "Belum Siap": 0
+      "Sangat Siap": 0, "Siap": 0, "Cukup Siap": 0, "Kurang Siap": 0, "Belum Siap": 0
     };
 
     const resolveKesiapanDigital = (item: any) => {
@@ -128,7 +184,7 @@ export async function GET(request: NextRequest) {
       return "Belum Siap";
     };
 
-    rawVillages.forEach(v => {
+    villagesList.forEach(v => {
       const cat = resolveKesiapanDigital(v);
       villageStatsMap[cat] = (villageStatsMap[cat] || 0) + 1;
     });
@@ -139,51 +195,21 @@ export async function GET(request: NextRequest) {
       value: villageStatsMap[cat],
     })).filter(c => c.value > 0);
 
-    // Kategori Inovasi
-    const innovationStats = await db.collection('innovations').aggregate([
-      { $group: { _id: '$kategori', count: { $sum: 1 } } }
-    ]).toArray();
-    const innovationChartData = innovationStats.map(s => ({
-      name: s._id || 'Lainnya',
-      value: s.count
-    }));
-
-    // Kategori Inovator
-    const innovatorStats = await db.collection('innovators').aggregate([
-      { $group: { _id: '$kategori', count: { $sum: 1 } } }
-    ]).toArray();
-    const innovatorChartData = innovatorStats.map(s => ({
-      name: s._id || 'Lainnya',
-      value: s.count
-    }));
-
-    const [
-      totalVillages,
-      verifiedVillages,
-      totalInnovations,
-      verifiedInnovations,
-      totalInnovators,
-      verifiedInnovators,
-      totalUsers,
-      villagesList,
-      allClaims,
-      innovatorsList,
-    ] = await Promise.all([
-      db.collection('villages').countDocuments(),
-      db.collection('villages').countDocuments({ status: 'Terverifikasi' }),
-      db.collection('innovations').countDocuments(),
-      db.collection('innovations').countDocuments({ status: 'Terverifikasi' }),
-      db.collection('innovators').countDocuments(),
-      db.collection('innovators').countDocuments({ status: 'Terverifikasi' }),
-      db.collection('users').countDocuments(),
-      db.collection('villages').find({}).toArray(),
-      db.collection('claimInnovations').find({}).toArray(),
-      db.collection('innovators').find({}).toArray(),
-    ])
-
     const { ObjectId } = require('mongodb');
+    
+    // Hash Map untuk claims (O(1) lookup)
+    const claimsMap = new Map();
+    allClaims.forEach(c => {
+      if (c.desaId) {
+        claimsMap.set(c.desaId.toString(), c);
+      }
+    });
+
     const pertumbuhanDesa = villagesList.map(v => {
-      const vClaim = allClaims.find(c => c.desaId === v.userId || c.desaId === v._id.toString());
+      const vUserId = v.userId ? v.userId.toString() : null;
+      const vId = v._id ? v._id.toString() : null;
+      const vClaim = (vUserId && claimsMap.get(vUserId)) || (vId && claimsMap.get(vId));
+      
       let year = 2026;
       if (v.createdAt) {
         year = new Date(v.createdAt).getFullYear();
@@ -227,36 +253,38 @@ export async function GET(request: NextRequest) {
       ...mappedInnovators
     ].filter(m => m.lat && m.lng);
 
-    return NextResponse.json(
-      {
-        dashboard: {
-          villages: {
-            total: totalVillages,
-            verified: verifiedVillages,
-          },
-          provinces: totalProvinces,
-          innovations: {
-            total: totalInnovations,
-            verified: verifiedInnovations,
-          },
-          innovators: {
-            total: totalInnovators,
-            verified: verifiedInnovators,
-          },
-          users: {
-            total: totalUsers,
-          },
-          pieChart: {
-            villages: villageChartData,
-            innovators: innovatorChartData,
-            innovations: innovationChartData,
-          },
-          pertumbuhanDesa,
-          mapMarkers
+    const dashboardData = {
+      dashboard: {
+        villages: {
+          total: totalVillages,
+          verified: verifiedVillages,
         },
+        provinces: totalProvinces,
+        innovations: {
+          total: totalInnovations,
+          verified: verifiedInnovations,
+        },
+        innovators: {
+          total: totalInnovators,
+          verified: verifiedInnovators,
+        },
+        users: {
+          total: totalUsers,
+        },
+        pieChart: {
+          villages: villageChartData,
+          innovators: innovatorChartData,
+          innovations: innovationChartData,
+        },
+        pertumbuhanDesa,
+        mapMarkers
       },
-      { status: 200 }
-    )
+    };
+
+    // Simpan ke cache selama 5 menit (300 detik)
+    await setCachedData(cacheKey, dashboardData, 300);
+
+    return NextResponse.json(dashboardData, { status: 200 })
   } catch (error) {
     console.error('Error fetching ministry dashboard:', error)
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 })
