@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
     const roleFilter = searchParams.get("role") || "all"; // "all" | "village" | "innovator"
+    const badgeId = searchParams.get("badgeId") || "";
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
 
@@ -57,6 +58,13 @@ export async function GET(req: NextRequest) {
 
     // Sort alphabetically by name
     usersList.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (badgeId) {
+      usersList = usersList.filter(user => {
+        const matchingBadge = user.badges.find((b: any) => b.id === badgeId);
+        return matchingBadge && matchingBadge.isUnlocked;
+      });
+    }
 
     const total = usersList.length;
     const paginated = usersList.slice((page - 1) * limit, page * limit);

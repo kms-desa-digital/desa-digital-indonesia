@@ -233,6 +233,7 @@
         "announcement": "Announcements",
         "chatbotData": "Chatbot Management",
         "userManagement": "User Management",
+        "monitoringGelar": "Badge Monitoring",
         "logout": "Logout",
         "helpFaq": "Help & FAQ",
         "login": "Login"

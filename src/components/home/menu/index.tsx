@@ -22,7 +22,6 @@ import VerifDesaIcon from "@public/icons/verifikasi-desa.svg";
 import VerifInnovatorIcon from "@public/icons/verifikasi-innovator.svg";
 import VerifKlaimIcon from "@public/icons/verifikasi-klaim.svg";
 import VerifTambahInnovasiIcon from "@public/icons/verifikasi-tambah-innovasi.svg";
-import BadgeIcon from "@public/icons/digital_nudge/badge.svg";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -46,7 +45,6 @@ const adminMenu = [
   { icon: VerifKlaimIcon, title: "Verifikasi Klaim Inovasi" },
   { icon: VerifTambahInnovasiIcon, title: "Verifikasi Tambah Inovasi" },
   { icon: PembuatanIklanIcon, title: "Pembuatan Iklan" },
-  { icon: BadgeIcon, title: "Monitoring Gelar" },
   { icon: MenuAllIcon, title: "Semua Kategori Inovasi" },
 ];
 
@@ -85,7 +83,6 @@ const Menu: React.FC<MenuProps> = ({ isAdmin = false }) => {
       case "Verifikasi Klaim Inovasi": return tc("verifClaim");
       case "Verifikasi Tambah Inovasi": return tc("verifAddInno");
       case "Pembuatan Iklan": return tc("adsMake");
-      case "Monitoring Gelar": return tc("monitoringGelar");
       default: return title;
     }
   };
@@ -117,9 +114,7 @@ const Menu: React.FC<MenuProps> = ({ isAdmin = false }) => {
                     : isAdmin
                       ? title === "Pembuatan Iklan"
                         ? paths.ADMIN_ADS
-                        : title === "Monitoring Gelar"
-                          ? paths.ADMIN_BADGE_MONITORING
-                          : paths.VERIFICATION_PAGE.replace(":category", title)
+                        : paths.VERIFICATION_PAGE.replace(":category", title)
                       : paths.INNOVATION_CATEGORY_PAGE.replace(":category", title)
                 }
                 style={{ textDecoration: 'none' }}

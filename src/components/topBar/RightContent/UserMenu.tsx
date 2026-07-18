@@ -315,7 +315,11 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
                     >
                       {t("userManagement")}
                     </MenuItem>
-
+                    <MenuItem
+                      onClick={() => router.push(paths.ADMIN_BADGE_MONITORING)}
+                    >
+                      {t("monitoringGelar")}
+                    </MenuItem>
                   </>
                 )}
 

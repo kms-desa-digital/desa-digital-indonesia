@@ -21,5 +21,6 @@ export const getBadgesAdminUsers = (params: {
   role?: string;
   page?: number;
   limit?: number;
+  badgeId?: string;
 }): Promise<any> =>
   api.get(`/admin/badges/users`, { params });
