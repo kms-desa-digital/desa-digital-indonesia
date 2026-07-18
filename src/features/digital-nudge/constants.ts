@@ -75,3 +75,20 @@ export const BADGE_STYLES: Record<
     color: "#A16207"
   }
 };
+
+export const VILLAGE_BADGES_INFO = [
+  { id: "penggerak_inovasi", name: "Penggerak Inovasi", desc: "Diperoleh dengan menerapkan 3 inovasi digital", target: 3 },
+  { id: "penggiat_digital", name: "Penggiat Digital", desc: "Diperoleh dengan menerapkan 7 inovasi digital", target: 7 },
+  { id: "adopter_spesialis", name: "Adopter Spesialis", desc: "Diperoleh dengan menerapkan 5 inovasi dari kategori yang sama", target: 5 },
+  { id: "adopter_giat", name: "Adopter Giat", desc: "Diperoleh dengan menerapkan 4 inovasi digital selama 6 bulan berturut-turut", target: 4 },
+  { id: "sahabat_inovator", name: "Sahabat Inovator", desc: "Diperoleh dengan menerapkan beberapa inovasi digital dari 10 inovator berbeda", target: 10 },
+];
+
+export const INNOVATOR_BADGES_INFO = [
+  { id: "terus_berkembang", name: "Terus Berkembang", desc: "Diperoleh dengan menambahkan 5 inovasi digital", target: 5 },
+  { id: "si_inovatif", name: "Si Inovatif", desc: "Diperoleh dengan menambahkan 10 inovasi digital", target: 10 },
+  { id: "kolaborator_handal", name: "Kolaborator Handal", desc: "Diperoleh dengan memiliki 15 desa dampingan", target: 15 },
+  { id: "sahabat_desa", name: "Sahabat Desa", desc: "Diperoleh dengan memiliki 30 desa dampingan", target: 30 },
+  { id: "pemimpin_pasar", name: "Pemimpin Pasar", desc: "Diperoleh dengan memiliki 100 desa dampingan", target: 100 },
+];
+

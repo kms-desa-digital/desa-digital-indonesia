@@ -35,25 +35,13 @@ import { SearchIcon } from "@chakra-ui/icons";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
 import Pagination from "Components/common/Pagination";
-import { getBadgesAdminSummary, getBadgesAdminUsers } from "@/features/digital-nudge/services";
-import { BADGE_STYLES } from "@/features/digital-nudge/constants";
+import { getBadgesAdminSummary } from "@/features/digital-nudge/services";
+import {
+  BADGE_STYLES,
+  VILLAGE_BADGES_INFO,
+  INNOVATOR_BADGES_INFO,
+} from "@/features/digital-nudge/constants";
 
-// Constant arrays for badge descriptions and definitions
-const VILLAGE_BADGES_INFO = [
-  { id: "penggerak_inovasi", name: "Penggerak Inovasi", desc: "Diperoleh dengan menerapkan 3 inovasi digital", target: 3 },
-  { id: "penggiat_digital", name: "Penggiat Digital", desc: "Diperoleh dengan menerapkan 7 inovasi digital", target: 7 },
-  { id: "adopter_spesialis", name: "Adopter Spesialis", desc: "Diperoleh dengan menerapkan 5 inovasi dari kategori yang sama", target: 5 },
-  { id: "adopter_giat", name: "Adopter Giat", desc: "Diperoleh dengan menerapkan 4 inovasi digital selama 6 bulan berturut-turut", target: 4 },
-  { id: "sahabat_inovator", name: "Sahabat Inovator", desc: "Diperoleh dengan menerapkan beberapa inovasi digital dari 10 inovator berbeda", target: 10 },
-];
-
-const INNOVATOR_BADGES_INFO = [
-  { id: "terus_berkembang", name: "Terus Berkembang", desc: "Diperoleh dengan menambahkan 5 inovasi digital", target: 5 },
-  { id: "si_inovatif", name: "Si Inovatif", desc: "Diperoleh dengan menambahkan 10 inovasi digital", target: 10 },
-  { id: "kolaborator_handal", name: "Kolaborator Handal", desc: "Diperoleh dengan memiliki 15 desa dampingan", target: 15 },
-  { id: "sahabat_desa", name: "Sahabat Desa", desc: "Diperoleh dengan memiliki 30 desa dampingan", target: 30 },
-  { id: "pemimpin_pasar", name: "Pemimpin Pasar", desc: "Diperoleh dengan memiliki 100 desa dampingan", target: 100 },
-];
 
 export default function AdminBadgesPage() {
   const router = useRouter();
@@ -61,15 +49,6 @@ export default function AdminBadgesPage() {
   // Summary State
   const [summaryData, setSummaryData] = useState<any>(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
-
-  // Selected Badge State for detail view modal
-  const [selectedBadge, setSelectedBadge] = useState<any | null>(null);
-  const [modalSearch, setModalSearch] = useState("");
-  const [modalPage, setModalPage] = useState(1);
-  const [modalUsers, setModalUsers] = useState<any[]>([]);
-  const [modalUsersLoading, setModalUsersLoading] = useState(false);
-  const [modalTotalPages, setModalTotalPages] = useState(1);
-  const [modalTotalUsers, setModalTotalUsers] = useState(0);
 
   const fetchSummary = async () => {
     try {
@@ -86,37 +65,6 @@ export default function AdminBadgesPage() {
   useEffect(() => {
     fetchSummary();
   }, []);
-
-  useEffect(() => {
-    if (!selectedBadge) {
-      setModalUsers([]);
-      setModalSearch("");
-      setModalPage(1);
-      return;
-    }
-
-    const fetchModalUsers = async () => {
-      try {
-        setModalUsersLoading(true);
-        const res = await getBadgesAdminUsers({
-          badgeId: selectedBadge.id,
-          role: selectedBadge.role,
-          search: modalSearch,
-          page: modalPage,
-          limit: 5 // Compact list size inside the modal
-        });
-        setModalUsers(res.users || []);
-        setModalTotalPages(res.totalPages || 1);
-        setModalTotalUsers(res.total || 0);
-      } catch (err) {
-        console.error("Error loading badge achievers:", err);
-      } finally {
-        setModalUsersLoading(false);
-      }
-    };
-
-    fetchModalUsers();
-  }, [selectedBadge, modalSearch, modalPage]);
 
   return (
     <Container page>
@@ -161,7 +109,7 @@ export default function AdminBadgesPage() {
                       cursor="pointer"
                       _hover={{ bg: "gray.50", shadow: "sm" }}
                       transition="all 0.2s"
-                      onClick={() => setSelectedBadge({ ...def, role: "village" })}
+                      onClick={() => router.push(`/admin/badges/${def.id}?role=village`)}
                     >
                       <Box p={2.5} bg={style.bg} borderRadius="12px" mr={4}>
                         <Image src={style.icon} alt={def.name} boxSize="36px" />
@@ -172,7 +120,7 @@ export default function AdminBadgesPage() {
                       </Stack>
                       <Box textAlign="right" pl={2}>
                         <Tag size="md" variant="subtle" bg={style.bg} color={style.color} fontWeight="bold" borderRadius="full">
-                          <TagLabel fontSize="11px">{count} Desa</TagLabel>
+                           <TagLabel fontSize="11px">{count} Desa</TagLabel>
                         </Tag>
                       </Box>
                     </Flex>
@@ -201,7 +149,7 @@ export default function AdminBadgesPage() {
                       cursor="pointer"
                       _hover={{ bg: "gray.50", shadow: "sm" }}
                       transition="all 0.2s"
-                      onClick={() => setSelectedBadge({ ...def, role: "innovator" })}
+                      onClick={() => router.push(`/admin/badges/${def.id}?role=innovator`)}
                     >
                       <Box p={2.5} bg={style.bg} borderRadius="12px" mr={4}>
                         <Image src={style.icon} alt={def.name} boxSize="36px" />
@@ -223,121 +171,6 @@ export default function AdminBadgesPage() {
           </Stack>
         )}
       </Box>
-
-      {/* Badge Achievers Detail Modal */}
-      <Modal isOpen={selectedBadge !== null} onClose={() => setSelectedBadge(null)} size="lg" isCentered>
-        <ModalOverlay />
-        <ModalContent borderRadius="20px" mx="16px" overflow="hidden">
-          <ModalHeader bg="green.50" borderBottomWidth="1px" borderColor="green.100" py={4}>
-            <Flex align="center" gap={3}>
-              {selectedBadge && (
-                <>
-                  <Box p={2} bg={BADGE_STYLES[selectedBadge.id]?.bg} borderRadius="12px">
-                    <Image src={BADGE_STYLES[selectedBadge.id]?.icon} alt={selectedBadge.name} boxSize="28px" />
-                  </Box>
-                  <Stack spacing={0.5}>
-                    <Text fontSize="15px" fontWeight="800" color="#1F2937">
-                      Penerima Gelar: {selectedBadge.name}
-                    </Text>
-                    <Text fontSize="11px" color="gray.500" fontWeight="normal">
-                      {selectedBadge.desc}
-                    </Text>
-                  </Stack>
-                </>
-              )}
-            </Flex>
-          </ModalHeader>
-          <ModalCloseButton mt={1} />
-          <ModalBody p={5}>
-            <Stack spacing={4}>
-              {/* Search Bar inside Modal */}
-              <InputGroup size="sm">
-                <InputLeftElement pointerEvents="none">
-                  <SearchIcon color="gray.400" />
-                </InputLeftElement>
-                <Input
-                  placeholder={`Cari ${selectedBadge?.role === "village" ? "desa" : "inovator"}...`}
-                  value={modalSearch}
-                  onChange={(e) => {
-                    setModalSearch(e.target.value);
-                    setModalPage(1);
-                  }}
-                  bg="gray.50"
-                  borderRadius="10px"
-                  fontSize="12px"
-                  borderColor="gray.200"
-                />
-              </InputGroup>
-
-              {modalUsersLoading ? (
-                <Flex minH="180px" align="center" justify="center">
-                  <Spinner color="#347357" size="md" />
-                </Flex>
-              ) : modalUsers.length === 0 ? (
-                <Flex minH="150px" direction="column" align="center" justify="center" bg="gray.50" borderRadius="12px">
-                  <Text fontSize="12px" color="gray.500" fontWeight="bold">
-                    Tidak ada {selectedBadge?.role === "village" ? "desa" : "inovator"} yang ditemukan.
-                  </Text>
-                </Flex>
-              ) : (
-                <Stack spacing={3}>
-                  <Box bg="white" border="1px solid" borderColor="gray.100" borderRadius="12px" overflow="hidden" shadow="xs">
-                    <Table size="sm" variant="simple">
-                      <Thead bg="gray.50">
-                        <Tr>
-                          <Th py={2.5} fontSize="10px" color="gray.500">Nama</Th>
-                          <Th py={2.5} fontSize="10px" color="gray.500">Gelar Aktif</Th>
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        {modalUsers.map((user) => {
-                          const activeStyle = user.activeBadge ? BADGE_STYLES[user.activeBadge] : null;
-                          return (
-                            <Tr key={user.id}>
-                              <Td py={2.5}>
-                                <Text fontSize="12px" fontWeight="700" color="#1F2937">{user.name}</Text>
-                              </Td>
-                              <Td py={2.5}>
-                                {activeStyle ? (
-                                  <Tag size="sm" variant="subtle" bg={activeStyle.bg} color={activeStyle.color} fontWeight="bold" borderRadius="full">
-                                    <Image src={activeStyle.icon} alt={activeStyle.name} boxSize="10px" mr={1} />
-                                    <TagLabel fontSize="9px">{activeStyle.name}</TagLabel>
-                                  </Tag>
-                                ) : (
-                                  <Text fontSize="10px" color="gray.400" fontStyle="italic">Tidak Ada</Text>
-                                )}
-                              </Td>
-                            </Tr>
-                          );
-                        })}
-                      </Tbody>
-                    </Table>
-                  </Box>
-
-                  {/* Modal Pagination */}
-                  {modalTotalPages > 1 && (
-                    <Flex justify="space-between" align="center" mt={2} px="2px" flexWrap="wrap" gap={2}>
-                      <Text fontSize="10px" color="gray.500">
-                        Menampilkan {modalUsers.length} dari {modalTotalUsers} pengguna
-                      </Text>
-                      <Pagination
-                        currentPage={modalPage}
-                        totalPages={modalTotalPages}
-                        onPageChange={(page) => setModalPage(page)}
-                      />
-                    </Flex>
-                  )}
-                </Stack>
-              )}
-            </Stack>
-          </ModalBody>
-          <ModalFooter borderTopWidth="1px" borderColor="gray.100" py={3} bg="gray.50">
-            <Button size="sm" colorScheme="green" bg="#347357" color="white" onClick={() => setSelectedBadge(null)}>
-              Tutup
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </Container>
   );
 }
