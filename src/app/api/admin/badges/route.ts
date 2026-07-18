@@ -21,8 +21,10 @@ export async function GET(req: NextRequest) {
       sahabat_inovator: 0
     };
     
-    for (const v of villages) {
-      const evaluation = await evaluateVillageBadges(db, v._id.toString());
+    const villageEvaluations = await Promise.all(
+      villages.map(v => evaluateVillageBadges(db, v._id.toString()))
+    );
+    for (const evaluation of villageEvaluations) {
       for (const badge of evaluation.badges) {
         if (badge.isUnlocked) {
           villageCounts[badge.id] = (villageCounts[badge.id] || 0) + 1;
@@ -40,8 +42,10 @@ export async function GET(req: NextRequest) {
       pemimpin_pasar: 0
     };
     
-    for (const i of innovators) {
-      const evaluation = await evaluateInnovatorBadges(db, i._id.toString());
+    const innovatorEvaluations = await Promise.all(
+      innovators.map(i => evaluateInnovatorBadges(db, i._id.toString()))
+    );
+    for (const evaluation of innovatorEvaluations) {
       for (const badge of evaluation.badges) {
         if (badge.isUnlocked) {
           innovatorCounts[badge.id] = (innovatorCounts[badge.id] || 0) + 1;

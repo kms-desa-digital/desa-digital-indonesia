@@ -25,16 +25,19 @@ export async function GET(req: NextRequest) {
         villageQuery.namaDesa = { $regex: search, $options: "i" };
       }
       const villages = await db.collection("villages").find(villageQuery).toArray();
-      for (const v of villages) {
-        const evalRes = await evaluateVillageBadges(db, v._id.toString());
-        usersList.push({
-          id: v._id.toString(),
-          name: v.namaDesa,
-          role: "village",
-          activeBadge: evalRes.activeBadge,
-          badges: evalRes.badges
-        });
-      }
+      const villageResults = await Promise.all(
+        villages.map(async (v) => {
+          const evalRes = await evaluateVillageBadges(db, v._id.toString());
+          return {
+            id: v._id.toString(),
+            name: v.namaDesa,
+            role: "village" as const,
+            activeBadge: evalRes.activeBadge,
+            badges: evalRes.badges
+          };
+        })
+      );
+      usersList.push(...villageResults);
     }
 
     // Fetch innovators
@@ -44,16 +47,19 @@ export async function GET(req: NextRequest) {
         innovatorQuery.namaInovator = { $regex: search, $options: "i" };
       }
       const innovators = await db.collection("innovators").find(innovatorQuery).toArray();
-      for (const i of innovators) {
-        const evalRes = await evaluateInnovatorBadges(db, i._id.toString());
-        usersList.push({
-          id: i._id.toString(),
-          name: i.namaInovator,
-          role: "innovator",
-          activeBadge: evalRes.activeBadge,
-          badges: evalRes.badges
-        });
-      }
+      const innovatorResults = await Promise.all(
+        innovators.map(async (i) => {
+          const evalRes = await evaluateInnovatorBadges(db, i._id.toString());
+          return {
+            id: i._id.toString(),
+            name: i.namaInovator,
+            role: "innovator" as const,
+            activeBadge: evalRes.activeBadge,
+            badges: evalRes.badges
+          };
+        })
+      );
+      usersList.push(...innovatorResults);
     }
 
     // Sort alphabetically by name
