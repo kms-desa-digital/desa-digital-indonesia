@@ -34,6 +34,7 @@ import {
 import { SearchIcon } from "@chakra-ui/icons";
 import TopBar from "Components/topBar";
 import Container from "Components/container";
+import Pagination from "Components/common/Pagination";
 import { getBadgesAdminSummary, getBadgesAdminUsers } from "@/features/digital-nudge/services";
 import { BADGE_STYLES } from "@/features/digital-nudge/constants";
 
@@ -315,34 +316,15 @@ export default function AdminBadgesPage() {
 
                   {/* Modal Pagination */}
                   {modalTotalPages > 1 && (
-                    <Flex justify="space-between" align="center" mt={1} px="2px">
+                    <Flex justify="space-between" align="center" mt={2} px="2px" flexWrap="wrap" gap={2}>
                       <Text fontSize="10px" color="gray.500">
                         Menampilkan {modalUsers.length} dari {modalTotalUsers} pengguna
                       </Text>
-                      <Flex gap={1.5}>
-                        <Button
-                          size="xs"
-                          onClick={() => setModalPage((p) => Math.max(p - 1, 1))}
-                          isDisabled={modalPage === 1}
-                          bg="white"
-                          borderWidth="1px"
-                          fontSize="10px"
-                          py={1}
-                        >
-                          Sebelumnya
-                        </Button>
-                        <Button
-                          size="xs"
-                          onClick={() => setModalPage((p) => Math.min(p + 1, modalTotalPages))}
-                          isDisabled={modalPage === modalTotalPages}
-                          bg="white"
-                          borderWidth="1px"
-                          fontSize="10px"
-                          py={1}
-                        >
-                          Berikutnya
-                        </Button>
-                      </Flex>
+                      <Pagination
+                        currentPage={modalPage}
+                        totalPages={modalTotalPages}
+                        onPageChange={(page) => setModalPage(page)}
+                      />
                     </Flex>
                   )}
                 </Stack>
