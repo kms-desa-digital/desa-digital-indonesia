@@ -21,12 +21,12 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const category    = searchParams.get('category')
-    const status      = searchParams.get('status')
+    const category = searchParams.get('category')
+    const status = searchParams.get('status')
     const innovatorId = searchParams.get('innovatorId')
-    const search      = searchParams.get('search')
-    const limitVal    = parseInt(searchParams.get('limit') || '0')
-    const skipVal     = parseInt(searchParams.get('skip') || '0')
+    const search = searchParams.get('search')
+    const limitVal = parseInt(searchParams.get('limit') || '0')
+    const skipVal = parseInt(searchParams.get('skip') || '0')
 
     const cacheKey = `cache:innovations:list:category=${category || 'all'}:status=${status || 'all'}:innovatorId=${innovatorId || 'all'}:search=${search || 'all'}:limit=${limitVal}:skip=${skipVal}`
     const cached = await getCachedData<any>(cacheKey)
@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
     const db = await connectToDatabase()
     const filter: Record<string, any> = {}
 
-    if (category)    filter.kategori    = category
-    if (status)      filter.status      = status
+    if (category) filter.kategori = category
+    if (status) filter.status = status
     if (innovatorId) filter.innovatorId = innovatorId
 
     if (search && search.trim()) {
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         { namaInnovator: { $regex: escapedSearch, $options: 'i' } },
       ]
     }
-    
+
     const totalCount = await db.collection('innovations').countDocuments(filter)
 
     const pipeline: any[] = [
@@ -146,10 +146,10 @@ export async function GET(request: NextRequest) {
       id: doc._id.toString(),
       _id: doc._id.toString(),
     }))
-    
+
     const totalPages = limitVal > 0 ? Math.ceil(totalCount / limitVal) : 1;
 
-    const responsePayload = { 
+    const responsePayload = {
       innovations: result,
       pagination: {
         total: totalCount,
@@ -194,10 +194,10 @@ export async function POST(request: NextRequest) {
 
     // Comprehensive Validation for Required Fields (matching frontend)
     if (
-      !namaInovasi || 
-      !kategori || 
-      !tahunDibuat || 
-      !deskripsi || 
+      !namaInovasi ||
+      !kategori ||
+      !tahunDibuat ||
+      !deskripsi ||
       !innovatorId ||
       !statusInovasi ||
       !modelBisnis || (Array.isArray(modelBisnis) && modelBisnis.length === 0) ||
@@ -262,7 +262,7 @@ export async function POST(request: NextRequest) {
         if (ObjectId.isValid(innovatorId)) {
           queryId = new ObjectId(innovatorId)
         }
-      } catch (e) {}
+      } catch (e) { }
 
       innovatorDoc = await db.collection('innovators').findOne({
         $or: [
@@ -278,12 +278,12 @@ export async function POST(request: NextRequest) {
 
     const newInnovation = {
       ...body,
-      namaInnovator:        finalNamaInnovator,
-      innovatorImgURL:      finalInnovatorImgURL,
-      status:               'Menunggu',   // status verifikasi admin
-      catatanAdmin:         null,
-      createdAt:            new Date(),
-      editedAt:             new Date(),
+      namaInnovator: finalNamaInnovator,
+      innovatorImgURL: finalInnovatorImgURL,
+      status: 'Menunggu',   // status verifikasi admin
+      catatanAdmin: null,
+      createdAt: new Date(),
+      editedAt: new Date(),
     }
 
     const result = await db.collection('innovations').insertOne(newInnovation)
@@ -316,7 +316,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        message:      'Inovasi berhasil ditambahkan, menunggu verifikasi admin',
+        message: 'Inovasi berhasil ditambahkan, menunggu verifikasi admin',
         innovationId: innovationId,
       },
       { status: 201 }
