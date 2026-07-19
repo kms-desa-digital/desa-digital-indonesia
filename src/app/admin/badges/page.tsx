@@ -69,8 +69,8 @@ export default function AdminBadgesPage() {
   return (
     <Container page>
       <TopBar title="Monitoring Gelar & Badge" onBack={() => router.push("/admin")} />
-      
-      <Box px="16px" pb={12} pt={4}>
+
+      <Box px="16px" pb={12} pt={8}>
         {summaryLoading ? (
           <Flex minH="250px" align="center" justify="center">
             <Spinner color="#347357" size="lg" />
