@@ -129,7 +129,7 @@ export default function AdminBadgeDetailPage() {
       />
 
       <Box px="16px" pb={12} pt={4}>
-        <Stack spacing={6}>
+        <Stack spacing={6} maxW="800px" mx="auto">
           {/* Premium Card showing Badge Details */}
           <Card
             borderRadius="20px"
@@ -269,7 +269,6 @@ export default function AdminBadgeDetailPage() {
                           fontSize="11px"
                           color="gray.500"
                           py={4}
-                          textAlign="right"
                         >
                           Aksi
                         </Th>
