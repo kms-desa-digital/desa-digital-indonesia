@@ -265,13 +265,6 @@ export default function AdminBadgeDetailPage() {
                         <Th fontSize="11px" color="gray.500" py={4}>
                           Gelar Aktif Saat Ini
                         </Th>
-                        <Th
-                          fontSize="11px"
-                          color="gray.500"
-                          py={4}
-                        >
-                          Aksi
-                        </Th>
                       </Tr>
                     </Thead>
                     <Tbody>
@@ -290,6 +283,15 @@ export default function AdminBadgeDetailPage() {
                                 fontSize="14px"
                                 fontWeight="700"
                                 color="#1F2937"
+                                cursor="pointer"
+                                _hover={{ textDecoration: "underline", color: "#347357" }}
+                                onClick={() => {
+                                  if (user.role === "village") {
+                                    router.push(`/village/detail/${user.id}`);
+                                  } else {
+                                    router.push(`/innovator/detail/${user.id}`);
+                                  }
+                                }}
                               >
                                 {user.name}
                               </Text>
@@ -323,26 +325,6 @@ export default function AdminBadgeDetailPage() {
                                   Tidak Ada
                                 </Text>
                               )}
-                            </Td>
-                            <Td py={4} textAlign="right">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                colorScheme="green"
-                                borderColor="green.200"
-                                color="#347357"
-                                borderRadius="8px"
-                                _hover={{ bg: "green.50" }}
-                                onClick={() => {
-                                  if (user.role === "village") {
-                                    router.push(`/village/detail/${user.id}`);
-                                  } else {
-                                    router.push(`/innovator/detail/${user.id}`);
-                                  }
-                                }}
-                              >
-                                Lihat Profil
-                              </Button>
                             </Td>
                           </Tr>
                         );
