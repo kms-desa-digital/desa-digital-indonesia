@@ -161,15 +161,6 @@ export default function AdminBadgeDetailPage() {
                     <Heading size="md" color="#1F2937">
                       {badgeInfo.name}
                     </Heading>
-                    <ChakraBadge
-                      colorScheme={role === "village" ? "teal" : "blue"}
-                      borderRadius="full"
-                      px={2.5}
-                      py={0.5}
-                      fontSize="10px"
-                    >
-                      {role === "village" ? "Desa" : "Inovator"}
-                    </ChakraBadge>
                   </HStack>
                   <Text fontSize="14px" color="gray.600" maxW="600px">
                     {badgeInfo.desc}
@@ -272,9 +263,6 @@ export default function AdminBadgeDetailPage() {
                           Nama Penerima
                         </Th>
                         <Th fontSize="11px" color="gray.500" py={4}>
-                          Tipe Pengguna
-                        </Th>
-                        <Th fontSize="11px" color="gray.500" py={4}>
                           Gelar Aktif Saat Ini
                         </Th>
                         <Th
@@ -305,15 +293,6 @@ export default function AdminBadgeDetailPage() {
                                 color="#1F2937"
                               >
                                 {user.name}
-                              </Text>
-                            </Td>
-                            <Td py={4}>
-                              <Text
-                                fontSize="13px"
-                                color="gray.600"
-                                textTransform="capitalize"
-                              >
-                                {user.role === "village" ? "Desa" : "Inovator"}
                               </Text>
                             </Td>
                             <Td py={4}>
@@ -375,8 +354,14 @@ export default function AdminBadgeDetailPage() {
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <Flex justify="space-between" align="center" mt={2} px="4px">
-                    <Text fontSize="12px" color="gray.500">
+                  <Flex
+                    direction="column"
+                    align="center"
+                    justify="center"
+                    gap={3}
+                    mt={4}
+                  >
+                    <Text fontSize="12px" color="gray.500" textAlign="center">
                       Menampilkan {(page - 1) * 10 + 1} -{" "}
                       {Math.min(page * 10, totalUsers)} dari {totalUsers}{" "}
                       pengguna
